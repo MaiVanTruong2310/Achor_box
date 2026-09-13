@@ -1,0 +1,47 @@
+# OS & System files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE & Editors
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Backend build outputs
+backend/.gradle/
+backend/build/
+backend/bin/
+backend/out/
+backend/.apt_generated
+backend/.classpath
+backend/.factorypath
+backend/.project
+backend/.settings
+backend/.springBeans
+backend/.sts4-cache
+
+# Frontend build outputs & dependencies
+web-admin/node_modules/
+web-admin/dist/
+web-admin/dist-ssr/
+web-admin/*.local
+
+# Frontend Environment Variables (Keep .env.example)
+web-admin/.env
+web-admin/.env.*
+!web-admin/.env.example
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
