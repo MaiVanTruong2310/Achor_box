@@ -33,15 +33,32 @@ web-admin/node_modules/
 web-admin/dist/
 web-admin/dist-ssr/
 web-admin/*.local
+web-shop/node_modules/
+web-shop/dist/
+web-shop/dist-ssr/
+web-shop/*.local
 
 # Frontend Environment Variables (Keep .env.example)
 web-admin/.env
 web-admin/.env.*
 !web-admin/.env.example
+web-shop/.env
+web-shop/.env.*
+!web-shop/.env.example
 .env
 .env.*
 !.env.example
 
+# Documents & Reports (Ignore all docx, doc, pdf, etc.)
+*.docx
+*.doc
+*.pdf
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+
 # Logs
 logs/
 *.log
+

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%" fill="none">
+  <rect width="400" height="400" fill="#f8fafc" rx="12"/>
+  
+  <!-- Outer Ring / Mount Base -->
+  <circle cx="200" cy="180" r="100" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+  <circle cx="200" cy="180" r="85" fill="#0f172a"/>
+  
+  <!-- Lens Rings -->
+  <circle cx="200" cy="180" r="55" fill="#1e293b" stroke="#3b82f6" stroke-width="3"/>
+  <circle cx="200" cy="180" r="35" fill="#020617" stroke="#60a5fa" stroke-width="2"/>
+  <circle cx="200" cy="180" r="18" fill="#1d4ed8"/>
+  <circle cx="194" cy="174" r="7" fill="#ffffff" opacity="0.8"/>
+  <circle cx="204" cy="184" r="3" fill="#ffffff" opacity="0.5"/>
+
+  <!-- IR LED Sensors -->
+  <circle cx="160" cy="180" r="5" fill="#ef4444" opacity="0.8"/>
+  <circle cx="240" cy="180" r="5" fill="#ef4444" opacity="0.8"/>
+  <circle cx="200" cy="140" r="5" fill="#ef4444" opacity="0.8"/>
+  <circle cx="200" cy="220" r="5" fill="#ef4444" opacity="0.8"/>
+
+  <!-- Microphone hole &amp; status LED -->
+  <circle cx="170" cy="150" r="2.5" fill="#64748b"/>
+  <circle cx="230" cy="150" r="3" fill="#10b981"/>
+
+  <!-- Cable Tail -->
+  <path d="M200 280 C200 310, 230 310, 230 340 L230 360" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+  <rect x="220" y="355" width="20" height="25" rx="3" fill="#0f172a"/>
+  
+  <text x="200" y="315" text-anchor="middle" fill="#0f172a" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="700">MODULE CAMERA AI 1080P</text>
+  <text x="200" y="333" text-anchor="middle" fill="#64748b" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">Góc rộng 135° • Hồng ngoại nhìn đêm</text>
+</svg>
