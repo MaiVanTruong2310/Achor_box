@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%" fill="none">
+  <rect width="400" height="400" fill="#f8fafc" rx="12"/>
+  
+  <!-- Heavy duty steel bracket -->
+  <path d="M100 120 L300 120 L300 240 L260 240 L260 160 L140 160 L140 240 L100 240 Z" fill="#334155" stroke="#0f172a" stroke-width="3"/>
+  
+  <!-- Gusset Support Ribs -->
+  <polygon points="100,160 140,240 100,240" fill="#1e293b"/>
+  <polygon points="300,160 260,240 300,240" fill="#1e293b"/>
+
+  <!-- Anchor Bolt Holes -->
+  <circle cx="120" cy="140" r="7" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="280" cy="140" r="7" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="120" cy="200" r="7" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="280" cy="200" r="7" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+
+  <!-- Expansion Anchors &amp; Screws -->
+  <rect x="155" y="220" width="14" height="45" rx="3" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/>
+  <rect x="180" y="210" width="14" height="55" rx="3" fill="#cbd5e1" stroke="#475569" stroke-width="1.5"/>
+  <rect x="205" y="210" width="14" height="55" rx="3" fill="#cbd5e1" stroke="#475569" stroke-width="1.5"/>
+  <rect x="230" y="220" width="14" height="45" rx="3" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/>
+
+  <text x="200" y="320" text-anchor="middle" fill="#0f172a" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="700">BỘ KHUNG GÁ &amp; CHÂN ĐẾ CHỐNG TRỘM</text>
+  <text x="200" y="340" text-anchor="middle" fill="#64748b" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">Thép mạ kẽm chịu lực • Đi kèm bu-lông nở sắt</text>
+</svg>
