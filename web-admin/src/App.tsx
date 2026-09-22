@@ -15,6 +15,7 @@ import { ContentPage } from './pages/Content';
 import { AuditLogsPage } from './pages/AuditLogs';
 import { SettingsPage } from './pages/Settings';
 import { Forbidden403 } from './pages/Forbidden403';
+import { ProductShowcaseAndGuide } from './pages/ProductShowcaseAndGuide';
 import { useAuth } from './contexts/AuthContext';
 import { getRoleDefaultPath } from './types/database';
 
@@ -31,20 +32,25 @@ export const App: React.FC = () => {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public Routes */}
+            {/* Public Customer & Auth Routes */}
+            <Route path="/" element={<ProductShowcaseAndGuide initialTab="products" standalone />} />
+            <Route path="/guide" element={<ProductShowcaseAndGuide initialTab="guide" standalone />} />
+            <Route path="/showcase" element={<ProductShowcaseAndGuide initialTab="products" standalone />} />
+            <Route path="/warranty" element={<ProductShowcaseAndGuide initialTab="warranty" standalone />} />
             <Route path="/login" element={<Login />} />
             <Route path="/403" element={<Forbidden403 />} />
 
             {/* Protected Admin Routes */}
             <Route
-              path="/"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['super_admin', 'technician', 'product_manager', 'support_agent', 'accountant']}>
                   <AdminLayout />
                 </ProtectedRoute>
               }
             >
-              <Route index element={<RoleDefaultRedirect />} />
+              <Route path="/admin" element={<RoleDefaultRedirect />} />
+              <Route path="/admin/guide" element={<ProductShowcaseAndGuide initialTab="guide" standalone={false} />} />
+              <Route path="/admin/warranty" element={<ProductShowcaseAndGuide initialTab="warranty" standalone={false} />} />
               
               {/* Module 1: Dashboard (Super Admin Only) */}
               <Route
@@ -137,8 +143,8 @@ export const App: React.FC = () => {
               />
             </Route>
 
-            {/* Catch-all */}
-            <Route path="*" element={<RoleDefaultRedirect />} />
+            {/* Catch-all: redirect unknown paths to storefront */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

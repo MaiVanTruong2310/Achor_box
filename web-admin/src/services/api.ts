@@ -29,9 +29,19 @@ async function fetchBackend<T>(path: string, options?: RequestInit): Promise<T |
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
 
+    // Tự động đính kèm Bearer JWT Token nếu đang có phiên đăng nhập
+    let authHeader: Record<string, string> = {};
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        authHeader['Authorization'] = `Bearer ${session.access_token}`;
+      }
+    } catch {}
+
     const res = await fetch(`${BACKEND_URL}${path}`, {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeader,
         ...(options?.headers || {})
       },
       signal: controller.signal,
@@ -42,6 +52,14 @@ async function fetchBackend<T>(path: string, options?: RequestInit): Promise<T |
 
     if (!res.ok) {
       console.warn(`[Backend HTTP ${res.status}] ${path}`);
+      // Nếu API trả về 401 (Hết hạn token hoặc không hợp lệ), lập tức kích hoạt sự kiện thu hồi phiên
+      if (res.status === 401 && typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('smartbox:auth-expired', {
+            detail: { reason: 'Phiên làm việc đã hết hạn (401 Unauthorized). Vui lòng đăng nhập lại.' }
+          })
+        );
+      }
       return null;
     }
     return await res.json();
@@ -209,7 +227,18 @@ export const productsService = {
         images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []),
         stock_quantity: p.stockQuantity ?? 0,
         is_active: p.isActive ?? true,
-        created_at: p.createdAt
+        created_at: p.createdAt,
+        variants: Array.isArray(p.variants) ? p.variants.map((v: any) => ({
+          id: v.id,
+          product_id: v.productId,
+          variant_name: v.variantName,
+          sku: v.sku,
+          name: v.variantName,
+          price_delta: Number(v.priceDelta || 0),
+          price_adjustment: Number(v.priceDelta || 0),
+          calculated_price: Number(v.calculatedPrice || 0),
+          stock_quantity: Number(v.stockQuantity || 0)
+        })) : []
       }));
     }
 
@@ -217,7 +246,7 @@ export const productsService = {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*, product_categories(name)')
+        .select('*, product_categories(name), product_variants(*)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -232,7 +261,17 @@ export const productsService = {
         return {
           ...p,
           images: parsedImages,
-          category_name: p.product_categories?.name || ''
+          category_name: p.product_categories?.name || '',
+          variants: Array.isArray(p.product_variants) ? p.product_variants.map((v: any) => ({
+            id: v.id,
+            product_id: v.product_id,
+            variant_name: v.variant_name,
+            sku: v.sku,
+            name: v.variant_name,
+            price_delta: Number(v.price_delta || 0),
+            price_adjustment: Number(v.price_delta || 0),
+            stock_quantity: Number(v.stock_quantity || 0)
+          })) : []
         };
       });
     } catch (err) {
@@ -251,6 +290,12 @@ export const productsService = {
       stockQuantity: product.stock_quantity ?? 0,
       isActive: product.is_active ?? true,
       images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []),
+      variants: Array.isArray(product.variants) ? product.variants.map((v: any) => ({
+        variantName: v.variant_name || v.name || v.sku,
+        sku: v.sku,
+        priceDelta: Number(v.price_delta ?? v.price_adjustment ?? 0),
+        stockQuantity: Number(v.stock_quantity ?? 0)
+      })) : []
     };
 
     const res = await fetchBackend<any>('/products', {
@@ -313,7 +358,14 @@ export const productsService = {
       price: updates.price,
       stockQuantity: updates.stock_quantity,
       isActive: updates.is_active,
-      images: updates.images
+      images: updates.images,
+      variants: Array.isArray(updates.variants) ? updates.variants.map((v: any) => ({
+        id: v.id,
+        variantName: v.variant_name || v.name || v.sku,
+        sku: v.sku,
+        priceDelta: Number(v.price_delta ?? v.price_adjustment ?? 0),
+        stockQuantity: Number(v.stock_quantity ?? 0)
+      })) : undefined
     };
 
     const res = await fetchBackend<any>(`/products/${id}`, {
@@ -956,6 +1008,12 @@ export const devicesService = {
         map_x: d.mapX ?? 0,
         map_y: d.mapY ?? 0,
         lock_status: d.lockStatus || 'locked',
+        door_status: d.doorStatus || 'closed',
+        weight_kg: Number(d.weightKg ?? 0),
+        package_detected: Boolean(d.packageDetected),
+        scale_ready: Boolean(d.scaleReady),
+        device_state: d.deviceState || 'starting',
+        mqtt_topic_id: d.mqttTopicId || '',
         wifi_rssi: d.wifiRssi ?? 0,
         ping_ms: d.pingMs ?? 0,
         owner: {
@@ -1223,6 +1281,24 @@ const DEFAULT_DEMO_CLAIMS: ExtendedWarrantyClaim[] = [
   }
 ];
 
+export interface WarrantyLookupResult {
+  serialNumber: string;
+  productName: string;
+  variantName: string;
+  status: 'active' | 'expired' | 'pending_activation' | string;
+  statusLabel: string;
+  startDate: string;
+  endDate: string;
+  remainingDays: number;
+  isValid: boolean;
+  ownerNameMasked: string;
+  ownerPhoneMasked: string;
+  locationLabel: string;
+  deviceStatus: string;
+  hardwareSpecs: string[];
+  features: string[];
+}
+
 export const warrantiesService = {
   async getClaims(): Promise<ExtendedWarrantyClaim[]> {
     // 1. Check local memory/localStorage cache first for updated items
@@ -1398,6 +1474,46 @@ export const warrantiesService = {
 
   async addInternalNote(claimId: string, note: string): Promise<{ success: boolean; error: string | null }> {
     return this.updateClaimFull(claimId, { internal_notes: note });
+  },
+
+  async lookupWarranty(serial: string): Promise<WarrantyLookupResult> {
+    const cleanSerial = serial.trim().toUpperCase();
+    const data = await fetchBackend<WarrantyLookupResult>(`/warranties/lookup?serial=${encodeURIComponent(cleanSerial)}`);
+    if (data) return data;
+
+    // Fallback nếu chạy độc lập
+    const isBoxPro = cleanSerial.includes('PRO') || cleanSerial.startsWith('DBX');
+    return {
+      serialNumber: cleanSerial,
+      productName: isBoxPro ? 'Anchor Box Pro IoT (Bản Cao Cấp)' : 'Anchor Box Base (Bản Tiêu Chuẩn)',
+      variantName: 'Size M (Tiêu chuẩn 85L)',
+      status: 'active',
+      statusLabel: 'Bảo hành chính hãng hợp lệ',
+      startDate: '2026-01-15',
+      endDate: '2027-01-15',
+      remainingDays: 298,
+      isValid: true,
+      ownerNameMasked: 'Trần V***',
+      ownerPhoneMasked: '098****312',
+      locationLabel: 'Hà Nội, Việt Nam',
+      deviceStatus: 'online',
+      hardwareSpecs: [
+        'Chip vi điều khiển: ESP32-S3 Dual-Core 240MHz Wi-Fi/BLE',
+        'Cơ cấu chốt khóa: Solenoid 12V DC trợ lực Servo 90°',
+        'Cảm biến cửa: Cảm biến từ MC-38 chống cạy phá',
+        'Cảm biến tải trọng: LoadCell HX711 24-bit chống tráo bưu phẩm',
+        'Bàn phím: Ma trận 4x4 I2C PCF8574 bọc kim loại',
+        'Màn hình: LCD 1602 I2C Backlight xanh',
+        'Chuẩn kháng nước: IP54 ngoài trời có mái che',
+        'Nguồn cấp: Adapter 12V 2A DC Jack 5.5x2.1mm'
+      ],
+      features: [
+        'Đổi mới 1-1 trong 30 ngày nếu lỗi do nhà sản xuất',
+        'Miễn phí bảo dưỡng và thay thế Servo/Solenoid chính hãng',
+        'Hỗ trợ cập nhật Firmware OTA từ xa trọn đời',
+        'Kỹ thuật viên hỗ trợ tận nơi trong 24h (Hà Nội & TP.HCM)'
+      ]
+    };
   }
 };
 
@@ -1999,4 +2115,637 @@ export const templatesService = {
     }
   }
 };
+
+// ==============================================================
+// CMS CONTENT & MARKETING SERVICE
+// ==============================================================
+export interface ArticleItem {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  summary: string;
+  content: string;
+  coverImage?: string;
+  authorName?: string;
+  status: 'published' | 'draft' | 'archived';
+  viewCount: number;
+  tags?: string[];
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BannerItem {
+  id: string;
+  title: string;
+  imageUrl: string;
+  targetUrl?: string;
+  position: string;
+  displayOrder: number;
+  isActive: boolean;
+  clickCount: number;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ReviewItem {
+  id: string;
+  productId?: string;
+  productName: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  rating: number;
+  title?: string;
+  comment: string;
+  images?: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  rejectReason?: string;
+  adminReply?: string;
+  adminRepliedAt?: string;
+  createdAt?: string;
+}
+
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  displayOrder: number;
+  isPublished: boolean;
+  helpfulCount: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ContentSummaryStats {
+  totalArticles: number;
+  publishedArticles: number;
+  totalBanners: number;
+  activeBanners: number;
+  totalReviews: number;
+  pendingReviews: number;
+  totalFaqs: number;
+}
+
+const DEFAULT_ARTICLES: ArticleItem[] = [
+  {
+    id: 'art-001',
+    title: 'Hướng Dẫn Cài Đặt & Đồng Bộ Mã OTP Một Lần Cho Shipper Giao Hàng',
+    slug: 'huong-dan-cai-dat-dong-bo-otp-cho-shipper',
+    category: 'guide',
+    summary: 'Chi tiết các bước cấp quyền mở nắp SmartBox cho nhân viên giao hàng bằng mã PIN dùng 1 lần (Dynamic OTP), đảm bảo an toàn tuyệt đối.',
+    content: 'SmartBox hỗ trợ công nghệ cấp mã OTP mở khóa động qua 2 hình thức: Cấp mã ngẫu nhiên trên App hoặc tự động gửi SMS cho Shipper khi đơn hàng đến nơi. Bài viết này hướng dẫn chi tiết cách chủ hộp kích hoạt tính năng này trong phần Cài đặt thiết bị.',
+    coverImage: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1000&q=80',
+    authorName: 'Kỹ Sư Lê Văn Tuấn',
+    status: 'published',
+    viewCount: 1420,
+    tags: ['Hướng dẫn', 'OTP', 'Bảo mật', 'Shipper'],
+    publishedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'art-002',
+    title: 'Ra Mắt Phiên Bản SmartBox Pro 2026: Tích Hợp Pin Năng Lượng Mặt Trời & Cân Điện Tử Chống Trộm',
+    slug: 'ra-mat-smartbox-pro-2026-pin-mat-troi-can-chong-trom',
+    category: 'product_intro',
+    summary: 'Thế hệ hộp nhận hàng thông minh cao cấp nhất với tấm pin Solar Panel hoạt động liên tục 365 ngày không cần sạc và cảm biến trọng lượng tải trọng 30kg.',
+    content: 'Phiên bản SmartBox Pro 2026 là bước đột phá công nghệ IoT của Nhóm 6. Hệ thống được trang bị cảm biến tải trọng Loadcell HX711 đo khối lượng chính xác đến từng gram, kết hợp camera góc rộng kích hoạt tự động khi nắp mở.',
+    coverImage: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1000&q=80',
+    authorName: 'Ban Biên Tập SmartBox',
+    status: 'published',
+    viewCount: 2850,
+    tags: ['Sản phẩm mới', 'SmartBox Pro', 'IoT', 'Năng lượng mặt trời'],
+    publishedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'art-003',
+    title: 'Giải Pháp Bảo Quản Thực Phẩm Tươi Sống Khi Shipper Giao Hàng Lúc Bạn Vắng Nhà',
+    slug: 'giai-phap-bao-quan-thuc-pham-tuoi-song-smartbox',
+    category: 'guide',
+    summary: 'Bí quyết sử dụng khay giữ nhiệt chân không bên trong SmartBox để bảo quản thực phẩm tươi sống lên tới 6 tiếng giữa thời tiết nắng nóng.',
+    content: 'Nỗi lo hàng thực phẩm tươi sống bị hư hại khi đặt mua online đã được giải quyết triệt để nhờ khoang chứa cách nhiệt EPS 3 lớp tích hợp gel làm lạnh chủ động của SmartBox Home Edition.',
+    coverImage: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1000&q=80',
+    authorName: 'Chuyên Gia Tiêu Dùng',
+    status: 'published',
+    viewCount: 980,
+    tags: ['Bảo quản', 'Mẹo vặt', 'Gia đình'],
+    publishedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  }
+];
+
+const DEFAULT_BANNERS: BannerItem[] = [
+  {
+    id: 'ban-001',
+    title: 'Đón Đầu Xu Hướng Nhà Thông Minh 2026 - Giảm Ngay 15% SmartBox Pro',
+    imageUrl: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=1600&q=80',
+    targetUrl: '/products/smartbox-pro',
+    position: 'hero_home',
+    displayOrder: 1,
+    isActive: true,
+    clickCount: 345,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'ban-002',
+    title: 'Miễn Phí Lắp Đặt & Tặng Khóa Từ Dự Phòng Toàn Quốc',
+    imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1600&q=80',
+    targetUrl: '/promotions/KTVFREESHIP',
+    position: 'hero_home',
+    displayOrder: 2,
+    isActive: true,
+    clickCount: 210,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'ban-003',
+    title: 'Combo Gia Đình An Tâm: 1 Hộp Thông Minh + Cảm Biến Cân Tải Trọng 30kg',
+    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+    targetUrl: '/combos/family-pack',
+    position: 'mid_banner',
+    displayOrder: 1,
+    isActive: true,
+    clickCount: 158,
+    createdAt: new Date().toISOString()
+  }
+];
+
+const DEFAULT_REVIEWS: ReviewItem[] = [
+  {
+    id: 'rev-001',
+    productName: 'SmartBox Pro 2026 (Bản Kèm Pin Solar)',
+    customerName: 'Nguyễn Hoàng Nam',
+    customerEmail: 'nam.nguyen@gmail.com',
+    customerPhone: '0912345678',
+    rating: 5,
+    title: 'Sản phẩm cực kỳ tiện ích cho người đi làm cả ngày!',
+    comment: 'Hộp cân trọng lượng bưu kiện rất chuẩn, mỗi lần shipper bỏ hàng vào là điện thoại reo báo ngay. Cửa khóa đóng rất chắc chắn, trời mưa to vẫn khô ráo 100%.',
+    status: 'approved',
+    adminReply: 'Cảm ơn anh Nam đã tin tưởng lựa chọn SmartBox Pro! Nếu cần hỗ trợ kỹ thuật thêm anh cứ liên hệ hotline 1900 8888 nhé ạ.',
+    adminRepliedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'rev-002',
+    productName: 'SmartBox Home Tiêu Chuẩn',
+    customerName: 'Trần Thị Mai Phương',
+    customerEmail: 'phuong.tran@gmail.com',
+    customerPhone: '0987654321',
+    rating: 5,
+    title: 'Thiết kế đẹp, shipper ai đến giao cũng khen hiện đại',
+    comment: 'Giao hàng nhanh, đóng gói cẩn thận. Bàn phím mã số bấm nhạy, loa thông báo giọng tiếng Việt rõ ràng.',
+    status: 'approved',
+    adminReply: 'SmartBox chân thành cảm ơn phản hồi quý báu của chị Mai Phương ạ!',
+    adminRepliedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'rev-003',
+    productName: 'SmartBox Mini Căn Hộ Chung Cư',
+    customerName: 'Lê Quốc Bảo',
+    customerEmail: 'bao.le@outlook.com',
+    customerPhone: '0909112233',
+    rating: 4,
+    title: 'Hộp hoạt động tốt nhưng ứng dụng thi thoảng báo trễ 1 vài giây',
+    comment: 'Nhìn chung rất hài lòng với phần cứng, hy vọng bản cập nhật firmware tới kết nối wifi nhà tôi sẽ ổn định hơn.',
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'rev-004',
+    productName: 'Khóa Điện Từ Dự Phòng SmartBox',
+    customerName: 'Người dùng ẩn danh',
+    customerEmail: 'spam@mail.com',
+    customerPhone: '0999999999',
+    rating: 1,
+    title: 'Quảng cáo linh tinh bực mình',
+    comment: 'Nội dung spam quảng cáo không liên quan sản phẩm...',
+    status: 'rejected',
+    rejectReason: 'Nội dung spam, không có giao dịch thực tế',
+    createdAt: new Date().toISOString()
+  }
+];
+
+const DEFAULT_FAQS: FaqItem[] = [
+  {
+    id: 'faq-001',
+    question: 'Khi mất điện hoặc hết pin, làm thế nào để mở nắp SmartBox?',
+    answer: 'SmartBox luôn được trang bị 3 cơ chế mở khóa dự phòng khẩn cấp: (1) Cổng sạc kích nguồn khẩn cấp qua cổng Type-C bằng pin sạc dự phòng điện thoại; (2) Chìa khóa cơ chống sao chép đi kèm hộp; (3) Cấp nguồn từ tấm pin mặt trời tích hợp sẵn.',
+    category: 'technical',
+    displayOrder: 1,
+    isPublished: true,
+    helpfulCount: 142,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'faq-002',
+    question: 'Làm sao để Shipper biết cách mở hộp bỏ bưu kiện vào khi tôi vắng nhà?',
+    answer: 'Mặt trên SmartBox có bảng hướng dẫn đồ họa trực quan và loa phát âm thanh: Shipper chỉ cần quét mã QR dán trên hộp hoặc nhấn phím * nhập mã OTP dùng 1 lần (được in trên bưu kiện hoặc bạn nhắn qua tin nhắn). Nắp hộp sẽ tự động mở lên trong 30 giây.',
+    category: 'usage',
+    displayOrder: 2,
+    isPublished: true,
+    helpfulCount: 215,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'faq-003',
+    question: 'Chính sách bảo hành và hỗ trợ lắp đặt tại nhà như thế nào?',
+    answer: 'Tất cả dòng sản phẩm SmartBox được bảo hành chính hãng 24 tháng (1 đổi 1 trong 30 ngày đầu tiên nếu lỗi nhà sản xuất). Đội ngũ kỹ thuật viên SmartBox hỗ trợ khảo sát và lắp đặt cố định chống trộm tại nhà miễn phí tại các thành phố lớn.',
+    category: 'warranty',
+    displayOrder: 3,
+    isPublished: true,
+    helpfulCount: 98,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'faq-004',
+    question: 'Hộp nhận hàng SmartBox có khả năng chống nước mưa và chịu nhiệt tốt không?',
+    answer: 'Vỏ hộp SmartBox được chế tạo từ hợp kim thép cán nguội mạ kẽm sơn tĩnh điện ngoài trời, đạt tiêu chuẩn chống nước IP65. Các gioăng cao su đàn hồi bảo vệ bưu kiện an toàn tuyệt đối ngay cả khi mưa bão lớn.',
+    category: 'technical',
+    displayOrder: 4,
+    isPublished: true,
+    helpfulCount: 85,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'faq-005',
+    question: 'Tôi có thể cài đặt nhiều mã PIN cho các thành viên trong gia đình không?',
+    answer: 'Hoàn toàn được! Thông qua Ứng dụng Di động SmartBox, bạn có thể tạo mã PIN riêng cho từng thành viên, đặt mã định kỳ theo giờ hoặc cấp quyền mở nắp từ xa qua Internet 4G/WiFi bất cứ lúc nào.',
+    category: 'usage',
+    displayOrder: 5,
+    isPublished: true,
+    helpfulCount: 176,
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const contentService = {
+  // --- STATS ---
+  async getSummaryStats(): Promise<ContentSummaryStats> {
+    try {
+      const res = await fetchBackend<ContentSummaryStats>('/content/summary');
+      if (res) return res;
+    } catch {}
+    return {
+      totalArticles: 3,
+      publishedArticles: 3,
+      totalBanners: 3,
+      activeBanners: 3,
+      totalReviews: 4,
+      pendingReviews: 1,
+      totalFaqs: 5
+    };
+  },
+
+  // --- ARTICLES ---
+  async getArticles(category?: string, status?: string): Promise<ArticleItem[]> {
+    try {
+      const params = new URLSearchParams();
+      if (category && category !== 'all') params.append('category', category);
+      if (status && status !== 'all') params.append('status', status);
+      const res = await fetchBackend<ArticleItem[]>(`/content/articles?${params.toString()}`);
+      if (res && res.length > 0) return res;
+    } catch {}
+
+    let items = [...DEFAULT_ARTICLES];
+    const saved = localStorage.getItem('smartbox_cms_articles');
+    if (saved) {
+      try { items = JSON.parse(saved); } catch {}
+    }
+    if (category && category !== 'all') items = items.filter(a => a.category === category);
+    if (status && status !== 'all') items = items.filter(a => a.status === status);
+    return items;
+  },
+
+  async createArticle(data: Partial<ArticleItem>): Promise<ArticleItem> {
+    try {
+      const res = await fetchBackend<ArticleItem>('/content/articles', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      if (res) return res;
+    } catch {}
+
+    const newItem: ArticleItem = {
+      id: 'art-' + Date.now(),
+      title: data.title || 'Bài viết mới',
+      slug: data.slug || 'bai-viet-' + Date.now(),
+      category: data.category || 'guide',
+      summary: data.summary || '',
+      content: data.content || '',
+      coverImage: data.coverImage || 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1000&q=80',
+      authorName: data.authorName || 'Ban Biên Tập SmartBox',
+      status: (data.status as any) || 'published',
+      viewCount: 0,
+      tags: data.tags || [],
+      publishedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    let items = [...DEFAULT_ARTICLES];
+    const saved = localStorage.getItem('smartbox_cms_articles');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    items.unshift(newItem);
+    localStorage.setItem('smartbox_cms_articles', JSON.stringify(items));
+    return newItem;
+  },
+
+  async updateArticle(id: string, data: Partial<ArticleItem>): Promise<ArticleItem | null> {
+    try {
+      const res = await fetchBackend<ArticleItem>(`/content/articles/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      if (res) return res;
+    } catch {}
+
+    let items = [...DEFAULT_ARTICLES];
+    const saved = localStorage.getItem('smartbox_cms_articles');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    const idx = items.findIndex(a => a.id === id);
+    if (idx !== -1) {
+      items[idx] = { ...items[idx], ...data, updatedAt: new Date().toISOString() };
+      localStorage.setItem('smartbox_cms_articles', JSON.stringify(items));
+      return items[idx];
+    }
+    return null;
+  },
+
+  async deleteArticle(id: string): Promise<boolean> {
+    try {
+      await fetchBackend(`/content/articles/${id}`, { method: 'DELETE' });
+    } catch {}
+    let items = [...DEFAULT_ARTICLES];
+    const saved = localStorage.getItem('smartbox_cms_articles');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    items = items.filter(a => a.id !== id);
+    localStorage.setItem('smartbox_cms_articles', JSON.stringify(items));
+    return true;
+  },
+
+  // --- BANNERS ---
+  async getBanners(position?: string, activeOnly?: boolean): Promise<BannerItem[]> {
+    try {
+      const params = new URLSearchParams();
+      if (position && position !== 'all') params.append('position', position);
+      if (activeOnly) params.append('activeOnly', 'true');
+      const res = await fetchBackend<BannerItem[]>(`/content/banners?${params.toString()}`);
+      if (res && res.length > 0) return res;
+    } catch {}
+
+    let items = [...DEFAULT_BANNERS];
+    const saved = localStorage.getItem('smartbox_cms_banners');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    if (position && position !== 'all') items = items.filter(b => b.position === position);
+    if (activeOnly) items = items.filter(b => b.isActive);
+    return items;
+  },
+
+  async createBanner(data: Partial<BannerItem>): Promise<BannerItem> {
+    try {
+      const res = await fetchBackend<BannerItem>('/content/banners', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      if (res) return res;
+    } catch {}
+
+    const newItem: BannerItem = {
+      id: 'ban-' + Date.now(),
+      title: data.title || 'Banner mới',
+      imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=1600&q=80',
+      targetUrl: data.targetUrl || '/products',
+      position: data.position || 'hero_home',
+      displayOrder: data.displayOrder || 1,
+      isActive: data.isActive !== undefined ? data.isActive : true,
+      clickCount: 0,
+      createdAt: new Date().toISOString()
+    };
+    let items = [...DEFAULT_BANNERS];
+    const saved = localStorage.getItem('smartbox_cms_banners');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    items.unshift(newItem);
+    localStorage.setItem('smartbox_cms_banners', JSON.stringify(items));
+    return newItem;
+  },
+
+  async updateBanner(id: string, data: Partial<BannerItem>): Promise<BannerItem | null> {
+    try {
+      const res = await fetchBackend<BannerItem>(`/content/banners/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      if (res) return res;
+    } catch {}
+
+    let items = [...DEFAULT_BANNERS];
+    const saved = localStorage.getItem('smartbox_cms_banners');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    const idx = items.findIndex(b => b.id === id);
+    if (idx !== -1) {
+      items[idx] = { ...items[idx], ...data, updatedAt: new Date().toISOString() };
+      localStorage.setItem('smartbox_cms_banners', JSON.stringify(items));
+      return items[idx];
+    }
+    return null;
+  },
+
+  async toggleBanner(id: string): Promise<boolean> {
+    try {
+      await fetchBackend(`/content/banners/${id}/toggle`, { method: 'PATCH' });
+    } catch {}
+    let items = [...DEFAULT_BANNERS];
+    const saved = localStorage.getItem('smartbox_cms_banners');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    const idx = items.findIndex(b => b.id === id);
+    if (idx !== -1) {
+      items[idx].isActive = !items[idx].isActive;
+      localStorage.setItem('smartbox_cms_banners', JSON.stringify(items));
+      return items[idx].isActive;
+    }
+    return false;
+  },
+
+  async deleteBanner(id: string): Promise<boolean> {
+    try {
+      await fetchBackend(`/content/banners/${id}`, { method: 'DELETE' });
+    } catch {}
+    let items = [...DEFAULT_BANNERS];
+    const saved = localStorage.getItem('smartbox_cms_banners');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    items = items.filter(b => b.id !== id);
+    localStorage.setItem('smartbox_cms_banners', JSON.stringify(items));
+    return true;
+  },
+
+  // --- REVIEWS ---
+  async getReviews(status?: string): Promise<ReviewItem[]> {
+    try {
+      const params = new URLSearchParams();
+      if (status && status !== 'all') params.append('status', status);
+      const res = await fetchBackend<ReviewItem[]>(`/content/reviews?${params.toString()}`);
+      if (res && res.length > 0) return res;
+    } catch {}
+
+    let items = [...DEFAULT_REVIEWS];
+    const saved = localStorage.getItem('smartbox_cms_reviews');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    if (status && status !== 'all') items = items.filter(r => r.status === status);
+    return items;
+  },
+
+  async updateReviewStatus(id: string, status: 'approved' | 'rejected' | 'pending', rejectReason?: string): Promise<ReviewItem | null> {
+    try {
+      const res = await fetchBackend<ReviewItem>(`/content/reviews/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, rejectReason })
+      });
+      if (res) return res;
+    } catch {}
+
+    let items = [...DEFAULT_REVIEWS];
+    const saved = localStorage.getItem('smartbox_cms_reviews');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    const idx = items.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      items[idx].status = status;
+      if (rejectReason) items[idx].rejectReason = rejectReason;
+      localStorage.setItem('smartbox_cms_reviews', JSON.stringify(items));
+      return items[idx];
+    }
+    return null;
+  },
+
+  async replyReview(id: string, adminReply: string): Promise<ReviewItem | null> {
+    try {
+      const res = await fetchBackend<ReviewItem>(`/content/reviews/${id}/reply`, {
+        method: 'POST',
+        body: JSON.stringify({ adminReply })
+      });
+      if (res) return res;
+    } catch {}
+
+    let items = [...DEFAULT_REVIEWS];
+    const saved = localStorage.getItem('smartbox_cms_reviews');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    const idx = items.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      items[idx].adminReply = adminReply;
+      items[idx].adminRepliedAt = new Date().toISOString();
+      localStorage.setItem('smartbox_cms_reviews', JSON.stringify(items));
+      return items[idx];
+    }
+    return null;
+  },
+
+  async deleteReview(id: string): Promise<boolean> {
+    try {
+      await fetchBackend(`/content/reviews/${id}`, { method: 'DELETE' });
+    } catch {}
+    let items = [...DEFAULT_REVIEWS];
+    const saved = localStorage.getItem('smartbox_cms_reviews');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    items = items.filter(r => r.id !== id);
+    localStorage.setItem('smartbox_cms_reviews', JSON.stringify(items));
+    return true;
+  },
+
+  // --- FAQS ---
+  async getFaqs(category?: string): Promise<FaqItem[]> {
+    try {
+      const params = new URLSearchParams();
+      if (category && category !== 'all') params.append('category', category);
+      const res = await fetchBackend<FaqItem[]>(`/content/faqs?${params.toString()}`);
+      if (res && res.length > 0) return res;
+    } catch {}
+
+    let items = [...DEFAULT_FAQS];
+    const saved = localStorage.getItem('smartbox_cms_faqs');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    if (category && category !== 'all') items = items.filter(f => f.category === category);
+    return items;
+  },
+
+  async createFaq(data: Partial<FaqItem>): Promise<FaqItem> {
+    try {
+      const res = await fetchBackend<FaqItem>('/content/faqs', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      if (res) return res;
+    } catch {}
+
+    const newItem: FaqItem = {
+      id: 'faq-' + Date.now(),
+      question: data.question || '',
+      answer: data.answer || '',
+      category: data.category || 'general',
+      displayOrder: data.displayOrder || 1,
+      isPublished: data.isPublished !== undefined ? data.isPublished : true,
+      helpfulCount: 0,
+      createdAt: new Date().toISOString()
+    };
+    let items = [...DEFAULT_FAQS];
+    const saved = localStorage.getItem('smartbox_cms_faqs');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    items.push(newItem);
+    localStorage.setItem('smartbox_cms_faqs', JSON.stringify(items));
+    return newItem;
+  },
+
+  async updateFaq(id: string, data: Partial<FaqItem>): Promise<FaqItem | null> {
+    try {
+      const res = await fetchBackend<FaqItem>(`/content/faqs/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      if (res) return res;
+    } catch {}
+
+    let items = [...DEFAULT_FAQS];
+    const saved = localStorage.getItem('smartbox_cms_faqs');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    const idx = items.findIndex(f => f.id === id);
+    if (idx !== -1) {
+      items[idx] = { ...items[idx], ...data, updatedAt: new Date().toISOString() };
+      localStorage.setItem('smartbox_cms_faqs', JSON.stringify(items));
+      return items[idx];
+    }
+    return null;
+  },
+
+  async toggleFaq(id: string): Promise<boolean> {
+    try {
+      await fetchBackend(`/content/faqs/${id}/toggle`, { method: 'PATCH' });
+    } catch {}
+    let items = [...DEFAULT_FAQS];
+    const saved = localStorage.getItem('smartbox_cms_faqs');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    const idx = items.findIndex(f => f.id === id);
+    if (idx !== -1) {
+      items[idx].isPublished = !items[idx].isPublished;
+      localStorage.setItem('smartbox_cms_faqs', JSON.stringify(items));
+      return items[idx].isPublished;
+    }
+    return false;
+  },
+
+  async deleteFaq(id: string): Promise<boolean> {
+    try {
+      await fetchBackend(`/content/faqs/${id}`, { method: 'DELETE' });
+    } catch {}
+    let items = [...DEFAULT_FAQS];
+    const saved = localStorage.getItem('smartbox_cms_faqs');
+    if (saved) { try { items = JSON.parse(saved); } catch {} }
+    items = items.filter(f => f.id !== id);
+    localStorage.setItem('smartbox_cms_faqs', JSON.stringify(items));
+    return true;
+  }
+};
+
 

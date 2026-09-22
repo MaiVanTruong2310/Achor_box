@@ -12,11 +12,11 @@ export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
   product_manager: '/products',
   support_agent: '/warranties',
   accountant: '/orders',
-  customer: '/403',
+  customer: '/guide',
 };
 
 export const getRoleDefaultPath = (role: UserRole): string => {
-  return ROLE_DEFAULT_ROUTES[role] || '/dashboard';
+  return ROLE_DEFAULT_ROUTES[role] || '/403';
 };
 
 export type DeviceStatus = 'online' | 'offline' | 'maintenance' | 'error';
@@ -53,6 +53,13 @@ export interface Device {
   firmware_version: string | null;
   last_seen_at: string | null;
   created_at: string;
+  door_status?: 'closed' | 'open' | string;
+  lock_status?: 'locked' | 'unlocked' | string;
+  weight_kg?: number;
+  package_detected?: boolean;
+  scale_ready?: boolean;
+  device_state?: string;
+  mqtt_topic_id?: string | null;
   owner?: Profile;
 }
 
@@ -81,13 +88,17 @@ export interface ProductCategory {
 
 export interface ProductVariant {
   id: string;
+  product_id?: string;
+  variant_name?: string;
   sku: string;
-  name: string;
+  name?: string;
   color?: string;
   color_code?: string;
   firmware_version?: string;
   capacity?: string;
-  price_adjustment: number;
+  price_adjustment?: number;
+  price_delta?: number;
+  calculated_price?: number;
   stock_quantity: number;
   image_url?: string;
 }
@@ -249,4 +260,3 @@ export interface TestSendResponse {
   message: string;
   isRealSent?: boolean;
 }
-

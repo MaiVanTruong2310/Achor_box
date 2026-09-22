@@ -333,9 +333,9 @@ table th.nowrap {
 
 .floating-pill {
   width: var(--pill-width);
-  height: 100vh;
-  min-height: 100vh;
-  max-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
   background: var(--pill-bg);
   border-radius: 0 20px 20px 0;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
@@ -420,6 +420,7 @@ table th.nowrap {
   width: 100%;
   position: relative;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
@@ -434,6 +435,7 @@ table th.nowrap {
 .pill-nav-item {
   width: var(--pill-width);
   height: var(--pill-item-height);
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -475,6 +477,8 @@ table th.nowrap {
 }
 
 .pill-item-icon {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -515,8 +519,8 @@ table th.nowrap {
   background: var(--pill-active-cutout);
   border-top-left-radius: calc(var(--pill-item-height) / 2);
   border-bottom-left-radius: calc(var(--pill-item-height) / 2);
-  top: calc(var(--pill-active-index, 0) * var(--pill-item-height));
-  transition: top 0.32s cubic-bezier(0.34, 1.45, 0.64, 1), background-color 0.25s ease, height 0.25s ease;
+  top: 0;
+  transition: background-color 0.25s ease, height 0.25s ease;
   pointer-events: none;
   z-index: 1;
 }
@@ -957,6 +961,7 @@ table th.nowrap {
 
 /* Borderless Global Search */
 .borderless-search-box {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -975,6 +980,7 @@ table th.nowrap {
 }
 
 .borderless-search-box input {
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
@@ -986,6 +992,38 @@ table th.nowrap {
 
 .borderless-search-box input::placeholder {
   color: var(--text-muted);
+}
+
+.admin-help-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 34px;
+  min-height: 34px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  border-radius: 8px;
+}
+.admin-help-link:hover, .admin-help-link.active {
+  color: var(--accent-primary);
+  background: var(--bg-surface);
+}
+.admin-help-link:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1200px) {
+  .admin-help-link span { display: none; }
+  .header-status-badges { display: none !important; }
+}
+
+@media (max-width: 1024px) {
+  .sleek-header .borderless-search-box { display: none; }
+  .admin-header-controls { gap: 10px !important; }
 }
 
 .search-shortcut-badge {
@@ -1297,7 +1335,8 @@ table th.nowrap {
   animation: fadeIn 0.2s ease;
 }
 
-.modal-content {
+.modal-content,
+.modal-container {
   background: var(--bg-shell) !important;
   border-radius: var(--radius-lg);
   padding: 24px 28px;
@@ -1458,4 +1497,197 @@ table th.nowrap {
 .leaflet-container {
   font-family: var(--font-main, sans-serif) !important;
   background: #090d16 !important;
+}
+
+/* ==========================================================================
+   SMART SAFE SCROLLYTELLING & 3D INTERACTIVE LANDING PAGE
+   ========================================================================== */
+@keyframes floatSafe {
+  0%, 100% {
+    transform: translateY(0px) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(1.5deg);
+  }
+}
+
+@keyframes pedestalGlow {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes hotspotPing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes scanlineMove {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 100%;
+  }
+}
+
+@keyframes neonPulseBlue {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.4), inset 0 0 15px rgba(14, 165, 233, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(37, 99, 235, 0.7), inset 0 0 25px rgba(37, 99, 235, 0.4);
+  }
+}
+
+@keyframes wifiWaves {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+.scrolly-float-safe {
+  animation: floatSafe 6s ease-in-out infinite;
+}
+
+.scrolly-pedestal {
+  animation: pedestalGlow 4s ease-in-out infinite;
+}
+
+.hotspot-beacon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hotspot-beacon::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.7;
+  animation: hotspotPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* 1602 LCD Panel Realistic Glow & Matrix Pattern */
+.lcd-1602-screen {
+  background: #a3c428;
+  color: #1a2e05;
+  text-shadow: 1px 1px 0px rgba(163, 196, 40, 0.8), 0 0 2px rgba(26, 46, 5, 0.5);
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 25px rgba(163, 196, 40, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.lcd-1602-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08) 0px,
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}
+
+/* Tactile 4x4 Keypad Buttons */
+.keypad-btn {
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.keypad-btn:active {
+  transform: scale(0.92) translateY(2px) !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Sticky 3D Safe Visualizer viewport */
+.sticky-safe-viewport {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 120px);
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+}
+
+@media (max-width: 960px) {
+  .sticky-safe-viewport {
+    position: relative;
+    top: 0;
+    height: auto;
+    min-height: 380px;
+    margin-bottom: 24px;
+  }
+
+  .smart-safe-scrolly-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+/* ==========================================================================
+   NEXA SMARTBOX LANDING PAGE RESPONSIVE GRIDS
+   ========================================================================== */
+.nexa-hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.8fr 1.15fr;
+  gap: 24px;
+}
+
+@media (max-width: 1120px) {
+  .nexa-hero-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .nexa-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nexa-sensors-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .nexa-sensors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .nexa-sensors-grid {
+    grid-template-columns: 1fr;
+  }
 }
