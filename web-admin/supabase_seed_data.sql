@@ -66,13 +66,26 @@ BEGIN
     (v_prod_solar_id, v_cat_acc_id, 'ACC-SOLAR-02', 'Phụ kiện: Tấm pin năng lượng mặt trời 10W IP67', 'Tấm pin quang năng mini kèm mạch sạc MPPT chống chai pin Li-ion cho ESP32.', 280000, '["https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400"]'::jsonb, 15, true)
   ON CONFLICT (id) DO NOTHING;
 
-  -- 5. THIẾT BỊ IOT (devices)
-  INSERT INTO public.devices (id, product_id, owner_id, serial_number, name, location_label, status, battery_level, firmware_version, last_seen_at)
+  -- 4.1. BIẾN THỂ KÍCH CỠ SẢN PHẨM (product_variants: Size S, M, L)
+  INSERT INTO public.product_variants (id, product_id, variant_name, sku, price_delta, stock_quantity)
   VALUES
-    (v_dev1_id, v_prod_std_id, v_admin_id, 'BOX-2026-001', 'Hộp nhận hàng cổng chính', 'Hà Đông, Hà Nội', 'online'::device_status, 95, 'v1.2.0', NOW()),
-    (v_dev2_id, v_prod_pro_id, v_admin_id, 'BOX-2026-002', 'SmartBox Ban Công Biệt Thự', 'Quận 7, TP.HCM', 'online'::device_status, 88, 'v1.2.0', NOW()),
-    (v_dev3_id, v_prod_std_id, v_admin_id, 'BOX-2026-003', 'Hộp nhận hàng gia đình', 'Thanh Xuân, Hà Nội', 'error'::device_status, 14, 'v1.1.8', NOW() - INTERVAL '15 minutes'),
-    (v_dev4_id, v_prod_pro_id, v_admin_id, 'BOX-PRO-004', 'Hộp SmartBox Cửa Hàng', 'Hải Châu, Đà Nẵng', 'maintenance'::device_status, 62, 'v1.2.0', NOW() - INTERVAL '30 minutes')
+    -- Biến thể của Bản Tiêu Chuẩn (Base: Chốt điện)
+    (gen_random_uuid(), v_prod_std_id, 'Size S (Nhỏ - 45L)', 'BOX-BASE-S', 0, 15),
+    (gen_random_uuid(), v_prod_std_id, 'Size M (Vừa - 85L)', 'BOX-BASE-M', 400000, 20),
+    (gen_random_uuid(), v_prod_std_id, 'Size L (Lớn - 150L)', 'BOX-BASE-L', 900000, 7),
+    -- Biến thể của Bản Cao Cấp (Pro: Cảm biến cân nặng Loadcell HX711)
+    (gen_random_uuid(), v_prod_pro_id, 'Size S (Nhỏ - 45L)', 'BOX-PRO-S', 0, 2),
+    (gen_random_uuid(), v_prod_pro_id, 'Size M (Vừa - 85L)', 'BOX-PRO-M', 500000, 3),
+    (gen_random_uuid(), v_prod_pro_id, 'Size L (Lớn - 150L)', 'BOX-PRO-L', 1100000, 1)
+  ON CONFLICT (sku) DO NOTHING;
+
+  -- 5. THIẾT BỊ IOT (devices)
+  INSERT INTO public.devices (id, product_id, owner_id, serial_number, name, location_label, status, battery_level, firmware_version, last_seen_at, door_status, lock_status, weight_kg, package_detected, scale_ready, device_state, mqtt_topic_id)
+  VALUES
+    (v_dev1_id, v_prod_std_id, v_admin_id, 'BOX-2026-001', 'Hộp nhận hàng cổng chính', 'Hà Đông, Hà Nội', 'online'::device_status, 95, 'v1.2.0', NOW(), 'closed', 'locked', 0.45, true, true, 'idle', 'smartbox/dev/BOX-2026-001'),
+    (v_dev2_id, v_prod_pro_id, v_admin_id, 'BOX-2026-002', 'SmartBox Ban Công Biệt Thự', 'Quận 7, TP.HCM', 'online'::device_status, 88, 'v1.2.0', NOW(), 'closed', 'locked', 1.25, true, true, 'idle', 'smartbox/dev/BOX-2026-002'),
+    (v_dev3_id, v_prod_std_id, v_admin_id, 'BOX-2026-003', 'Hộp nhận hàng gia đình', 'Thanh Xuân, Hà Nội', 'error'::device_status, 14, 'v1.1.8', NOW() - INTERVAL '15 minutes', 'open', 'unlocked', 0.0, false, false, 'error', 'smartbox/dev/BOX-2026-003'),
+    (v_dev4_id, v_prod_pro_id, v_admin_id, 'BOX-PRO-004', 'Hộp SmartBox Cửa Hàng', 'Hải Châu, Đà Nẵng', 'maintenance'::device_status, 62, 'v1.2.0', NOW() - INTERVAL '30 minutes', 'closed', 'locked', 0.0, false, true, 'idle', 'smartbox/dev/BOX-PRO-004')
   ON CONFLICT (id) DO NOTHING;
 
   -- 6. SỰ KIỆN CẢM BIẾN TELEMETRY (device_events)

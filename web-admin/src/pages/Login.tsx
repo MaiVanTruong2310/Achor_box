@@ -1,174 +1,73 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, BookOpen, Box, Check, Clock, Eye, EyeOff, LockKeyhole, Mail, Moon, ShieldCheck, ShieldAlert, Sun } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Package, Lock, Mail, ShieldAlert, Sun, Moon, Cpu, Wifi, Activity } from 'lucide-react';
 import { getRoleDefaultPath } from '../types/database';
+import { clearAllAuthTokens } from '../services/supabase';
+import './login.css';
+
+const accountRoles = ['Khách hàng', 'Quản trị viên', 'Quản lý sản phẩm', 'Nhân viên hỗ trợ', 'Kỹ thuật viên', 'Kế toán'];
 
 export const Login: React.FC = () => {
   const { login, error: authError, loading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const isExpired = searchParams.get('expired') === 'true' || (location.state as { expired?: boolean } | null)?.expired === true;
+  useEffect(() => { if (isExpired) void clearAllAuthTokens(); }, [isExpired]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (submitting || loading) return;
     setLocalError(null);
-
-    if (!email || !password) {
-      setLocalError('Vui lòng nhập đầy đủ Email và Mật khẩu.');
-      return;
-    }
-
-    const res = await login(email, password);
-    if (res.success && res.role) {
-      navigate(getRoleDefaultPath(res.role));
-    } else if (res.success) {
-      navigate('/dashboard');
-    }
+    if (!email.trim() || !password) { setLocalError('Vui lòng nhập email và mật khẩu của bạn.'); return; }
+    setSubmitting(true);
+    try {
+      const result = await login(email.trim(), password);
+      if (result.success) navigate(result.role ? getRoleDefaultPath(result.role) : '/403', { replace: true });
+      else setLocalError(result.error || 'Không thể đăng nhập. Vui lòng kiểm tra thông tin và thử lại.');
+    } catch { setLocalError('Chưa thể kết nối. Vui lòng thử lại sau ít phút.'); }
+    finally { setSubmitting(false); }
   };
-
   const displayError = localError || authError;
+  const busy = loading || submitting;
 
-  return (
-    <div style={{
-      minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'var(--bg-app)', color: 'var(--text-primary)', fontFamily: 'var(--font-main)',
-      position: 'relative', overflow: 'hidden', padding: '24px'
-    }}>
-      <div style={{
-        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-        width: '850px', height: '650px', borderRadius: '50%',
-        background: theme === 'dark'
-          ? 'radial-gradient(ellipse at center, rgba(37, 99, 235, 0.18) 0%, rgba(99, 102, 241, 0.12) 40%, rgba(14, 165, 233, 0.05) 70%, transparent 85%)'
-          : 'radial-gradient(ellipse at center, rgba(191, 219, 254, 0.55) 0%, rgba(224, 231, 255, 0.4) 40%, rgba(240, 249, 255, 0.2) 70%, transparent 85%)',
-        filter: 'blur(70px)', pointerEvents: 'none', zIndex: 1
-      }} />
-
-      <div style={{ position: 'absolute', top: '24px', right: '28px', zIndex: 20 }}>
-        <button
-          onClick={toggleTheme}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', width: '38px', height: '38px',
-            borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card)',
-            color: 'var(--text-primary)', cursor: 'pointer', boxShadow: 'var(--shadow-card)',
-            backdropFilter: 'blur(12px)', transition: 'all 0.3s ease'
-          }}
-        >
-          {theme === 'dark' ? <Sun size={18} color="#fbbf24" /> : <Moon size={18} color="#2563eb" />}
-        </button>
-      </div>
-
-      <div style={{
-        width: '100%', maxWidth: '1100px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: '48px', alignItems: 'center', position: 'relative', zIndex: 10
-      }}>
-
-        {/* CỘT TRÁI: THIẾT KẾ TINH GỌN, SANG TRỌNG */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', boxShadow: '0 6px 18px rgba(37, 99, 235, 0.35)'
-            }}>
-              <Package size={22} strokeWidth={2} />
-            </div>
-            <div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>SmartBox Hub</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>IoT Delivery & Warranty System</div>
-            </div>
-          </div>
-
-          <div>
-            <h1 style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1.2, color: 'var(--text-primary)', margin: '0 0 10px 0' }}>
-              Cổng Quản Trị &{' '}
-              <span style={{ background: 'linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Vận Hành Thiết Bị
-              </span>
-            </h1>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-              Giám sát phần cứng IoT, quản lý đơn hàng và xử lý bảo hành tập trung.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '4px' }}>
-            <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-              <Cpu size={20} color="#10b981" style={{ margin: '0 auto 6px auto' }} />
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>ESP32 S3</div>
-              <div style={{ fontSize: '0.6875rem', color: '#10b981', fontWeight: 600 }}>ONLINE</div>
-            </div>
-
-            <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-              <Wifi size={20} color="#2563eb" style={{ margin: '0 auto 6px auto' }} />
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>MQTT TLS</div>
-              <div style={{ fontSize: '0.6875rem', color: '#2563eb', fontWeight: 600 }}>ACTIVE</div>
-            </div>
-
-            <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-              <Activity size={20} color="#0ea5e9" style={{ margin: '0 auto 6px auto' }} />
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>Loadcell HX711</div>
-              <div style={{ fontSize: '0.6875rem', color: '#0ea5e9', fontWeight: 600 }}>READY</div>
-            </div>
-          </div>
-        </div>
-
-        {/* CỘT PHẢI: FORM CHÍNH */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{
-            width: '100%', maxWidth: '440px', borderRadius: '16px', background: 'var(--bg-card)',
-            border: '1px solid var(--border-glass)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            padding: '36px 32px'
-          }}>
-            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-              <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>Đăng nhập</h2>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: 0 }}>Nhập thông tin xác thực để truy cập cổng điều hành.</p>
-            </div>
-
-            {displayError && (
-              <div style={{ padding: '10px 12px', borderRadius: '10px', background: 'var(--accent-rose-soft)', border: '1px solid rgba(244, 63, 94, 0.3)', color: 'var(--accent-rose-text)', fontSize: '0.78125rem', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldAlert size={16} style={{ flexShrink: 0 }} />
-                <span>{displayError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }} htmlFor="email">Email</label>
-                <div style={{ position: 'relative' }}>
-                  <Mail size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    id="email" type="email" placeholder="admin@smartbox.vn"
-                    value={email} onChange={(e) => setEmail(e.target.value)}
-                    style={{ width: '100%', padding: '11px 14px 11px 38px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: theme === 'dark' ? 'rgba(18, 27, 48, 0.8)' : '#f9fafb', color: 'var(--text-primary)', fontSize: '0.84375rem', outline: 'none' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }} htmlFor="password">Mật khẩu</label>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    id="password" type="password" placeholder="••••••••"
-                    value={password} onChange={(e) => setPassword(e.target.value)}
-                    style={{ width: '100%', padding: '11px 14px 11px 38px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: theme === 'dark' ? 'rgba(18, 27, 48, 0.8)' : '#f9fafb', color: 'var(--text-primary)', fontSize: '0.84375rem', outline: 'none' }}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit" disabled={loading}
-                style={{ width: '100%', padding: '11px', borderRadius: '10px', border: 'none', background: '#2563eb', color: '#ffffff', fontSize: '0.84375rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)', marginTop: '8px' }}
-              >
-                {loading ? 'Đang xác thực...' : 'Đăng nhập Hệ thống'}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className={`sb-auth sb-auth-${theme}`}>
+    <header className="sb-auth-header">
+      <Link to="/" className="sb-auth-brand" aria-label="Trang chủ SmartBox"><Box size={27} strokeWidth={1.5} />SmartBox<span>®</span></Link>
+      <div className="sb-auth-header-actions"><Link to="/" className="sb-auth-back"><ArrowLeft size={15} /><span>Về trang chủ</span></Link><button className="sb-auth-theme" type="button" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button></div>
+    </header>
+    <main className="sb-auth-main">
+      <section className="sb-auth-story" aria-labelledby="account-title">
+        <div className="sb-auth-eyebrow"><span /> TÀI KHOẢN SMARTBOX</div>
+        <h1 id="account-title">Một kết nối.<br /><span>Cho mọi vai trò.</span></h1>
+        <p>Dù bạn sử dụng SmartBox tại nhà hay đồng hành cùng đội ngũ, mọi trải nghiệm đều bắt đầu từ tài khoản của bạn.</p>
+        <div className="sb-auth-product"><img src="/smartbox-studio-v1.png" alt="Hộp SmartBox mica trong suốt với màn hình LCD và bàn phím số" /><div className="sb-auth-product-caption"><ShieldCheck size={19} /><span>Nhận hàng an tâm.<br /><strong>Kết nối mỗi ngày.</strong></span></div></div>
+        <div className="sb-auth-audience"><span>DÀNH CHO BẠN VÀ ĐỘI NGŨ SMARTBOX</span><ul>{accountRoles.map(role => <li key={role}><Check size={12} />{role}</li>)}</ul></div>
+      </section>
+      <section className="sb-auth-panel" aria-labelledby="login-title">
+        <div className="sb-auth-panel-mark"><LockKeyhole size={23} strokeWidth={1.5} /></div>
+        <div className="sb-auth-eyebrow">CHÀO MỪNG BẠN TRỞ LẠI</div>
+        <h2 id="login-title">Đăng nhập SmartBox</h2>
+        <p className="sb-auth-intro">Truy cập tài khoản và tiếp tục trải nghiệm của bạn.</p>
+        {isExpired && <div className="sb-auth-notice" role="status"><Clock size={18} /><p>Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.</p></div>}
+        {displayError && <div className="sb-auth-error" id="login-error" role="alert"><ShieldAlert size={18} /><p>{displayError}</p></div>}
+        <form onSubmit={handleSubmit} className="sb-auth-form" aria-busy={busy}>
+          <div className="sb-auth-field"><label htmlFor="email">Email</label><div className="sb-auth-input"><Mail size={17} /><input id="email" name="email" type="email" autoComplete="username" placeholder="Email tài khoản của bạn" required value={email} onChange={event => setEmail(event.target.value)} aria-describedby={displayError ? 'login-error' : undefined} /></div></div>
+          <div className="sb-auth-field"><label htmlFor="password">Mật khẩu</label><div className="sb-auth-input"><LockKeyhole size={17} /><input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Nhập mật khẩu" required value={password} onChange={event => setPassword(event.target.value)} aria-describedby={displayError ? 'login-error' : undefined} /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} aria-pressed={showPassword}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
+          <button className="sb-auth-submit" type="submit" disabled={busy}>{busy ? 'Đang đăng nhập…' : 'Đăng nhập'}<ArrowRight size={18} /></button>
+        </form>
+        <div className="sb-auth-routing"><ShieldCheck size={18} /><p>SmartBox tự đưa bạn đến trang phù hợp với vai trò và quyền truy cập của tài khoản.</p></div>
+        <div className="sb-auth-public"><p>Bạn muốn tìm hiểu trước?</p><div><Link to="/guide"><BookOpen size={16} />Hướng dẫn sử dụng<ArrowRight size={14} /></Link><Link to="/warranty"><ShieldCheck size={16} />Tra cứu bảo hành<ArrowRight size={14} /></Link></div></div>
+      </section>
+    </main>
+    <footer className="sb-auth-footer"><span>© {new Date().getFullYear()} SmartBox</span><span>Nhận hàng thông minh. An tâm mỗi ngày.</span></footer>
+  </div>;
 };

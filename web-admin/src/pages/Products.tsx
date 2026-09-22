@@ -72,7 +72,7 @@ export const SmartBoxLogoPlaceholder: React.FC<{
   size?: number;
   className?: string;
   style?: React.CSSProperties;
-}> = ({ name = 'SmartBox IoT', size = 56, className = '', style = {} }) => {
+}> = ({ name = 'Anchor Box IoT', size = 56, className = '', style = {} }) => {
   return (
     <div
       className={`smartbox-logo-placeholder ${className}`}
@@ -89,72 +89,22 @@ export const SmartBoxLogoPlaceholder: React.FC<{
         justifyContent: 'center',
         position: 'relative',
         overflow: 'hidden',
+        padding: `${Math.max(4, size * 0.08)}px`,
         flexShrink: 0,
         ...style
       }}
-      title={`${name} (Ảnh hệ thống mặc định)`}
+      title={`${name} (Anchor Box)`}
     >
-      {/* Circuit Glow Overlay */}
-      <div
+      <img
+        src="/Logo.png"
+        alt={name}
         style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(circle at 50% 30%, rgba(37, 99, 235, 0.35) 0%, transparent 70%)',
-          pointerEvents: 'none'
+          width: '85%',
+          height: '85%',
+          objectFit: 'contain',
+          filter: 'drop-shadow(0 2px 8px rgba(37, 99, 235, 0.4))'
         }}
       />
-      {/* SmartBox Stylized Isometric SVG Box */}
-      <svg
-        width={Math.max(24, size * 0.48)}
-        height={Math.max(24, size * 0.48)}
-        viewBox="0 0 48 48"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ zIndex: 2 }}
-      >
-        <path
-          d="M24 4L42 14.5V33.5L24 44L6 33.5V14.5L24 4Z"
-          fill="url(#box-gradient)"
-          stroke="#60a5fa"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M24 4V24M24 24L42 14.5M24 24L6 14.5"
-          stroke="#93c5fd"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <circle cx="24" cy="24" r="3.5" fill="#38bdf8" />
-        <path
-          d="M24 24V44"
-          stroke="#3b82f6"
-          strokeWidth="1.5"
-          strokeDasharray="2 2"
-        />
-        <defs>
-          <linearGradient id="box-gradient" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#1e40af" stopOpacity="0.8" />
-            <stop offset="1" stopColor="#0f172a" stopOpacity="0.95" />
-          </linearGradient>
-        </defs>
-      </svg>
-      {size >= 60 && (
-        <span
-          style={{
-            fontSize: '0.55rem',
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 800,
-            color: '#60a5fa',
-            letterSpacing: '0.05em',
-            marginTop: '2px',
-            zIndex: 2,
-            textTransform: 'uppercase'
-          }}
-        >
-          SmartBox
-        </span>
-      )}
     </div>
   );
 };
@@ -412,25 +362,33 @@ export const Products: React.FC = () => {
           : [
               {
                 id: `var-${p.id}-1`,
-                sku: `${p.sku}-WHT`,
-                name: `${p.name} (Trắng Titan)`,
-                color: 'Trắng Titan',
-                color_code: '#f8fafc',
-                firmware_version: 'v1.2.0-stable',
+                sku: `${p.sku}-S`,
+                name: 'Size S (Nhỏ - 45L)',
+                variant_name: 'Size S (Nhỏ - 45L)',
                 capacity: 'Standard 45L',
                 price_adjustment: 0,
-                stock_quantity: Math.floor(p.stock_quantity * 0.6)
+                price_delta: 0,
+                stock_quantity: Math.floor(p.stock_quantity * 0.4)
               },
               {
                 id: `var-${p.id}-2`,
-                sku: `${p.sku}-GRY`,
-                name: `${p.name} (Xám Không Gian)`,
-                color: 'Xám Không Gian',
-                color_code: '#475569',
-                firmware_version: 'v2.0.1-mesh',
+                sku: `${p.sku}-M`,
+                name: 'Size M (Vừa - 85L)',
+                variant_name: 'Size M (Vừa - 85L)',
                 capacity: 'Pro 85L',
-                price_adjustment: 350000,
+                price_adjustment: 400000,
+                price_delta: 400000,
                 stock_quantity: Math.floor(p.stock_quantity * 0.4)
+              },
+              {
+                id: `var-${p.id}-3`,
+                sku: `${p.sku}-L`,
+                name: 'Size L (Lớn - 150L)',
+                variant_name: 'Size L (Lớn - 150L)',
+                capacity: 'Enterprise 150L',
+                price_adjustment: 900000,
+                price_delta: 900000,
+                stock_quantity: Math.floor(p.stock_quantity * 0.2)
               }
             ];
 
@@ -536,14 +494,33 @@ export const Products: React.FC = () => {
       variants: [
         {
           id: `var-new-1`,
-          sku: `${newSku}-WHT`,
-          name: 'Phiên bản Trắng Titan',
-          color: 'Trắng Titan',
-          color_code: '#f8fafc',
-          firmware_version: 'v1.2.0-stable',
+          sku: `${newSku}-S`,
+          name: 'Size S (Nhỏ - 45L)',
+          variant_name: 'Size S (Nhỏ - 45L)',
           capacity: 'Standard 45L',
           price_adjustment: 0,
+          price_delta: 0,
           stock_quantity: 15
+        },
+        {
+          id: `var-new-2`,
+          sku: `${newSku}-M`,
+          name: 'Size M (Vừa - 85L)',
+          variant_name: 'Size M (Vừa - 85L)',
+          capacity: 'Pro 85L',
+          price_adjustment: 400000,
+          price_delta: 400000,
+          stock_quantity: 20
+        },
+        {
+          id: `var-new-3`,
+          sku: `${newSku}-L`,
+          name: 'Size L (Lớn - 150L)',
+          variant_name: 'Size L (Lớn - 150L)',
+          capacity: 'Enterprise 150L',
+          price_adjustment: 900000,
+          price_delta: 900000,
+          stock_quantity: 10
         }
       ],
       seo: {
@@ -804,16 +781,18 @@ export const Products: React.FC = () => {
   // Variant Management Helper in Modal
   // -------------------------------------------------------------
   const handleAddVariant = () => {
+    const sizeLabels = ['Size S (Nhỏ - 45L)', 'Size M (Vừa - 85L)', 'Size L (Lớn - 150L)', 'Size XL (Doanh Nghiệp - 250L)'];
+    const sizeSuffixes = ['S', 'M', 'L', 'XL'];
+    const idx = productForm.variants.length % sizeLabels.length;
     const newVariant: ProductVariant = {
       id: `var-${Date.now()}`,
-      sku: `${productForm.sku}-VAR${productForm.variants.length + 1}`,
-      name: `Biến thể mới #${productForm.variants.length + 1}`,
-      color: VARIANT_COLORS[productForm.variants.length % VARIANT_COLORS.length].name,
-      color_code: VARIANT_COLORS[productForm.variants.length % VARIANT_COLORS.length].hex,
-      firmware_version: VARIANT_FIRMWARES[0],
-      capacity: VARIANT_CAPACITIES[0],
-      price_adjustment: 0,
-      stock_quantity: 10
+      sku: `${productForm.sku}-${sizeSuffixes[idx]}`,
+      name: sizeLabels[idx],
+      variant_name: sizeLabels[idx],
+      capacity: sizeLabels[idx],
+      price_adjustment: idx === 0 ? 0 : (idx === 1 ? 400000 : (idx === 2 ? 900000 : 1600000)),
+      price_delta: idx === 0 ? 0 : (idx === 1 ? 400000 : (idx === 2 ? 900000 : 1600000)),
+      stock_quantity: 15
     };
     setProductForm({
       ...productForm,

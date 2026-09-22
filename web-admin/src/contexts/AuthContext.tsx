@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured } from '../services/supabase';
+import { supabase, isSupabaseConfigured, clearAllAuthTokens, isSessionExpired, pruneLegacyLocalStorageAuth } from '../services/supabase';
 import { Profile, UserRole } from '../types/database';
 
 interface AuthContextType {
@@ -21,6 +21,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Tham chiếu bộ đếm thời gian tự động đăng xuất khi token hết hạn
+  const sessionExpiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
     try {
       const { data, error: profileErr } = await supabase
@@ -36,7 +39,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  /**
+   * Xử lý khi phiên làm việc hoặc token bị hết hạn:
+   * 1. Hủy bộ đếm thời gian
+   * 2. Xóa sạch mọi token trong sessionStorage và localStorage
+   * 3. Reset trạng thái người dùng về null
+   * 4. Chuyển hướng người dùng về trang /login?expired=true nếu đang ở trang quản trị
+   */
+  const handleSessionExpired = async (reason: string = 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.') => {
+    if (sessionExpiryTimerRef.current) {
+      clearTimeout(sessionExpiryTimerRef.current);
+      sessionExpiryTimerRef.current = null;
+    }
+
+    await clearAllAuthTokens();
+    setUser(null);
+    setProfile(null);
+    setError(reason);
+    setLoading(false);
+
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      const isAdminRoute =
+        pathname.startsWith('/admin') ||
+        pathname.startsWith('/dashboard') ||
+        pathname.startsWith('/devices') ||
+        pathname.startsWith('/warranties') ||
+        pathname.startsWith('/products') ||
+        pathname.startsWith('/orders') ||
+        pathname.startsWith('/users') ||
+        pathname.startsWith('/content') ||
+        pathname.startsWith('/audit-logs') ||
+        pathname.startsWith('/settings');
+
+      if (isAdminRoute && !pathname.includes('/login')) {
+        window.location.href = '/login?expired=true';
+      }
+    }
+  };
+
+  /**
+   * Lên lịch tự động đăng xuất và xóa token khi đúng thời điểm expires_at
+   */
+  const scheduleSessionExpiry = (expiresAtSeconds: number | undefined) => {
+    if (sessionExpiryTimerRef.current) {
+      clearTimeout(sessionExpiryTimerRef.current);
+      sessionExpiryTimerRef.current = null;
+    }
+
+    if (!expiresAtSeconds) return;
+
+    const msRemaining = expiresAtSeconds * 1000 - Date.now();
+    if (msRemaining <= 0) {
+      console.warn('🕒 [Auth] Token đã quá hạn ngay khi kiểm tra. Thu hồi phiên...');
+      handleSessionExpired();
+      return;
+    }
+
+    sessionExpiryTimerRef.current = setTimeout(() => {
+      console.warn('🕒 [Auth] Token đã hết thời hạn sử dụng. Đang tự động xóa token và đăng xuất...');
+      handleSessionExpired('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    }, msRemaining);
+  };
+
   useEffect(() => {
+    // 1. Dọn dẹp token cũ còn đọng trong localStorage từ các phiên trước
+    pruneLegacyLocalStorageAuth();
+
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;
@@ -44,24 +113,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setUser(session.user);
-          const prof = await fetchUserProfile(session.user.id);
+        const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
 
-          if (prof?.role === 'customer') {
-            await supabase.auth.signOut();
-            setError('Tài khoản của bạn không có quyền truy cập hệ thống.');
-            setUser(null);
-            setProfile(null);
-          } else if (prof?.is_locked) {
-            await supabase.auth.signOut();
-            setError('Tài khoản của bạn đã bị khóa.');
-            setUser(null);
-            setProfile(null);
-          } else {
-            setProfile(prof);
-          }
+        if (sessionErr || !session || !session.user) {
+          setUser(null);
+          setProfile(null);
+          return;
+        }
+
+        // Kiểm tra xem token hiện tại đã hết hạn chưa
+        if (isSessionExpired(session)) {
+          console.warn('⚠️ [Auth] Token lưu trữ đã hết hạn khi mở ứng dụng. Đang xóa sạch token...');
+          await handleSessionExpired();
+          return;
+        }
+
+        // Lên lịch tự động đăng xuất khi token hết hạn
+        scheduleSessionExpiry(session.expires_at);
+
+        setUser(session.user);
+        const prof = await fetchUserProfile(session.user.id);
+
+        if (prof?.is_locked) {
+          await handleSessionExpired('Tài khoản của bạn đã bị khóa.');
+        } else {
+          setProfile(prof);
         }
       } catch (err) {
         console.error('Initialize auth error:', err);
@@ -72,33 +148,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
+    // 2. Lắng nghe thay đổi trạng thái xác thực từ Supabase
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        if (sessionExpiryTimerRef.current) {
+          clearTimeout(sessionExpiryTimerRef.current);
+          sessionExpiryTimerRef.current = null;
+        }
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      // Nếu session nhận được đã hết hạn
+      if (isSessionExpired(session)) {
+        await handleSessionExpired();
+        return;
+      }
+
+      // Lên lịch đếm ngược hết hạn cho token mới
+      scheduleSessionExpiry(session.expires_at);
+
+      if (session.user) {
         setUser(session.user);
         const prof = await fetchUserProfile(session.user.id);
 
-        if (prof?.role === 'customer') {
-          await supabase.auth.signOut();
-          setError('Tài khoản của bạn không có quyền truy cập hệ thống.');
-          setUser(null);
-          setProfile(null);
-        } else if (prof?.is_locked) {
-          await supabase.auth.signOut();
-          setError('Tài khoản  của bạn đã bị khóa.');
-          setUser(null);
-          setProfile(null);
+        if (prof?.is_locked) {
+          await handleSessionExpired('Tài khoản của bạn đã bị khóa.');
         } else {
           setProfile(prof);
           setError(null);
         }
-      } else {
-        setUser(null);
-        setProfile(null);
       }
       setLoading(false);
     });
 
-    return () => authListener.subscription.unsubscribe();
+    // 3. Lắng nghe sự kiện toàn cục khi API trả về 401 (token hết hạn hoặc không hợp lệ)
+    const handleAuthExpiredEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ reason?: string }>;
+      const reason = customEvent?.detail?.reason || 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.';
+      handleSessionExpired(reason);
+    };
+    window.addEventListener('smartbox:auth-expired', handleAuthExpiredEvent);
+
+    // 4. Kiểm tra lại tính hợp lệ của token khi người dùng quay lại tab (sau sleep/inactivity)
+    const handleVisibilityOrFocus = async () => {
+      if (document.visibilityState === 'visible') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && isSessionExpired(session)) {
+          console.warn('⚠️ [Auth] Phát hiện token hết hạn khi người dùng quay lại tab.');
+          await handleSessionExpired();
+        }
+      }
+    };
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    return () => {
+      authListener.subscription.unsubscribe();
+      window.removeEventListener('smartbox:auth-expired', handleAuthExpiredEvent);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      if (sessionExpiryTimerRef.current) {
+        clearTimeout(sessionExpiryTimerRef.current);
+      }
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -122,26 +237,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
+        if (isSessionExpired(data.session)) {
+          await handleSessionExpired();
+          return { success: false, error: 'Token đăng nhập không hợp lệ hoặc đã hết hạn.' };
+        }
+
         const prof = await fetchUserProfile(data.user.id);
 
-        if (!prof || prof.role === 'customer') {
-          await supabase.auth.signOut();
-          const roleErr = 'Tài khoản khách hàng không có quyền truy cập vào hệ thống.';
-          setError(roleErr);
-          setLoading(false);
+        if (!prof) {
+          await handleSessionExpired('Không tìm thấy hồ sơ tài khoản. Vui lòng liên hệ hỗ trợ.');
+          const roleErr = 'Không tìm thấy hồ sơ tài khoản. Vui lòng liên hệ hỗ trợ.';
           return { success: false, error: roleErr };
         }
 
         if (prof.is_locked) {
-          await supabase.auth.signOut();
+          await handleSessionExpired('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.');
           const lockErr = 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.';
-          setError(lockErr);
-          setLoading(false);
           return { success: false, error: lockErr };
         }
 
+        // Lên lịch đếm ngược tự động đăng xuất khi token hết hạn
+        scheduleSessionExpiry(data.session?.expires_at);
+
         setUser(data.user);
         setProfile(prof);
+        setError(null);
         setLoading(false);
         return { success: true, role: prof.role };
       }
@@ -157,9 +277,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    if (isSupabaseConfigured) await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
+    await handleSessionExpired('');
     setError(null);
   };
 

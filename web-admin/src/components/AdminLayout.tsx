@@ -31,7 +31,11 @@ import {
   CreditCard,
   Layers,
   Headphones,
-  ShieldAlert
+  ShieldAlert,
+  CircleHelp,
+  QrCode,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import { UserRole } from '../types/database';
 
@@ -60,6 +64,11 @@ const MENU_ITEMS: MenuItem[] = [
     name: 'Tổng quan Báo cáo',
     icon: <Home size={21} strokeWidth={1.8} />,
     roles: ['super_admin'],
+  },
+  {
+    path: '/admin/warranty',
+    name: 'Tra Cứu Bảo Hành (QR)',
+    icon: <QrCode size={21} strokeWidth={1.8} />,
   },
   {
     path: '/devices',
@@ -422,7 +431,7 @@ export const AdminLayout: React.FC = () => {
   const activeIndex = useMemo(() => {
     const currentPath = location.pathname;
     const index = accessibleMenuItems.findIndex((item) => currentPath.startsWith(item.path));
-    return index !== -1 ? index : 0;
+    return index;
   }, [location.pathname, accessibleMenuItems]);
 
   // Filter notifications strictly for the current role
@@ -529,19 +538,33 @@ export const AdminLayout: React.FC = () => {
         <div className="floating-sidebar-container">
           <aside
             className={`floating-pill ${isSidebarExpanded ? 'expanded' : ''}`}
-            style={{
-              '--pill-active-index': activeIndex,
-            } as React.CSSProperties}
           >
             {/* Top Brand Logo - Anchored at the very top of screen */}
-            <div className="pill-brand-header">
-              <div className="pill-brand-icon" title="SmartBox IoT Platform">
-                <Box size={22} color="#ffffff" strokeWidth={2.2} />
+            <div
+              className="pill-brand-header"
+              onClick={() => navigate('/dashboard')}
+              title="Anchor Box - Về Tổng Quan Hệ Thống"
+              style={{ cursor: 'pointer' }}
+            >
+              <div
+                className="pill-brand-icon"
+                style={{
+                  padding: '2px',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+                  overflow: 'hidden'
+                }}
+              >
+                <img
+                  src="/Logo.png"
+                  alt="Anchor Box"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
               </div>
               {isSidebarExpanded && (
                 <div className="pill-brand-info">
-                  <span className="pill-brand-title">SmartBox</span>
-                  <span className="pill-brand-sub">IoT Admin</span>
+                  <span className="pill-brand-title">Anchor Box</span>
+                  <span className="pill-brand-sub">IoT System 2026</span>
                 </div>
               )}
             </div>
@@ -550,9 +573,6 @@ export const AdminLayout: React.FC = () => {
 
             {/* Scrollable Navigation Items */}
             <div className="pill-items-scroll">
-              {/* Liquid Notch Curved Indicator */}
-              <div className="liquid-notch-indicator" />
-
               {/* Navigation Icons */}
               {accessibleMenuItems.map((item, idx) => {
                 const isActive = activeIndex === idx;
@@ -565,6 +585,7 @@ export const AdminLayout: React.FC = () => {
                     className={`pill-nav-item ${isActive ? 'active' : ''}`}
                     title={isSidebarExpanded ? undefined : displayName}
                   >
+                    {isActive && <span className="liquid-notch-indicator" aria-hidden="true" />}
                     <span className="pill-item-icon">
                       {item.icon}
                     </span>
@@ -589,7 +610,7 @@ export const AdminLayout: React.FC = () => {
             <div className="pill-divider" />
 
             {/* Bottom Actions: Expand/Collapse & Logout Button */}
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
               {/* Desktop Expand / Collapse Toggle Button */}
               <button
                 type="button"
@@ -687,10 +708,10 @@ export const AdminLayout: React.FC = () => {
           </div>
 
           {/* Right Controls: Role-Specific Status Badges, Theme Switch, Notifications, User Profile */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="admin-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
 
             {/* Dynamic Status Badges per role */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            <div className="header-status-badges" style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
               {roleConfig.statusBadges.map((badge, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: badge.color, display: 'inline-block', boxShadow: `0 0 8px ${badge.color}` }} />
@@ -700,6 +721,39 @@ export const AdminLayout: React.FC = () => {
             </div>
 
             <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
+
+            {/* Quick Link to Public Storefront */}
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-subtle)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-secondary)',
+                textDecoration: 'none',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+                cursor: 'pointer'
+              }}
+              title="Mở Website Bán Hàng & Giới Thiệu Anchor Box (Tab mới)"
+            >
+              <Globe size={14} color="#3b82f6" />
+              <span>Website Bán Hàng</span>
+              <ExternalLink size={12} color="var(--text-muted)" />
+            </a>
+
+            <NavLink to="/admin/guide" className="admin-help-link" title="Trợ giúp — Cẩm nang sử dụng" aria-label="Trợ giúp — Cẩm nang sử dụng">
+              <CircleHelp size={18} />
+              <span>Trợ giúp</span>
+            </NavLink>
 
             {/* Theme Toggle Button */}
             <button
@@ -1099,10 +1153,12 @@ export const AdminLayout: React.FC = () => {
           <div className="mobile-drawer-panel" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-header">
               <div className="mobile-drawer-brand">
-                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: roleConfig.color, boxShadow: `0 0 10px ${roleConfig.color}` }} />
+                <div style={{ width: '28px', height: '28px', borderRadius: '8px', overflow: 'hidden', background: '#ffffff', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src="/Logo.png" alt="Anchor Box" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </div>
                 <div>
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                    SmartBox Admin
+                    Anchor Box
                   </h4>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                     {roleConfig.workspaceTitle}
