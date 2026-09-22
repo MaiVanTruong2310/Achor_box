@@ -1,7 +1,11 @@
 package com.smartbox.backend.service;
 
-import com.smartbox.backend.dto.SettingsDTO;
-import com.smartbox.backend.model.MessageTemplate;
+import com.smartbox.backend.dto.request.TemplateUpdateRequest;
+import com.smartbox.backend.dto.request.TestSendTemplateRequest;
+import com.smartbox.backend.dto.response.SystemSettingsResponse;
+import com.smartbox.backend.dto.response.TestSendResponse;
+import com.smartbox.backend.entity.MessageTemplate;
+import com.smartbox.backend.exception.ResourceNotFoundException;
 import com.smartbox.backend.repository.MessageTemplateRepository;
 import com.smartbox.backend.repository.PaymentMethodRepository;
 import com.smartbox.backend.repository.ShippingMethodRepository;
@@ -26,8 +30,8 @@ public class SettingsService {
     private final EmailService emailService;
 
     @Transactional(readOnly = true)
-    public SettingsDTO.SystemSettingsResponse getSettings() {
-        return SettingsDTO.SystemSettingsResponse.builder()
+    public SystemSettingsResponse getSettings() {
+        return SystemSettingsResponse.builder()
                 .messageTemplates(templateRepository.findAll())
                 .shippingMethods(shippingRepository.findAll())
                 .paymentMethods(paymentRepository.findAll())
@@ -42,11 +46,11 @@ public class SettingsService {
     @Transactional(readOnly = true)
     public MessageTemplate getTemplateByCode(String code) {
         return templateRepository.findByCode(code)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy mẫu thông báo với mã: " + code));
+                .orElseThrow(() -> new ResourceNotFoundException("Mẫu thông báo", "code", code));
     }
 
     @Transactional
-    public MessageTemplate saveTemplate(SettingsDTO.TemplateUpdateRequest req) {
+    public MessageTemplate saveTemplate(TemplateUpdateRequest req) {
         MessageTemplate template = templateRepository.findByCode(req.getCode())
                 .orElse(MessageTemplate.builder().code(req.getCode()).build());
 
@@ -80,7 +84,7 @@ public class SettingsService {
     @Transactional
     public MessageTemplate resetToDefault(String code) {
         MessageTemplate template = templateRepository.findByCode(code)
-                .orElseThrow(() -> new RuntimeException("Mẫu thông báo không tồn tại: " + code));
+                .orElseThrow(() -> new ResourceNotFoundException("Mẫu thông báo", "code", code));
 
         switch (code.toUpperCase()) {
             case "OTP_RESET_PASSWORD" -> {
@@ -134,7 +138,7 @@ public class SettingsService {
         return templateRepository.save(template);
     }
 
-    public SettingsDTO.TestSendResponse testSendTemplate(SettingsDTO.TestSendTemplateRequest req) {
+    public TestSendResponse testSendTemplate(TestSendTemplateRequest req) {
         String code = req.getTemplateCode();
         MessageTemplate template = templateRepository.findByCode(code).orElse(null);
 
@@ -200,7 +204,7 @@ public class SettingsService {
             statusMsg = "Mẫu " + channel.toUpperCase() + " đã render thành công (Chế độ mô phỏng Test Sandbox)!";
         }
 
-        return SettingsDTO.TestSendResponse.builder()
+        return TestSendResponse.builder()
                 .success(true)
                 .channel(channel)
                 .recipient(recipient)

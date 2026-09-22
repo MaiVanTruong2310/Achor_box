@@ -1,14 +1,20 @@
 package com.smartbox.backend.controller;
 
-import com.smartbox.backend.dto.PromotionDTO;
+import com.smartbox.backend.common.AppConstants;
+import com.smartbox.backend.dto.request.PromotionRequest;
+import com.smartbox.backend.dto.request.ValidateCouponRequest;
+import com.smartbox.backend.dto.response.PromotionResponse;
+import com.smartbox.backend.dto.response.ValidateCouponResponse;
 import com.smartbox.backend.service.PromotionService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -21,28 +27,36 @@ public class PromotionController {
 
     @GetMapping
     @Operation(summary = "Lấy danh sách tất cả mã khuyến mãi")
-    public ResponseEntity<List<PromotionDTO.PromotionResponse>> getAllPromotions() {
+    public ResponseEntity<List<PromotionResponse>> getAllPromotions() {
         return ResponseEntity.ok(promotionService.getAllPromotions());
+    }
+
+    @GetMapping("/paged")
+    @Operation(summary = "Lấy danh sách mã khuyến mãi có phân trang dạng Map<String, Object>")
+    public ResponseEntity<Map<String, Object>> getPromotionsPaged(
+            @Parameter(description = "Chỉ số trang (0-based)") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
+            @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
+        return ResponseEntity.ok(promotionService.getPromotionsPaged(page, size));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Lấy thông tin chi tiết một mã khuyến mãi theo ID")
-    public ResponseEntity<PromotionDTO.PromotionResponse> getPromotionById(@PathVariable UUID id) {
+    public ResponseEntity<PromotionResponse> getPromotionById(@PathVariable UUID id) {
         return ResponseEntity.ok(promotionService.getPromotionById(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo mới mã khuyến mãi")
-    public ResponseEntity<PromotionDTO.PromotionResponse> createPromotion(
-            @RequestBody PromotionDTO.PromotionRequest request) {
+    public ResponseEntity<PromotionResponse> createPromotion(
+            @RequestBody PromotionRequest request) {
         return ResponseEntity.ok(promotionService.createPromotion(request));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật thông tin mã khuyến mãi")
-    public ResponseEntity<PromotionDTO.PromotionResponse> updatePromotion(
+    public ResponseEntity<PromotionResponse> updatePromotion(
             @PathVariable UUID id,
-            @RequestBody PromotionDTO.PromotionRequest request) {
+            @RequestBody PromotionRequest request) {
         return ResponseEntity.ok(promotionService.updatePromotion(id, request));
     }
 
@@ -55,14 +69,14 @@ public class PromotionController {
 
     @PatchMapping("/{id}/toggle")
     @Operation(summary = "Bật / Tắt kích hoạt mã khuyến mãi")
-    public ResponseEntity<PromotionDTO.PromotionResponse> toggleActive(@PathVariable UUID id) {
+    public ResponseEntity<PromotionResponse> toggleActive(@PathVariable UUID id) {
         return ResponseEntity.ok(promotionService.toggleActive(id));
     }
 
     @PostMapping("/validate")
     @Operation(summary = "Kiểm tra điều kiện hợp lệ và tính số tiền giảm giá cho đơn hàng")
-    public ResponseEntity<PromotionDTO.ValidateCouponResponse> validateAndCalculate(
-            @RequestBody PromotionDTO.ValidateCouponRequest request) {
+    public ResponseEntity<ValidateCouponResponse> validateAndCalculate(
+            @RequestBody ValidateCouponRequest request) {
         return ResponseEntity.ok(promotionService.validateAndCalculate(request));
     }
 }

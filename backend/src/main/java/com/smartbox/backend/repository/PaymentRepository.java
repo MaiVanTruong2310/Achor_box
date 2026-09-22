@@ -1,6 +1,6 @@
 package com.smartbox.backend.repository;
 
-import com.smartbox.backend.model.Payment;
+import com.smartbox.backend.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,3 +11,4 @@ import java.util.UUID;
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     List<Payment> findByOrderId(UUID orderId);
 }
+

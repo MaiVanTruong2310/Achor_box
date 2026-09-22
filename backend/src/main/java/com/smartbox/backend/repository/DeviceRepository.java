@@ -1,6 +1,6 @@
 package com.smartbox.backend.repository;
 
-import com.smartbox.backend.model.Device;
+import com.smartbox.backend.entity.Device;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,3 +15,4 @@ public interface DeviceRepository extends JpaRepository<Device, UUID> {
     Optional<Device> findBySerialNumber(String serialNumber);
     long countByStatus(String status);
 }
+

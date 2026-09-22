@@ -1,16 +1,24 @@
 package com.smartbox.backend.service;
 
-import com.smartbox.backend.dto.DeviceDTO;
-import com.smartbox.backend.model.Device;
-import com.smartbox.backend.model.DeviceEvent;
+import com.smartbox.backend.common.PaginationUtil;
+import com.smartbox.backend.dto.response.DeviceEventResponse;
+import com.smartbox.backend.dto.response.DeviceResponse;
+import com.smartbox.backend.entity.Device;
+import com.smartbox.backend.entity.DeviceEvent;
+import com.smartbox.backend.exception.ResourceNotFoundException;
 import com.smartbox.backend.repository.DeviceEventRepository;
 import com.smartbox.backend.repository.DeviceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -22,24 +30,31 @@ public class DeviceService {
     private final DeviceEventRepository deviceEventRepository;
 
     @Transactional(readOnly = true)
-    public List<DeviceDTO.DeviceResponse> getAllDevices() {
+    public List<DeviceResponse> getAllDevices() {
         List<Device> devices = deviceRepository.findAllByOrderByCreatedAtDesc();
         return devices.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<DeviceDTO.DeviceResponse> getDevicesByOwnerId(UUID ownerId) {
+    public Map<String, Object> getDevicesPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<DeviceResponse> pageResult = deviceRepository.findAll(pageable).map(this::mapToResponse);
+        return PaginationUtil.toMap(pageResult);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DeviceResponse> getDevicesByOwnerId(UUID ownerId) {
         List<Device> devices = deviceRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId);
         return devices.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<DeviceDTO.DeviceEventResponse> getDeviceEvents(UUID deviceId) {
+    public List<DeviceEventResponse> getDeviceEvents(UUID deviceId) {
         List<DeviceEvent> events = (deviceId != null)
                 ? deviceEventRepository.findByDeviceIdOrderByCreatedAtDesc(deviceId)
                 : deviceEventRepository.findTop50ByOrderByCreatedAtDesc();
 
-        return events.stream().map(e -> DeviceDTO.DeviceEventResponse.builder()
+        return events.stream().map(e -> DeviceEventResponse.builder()
                 .id(e.getId())
                 .deviceId(e.getDeviceId())
                 .deviceSerial(e.getDevice() != null ? e.getDevice().getSerialNumber() : "BOX-2026-001")
@@ -51,15 +66,15 @@ public class DeviceService {
     }
 
     @Transactional
-    public DeviceDTO.DeviceResponse updateDeviceStatus(UUID id, String status) {
+    public DeviceResponse updateDeviceStatus(UUID id, String status) {
         Device device = deviceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Thiết bị không tồn tại: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Thiết bị", "id", id));
         device.setStatus(status);
         device.setLastSeenAt(OffsetDateTime.now());
         return mapToResponse(deviceRepository.save(device));
     }
 
-    private DeviceDTO.DeviceResponse mapToResponse(Device d) {
+    public DeviceResponse mapToResponse(Device d) {
         int hash = Math.abs(d.getId().hashCode());
         int idx = hash % 10;
 
@@ -73,7 +88,7 @@ public class DeviceService {
         String ownerPhone = d.getOwner() != null ? d.getOwner().getPhone() : "0901234567";
         String productName = d.getProduct() != null ? d.getProduct().getName() : "SmartBox Pro IoT";
 
-        return DeviceDTO.DeviceResponse.builder()
+        return DeviceResponse.builder()
                 .id(d.getId())
                 .productId(d.getProductId())
                 .productName(productName)
@@ -95,7 +110,13 @@ public class DeviceService {
                 .geoCity(d.getLocationLabel() != null ? d.getLocationLabel() : "Hà Nội")
                 .mapX(mapX)
                 .mapY(mapY)
-                .lockStatus("locked")
+                .lockStatus(d.getLockStatus() != null ? d.getLockStatus() : "locked")
+                .doorStatus(d.getDoorStatus() != null ? d.getDoorStatus() : "closed")
+                .weightKg(d.getWeightKg() != null ? d.getWeightKg() : 0.0)
+                .packageDetected(d.getPackageDetected() != null ? d.getPackageDetected() : false)
+                .scaleReady(d.getScaleReady() != null ? d.getScaleReady() : false)
+                .deviceState(d.getDeviceState() != null ? d.getDeviceState() : "starting")
+                .mqttTopicId(d.getMqttTopicId() != null ? d.getMqttTopicId() : ("smartbox/dev/" + d.getSerialNumber()))
                 .wifiRssi(-60)
                 .pingMs(22)
                 .build();

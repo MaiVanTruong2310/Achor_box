@@ -1,10 +1,12 @@
 package com.smartbox.backend.service;
 
-import com.smartbox.backend.dto.DashboardStatsDTO;
-import com.smartbox.backend.dto.OrderDTO;
-import com.smartbox.backend.model.Order;
-import com.smartbox.backend.model.OrderItem;
-import com.smartbox.backend.model.Product;
+import com.smartbox.backend.dto.response.DashboardStatsResponse;
+import com.smartbox.backend.dto.response.MonthlyRevenueItem;
+import com.smartbox.backend.dto.response.OrderResponse;
+import com.smartbox.backend.dto.response.ProductSalesItem;
+import com.smartbox.backend.entity.Order;
+import com.smartbox.backend.entity.OrderItem;
+import com.smartbox.backend.entity.Product;
 import com.smartbox.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -31,13 +33,13 @@ public class DashboardService {
     private final OrderService orderService;
 
     @Transactional(readOnly = true)
-    public DashboardStatsDTO getDashboardStats() {
+    public DashboardStatsResponse getDashboardStats() {
         return getDashboardStats("6m");
     }
 
     @Transactional(readOnly = true)
     @Cacheable(value = "dashboardStats", key = "#range != null ? #range.toLowerCase() : '6m'")
-    public DashboardStatsDTO getDashboardStats(String range) {
+    public DashboardStatsResponse getDashboardStats(String range) {
         String normalizedRange = (range != null) ? range.trim().toLowerCase() : "6m";
         List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc();
 
@@ -99,7 +101,7 @@ public class DashboardService {
         }
 
         // 3. Biểu đồ xu hướng tính toán động theo range (7d / 30d / 6m)
-        List<DashboardStatsDTO.MonthlyRevenueItem> timelineRevenue = new ArrayList<>();
+        List<MonthlyRevenueItem> timelineRevenue = new ArrayList<>();
 
         if ("7d".equals(normalizedRange) || "7days".equals(normalizedRange)) {
             // Lọc 7 ngày gần nhất
@@ -125,11 +127,11 @@ public class DashboardService {
                 }
 
                 double revInMillions = dayRev.divide(new BigDecimal("1000000"), 2, RoundingMode.HALF_UP).doubleValue();
-                timelineRevenue.add(new DashboardStatsDTO.MonthlyRevenueItem(shortLabel, fullLabel, revInMillions, dayOrdCount));
+                timelineRevenue.add(new MonthlyRevenueItem(shortLabel, fullLabel, revInMillions, dayOrdCount));
             }
 
         } else if ("30d".equals(normalizedRange) || "30days".equals(normalizedRange)) {
-            // Lọc 30 ngày gần nhất (tổng hợp 30 điểm dữ liệu ngày)
+            // Lọc 30 ngày gần nhất
             LocalDate today = LocalDate.now();
             DateTimeFormatter dayMonthFmt = DateTimeFormatter.ofPattern("dd/MM");
             DateTimeFormatter fullDateFmt = DateTimeFormatter.ofPattern("dd 'Tháng' MM, yyyy");
@@ -152,7 +154,7 @@ public class DashboardService {
                 }
 
                 double revInMillions = dayRev.divide(new BigDecimal("1000000"), 2, RoundingMode.HALF_UP).doubleValue();
-                timelineRevenue.add(new DashboardStatsDTO.MonthlyRevenueItem(shortLabel, fullLabel, revInMillions, dayOrdCount));
+                timelineRevenue.add(new MonthlyRevenueItem(shortLabel, fullLabel, revInMillions, dayOrdCount));
             }
 
         } else {
@@ -177,11 +179,11 @@ public class DashboardService {
                 }
 
                 double revInMillions = monthRev.divide(new BigDecimal("1000000"), 2, RoundingMode.HALF_UP).doubleValue();
-                timelineRevenue.add(new DashboardStatsDTO.MonthlyRevenueItem(monthLabel, fullLabel, revInMillions, monthOrdCount));
+                timelineRevenue.add(new MonthlyRevenueItem(monthLabel, fullLabel, revInMillions, monthOrdCount));
             }
         }
 
-        // 4. Cơ cấu doanh số theo sản phẩm (Tính toán động từ order_items và products)
+        // 4. Cơ cấu doanh số theo sản phẩm
         List<OrderItem> allOrderItems = orderItemRepository.findAll();
         Map<String, BigDecimal> productRevenueMap = new HashMap<>();
         Map<String, String> productSubMap = new HashMap<>();
@@ -199,7 +201,7 @@ public class DashboardService {
         }
 
         String[] colors = {"#3b82f6", "#0ea5e9", "#10b981", "#f59e0b", "#8b5cf6"};
-        List<DashboardStatsDTO.ProductSalesItem> productSales = new ArrayList<>();
+        List<ProductSalesItem> productSales = new ArrayList<>();
         int colorIdx = 0;
 
         BigDecimal totalProductRev = productRevenueMap.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -209,7 +211,7 @@ public class DashboardService {
             if (totalProductRev.compareTo(BigDecimal.ZERO) > 0) {
                 percent = entry.getValue().multiply(new BigDecimal(100)).divide(totalProductRev, 0, RoundingMode.HALF_UP).intValue();
             }
-            productSales.add(DashboardStatsDTO.ProductSalesItem.builder()
+            productSales.add(ProductSalesItem.builder()
                     .id("p-" + colorIdx)
                     .name(entry.getKey())
                     .sub(productSubMap.getOrDefault(entry.getKey(), "Sản phẩm IoT"))
@@ -224,7 +226,7 @@ public class DashboardService {
         if (productSales.isEmpty()) {
             List<Product> products = productRepository.findAll();
             for (Product p : products) {
-                productSales.add(DashboardStatsDTO.ProductSalesItem.builder()
+                productSales.add(ProductSalesItem.builder()
                         .id(p.getId() != null ? p.getId().toString() : "p-" + colorIdx)
                         .name(p.getName())
                         .sub("SKU: " + p.getSku())
@@ -236,11 +238,11 @@ public class DashboardService {
             }
         }
 
-        List<OrderDTO.OrderResponse> recentOrders = orderService.getOrders().stream()
+        List<OrderResponse> recentOrders = orderService.getOrders().stream()
                 .limit(5)
                 .collect(Collectors.toList());
 
-        return DashboardStatsDTO.builder()
+        return DashboardStatsResponse.builder()
                 .totalRevenue(totalRevenue)
                 .revenueGrowth(revenueGrowth)
                 .totalOrders(totalOrders)
@@ -254,4 +256,3 @@ public class DashboardService {
                 .build();
     }
 }
-
