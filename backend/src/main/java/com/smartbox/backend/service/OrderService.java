@@ -1,18 +1,26 @@
 package com.smartbox.backend.service;
 
-import com.smartbox.backend.dto.OrderDTO;
-import com.smartbox.backend.model.Order;
-import com.smartbox.backend.model.OrderItem;
-import com.smartbox.backend.model.Payment;
+import com.smartbox.backend.common.PaginationUtil;
+import com.smartbox.backend.dto.response.OrderItemResponse;
+import com.smartbox.backend.dto.response.OrderResponse;
+import com.smartbox.backend.entity.Order;
+import com.smartbox.backend.entity.OrderItem;
+import com.smartbox.backend.entity.Payment;
+import com.smartbox.backend.exception.ResourceNotFoundException;
 import com.smartbox.backend.repository.OrderItemRepository;
 import com.smartbox.backend.repository.OrderRepository;
 import com.smartbox.backend.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,14 +33,21 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
 
     @Transactional(readOnly = true)
-    public List<OrderDTO.OrderResponse> getOrders() {
+    public List<OrderResponse> getOrders() {
         return orderRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<OrderDTO.OrderResponse> getOrdersByUserId(UUID userId) {
+    public Map<String, Object> getOrdersPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<OrderResponse> pageResult = orderRepository.findAll(pageable).map(this::mapToResponse);
+        return PaginationUtil.toMap(pageResult);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getOrdersByUserId(UUID userId) {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -40,23 +55,23 @@ public class OrderService {
 
     @Transactional
     @CacheEvict(value = "dashboardStats", allEntries = true)
-    public OrderDTO.OrderResponse updateOrderStatus(UUID id, String status) {
+    public OrderResponse updateOrderStatus(UUID id, String status) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng", "id", id));
         order.setStatus(status);
         return mapToResponse(orderRepository.save(order));
     }
 
     @Transactional
     @CacheEvict(value = "dashboardStats", allEntries = true)
-    public OrderDTO.OrderResponse updateTrackingNumber(UUID id, String trackingNumber) {
+    public OrderResponse updateTrackingNumber(UUID id, String trackingNumber) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng", "id", id));
         order.setTrackingNumber(trackingNumber);
         return mapToResponse(orderRepository.save(order));
     }
 
-    private OrderDTO.OrderResponse mapToResponse(Order o) {
+    public OrderResponse mapToResponse(Order o) {
         List<OrderItem> items = orderItemRepository.findByOrderId(o.getId());
         List<Payment> payments = paymentRepository.findByOrderId(o.getId());
 
@@ -65,7 +80,7 @@ public class OrderService {
         String paymentStatus = firstPayment != null && firstPayment.getStatus() != null ? firstPayment.getStatus() : ("completed".equalsIgnoreCase(o.getStatus()) ? "paid" : "pending");
         String transactionRef = firstPayment != null && firstPayment.getTransactionRef() != null ? firstPayment.getTransactionRef() : "TRX-" + o.getId().toString().substring(0, 8);
 
-        List<OrderDTO.OrderItemResponse> itemDTOs = items.stream().map(it -> OrderDTO.OrderItemResponse.builder()
+        List<OrderItemResponse> itemDTOs = items.stream().map(it -> OrderItemResponse.builder()
                 .id(it.getId())
                 .productId(it.getProductId())
                 .productName(it.getProduct() != null ? it.getProduct().getName() : "Hộp Smart Delivery Box")
@@ -81,7 +96,7 @@ public class OrderService {
         String customerName = o.getCustomer() != null ? o.getCustomer().getFullName() : "Khách hàng SmartBox";
         String customerPhone = o.getCustomer() != null ? o.getCustomer().getPhone() : "0901234567";
 
-        return OrderDTO.OrderResponse.builder()
+        return OrderResponse.builder()
                 .id(o.getId())
                 .userId(o.getUserId())
                 .customerName(customerName)

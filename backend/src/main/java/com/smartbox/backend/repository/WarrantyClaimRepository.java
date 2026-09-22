@@ -1,6 +1,6 @@
 package com.smartbox.backend.repository;
 
-import com.smartbox.backend.model.WarrantyClaim;
+import com.smartbox.backend.entity.WarrantyClaim;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,3 +12,4 @@ public interface WarrantyClaimRepository extends JpaRepository<WarrantyClaim, UU
     List<WarrantyClaim> findAllByOrderByCreatedAtDesc();
     long countByStatusIn(List<String> statuses);
 }
+

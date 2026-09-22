@@ -1,7 +1,10 @@
 package com.smartbox.backend.controller;
 
-import com.smartbox.backend.dto.SettingsDTO;
-import com.smartbox.backend.model.MessageTemplate;
+import com.smartbox.backend.dto.request.TemplateUpdateRequest;
+import com.smartbox.backend.dto.request.TestSendTemplateRequest;
+import com.smartbox.backend.dto.response.SystemSettingsResponse;
+import com.smartbox.backend.dto.response.TestSendResponse;
+import com.smartbox.backend.entity.MessageTemplate;
 import com.smartbox.backend.service.SettingsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +24,7 @@ public class SettingsController {
 
     @GetMapping
     @Operation(summary = "Lấy tất cả cài đặt hệ thống")
-    public ResponseEntity<SettingsDTO.SystemSettingsResponse> getSettings() {
+    public ResponseEntity<SystemSettingsResponse> getSettings() {
         return ResponseEntity.ok(settingsService.getSettings());
     }
 
@@ -39,7 +42,7 @@ public class SettingsController {
 
     @PostMapping("/templates")
     @Operation(summary = "Tạo mới hoặc cập nhật mẫu thông báo Email/SMS/Push")
-    public ResponseEntity<MessageTemplate> saveTemplate(@RequestBody SettingsDTO.TemplateUpdateRequest request) {
+    public ResponseEntity<MessageTemplate> saveTemplate(@RequestBody TemplateUpdateRequest request) {
         return ResponseEntity.ok(settingsService.saveTemplate(request));
     }
 
@@ -51,9 +54,9 @@ public class SettingsController {
 
     @PostMapping("/templates/{code}/test-send")
     @Operation(summary = "Gửi thử nghiệm mẫu thông báo (Test Send via SMTP / Simulation)")
-    public ResponseEntity<SettingsDTO.TestSendResponse> testSendTemplate(
+    public ResponseEntity<TestSendResponse> testSendTemplate(
             @PathVariable String code,
-            @RequestBody SettingsDTO.TestSendTemplateRequest request) {
+            @RequestBody TestSendTemplateRequest request) {
         request.setTemplateCode(code);
         return ResponseEntity.ok(settingsService.testSendTemplate(request));
     }

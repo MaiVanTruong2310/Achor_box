@@ -1,10 +1,20 @@
 package com.smartbox.backend.service;
 
-import com.smartbox.backend.dto.PromotionDTO;
-import com.smartbox.backend.model.Promotion;
+import com.smartbox.backend.common.PaginationUtil;
+import com.smartbox.backend.dto.request.PromotionRequest;
+import com.smartbox.backend.dto.request.ValidateCouponRequest;
+import com.smartbox.backend.dto.response.PromotionResponse;
+import com.smartbox.backend.dto.response.ValidateCouponResponse;
+import com.smartbox.backend.entity.Promotion;
+import com.smartbox.backend.exception.AppException;
+import com.smartbox.backend.exception.ResourceNotFoundException;
 import com.smartbox.backend.repository.PromotionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +25,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,7 +37,7 @@ public class PromotionService {
     private final PromotionRepository promotionRepository;
 
     @Transactional(readOnly = true)
-    public List<PromotionDTO.PromotionResponse> getAllPromotions() {
+    public List<PromotionResponse> getAllPromotions() {
         return promotionRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .map(this::mapToResponse)
@@ -34,20 +45,27 @@ public class PromotionService {
     }
 
     @Transactional(readOnly = true)
-    public PromotionDTO.PromotionResponse getPromotionById(UUID id) {
+    public Map<String, Object> getPromotionsPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<PromotionResponse> pageResult = promotionRepository.findAll(pageable).map(this::mapToResponse);
+        return PaginationUtil.toMap(pageResult);
+    }
+
+    @Transactional(readOnly = true)
+    public PromotionResponse getPromotionById(UUID id) {
         Promotion promotion = promotionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã khuyến mãi với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Mã khuyến mãi", "id", id));
         return mapToResponse(promotion);
     }
 
     @Transactional
-    public PromotionDTO.PromotionResponse createPromotion(PromotionDTO.PromotionRequest request) {
+    public PromotionResponse createPromotion(PromotionRequest request) {
         String cleanCode = request.getCode() != null ? request.getCode().trim().toUpperCase() : "";
         if (cleanCode.isEmpty()) {
-            throw new IllegalArgumentException("Mã khuyến mãi không được để trống.");
+            throw new AppException(400, "Mã khuyến mãi không được để trống.");
         }
         if (promotionRepository.existsByCodeIgnoreCase(cleanCode)) {
-            throw new IllegalArgumentException("Mã khuyến mãi '" + cleanCode + "' đã tồn tại trên hệ thống.");
+            throw new AppException(400, "Mã khuyến mãi '" + cleanCode + "' đã tồn tại trên hệ thống.");
         }
 
         Promotion promotion = Promotion.builder()
@@ -70,14 +88,14 @@ public class PromotionService {
     }
 
     @Transactional
-    public PromotionDTO.PromotionResponse updatePromotion(UUID id, PromotionDTO.PromotionRequest request) {
+    public PromotionResponse updatePromotion(UUID id, PromotionRequest request) {
         Promotion promotion = promotionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã khuyến mãi với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Mã khuyến mãi", "id", id));
 
         if (request.getCode() != null) {
             String cleanCode = request.getCode().trim().toUpperCase();
             if (!cleanCode.equalsIgnoreCase(promotion.getCode()) && promotionRepository.existsByCodeIgnoreCase(cleanCode)) {
-                throw new IllegalArgumentException("Mã khuyến mãi '" + cleanCode + "' đã tồn tại.");
+                throw new AppException(400, "Mã khuyến mãi '" + cleanCode + "' đã tồn tại.");
             }
             promotion.setCode(cleanCode);
         }
@@ -101,31 +119,28 @@ public class PromotionService {
     @Transactional
     public void deletePromotion(UUID id) {
         if (!promotionRepository.existsById(id)) {
-            throw new RuntimeException("Không tìm thấy mã khuyến mãi để xóa.");
+            throw new ResourceNotFoundException("Mã khuyến mãi", "id", id);
         }
         promotionRepository.deleteById(id);
         log.info("Đã xóa mã khuyến mãi ID: {}", id);
     }
 
     @Transactional
-    public PromotionDTO.PromotionResponse toggleActive(UUID id) {
+    public PromotionResponse toggleActive(UUID id) {
         Promotion promotion = promotionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã khuyến mãi."));
+                .orElseThrow(() -> new ResourceNotFoundException("Mã khuyến mãi", "id", id));
         promotion.setIsActive(!Boolean.TRUE.equals(promotion.getIsActive()));
         Promotion updated = promotionRepository.save(promotion);
         return mapToResponse(updated);
     }
 
-    /**
-     * Validate coupon code against business constraints and calculate exact discount amount
-     */
     @Transactional(readOnly = true)
-    public PromotionDTO.ValidateCouponResponse validateAndCalculate(PromotionDTO.ValidateCouponRequest request) {
+    public ValidateCouponResponse validateAndCalculate(ValidateCouponRequest request) {
         String code = request.getCode() != null ? request.getCode().trim().toUpperCase() : "";
         BigDecimal orderTotal = request.getOrderTotal() != null ? request.getOrderTotal() : BigDecimal.ZERO;
 
         if (code.isEmpty()) {
-            return PromotionDTO.ValidateCouponResponse.builder()
+            return ValidateCouponResponse.builder()
                     .isValid(false)
                     .message("Vui lòng nhập mã giảm giá.")
                     .originalTotal(orderTotal)
@@ -136,7 +151,7 @@ public class PromotionService {
 
         var opt = promotionRepository.findByCodeIgnoreCase(code);
         if (opt.isEmpty()) {
-            return PromotionDTO.ValidateCouponResponse.builder()
+            return ValidateCouponResponse.builder()
                     .isValid(false)
                     .message("Mã giảm giá '" + code + "' không tồn tại.")
                     .code(code)
@@ -151,7 +166,7 @@ public class PromotionService {
 
         // 1. Check if active
         if (!Boolean.TRUE.equals(p.getIsActive())) {
-            return PromotionDTO.ValidateCouponResponse.builder()
+            return ValidateCouponResponse.builder()
                     .isValid(false)
                     .message("Mã giảm giá '" + code + "' hiện đang tạm ngưng áp dụng.")
                     .code(code)
@@ -163,7 +178,7 @@ public class PromotionService {
 
         // 2. Check validity dates
         if (p.getStartDate() != null && now.isBefore(p.getStartDate())) {
-            return PromotionDTO.ValidateCouponResponse.builder()
+            return ValidateCouponResponse.builder()
                     .isValid(false)
                     .message("Chương trình khuyến mãi của mã '" + code + "' chưa bắt đầu.")
                     .code(code)
@@ -174,7 +189,7 @@ public class PromotionService {
         }
 
         if (p.getEndDate() != null && now.isAfter(p.getEndDate())) {
-            return PromotionDTO.ValidateCouponResponse.builder()
+            return ValidateCouponResponse.builder()
                     .isValid(false)
                     .message("Mã giảm giá '" + code + "' đã hết hạn sử dụng.")
                     .code(code)
@@ -186,7 +201,7 @@ public class PromotionService {
 
         // 3. Check usage limit
         if (p.getUsageLimit() != null && p.getUsedCount() != null && p.getUsedCount() >= p.getUsageLimit()) {
-            return PromotionDTO.ValidateCouponResponse.builder()
+            return ValidateCouponResponse.builder()
                     .isValid(false)
                     .message("Mã giảm giá '" + code + "' đã hết lượt sử dụng.")
                     .code(code)
@@ -198,7 +213,7 @@ public class PromotionService {
 
         // 4. Check min order value
         if (p.getMinOrderValue() != null && orderTotal.compareTo(p.getMinOrderValue()) < 0) {
-            return PromotionDTO.ValidateCouponResponse.builder()
+            return ValidateCouponResponse.builder()
                     .isValid(false)
                     .message(String.format("Đơn hàng chưa đạt giá trị tối thiểu %,.0f VNĐ để áp dụng mã này.", p.getMinOrderValue()))
                     .code(code)
@@ -231,7 +246,7 @@ public class PromotionService {
             finalTotal = BigDecimal.ZERO;
         }
 
-        return PromotionDTO.ValidateCouponResponse.builder()
+        return ValidateCouponResponse.builder()
                 .isValid(true)
                 .message("Áp dụng mã giảm giá thành công!")
                 .code(p.getCode())
@@ -244,8 +259,8 @@ public class PromotionService {
                 .build();
     }
 
-    private PromotionDTO.PromotionResponse mapToResponse(Promotion p) {
-        return PromotionDTO.PromotionResponse.builder()
+    public PromotionResponse mapToResponse(Promotion p) {
+        return PromotionResponse.builder()
                 .id(p.getId())
                 .code(p.getCode())
                 .description(p.getDescription())

@@ -1,6 +1,6 @@
 package com.smartbox.backend.repository;
 
-import com.smartbox.backend.model.Product;
+import com.smartbox.backend.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,3 +13,4 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     List<Product> findAllByOrderByCreatedAtDesc();
     Optional<Product> findBySku(String sku);
 }
+

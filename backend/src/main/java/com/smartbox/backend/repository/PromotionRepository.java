@@ -1,6 +1,6 @@
 package com.smartbox.backend.repository;
 
-import com.smartbox.backend.model.Promotion;
+import com.smartbox.backend.entity.Promotion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,3 +14,4 @@ public interface PromotionRepository extends JpaRepository<Promotion, UUID> {
     Optional<Promotion> findByCodeIgnoreCase(String code);
     boolean existsByCodeIgnoreCase(String code);
 }
+

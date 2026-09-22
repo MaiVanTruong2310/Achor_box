@@ -1,6 +1,6 @@
 package com.smartbox.backend.controller;
 
-import com.smartbox.backend.dto.DashboardStatsDTO;
+import com.smartbox.backend.dto.response.DashboardStatsResponse;
 import com.smartbox.backend.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,10 +22,9 @@ public class DashboardController {
 
     @GetMapping("/stats")
     @Operation(summary = "Lấy dữ liệu thống kê tổng quan Dashboard", description = "Trả về tổng doanh thu, số đơn hàng, số thiết bị online, ticket bảo hành và biểu đồ doanh thu theo khoảng thời gian (7d, 30d, 6m). Hỗ trợ cache tự động.")
-    public ResponseEntity<DashboardStatsDTO> getDashboardStats(
+    public ResponseEntity<DashboardStatsResponse> getDashboardStats(
             @Parameter(description = "Khoảng thời gian: 7d (7 ngày), 30d (30 ngày), 6m (6 tháng)")
             @RequestParam(defaultValue = "6m", required = false) String range) {
         return ResponseEntity.ok(dashboardService.getDashboardStats(range));
     }
 }
-

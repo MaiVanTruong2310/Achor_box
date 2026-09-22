@@ -1,14 +1,19 @@
 package com.smartbox.backend.controller;
 
-import com.smartbox.backend.dto.OrderDTO;
+import com.smartbox.backend.common.AppConstants;
+import com.smartbox.backend.dto.request.OrderStatusUpdateRequest;
+import com.smartbox.backend.dto.request.TrackingUpdateRequest;
+import com.smartbox.backend.dto.response.OrderResponse;
 import com.smartbox.backend.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -21,23 +26,31 @@ public class OrderController {
 
     @GetMapping
     @Operation(summary = "Lấy danh sách tất cả đơn hàng")
-    public ResponseEntity<List<OrderDTO.OrderResponse>> getOrders() {
+    public ResponseEntity<List<OrderResponse>> getOrders() {
         return ResponseEntity.ok(orderService.getOrders());
+    }
+
+    @GetMapping("/paged")
+    @Operation(summary = "Lấy danh sách đơn hàng có phân trang dạng Map<String, Object>")
+    public ResponseEntity<Map<String, Object>> getOrdersPaged(
+            @Parameter(description = "Chỉ số trang (0-based)") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
+            @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
+        return ResponseEntity.ok(orderService.getOrdersPaged(page, size));
     }
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Cập nhật trạng thái đơn hàng")
-    public ResponseEntity<OrderDTO.OrderResponse> updateOrderStatus(
+    public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable UUID id,
-            @RequestBody OrderDTO.StatusUpdateRequest request) {
+            @RequestBody OrderStatusUpdateRequest request) {
         return ResponseEntity.ok(orderService.updateOrderStatus(id, request.getStatus()));
     }
 
     @PatchMapping("/{id}/tracking")
     @Operation(summary = "Cập nhật mã vận đơn")
-    public ResponseEntity<OrderDTO.OrderResponse> updateTrackingNumber(
+    public ResponseEntity<OrderResponse> updateTrackingNumber(
             @PathVariable UUID id,
-            @RequestBody OrderDTO.TrackingUpdateRequest request) {
+            @RequestBody TrackingUpdateRequest request) {
         return ResponseEntity.ok(orderService.updateTrackingNumber(id, request.getTrackingNumber()));
     }
 }

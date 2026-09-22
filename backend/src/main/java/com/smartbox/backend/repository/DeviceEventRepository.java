@@ -1,6 +1,6 @@
 package com.smartbox.backend.repository;
 
-import com.smartbox.backend.model.DeviceEvent;
+import com.smartbox.backend.entity.DeviceEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,3 +12,4 @@ public interface DeviceEventRepository extends JpaRepository<DeviceEvent, UUID> 
     List<DeviceEvent> findTop50ByOrderByCreatedAtDesc();
     List<DeviceEvent> findByDeviceIdOrderByCreatedAtDesc(UUID deviceId);
 }
+
