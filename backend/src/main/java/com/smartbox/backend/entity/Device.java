@@ -36,6 +36,7 @@ public class Device {
     @Column(name = "location_label")
     private String locationLabel;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::public.device_status")
     @Column(name = "status", nullable = false)
     @Builder.Default
     private String status = "offline";

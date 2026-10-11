@@ -57,7 +57,7 @@ public class DeviceService {
         return events.stream().map(e -> DeviceEventResponse.builder()
                 .id(e.getId())
                 .deviceId(e.getDeviceId())
-                .deviceSerial(e.getDevice() != null ? e.getDevice().getSerialNumber() : "BOX-2026-001")
+                .deviceSerial(e.getDevice() != null ? e.getDevice().getSerialNumber() : null)
                 .eventType(e.getEventType())
                 .payload(e.getPayload())
                 .createdAt(e.getCreatedAt())
@@ -69,25 +69,17 @@ public class DeviceService {
     public DeviceResponse updateDeviceStatus(UUID id, String status) {
         Device device = deviceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Thiết bị", "id", id));
+        if(!java.util.Set.of("online","offline","maintenance","error").contains(status))
+            throw new com.smartbox.backend.exception.BadRequestException("INVALID_DEVICE_STATUS");
         device.setStatus(status);
-        device.setLastSeenAt(OffsetDateTime.now());
+
         return mapToResponse(deviceRepository.save(device));
     }
 
     public DeviceResponse mapToResponse(Device d) {
-        int hash = Math.abs(d.getId().hashCode());
-        int idx = hash % 10;
-
-        String macAddress = String.format("24:6F:28:B4:7A:%02X", idx + 1);
-        String publicIp = "113.190.234." + (10 + idx);
-        String localIp = "192.168.1." + (100 + idx);
-        int mapX = (idx % 2 == 0) ? (35 + idx * 4) : (65 + idx * 3);
-        int mapY = (idx % 2 == 0) ? (22 + idx * 5) : (75 + idx * 2);
-
-        String ownerName = d.getOwner() != null ? d.getOwner().getFullName() : "Admin SmartBox";
-        String ownerPhone = d.getOwner() != null ? d.getOwner().getPhone() : "0901234567";
-        String productName = d.getProduct() != null ? d.getProduct().getName() : "SmartBox Pro IoT";
-
+        String ownerName = d.getOwner() != null ? d.getOwner().getFullName() : null;
+        String ownerPhone = d.getOwner() != null ? d.getOwner().getPhone() : null;
+        String productName = d.getProduct() != null ? d.getProduct().getName() : null;
         return DeviceResponse.builder()
                 .id(d.getId())
                 .productId(d.getProductId())
@@ -97,28 +89,28 @@ public class DeviceService {
                 .ownerPhone(ownerPhone)
                 .serialNumber(d.getSerialNumber())
                 .name(d.getName())
-                .locationLabel(d.getLocationLabel() != null ? d.getLocationLabel() : "Hà Nội")
+                .locationLabel(d.getLocationLabel())
                 .status(d.getStatus())
-                .batteryLevel(d.getBatteryLevel() != null ? d.getBatteryLevel() : 85)
-                .firmwareVersion(d.getFirmwareVersion() != null ? d.getFirmwareVersion() : "v1.2.0")
+                .batteryLevel(d.getBatteryLevel())
+                .firmwareVersion(d.getFirmwareVersion())
                 .lastSeenAt(d.getLastSeenAt())
                 .createdAt(d.getCreatedAt())
-                .macAddress(macAddress)
-                .chipModel("ESP32-S3 (Dual Core 240MHz)")
-                .publicIp(publicIp)
-                .localIp(localIp)
-                .geoCity(d.getLocationLabel() != null ? d.getLocationLabel() : "Hà Nội")
-                .mapX(mapX)
-                .mapY(mapY)
+                .macAddress(null)
+                .chipModel(null)
+                .publicIp(null)
+                .localIp(null)
+                .geoCity(d.getLocationLabel())
+                .mapX(null)
+                .mapY(null)
                 .lockStatus(d.getLockStatus() != null ? d.getLockStatus() : "locked")
                 .doorStatus(d.getDoorStatus() != null ? d.getDoorStatus() : "closed")
                 .weightKg(d.getWeightKg() != null ? d.getWeightKg() : 0.0)
                 .packageDetected(d.getPackageDetected() != null ? d.getPackageDetected() : false)
                 .scaleReady(d.getScaleReady() != null ? d.getScaleReady() : false)
                 .deviceState(d.getDeviceState() != null ? d.getDeviceState() : "starting")
-                .mqttTopicId(d.getMqttTopicId() != null ? d.getMqttTopicId() : ("smartbox/dev/" + d.getSerialNumber()))
-                .wifiRssi(-60)
-                .pingMs(22)
+                .mqttTopicId(d.getMqttTopicId())
+                .wifiRssi(null)
+                .pingMs(null)
                 .build();
     }
 }
