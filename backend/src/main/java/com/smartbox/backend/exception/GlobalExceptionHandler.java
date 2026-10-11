@@ -12,7 +12,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@lombok.extern.slf4j.Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(ReportParamsException.class)
+    public ResponseEntity<Map<String,Object>> reportParams(ReportParamsException ex) {
+        return ResponseEntity.badRequest().body(Map.of("code","INVALID_REPORT_PARAMS","message","Tham số báo cáo không hợp lệ","errors",ex.getErrors(),"timestamp",java.time.OffsetDateTime.now(java.time.ZoneOffset.ofHours(7))));
+    }
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadRequestException(BadRequestException ex) {
@@ -75,8 +80,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneralException(Exception ex) {
+        log.error("Unhandled request failure", ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(500, "Đã xảy ra lỗi hệ thống: " + ex.getMessage()));
+                .body(ApiResponse.error(500, "Đã xảy ra lỗi hệ thống. Vui lòng cung cấp mã traceId để tra cứu."));
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, org.springframework.http.converter.HttpMessageNotReadableException.class,
+        org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+        org.springframework.web.bind.MissingRequestHeaderException.class})
+    public ResponseEntity<ApiResponse<Object>> invalidInput(Exception ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(400,"VALIDATION_ERROR: Dữ liệu đầu vào không hợp lệ"));
+    }
+
+    @ExceptionHandler({org.springframework.dao.DataIntegrityViolationException.class,
+        org.springframework.dao.CannotAcquireLockException.class,org.springframework.orm.ObjectOptimisticLockingFailureException.class})
+    public ResponseEntity<ApiResponse<Object>> conflict(Exception ex) {
+        log.warn("Persistence conflict ({})",ex.getClass().getSimpleName());
+        return ResponseEntity.status(409).body(ApiResponse.error(409,"CONCURRENT_MODIFICATION_OR_CONSTRAINT: Dữ liệu bị xung đột"));
     }
 }

@@ -29,6 +29,15 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.apache.poi:poi-ooxml:5.4.0'
+	implementation 'com.github.librepdf:openpdf:2.0.3'
+	implementation 'com.google.auth:google-auth-library-oauth2-http:1.30.1'
+	testRuntimeOnly 'com.h2database:h2'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.testcontainers:postgresql:1.20.6'
+	testImplementation 'org.testcontainers:junit-jupiter:1.20.6'
 
 	// --- IoT & Hardware Integration ---
 	// Thư viện Eclipse Paho MQTT client để nhận dữ liệu từ ESP32
@@ -59,4 +68,10 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Docker 29+ requires API >=1.44; use a configurable client API for test containers.
+	systemProperty 'api.version', System.getenv('DOCKER_API_VERSION') ?: '1.44'
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
 }

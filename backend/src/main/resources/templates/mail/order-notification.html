@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SmartBox</title></head>
+<body style="margin:0;padding:16px;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a">
+<table role="presentation" style="width:100%;max-width:640px;margin:auto;background:white;border-radius:12px"><tr><td style="padding:24px">
+<h1 style="color:#0369a1">SmartBox</h1>
+<h2 th:text="${title}">Cập nhật đơn hàng</h2>
+<p>Xin chào <span th:text="${name ?: 'Quý khách'}">Quý khách</span>,</p>
+<p>Mã đơn hàng: <strong th:text="${orderId}"></strong></p>
+<p>Thời gian: <span th:text="${timeFormatted}"></span> (UTC+7)</p>
+<p th:text="${reason}"></p>
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+<thead><tr><th style="text-align:left">Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
+<tbody><tr th:each="item : ${items}">
+<td style="padding:12px 0;border-bottom:1px solid #e2e8f0"><span th:text="${item.name}"></span><br><small th:text="${item.variant}"></small><br><small th:text="${item.sku}"></small></td>
+<td style="text-align:center" th:text="${item.quantity}"></td>
+<td style="text-align:right" th:text="${#numbers.formatDecimal(item.price,1,'POINT',0,'COMMA') + ' ₫'}"></td>
+<td style="text-align:right" th:text="${#numbers.formatDecimal(item.subtotal,1,'POINT',0,'COMMA') + ' ₫'}"></td>
+</tr></tbody></table>
+<p>Tổng tiền: <strong th:text="${totalFormatted}"></strong></p>
+<p th:if="${orderUrl != null}"><a th:href="${orderUrl}" style="display:inline-block;padding:12px 20px;background:#0369a1;color:white;text-decoration:none;border-radius:6px">Xem đơn hàng</a></p>
+<p style="color:#64748b;font-size:12px">Thông báo tự động từ hệ thống SmartBox.</p>
+</td></tr></table></body></html>
