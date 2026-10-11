@@ -1,0 +1,4966 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/audit-logs",
+    "controller": "AuditLogController",
+    "handler": "getLogs",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/AuditLogController.java",
+    "line": 25,
+    "signature": "",
+    "return": "ResponseEntity<List<AuditLogResponse>>",
+    "body": "\n        return ResponseEntity.ok(auditLogService.getRecentLogs());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/AuditLogService.java::getRecentLogs"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "AuditLogRepository::findTop50ByOrderByCreatedAtDesc",
+      "AuditLogService::getRecentLogs",
+      "AuditLogService::mapToResponse"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/audit-logs",
+    "controller": "AuditLogController",
+    "handler": "logAction",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/AuditLogController.java",
+    "line": 39,
+    "signature": "@RequestBody AuditLogRequest request",
+    "return": "ResponseEntity<AuditLogResponse>",
+    "body": "\n        return ResponseEntity.ok(auditLogService.logAction(request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/AuditLogService.java::logAction"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "AuditLogRepository::save",
+      "AuditLogService::logAction",
+      "AuditLogService::mapToResponse"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/audit-logs/paged",
+    "controller": "AuditLogController",
+    "handler": "getLogsPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/AuditLogController.java",
+    "line": 31,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(auditLogService.getLogsPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/AuditLogService.java::getLogsPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "AuditLogRepository::findAll",
+      "AuditLogService::getLogsPaged",
+      "AuditLogService::mapToResponse"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/login",
+    "controller": "AuthController",
+    "handler": "login",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/AuthController.java",
+    "line": 25,
+    "signature": "@RequestBody @Valid LoginRequest request",
+    "return": "ResponseEntity<LoginResponse>",
+    "body": "\n        LoginResponse res = authService.login(request);\n        if (Boolean.TRUE.equals(res.getSuccess())) {\n            return ResponseEntity.ok(res);\n        }\n        return ResponseEntity.badRequest().body(res);\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/AuthService.java::login"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": true,
+    "demo": false,
+    "access": "Public",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "ACCOUNT_LOCKED"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "AUTH_PROFILE_MISSING"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Thông tin đăng nhập hoặc refresh token không hợp lệ"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "AUTH_PROVIDER_NOT_CONFIGURED"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "AUTH_PROVIDER_UNAVAILABLE"
+      }
+    ],
+    "reachableMethods": [
+      "AuthService::login",
+      "AuthService::profile",
+      "ProfileRepository::findById",
+      "RestClient::post",
+      "String::isBlank",
+      "SupabaseAuthGateway::configured",
+      "SupabaseAuthGateway::exchange",
+      "SupabaseAuthGateway::password"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/logout",
+    "controller": "AuthController",
+    "handler": "logout",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/AuthController.java",
+    "line": 41,
+    "signature": "\n            @Parameter(description = \"Bearer JWT token phiên đăng nhập (tùy chọn)\")\n            @RequestHeader(value = \"Authorization\", required = false) String authHeader",
+    "return": "ResponseEntity<ApiResponse<String>>",
+    "body": "\n        return ResponseEntity.ok(authService.logout(authHeader));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/AuthService.java::logout"
+    ],
+    "errors": [
+      [
+        "UnauthorizedException",
+        "Yêu cầu access token"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer; mọi role hợp lệ, tài khoản chưa khóa",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "INVALID_ACCESS_TOKEN"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu access token"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "AUTH_PROVIDER_NOT_CONFIGURED"
+      }
+    ],
+    "reachableMethods": [
+      "AuthService::logout",
+      "RestClient::post",
+      "String::isBlank",
+      "SupabaseAuthGateway::configured",
+      "SupabaseAuthGateway::logout"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/refresh-token",
+    "controller": "AuthController",
+    "handler": "refreshToken",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/AuthController.java",
+    "line": 35,
+    "signature": "@RequestBody @Valid RefreshTokenRequest request",
+    "return": "ResponseEntity<RefreshTokenResponse>",
+    "body": "\n        return ResponseEntity.ok(authService.refreshToken(request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/AuthService.java::refreshToken"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": true,
+    "demo": false,
+    "access": "Public",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "ACCOUNT_LOCKED"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "AUTH_PROFILE_MISSING"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Thông tin đăng nhập hoặc refresh token không hợp lệ"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "AUTH_PROVIDER_NOT_CONFIGURED"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "AUTH_PROVIDER_UNAVAILABLE"
+      }
+    ],
+    "reachableMethods": [
+      "AuthService::profile",
+      "AuthService::refreshToken",
+      "ProfileRepository::findById",
+      "RestClient::post",
+      "String::isBlank",
+      "SupabaseAuthGateway::configured",
+      "SupabaseAuthGateway::exchange",
+      "SupabaseAuthGateway::refresh"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/emails",
+    "controller": "CommerceController",
+    "handler": "emails",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 62,
+    "signature": "@RequestParam(defaultValue=\"FAILED\") String status,@RequestParam(defaultValue=\"0\") int page,@RequestParam(defaultValue=\"20\") int size",
+    "return": "Map<String,Object>",
+    "body": "return outbox.list(status,page,size);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OutboxService.java::list"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "OutboxService::list"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/emails/{id}/resend",
+    "controller": "CommerceController",
+    "handler": "resend",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 64,
+    "signature": "@PathVariable UUID id",
+    "return": "Map<String,Object>",
+    "body": "outbox.resend(id);return Map.of(\"queued\",true);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OutboxService.java::resend"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "EMAIL_NOT_RESENDABLE"
+      ]
+    ],
+    "effects": [
+      "email_outbox"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "Chỉ email FAILED; reset attempts=0 rồi PENDING, không gửi SMTP trong request.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "EMAIL_NOT_RESENDABLE"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::update",
+      "OutboxService::resend"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/refunds",
+    "controller": "CommerceController",
+    "handler": "refunds",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 58,
+    "signature": "@RequestParam(defaultValue=\"0\") int page,@RequestParam(defaultValue=\"20\") int size",
+    "return": "List<Map<String,Object>>",
+    "body": "return fulfillment.refunds(page,size);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/FulfillmentService.java::refunds"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "VALIDATION_ERROR"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "VALIDATION_ERROR"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CurrentActor::get",
+      "FulfillmentService::refunds",
+      "JdbcTemplate::queryForList"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/refunds/{id}/complete",
+    "controller": "CommerceController",
+    "handler": "refund",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 60,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody CommerceRequests.RefundCompletion request",
+    "return": "Map<String,Object>",
+    "body": "fulfillment.completeRefund(id,request.providerRef());return Map.of(\"completed\",true);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/FulfillmentService.java::completeRefund"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "REFUND_REFERENCE_MISMATCH"
+      ]
+    ],
+    "effects": [
+      "payments",
+      "refunds"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "super_admin/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "super_admin/accountant đối soát providerRef; cùng refund/ref lặp idempotent; không chuyển tiền thật. Email khách sau COMPLETED.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "REFUND_REFERENCE_MISMATCH"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "FulfillmentService::completeRefund",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OutboxService::enqueue"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders",
+    "controller": "CommerceController",
+    "handler": "create",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 20,
+    "signature": "@Valid @RequestBody CommerceRequests.CreateOrder request",
+    "return": "ResponseEntity<Map<String,Object>>",
+    "body": "return ResponseEntity.status(201).body(orders.create(request));",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::create"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "EMAIL_REQUIRED: Tài khoản cần có email nhận thông báo"
+      ]
+    ],
+    "effects": [
+      "orders"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "Bearer + chủ đơn (create/mine theo principal)",
+    "status": "IMPLEMENTED",
+    "notes": "OrderWorkflowService: shippingAddress string, email profile bắt buộc; items variantId 1–99, tối đa 100 entries; merge trùng rồi reserve kho. Không có recipientName/phone riêng, shipping fee/coupon/COD.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "EMAIL_REQUIRED: Tài khoản cần có email nhận thông báo"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_PRICE: Giá SKU phải không âm"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "PRODUCT_INACTIVE: SKU không được bán"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "QUANTITY_LIMIT_EXCEEDED: Số lượng phải từ 1 đến 99"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "OrderWorkflowService::addLocked",
+      "OrderWorkflowService::create",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::money",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::quantity",
+      "OrderWorkflowService::recalculate",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/orders/my-orders",
+    "controller": "CommerceController",
+    "handler": "mine",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 24,
+    "signature": "@RequestParam(defaultValue=\"0\") int page,@RequestParam(defaultValue=\"20\") int size",
+    "return": "List<Map<String,Object>>",
+    "body": "return orders.mine(page,size);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::mine"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "VALIDATION_ERROR"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + chủ đơn (create/mine theo principal)",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "VALIDATION_ERROR"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "OrderWorkflowService::mine"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/orders/{id}",
+    "controller": "CommerceController",
+    "handler": "detail",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 22,
+    "signature": "@PathVariable UUID id",
+    "return": "Map<String,Object>",
+    "body": "return orders.detail(id);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::detail"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Chủ đơn hoặc super_admin/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/{id}/cancel",
+    "controller": "CommerceController",
+    "handler": "cancel",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 36,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody CommerceRequests.Reason request",
+    "return": "Map<String,Object>",
+    "body": "return orders.cancel(id,request.reason());",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::cancel"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "ORDER_ALREADY_SHIPPED"
+      ],
+      [
+        "ConflictException",
+        "PAID_ORDER_REQUIRES_STAFF_CANCELLATION"
+      ]
+    ],
+    "effects": [
+      "approval_tickets",
+      "devices",
+      "payments",
+      "ticket_history"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "Chủ đơn trước paid; super_admin/support_agent trước shipment SHIPPED",
+    "status": "IMPLEMENTED",
+    "notes": "Legacy workflow 1 bị chặn; cancelled lặp trả view; customer paid/confirmed bị chặn; shipment không PREPARING bị chặn. Paid cancellation tạo refund; hoàn kho một lần.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_ALREADY_SHIPPED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "PAID_ORDER_REQUIRES_STAFF_CANCELLATION"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::cancel",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::release",
+      "OrderWorkflowService::requestRefund",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/{id}/checkout",
+    "controller": "CommerceController",
+    "handler": "checkout",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 34,
+    "signature": "@PathVariable UUID id,@RequestHeader(value=\"Idempotency-Key\",required=false) String key",
+    "return": "Map<String,Object>",
+    "body": "return payments.checkout(id,key);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PaymentService.java::checkout"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "IDEMPOTENCY_KEY_REQUIRED"
+      ],
+      [
+        "BadRequestException",
+        "INVALID_IDEMPOTENCY_KEY"
+      ],
+      [
+        "ConflictException",
+        "IDEMPOTENCY_KEY_REUSED"
+      ],
+      [
+        "ConflictException",
+        "ORDER_NOT_CHECKOUTABLE: Đơn cần sản phẩm và tổng tiền dương"
+      ],
+      [
+        "IllegalStateException",
+        "Cannot save checkout response"
+      ]
+    ],
+    "effects": [
+      "checkout_keys",
+      "orders",
+      "payments"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + chủ đơn (create/mine theo principal)",
+    "status": "IMPLEMENTED",
+    "notes": "Idempotency-Key bắt buộc <=128 ký tự, response lưu 24h; cùng key/order trả nguyên response. Order pending unexpired, items không rỗng và total>0; provider mock. Không re-checkout cancelled: tạo order mới.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "IDEMPOTENCY_KEY_REQUIRED"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_IDEMPOTENCY_KEY"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "IDEMPOTENCY_KEY_REUSED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_NOT_CHECKOUTABLE: Đơn cần sản phẩm và tổng tiền dương"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_NOT_EDITABLE: Đơn không còn cho phép sửa sản phẩm"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::readValue",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::editable",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::owned",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::time",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "PaymentService::checkout",
+      "PaymentService::readResponse",
+      "PaymentService::serialize"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/{id}/devices",
+    "controller": "CommerceController",
+    "handler": "assign",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 56,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody CommerceRequests.DeviceAssignment request",
+    "return": "Map<String,Object>",
+    "body": "fulfillment.assign(id,request);return Map.of(\"assigned\",true);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/FulfillmentService.java::assign"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "ORDER_NOT_CONFIRMED"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_ALREADY_SOLD"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_PRODUCT_MISMATCH"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_VARIANT_MISMATCH"
+      ],
+      [
+        "ConflictException",
+        "ITEM_DEVICE_LIMIT"
+      ]
+    ],
+    "effects": [
+      "devices"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "super_admin/support_agent/technician",
+    "status": "IMPLEMENTED",
+    "notes": "Order confirmed, serial chưa bán, đúng product và variant; không vượt quantity. Gắn sold_order_item_id nhưng chưa owner trước deliver.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "DEVICE_ALREADY_SOLD"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "DEVICE_PRODUCT_MISMATCH"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "DEVICE_VARIANT_MISMATCH"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ITEM_DEVICE_LIMIT"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_NOT_CONFIRMED"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "FulfillmentService::assign",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/orders/{id}/history",
+    "controller": "CommerceController",
+    "handler": "history",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 26,
+    "signature": "@PathVariable UUID id",
+    "return": "List<Map<String,Object>>",
+    "body": "return orders.history(id);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::history"
+    ],
+    "errors": [],
+    "effects": [
+      "order_status_history"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "Chủ đơn hoặc super_admin/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/{id}/items",
+    "controller": "CommerceController",
+    "handler": "add",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 28,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody CommerceRequests.Item item",
+    "return": "Map<String,Object>",
+    "body": "return orders.add(id,item.variantId(),item.quantity());",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::add"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": true,
+    "demo": false,
+    "access": "Bearer + chủ đơn (create/mine theo principal)",
+    "status": "IMPLEMENTED",
+    "notes": "Chỉ workflow_version=2, pending và chưa hết draft; cộng qty, giữ snapshot lần đầu; khóa order và SKU, guard stock.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_PRICE: Giá SKU phải không âm"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "PRODUCT_INACTIVE: SKU không được bán"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "QUANTITY_LIMIT_EXCEEDED: Số lượng phải từ 1 đến 99"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_NOT_EDITABLE: Đơn không còn cho phép sửa sản phẩm"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "OrderWorkflowService::add",
+      "OrderWorkflowService::addLocked",
+      "OrderWorkflowService::editable",
+      "OrderWorkflowService::money",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::owned",
+      "OrderWorkflowService::quantity",
+      "OrderWorkflowService::recalculate",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::time",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/orders/{id}/items/{variantId}",
+    "controller": "CommerceController",
+    "handler": "remove",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 32,
+    "signature": "@PathVariable UUID id,@PathVariable UUID variantId",
+    "return": "Map<String,Object>",
+    "body": "return orders.remove(id,variantId);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::remove"
+    ],
+    "errors": [],
+    "effects": [
+      "order_items"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + chủ đơn (create/mine theo principal)",
+    "status": "IMPLEMENTED",
+    "notes": "Chỉ pending chưa hết hạn; hoàn đúng qty đã giữ rồi xóa row và tính lại total.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_NOT_EDITABLE: Đơn không còn cho phép sửa sản phẩm"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "OrderWorkflowService::editable",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::owned",
+      "OrderWorkflowService::recalculate",
+      "OrderWorkflowService::remove",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::time",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/orders/{id}/items/{variantId}",
+    "controller": "CommerceController",
+    "handler": "quantity",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 30,
+    "signature": "@PathVariable UUID id,@PathVariable UUID variantId,@Valid @RequestBody CommerceRequests.Quantity request",
+    "return": "Map<String,Object>",
+    "body": "return orders.setQuantity(id,variantId,request.quantity());",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::setQuantity"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "PRODUCT_INACTIVE"
+      ]
+    ],
+    "effects": [
+      "order_items"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "Bearer + chủ đơn (create/mine theo principal)",
+    "status": "IMPLEMENTED",
+    "notes": "Chỉ pending chưa hết hạn; quantity là số lượng đích, không phải delta. Giảm qty trả kho, tăng qty kiểm tra active và stock.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "PRODUCT_INACTIVE"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "QUANTITY_LIMIT_EXCEEDED: Số lượng phải từ 1 đến 99"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_NOT_EDITABLE: Đơn không còn cho phép sửa sản phẩm"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "OrderWorkflowService::editable",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::owned",
+      "OrderWorkflowService::quantity",
+      "OrderWorkflowService::recalculate",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::setQuantity",
+      "OrderWorkflowService::time",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/{id}/shipment/deliver",
+    "controller": "CommerceController",
+    "handler": "deliver",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 54,
+    "signature": "@PathVariable UUID id",
+    "return": "Map<String,Object>",
+    "body": "return fulfillment.delivered(id);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/FulfillmentService.java::delivered"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "SHIPMENT_NOT_SHIPPED"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE"
+      ]
+    ],
+    "effects": [
+      "devices",
+      "shipment_history",
+      "shipments"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "PARTIAL",
+    "notes": "Shipment SHIPPED, số devices gắn order item phải bằng quantity; hoàn thành shipment và order, owner được gắn lúc này. Chưa kiểm tra lắp đặt/ACK/nghiệm thu, vì vậy PARTIAL so với nghiệp vụ mới.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "SHIPMENT_NOT_SHIPPED"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "FulfillmentService::delivered",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/{id}/shipment/ship",
+    "controller": "CommerceController",
+    "handler": "ship",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 52,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody CommerceRequests.Shipment request",
+    "return": "Map<String,Object>",
+    "body": "return fulfillment.ship(id,request);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/FulfillmentService.java::ship"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "ORDER_NOT_CONFIRMED"
+      ],
+      [
+        "ConflictException",
+        "SHIPMENT_NOT_PREPARING"
+      ]
+    ],
+    "effects": [
+      "orders",
+      "shipment_history",
+      "shipments"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "Order confirmed, shipment PREPARING; ghi carrier/tracking, SHIPPED và email. Đây là shipment cũ, không tương đương công việc delivery_installations.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_NOT_CONFIRMED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "SHIPMENT_NOT_PREPARING"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "FulfillmentService::ship",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/payments/callback",
+    "controller": "CommerceController",
+    "handler": "callback",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 38,
+    "signature": "@Valid @RequestBody CommerceRequests.Callback request",
+    "return": "Map<String,Object>",
+    "body": "return payments.callback(request);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PaymentService.java::callback"
+    ],
+    "errors": [
+      [
+        "UnauthorizedException",
+        "INVALID_SIGNATURE"
+      ],
+      [
+        "BadRequestException",
+        "INVALID_PAYMENT_RESULT"
+      ],
+      [
+        "BadRequestException",
+        "PAYMENT_ORDER_MISMATCH"
+      ],
+      [
+        "BadRequestException",
+        "AMOUNT_MISMATCH"
+      ],
+      [
+        "IllegalStateException",
+        "DEMO_FAIL_AFTER_PAID"
+      ],
+      [
+        "ConflictException",
+        "PAYMENT_ORDER_STATE_MISMATCH"
+      ]
+    ],
+    "effects": [
+      "approval_tickets",
+      "orders",
+      "payments",
+      "ticket_history"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "Public; callback cần HMAC, không cần Bearer",
+    "status": "IMPLEMENTED",
+    "notes": "HMAC-SHA256 xác minh trước mutation; khóa order→payment; amount/order match; duplicate success ACK; expired/cancelled SUCCESS tạo refund_required, không hồi sinh order. Không phải API frontend xác nhận paid.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "AMOUNT_MISMATCH"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_PAYMENT_RESULT"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "PAYMENT_ORDER_MISMATCH"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "INVALID_SIGNATURE"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "PAYMENT_ORDER_STATE_MISMATCH"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "PAYMENT_NOT_CONFIGURED"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::release",
+      "OrderWorkflowService::requestRefund",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue",
+      "PaymentService::callback",
+      "PaymentService::expireLocked",
+      "PaymentService::sign",
+      "String::getBytes",
+      "String::length"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/tickets",
+    "controller": "CommerceController",
+    "handler": "tickets",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 40,
+    "signature": "@RequestParam(defaultValue=\"0\") int page,@RequestParam(defaultValue=\"20\") int size",
+    "return": "List<Map<String,Object>>",
+    "body": "return tickets.list(page,size);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ApprovalTicketService.java::list"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "VALIDATION_ERROR"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "VALIDATION_ERROR"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "ApprovalTicketService::list",
+      "CommerceRepository::list",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/tickets/{id}",
+    "controller": "CommerceController",
+    "handler": "ticket",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 42,
+    "signature": "@PathVariable UUID id",
+    "return": "Map<String,Object>",
+    "body": "return tickets.detail(id);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ApprovalTicketService.java::detail"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Chủ đơn hoặc super_admin/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "ApprovalTicketService::detail",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/tickets/{id}/approve",
+    "controller": "CommerceController",
+    "handler": "approve",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 44,
+    "signature": "@PathVariable UUID id",
+    "return": "Map<String,Object>",
+    "body": "return tickets.act(id,\"APPROVE\",null);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ApprovalTicketService.java::act"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "TICKET_ORDER_NOT_PAID"
+      ],
+      [
+        "ConflictException",
+        "INVALID_TICKET_TRANSITION"
+      ],
+      [
+        "ConflictException",
+        "TICKET_ALREADY_REVIEWED"
+      ],
+      [
+        "BadRequestException",
+        "INVALID_TICKET_ACTION"
+      ]
+    ],
+    "effects": [
+      "approval_tickets",
+      "shipments",
+      "ticket_history"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "Ticket PENDING, order paid; update APPROVED + order confirmed + shipment PREPARING trong transaction; audit/history/outbox. Chưa phân công kỹ thuật viên.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_TICKET_ACTION"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "TICKET_REASON_REQUIRED"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_TICKET_TRANSITION"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "TICKET_ALREADY_REVIEWED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "TICKET_ORDER_NOT_PAID"
+      }
+    ],
+    "reachableMethods": [
+      "ApprovalTicketService::act",
+      "ApprovalTicketService::detail",
+      "ApprovalTicketService::requireReason",
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::release",
+      "OrderWorkflowService::requestRefund",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/tickets/{id}/reject",
+    "controller": "CommerceController",
+    "handler": "reject",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 50,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody CommerceRequests.Reason request",
+    "return": "Map<String,Object>",
+    "body": "return tickets.act(id,\"REJECT\",request.reason());",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ApprovalTicketService.java::act"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "TICKET_ORDER_NOT_PAID"
+      ],
+      [
+        "ConflictException",
+        "INVALID_TICKET_TRANSITION"
+      ],
+      [
+        "ConflictException",
+        "TICKET_ALREADY_REVIEWED"
+      ],
+      [
+        "BadRequestException",
+        "INVALID_TICKET_ACTION"
+      ]
+    ],
+    "effects": [
+      "approval_tickets",
+      "shipments",
+      "ticket_history"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "Ticket PENDING/order paid; reason bắt buộc; REJECTED, order cancelled, refund PENDING, stock restore, outbox.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_TICKET_ACTION"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "TICKET_REASON_REQUIRED"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_TICKET_TRANSITION"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "TICKET_ALREADY_REVIEWED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "TICKET_ORDER_NOT_PAID"
+      }
+    ],
+    "reachableMethods": [
+      "ApprovalTicketService::act",
+      "ApprovalTicketService::detail",
+      "ApprovalTicketService::requireReason",
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::release",
+      "OrderWorkflowService::requestRefund",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/tickets/{id}/resubmit",
+    "controller": "CommerceController",
+    "handler": "resubmit",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 48,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody CommerceRequests.Reason request",
+    "return": "Map<String,Object>",
+    "body": "return tickets.act(id,\"RESUBMIT\",request.reason());",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ApprovalTicketService.java::act"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "TICKET_ORDER_NOT_PAID"
+      ],
+      [
+        "ConflictException",
+        "INVALID_TICKET_TRANSITION"
+      ],
+      [
+        "ConflictException",
+        "TICKET_ALREADY_REVIEWED"
+      ],
+      [
+        "BadRequestException",
+        "INVALID_TICKET_ACTION"
+      ]
+    ],
+    "effects": [
+      "approval_tickets",
+      "shipments",
+      "ticket_history"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "Bearer + chủ đơn (create/mine theo principal)",
+    "status": "IMPLEMENTED",
+    "notes": "Chủ đơn, ticket RETURNED/order paid; reason bắt buộc; ticket PENDING, review_round tăng. Chỉ text reason, chưa có attachments.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_TICKET_ACTION"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "TICKET_REASON_REQUIRED"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_TICKET_TRANSITION"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "TICKET_ALREADY_REVIEWED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "TICKET_ORDER_NOT_PAID"
+      }
+    ],
+    "reachableMethods": [
+      "ApprovalTicketService::act",
+      "ApprovalTicketService::detail",
+      "ApprovalTicketService::requireReason",
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::release",
+      "OrderWorkflowService::requestRefund",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/tickets/{id}/return",
+    "controller": "CommerceController",
+    "handler": "returnTicket",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/CommerceController.java",
+    "line": 46,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody CommerceRequests.Reason request",
+    "return": "Map<String,Object>",
+    "body": "return tickets.act(id,\"RETURN\",request.reason());",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ApprovalTicketService.java::act"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "TICKET_ORDER_NOT_PAID"
+      ],
+      [
+        "ConflictException",
+        "INVALID_TICKET_TRANSITION"
+      ],
+      [
+        "ConflictException",
+        "TICKET_ALREADY_REVIEWED"
+      ],
+      [
+        "BadRequestException",
+        "INVALID_TICKET_ACTION"
+      ]
+    ],
+    "effects": [
+      "approval_tickets",
+      "shipments",
+      "ticket_history"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "Ticket PENDING/order paid; reason bắt buộc. Ticket RETURNED nhưng order vẫn paid, items bất biến.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_TICKET_ACTION"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "TICKET_REASON_REQUIRED"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_TICKET_TRANSITION"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "TICKET_ALREADY_REVIEWED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "TICKET_ORDER_NOT_PAID"
+      }
+    ],
+    "reachableMethods": [
+      "ApprovalTicketService::act",
+      "ApprovalTicketService::detail",
+      "ApprovalTicketService::requireReason",
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::release",
+      "OrderWorkflowService::requestRefund",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/dashboard",
+    "controller": "ConcurrentDashboardController",
+    "handler": "dashboard",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ConcurrentDashboardController.java",
+    "line": 14,
+    "signature": "@RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate date",
+    "return": "Map<String,Object>",
+    "body": "\n        return dashboard.dashboard(date==null?LocalDate.now(ZoneId.of(\"Asia/Ho_Chi_Minh\")):date);\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ConcurrentDashboardService.java::dashboard"
+    ],
+    "errors": [
+      [
+        "AppException",
+        "DASHBOARD_BUSY"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "DASHBOARD_BUSY"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "ConcurrentDashboardService::dashboard",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/content/articles",
+    "controller": "ContentController",
+    "handler": "getAllArticles",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 38,
+    "signature": "\n            @RequestParam(required = false) String category,\n            @RequestParam(required = false) String status",
+    "return": "ResponseEntity<List<ArticleResponse>>",
+    "body": "\n        return ResponseEntity.ok(contentService.getAllArticles(category, status));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::getAllArticles"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ArticleRepository::findAllByOrderByCreatedAtDesc",
+      "ArticleRepository::findByCategoryOrderByCreatedAtDesc",
+      "ArticleRepository::findByStatusOrderByCreatedAtDesc",
+      "ContentService::getAllArticles",
+      "ContentService::mapToArticleResponse"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/content/articles",
+    "controller": "ContentController",
+    "handler": "createArticle",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 60,
+    "signature": "@RequestBody ArticleRequest req",
+    "return": "ResponseEntity<ArticleResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.createArticle(req));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::createArticle"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ArticleRepository::existsBySlug",
+      "ArticleRepository::save",
+      "ContentService::createArticle",
+      "ContentService::generateSlug",
+      "ContentService::mapToArticleResponse"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/content/articles/paged",
+    "controller": "ContentController",
+    "handler": "getArticlesPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 46,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(contentService.getArticlesPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::getArticlesPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ArticleRepository::findAll",
+      "ContentService::getArticlesPaged",
+      "ContentService::mapToArticleResponse"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/content/articles/{id}",
+    "controller": "ContentController",
+    "handler": "deleteArticle",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 74,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        contentService.deleteArticle(id);\n        return ResponseEntity.ok(Map.of(\"success\", true, \"message\", \"Đã xóa bài viết thành công.\"));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::deleteArticle"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Bài viết"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ArticleRepository::deleteById",
+      "ArticleRepository::existsById",
+      "ContentService::deleteArticle"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/content/articles/{id}",
+    "controller": "ContentController",
+    "handler": "getArticleById",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 54,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<ArticleResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.getArticleById(id));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::getArticleById"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Bài viết"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ArticleRepository::findById",
+      "ContentService::getArticleById",
+      "ContentService::mapToArticleResponse"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/content/articles/{id}",
+    "controller": "ContentController",
+    "handler": "updateArticle",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 66,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody ArticleRequest req",
+    "return": "ResponseEntity<ArticleResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.updateArticle(id, req));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::updateArticle"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Bài viết"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ArticleRepository::findById",
+      "ArticleRepository::save",
+      "ContentService::mapToArticleResponse",
+      "ContentService::updateArticle"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/content/banners",
+    "controller": "ContentController",
+    "handler": "getAllBanners",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 84,
+    "signature": "\n            @RequestParam(required = false) String position,\n            @RequestParam(required = false) Boolean activeOnly",
+    "return": "ResponseEntity<List<BannerResponse>>",
+    "body": "\n        return ResponseEntity.ok(contentService.getAllBanners(position, activeOnly));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::getAllBanners"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "BannerRepository::findAllByOrderByDisplayOrderAscCreatedAtDesc",
+      "BannerRepository::findByIsActiveTrueOrderByDisplayOrderAsc",
+      "BannerRepository::findByPositionOrderByDisplayOrderAsc",
+      "ContentService::getAllBanners",
+      "ContentService::mapToBannerResponse"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/content/banners",
+    "controller": "ContentController",
+    "handler": "createBanner",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 92,
+    "signature": "@RequestBody BannerRequest req",
+    "return": "ResponseEntity<BannerResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.createBanner(req));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::createBanner"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "BannerRepository::save",
+      "ContentService::createBanner",
+      "ContentService::mapToBannerResponse"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/content/banners/{id}",
+    "controller": "ContentController",
+    "handler": "deleteBanner",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 112,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        contentService.deleteBanner(id);\n        return ResponseEntity.ok(Map.of(\"success\", true, \"message\", \"Đã xóa banner thành công.\"));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::deleteBanner"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Banner"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "BannerRepository::deleteById",
+      "BannerRepository::existsById",
+      "ContentService::deleteBanner"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/content/banners/{id}",
+    "controller": "ContentController",
+    "handler": "updateBanner",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 98,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody BannerRequest req",
+    "return": "ResponseEntity<BannerResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.updateBanner(id, req));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::updateBanner"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Banner"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "BannerRepository::findById",
+      "BannerRepository::save",
+      "ContentService::mapToBannerResponse",
+      "ContentService::updateBanner"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/content/banners/{id}/toggle",
+    "controller": "ContentController",
+    "handler": "toggleBannerStatus",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 106,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<BannerResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.toggleBannerStatus(id));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::toggleBannerStatus"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Banner"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "BannerRepository::findById",
+      "BannerRepository::save",
+      "ContentService::mapToBannerResponse",
+      "ContentService::toggleBannerStatus"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/content/faqs",
+    "controller": "ContentController",
+    "handler": "getAllFaqs",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 164,
+    "signature": "\n            @RequestParam(required = false) String category,\n            @RequestParam(required = false) Boolean publishedOnly",
+    "return": "ResponseEntity<List<FaqResponse>>",
+    "body": "\n        return ResponseEntity.ok(contentService.getAllFaqs(category, publishedOnly));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::getAllFaqs"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::getAllFaqs",
+      "ContentService::mapToFaqResponse",
+      "FaqRepository::findAllByOrderByDisplayOrderAscCreatedAtDesc",
+      "FaqRepository::findByCategoryOrderByDisplayOrderAsc",
+      "FaqRepository::findByIsPublishedTrueOrderByDisplayOrderAsc"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/content/faqs",
+    "controller": "ContentController",
+    "handler": "createFaq",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 172,
+    "signature": "@RequestBody FaqRequest req",
+    "return": "ResponseEntity<FaqResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.createFaq(req));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::createFaq"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::createFaq",
+      "ContentService::mapToFaqResponse",
+      "FaqRepository::save"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/content/faqs/{id}",
+    "controller": "ContentController",
+    "handler": "deleteFaq",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 192,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        contentService.deleteFaq(id);\n        return ResponseEntity.ok(Map.of(\"success\", true, \"message\", \"Đã xóa câu hỏi FAQ thành công.\"));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::deleteFaq"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "FAQ"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::deleteFaq",
+      "FaqRepository::deleteById",
+      "FaqRepository::existsById"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/content/faqs/{id}",
+    "controller": "ContentController",
+    "handler": "updateFaq",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 178,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody FaqRequest req",
+    "return": "ResponseEntity<FaqResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.updateFaq(id, req));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::updateFaq"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "FAQ"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::mapToFaqResponse",
+      "ContentService::updateFaq",
+      "FaqRepository::findById",
+      "FaqRepository::save"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/content/faqs/{id}/toggle",
+    "controller": "ContentController",
+    "handler": "toggleFaqStatus",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 186,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<FaqResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.toggleFaqStatus(id));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::toggleFaqStatus"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "FAQ"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::mapToFaqResponse",
+      "ContentService::toggleFaqStatus",
+      "FaqRepository::findById",
+      "FaqRepository::save"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/content/reviews",
+    "controller": "ContentController",
+    "handler": "getAllReviews",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 122,
+    "signature": "\n            @RequestParam(required = false) String status,\n            @RequestParam(required = false) UUID productId",
+    "return": "ResponseEntity<List<ProductReviewResponse>>",
+    "body": "\n        return ResponseEntity.ok(contentService.getAllReviews(status, productId));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::getAllReviews"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::getAllReviews",
+      "ContentService::mapToReviewResponse",
+      "ProductReviewRepository::findAllByOrderByCreatedAtDesc",
+      "ProductReviewRepository::findByProductIdOrderByCreatedAtDesc",
+      "ProductReviewRepository::findByStatusOrderByCreatedAtDesc"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/content/reviews/paged",
+    "controller": "ContentController",
+    "handler": "getReviewsPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 130,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(contentService.getReviewsPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::getReviewsPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::getReviewsPaged",
+      "ContentService::mapToReviewResponse",
+      "ProductReviewRepository::findAll"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/content/reviews/{id}",
+    "controller": "ContentController",
+    "handler": "deleteReview",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 154,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        contentService.deleteReview(id);\n        return ResponseEntity.ok(Map.of(\"success\", true, \"message\", \"Đã xóa đánh giá thành công.\"));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::deleteReview"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Đánh giá"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::deleteReview",
+      "ProductReviewRepository::deleteById",
+      "ProductReviewRepository::existsById"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/content/reviews/{id}/reply",
+    "controller": "ContentController",
+    "handler": "replyReview",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 146,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody ReviewReplyRequest req",
+    "return": "ResponseEntity<ProductReviewResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.replyReview(id, req));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::replyReview"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Đánh giá"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::mapToReviewResponse",
+      "ContentService::replyReview",
+      "ProductReviewRepository::findById",
+      "ProductReviewRepository::save"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/content/reviews/{id}/status",
+    "controller": "ContentController",
+    "handler": "updateReviewStatus",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 138,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody ReviewStatusUpdateRequest req",
+    "return": "ResponseEntity<ProductReviewResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.updateReviewStatus(id, req));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::updateReviewStatus"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Đánh giá"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ContentService::mapToReviewResponse",
+      "ContentService::updateReviewStatus",
+      "ProductReviewRepository::findById",
+      "ProductReviewRepository::save"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/content/summary",
+    "controller": "ContentController",
+    "handler": "getSummaryStats",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ContentController.java",
+    "line": 29,
+    "signature": "",
+    "return": "ResponseEntity<ContentSummaryStatsResponse>",
+    "body": "\n        return ResponseEntity.ok(contentService.getSummaryStats());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ContentService.java::getSummaryStats"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Admin-only, không dùng cho Blog/FAQ public; phần lớn DTO không @Valid, enum/body sanitation cần kiểm tra riêng. Không chạy HTML không tin cậy.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ArticleRepository::count",
+      "ArticleRepository::countByStatus",
+      "BannerRepository::count",
+      "BannerRepository::countByIsActiveTrue",
+      "ContentService::getSummaryStats",
+      "FaqRepository::count",
+      "ProductReviewRepository::count",
+      "ProductReviewRepository::countByStatus"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/dashboard/stats",
+    "controller": "DashboardController",
+    "handler": "getDashboardStats",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DashboardController.java",
+    "line": 23,
+    "signature": "\n            @Parameter(description = \"Khoảng thời gian: 7d (7 ngày), 30d (30 ngày), 6m (6 tháng)\")\n            @RequestParam(defaultValue = \"6m\", required = false) String range",
+    "return": "ResponseEntity<DashboardStatsResponse>",
+    "body": "\n        return ResponseEntity.ok(dashboardService.getDashboardStats(range));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DashboardService.java::getDashboardStats"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "INVALID_DASHBOARD_RANGE"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_DASHBOARD_RANGE"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "DashboardService::count",
+      "DashboardService::getDashboardStats",
+      "DashboardService::growth",
+      "DashboardService::orders",
+      "DashboardService::revenue",
+      "JdbcTemplate::queryForList",
+      "OrderRepository::findAll"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/devices",
+    "controller": "DeviceController",
+    "handler": "getAllDevices",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceController.java",
+    "line": 27,
+    "signature": "",
+    "return": "ResponseEntity<List<DeviceResponse>>",
+    "body": "\n        return ResponseEntity.ok(deviceService.getAllDevices());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceService.java::getAllDevices"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/technician",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "DeviceRepository::findAllByOrderByCreatedAtDesc",
+      "DeviceService::getAllDevices",
+      "DeviceService::mapToResponse"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/devices/events",
+    "controller": "DeviceController",
+    "handler": "getDeviceEvents",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceController.java",
+    "line": 41,
+    "signature": "\n            @Parameter(description = \"ID thiết bị (tùy chọn)\") @RequestParam(required = false) UUID deviceId",
+    "return": "ResponseEntity<List<DeviceEventResponse>>",
+    "body": "\n        return ResponseEntity.ok(deviceService.getDeviceEvents(deviceId));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceService.java::getDeviceEvents"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/technician",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "DeviceEventRepository::findByDeviceIdOrderByCreatedAtDesc",
+      "DeviceEventRepository::findTop50ByOrderByCreatedAtDesc",
+      "DeviceService::getDeviceEvents"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/devices/paged",
+    "controller": "DeviceController",
+    "handler": "getDevicesPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceController.java",
+    "line": 33,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(deviceService.getDevicesPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceService.java::getDevicesPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/technician",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "DeviceRepository::findAll",
+      "DeviceService::getDevicesPaged",
+      "DeviceService::mapToResponse"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/devices/{id}/status",
+    "controller": "DeviceController",
+    "handler": "updateDeviceStatus",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceController.java",
+    "line": 48,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody DeviceStatusUpdateRequest request",
+    "return": "ResponseEntity<DeviceResponse>",
+    "body": "\n        return ResponseEntity.ok(deviceService.updateDeviceStatus(id, request.getStatus()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceService.java::updateDeviceStatus"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Thiết bị"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/technician",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "DeviceRepository::findById",
+      "DeviceRepository::save",
+      "DeviceService::mapToResponse",
+      "DeviceService::updateDeviceStatus"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/devices/my-devices",
+    "controller": "DeviceWorkflowController",
+    "handler": "mine",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceWorkflowController.java",
+    "line": 13,
+    "signature": "",
+    "return": "List<Map<String,Object>>",
+    "body": "return devices.myDevices();",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceWorkflowService.java::myDevices"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + owner thiết bị",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CurrentActor::get",
+      "DeviceWorkflowService::myDevices",
+      "JdbcTemplate::queryForList"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/devices/register",
+    "controller": "DeviceWorkflowController",
+    "handler": "register",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceWorkflowController.java",
+    "line": 12,
+    "signature": "@Valid @RequestBody DeviceWorkflowService.Registration request",
+    "return": "Map<String,Object>",
+    "body": "return devices.register(request);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceWorkflowService.java::register"
+    ],
+    "errors": [],
+    "effects": [
+      "devices"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "super_admin/technician",
+    "status": "IMPLEMENTED",
+    "notes": "Chỉ nhân viên; tạo device mới từ variant thật và topic prefix cấu hình; serial/topic unique theo DB. Không đăng ký account khách.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::one",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "DeviceWorkflowService::register",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/devices/{id}/activate",
+    "controller": "DeviceWorkflowController",
+    "handler": "activate",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceWorkflowController.java",
+    "line": 14,
+    "signature": "@PathVariable UUID id",
+    "return": "Map<String,Object>",
+    "body": "return devices.activate(id);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceWorkflowService.java::activate"
+    ],
+    "errors": [
+      [
+        "ConflictException",
+        "DEVICE_SALE_NOT_LINKED"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_NOT_DELIVERED"
+      ]
+    ],
+    "effects": [
+      "devices"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + owner thiết bị",
+    "status": "IMPLEMENTED",
+    "notes": "Owner, sold_order_item_id có order completed. activated_at COALESCE nên lặp an toàn. Chưa chờ nghiệm thu installation.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "DEVICE_NOT_DELIVERED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "DEVICE_SALE_NOT_LINKED"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::one",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "DeviceWorkflowService::activate",
+      "DeviceWorkflowService::owned",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/devices/{id}/commands",
+    "controller": "DeviceWorkflowController",
+    "handler": "command",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceWorkflowController.java",
+    "line": 15,
+    "signature": "@PathVariable UUID id,@Valid @RequestBody DeviceWorkflowService.Control request",
+    "return": "Map<String,Object>",
+    "body": "return devices.command(id,request);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceWorkflowService.java::command"
+    ],
+    "errors": [
+      [
+        "AppException",
+        "MQTT_NOT_CONFIGURED"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_NOT_ACTIVATED"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_OFFLINE"
+      ],
+      [
+        "BadRequestException",
+        "WEIGHT_SENSOR_NOT_SUPPORTED"
+      ],
+      [
+        "ConflictException",
+        "COMMAND_KEY_REUSED"
+      ],
+      [
+        "AppException",
+        "DEVICE_COMMAND_RATE_LIMITED"
+      ]
+    ],
+    "effects": [
+      "device_commands"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "Bearer + owner thiết bị",
+    "status": "IMPLEMENTED",
+    "notes": "Owner; MQTT enabled, activated và online; TARE cần has_weight_sensor. Key request UUID idempotent cùng command; max20/min/device. Trả PENDING không phải đã mở khóa. GET command trả ACK/timeout.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "WEIGHT_SENSOR_NOT_SUPPORTED"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "COMMAND_KEY_REUSED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "DEVICE_NOT_ACTIVATED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "DEVICE_OFFLINE"
+      },
+      {
+        "http": 429,
+        "messagePrefix": "DEVICE_COMMAND_RATE_LIMITED"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "MQTT_NOT_CONFIGURED"
+      }
+    ],
+    "reachableMethods": [
+      "ApplicationEventPublisher::publishEvent",
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "DeviceWorkflowService::command",
+      "DeviceWorkflowService::owned",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/devices/{id}/commands/{commandId}",
+    "controller": "DeviceWorkflowController",
+    "handler": "command",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceWorkflowController.java",
+    "line": 16,
+    "signature": "@PathVariable UUID id,@PathVariable UUID commandId",
+    "return": "Map<String,Object>",
+    "body": "return devices.command(id,commandId);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceWorkflowService.java::command"
+    ],
+    "errors": [
+      [
+        "AppException",
+        "MQTT_NOT_CONFIGURED"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_NOT_ACTIVATED"
+      ],
+      [
+        "ConflictException",
+        "DEVICE_OFFLINE"
+      ],
+      [
+        "BadRequestException",
+        "WEIGHT_SENSOR_NOT_SUPPORTED"
+      ],
+      [
+        "ConflictException",
+        "COMMAND_KEY_REUSED"
+      ],
+      [
+        "AppException",
+        "DEVICE_COMMAND_RATE_LIMITED"
+      ]
+    ],
+    "effects": [
+      "device_commands"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + owner thiết bị",
+    "status": "IMPLEMENTED",
+    "notes": "Owner; MQTT enabled, activated và online; TARE cần has_weight_sensor. Key request UUID idempotent cùng command; max20/min/device. Trả PENDING không phải đã mở khóa. GET command trả ACK/timeout.",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::one",
+      "CurrentActor::get",
+      "DeviceWorkflowService::command",
+      "DeviceWorkflowService::owned",
+      "JdbcTemplate::queryForList"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/devices/{id}/packages",
+    "controller": "DeviceWorkflowController",
+    "handler": "packages",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceWorkflowController.java",
+    "line": 17,
+    "signature": "@PathVariable UUID id,@RequestParam(defaultValue=\"0\") int page,@RequestParam(defaultValue=\"20\") int size",
+    "return": "List<Map<String,Object>>",
+    "body": "return devices.packages(id,page,size);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceWorkflowService.java::packages"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + owner thiết bị",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "VALIDATION_ERROR"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CurrentActor::get",
+      "DeviceWorkflowService::owned",
+      "DeviceWorkflowService::packages",
+      "DeviceWorkflowService::page",
+      "JdbcTemplate::queryForList"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/devices/{id}/readings",
+    "controller": "DeviceWorkflowController",
+    "handler": "readings",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/DeviceWorkflowController.java",
+    "line": 18,
+    "signature": "@PathVariable UUID id,@RequestParam(defaultValue=\"0\") int page,@RequestParam(defaultValue=\"20\") int size",
+    "return": "List<Map<String,Object>>",
+    "body": "return devices.readings(id,page,size);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/DeviceWorkflowService.java::readings"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + owner thiết bị",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "VALIDATION_ERROR"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CurrentActor::get",
+      "DeviceWorkflowService::owned",
+      "DeviceWorkflowService::page",
+      "DeviceWorkflowService::readings",
+      "JdbcTemplate::queryForList"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/mock-payment/payments/{id}",
+    "controller": "MockPaymentController",
+    "handler": "detail",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/MockPaymentController.java",
+    "line": 27,
+    "signature": "@PathVariable UUID id",
+    "return": "Map<String,Object>",
+    "body": "\n        var payment=db.one(\"SELECT * FROM public.payments WHERE id=?\",id);\n        orders.owned(uuid(payment.get(\"order_id\")),actors.get(),false);\n        return payment;\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderWorkflowService.java::owned"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": true,
+    "access": "Bearer + chủ đơn; chỉ profile demo",
+    "status": "IMPLEMENTED",
+    "notes": "Chỉ profile demo; chính owner gọi mock result. detail SQL row không phải Payment result từ gateway thật.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "JdbcTemplate::queryForList",
+      "OrderWorkflowService::owned",
+      "OrderWorkflowService::uuid"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/mock-payment/payments/{id}/complete",
+    "controller": "MockPaymentController",
+    "handler": "complete",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/MockPaymentController.java",
+    "line": 35,
+    "signature": "@PathVariable UUID id,@RequestParam String result",
+    "return": "Map<String,Object>",
+    "body": "\n        if(!Set.of(\"SUCCESS\",\"FAILED\").contains(result))throw new BadRequestException(\"INVALID_PAYMENT_RESULT\");\n        var payment=detail(id);UUID order=uuid(payment.get(\"order_id\"));var amount=money(payment.get(\"amount\"));\n        return payments.callback(new CommerceRequests.Callback(id,order,amount,result,payments.sign(id,order,amount,result)));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PaymentService.java::callback",
+      "backend/src/main/java/com/smartbox/backend/service/PaymentService.java::sign"
+    ],
+    "errors": [
+      [
+        "UnauthorizedException",
+        "INVALID_SIGNATURE"
+      ],
+      [
+        "BadRequestException",
+        "INVALID_PAYMENT_RESULT"
+      ],
+      [
+        "BadRequestException",
+        "PAYMENT_ORDER_MISMATCH"
+      ],
+      [
+        "BadRequestException",
+        "AMOUNT_MISMATCH"
+      ],
+      [
+        "IllegalStateException",
+        "DEMO_FAIL_AFTER_PAID"
+      ],
+      [
+        "ConflictException",
+        "PAYMENT_ORDER_STATE_MISMATCH"
+      ],
+      [
+        "AppException",
+        "PAYMENT_NOT_CONFIGURED"
+      ]
+    ],
+    "effects": [
+      "approval_tickets",
+      "orders",
+      "payments",
+      "ticket_history"
+    ],
+    "valid": false,
+    "demo": true,
+    "access": "Bearer + chủ đơn; chỉ profile demo",
+    "status": "IMPLEMENTED",
+    "notes": "Chỉ profile demo; chính owner gọi mock result. detail SQL row không phải Payment result từ gateway thật.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "AMOUNT_MISMATCH"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_PAYMENT_RESULT"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "PAYMENT_ORDER_MISMATCH"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "INVALID_SIGNATURE"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "PAYMENT_ORDER_STATE_MISMATCH"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "PAYMENT_NOT_CONFIGURED"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::release",
+      "OrderWorkflowService::requestRefund",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue",
+      "PaymentService::callback",
+      "PaymentService::expireLocked",
+      "PaymentService::sign",
+      "String::getBytes",
+      "String::length"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/notifications",
+    "controller": "NotificationController",
+    "handler": "list",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/NotificationController.java",
+    "line": 16,
+    "signature": "@RequestParam(defaultValue=\"0\") int page,@RequestParam(defaultValue=\"20\") int size",
+    "return": "List<Map<String,Object>>",
+    "body": "return push.list(page,size);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PushNotificationService.java::list"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "VALIDATION_ERROR"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + dữ liệu principal",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "VALIDATION_ERROR"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "PushNotificationService::list"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/notifications/preferences/{event}",
+    "controller": "NotificationController",
+    "handler": "preference",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/NotificationController.java",
+    "line": 18,
+    "signature": "@PathVariable String event,@Valid @RequestBody Preference request",
+    "return": "void",
+    "body": "push.preference(event,request.enabled());",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PushNotificationService.java::preference"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "INVALID_NOTIFICATION_EVENT"
+      ]
+    ],
+    "effects": [
+      "notification_preferences"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "Bearer + dữ liệu principal",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_NOTIFICATION_EVENT"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::update",
+      "PushNotificationService::preference"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/notifications/tokens",
+    "controller": "NotificationController",
+    "handler": "register",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/NotificationController.java",
+    "line": 14,
+    "signature": "@Valid @RequestBody Token request",
+    "return": "Map<String,Object>",
+    "body": "return push.register(request.token());",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PushNotificationService.java::register"
+    ],
+    "errors": [
+      [
+        "BadRequestException",
+        "INVALID_PUSH_TOKEN"
+      ]
+    ],
+    "effects": [
+      "push_tokens"
+    ],
+    "valid": true,
+    "demo": false,
+    "access": "Bearer + dữ liệu principal",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_PUSH_TOKEN"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::one",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "PushNotificationService::register"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/notifications/tokens/{id}",
+    "controller": "NotificationController",
+    "handler": "remove",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/NotificationController.java",
+    "line": 15,
+    "signature": "@PathVariable UUID id",
+    "return": "void",
+    "body": "push.remove(id);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PushNotificationService.java::remove"
+    ],
+    "errors": [],
+    "effects": [
+      "push_tokens"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + dữ liệu principal",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::update",
+      "PushNotificationService::remove"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/notifications/{id}/read",
+    "controller": "NotificationController",
+    "handler": "read",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/NotificationController.java",
+    "line": 17,
+    "signature": "@PathVariable UUID id",
+    "return": "void",
+    "body": "push.read(id);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PushNotificationService.java::read"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Thông báo"
+      ]
+    ],
+    "effects": [
+      "notifications"
+    ],
+    "valid": false,
+    "demo": false,
+    "access": "Bearer + dữ liệu principal",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::update",
+      "PushNotificationService::read"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/orders",
+    "controller": "OrderController",
+    "handler": "getOrders",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/OrderController.java",
+    "line": 27,
+    "signature": "",
+    "return": "ResponseEntity<List<OrderResponse>>",
+    "body": "\n        return ResponseEntity.ok(orderService.getOrders());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderService.java::getOrders"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "OrderItemRepository::findByOrderId",
+      "OrderRepository::findAllByOrderByCreatedAtDesc",
+      "OrderService::getOrders",
+      "OrderService::mapToResponse",
+      "PaymentRepository::findByOrderId"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/orders/paged",
+    "controller": "OrderController",
+    "handler": "getOrdersPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/OrderController.java",
+    "line": 33,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(orderService.getOrdersPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderService.java::getOrdersPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "OrderItemRepository::findByOrderId",
+      "OrderRepository::findAll",
+      "OrderService::getOrdersPaged",
+      "OrderService::mapToResponse",
+      "PaymentRepository::findByOrderId"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/orders/{id}/status",
+    "controller": "OrderController",
+    "handler": "updateOrderStatus",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/OrderController.java",
+    "line": 41,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody OrderStatusUpdateRequest request",
+    "return": "ResponseEntity<OrderResponse>",
+    "body": "\n        return ResponseEntity.ok(orderService.updateOrderStatus(id, request.getStatus()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderService.java::updateOrderStatus"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INSUFFICIENT_STOCK: Không đủ tồn kho cho SKU "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "INVALID_ORDER_TRANSITION: "
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "ORDER_ALREADY_SHIPPED"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "PAID_ORDER_REQUIRES_STAFF_CANCELLATION"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::audit",
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "ObjectMapper::writeValueAsString",
+      "OrderItemRepository::findByOrderId",
+      "OrderRepository::findById",
+      "OrderService::mapToResponse",
+      "OrderService::updateOrderStatus",
+      "OrderStateMachine::requireTransition",
+      "OrderWorkflowService::cancel",
+      "OrderWorkflowService::detail",
+      "OrderWorkflowService::history",
+      "OrderWorkflowService::moveStock",
+      "OrderWorkflowService::now",
+      "OrderWorkflowService::release",
+      "OrderWorkflowService::requestRefund",
+      "OrderWorkflowService::requireNewWorkflow",
+      "OrderWorkflowService::transition",
+      "OrderWorkflowService::uuid",
+      "OrderWorkflowService::view",
+      "OutboxService::enqueue",
+      "PaymentRepository::findByOrderId"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/orders/{id}/tracking",
+    "controller": "OrderController",
+    "handler": "updateTrackingNumber",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/OrderController.java",
+    "line": 49,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody TrackingUpdateRequest request",
+    "return": "ResponseEntity<OrderResponse>",
+    "body": "\n        return ResponseEntity.ok(orderService.updateTrackingNumber(id, request.getTrackingNumber()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/OrderService.java::updateTrackingNumber"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_TRACKING_NUMBER"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "LEGACY_ORDER_REVIEW_REQUIRED: Đơn cũ chưa xác minh giữ kho/thanh toán"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "SHIPMENT_ALREADY_DELIVERED"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::one",
+      "CommerceRepository::order",
+      "CommerceRepository::update",
+      "CurrentActor::get",
+      "FulfillmentService::tracking",
+      "JdbcTemplate::queryForList",
+      "JdbcTemplate::update",
+      "OrderItemRepository::findByOrderId",
+      "OrderRepository::findById",
+      "OrderService::mapToResponse",
+      "OrderService::updateTrackingNumber",
+      "OrderWorkflowService::requireNewWorkflow",
+      "PaymentRepository::findByOrderId"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/products",
+    "controller": "ProductController",
+    "handler": "getAllProducts",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 34,
+    "signature": "",
+    "return": "ResponseEntity<List<ProductResponse>>",
+    "body": "\n        return ResponseEntity.ok(productService.getAllProducts());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ProductService.java::getAllProducts"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Public",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProductRepository::findAllByOrderByCreatedAtDesc",
+      "ProductService::getAllProducts",
+      "ProductService::mapToResponse"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/products",
+    "controller": "ProductController",
+    "handler": "createProduct",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 54,
+    "signature": "@RequestBody ProductRequest request",
+    "return": "ResponseEntity<ProductResponse>",
+    "body": "\n        return ResponseEntity.ok(productService.createProduct(request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ProductService.java::createProduct"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProductRepository::save",
+      "ProductService::createProduct",
+      "ProductService::mapToResponse",
+      "ProductService::validateVariant"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/products/categories",
+    "controller": "ProductController",
+    "handler": "getCategories",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 48,
+    "signature": "",
+    "return": "ResponseEntity<List<ProductCategory>>",
+    "body": "\n        return ResponseEntity.ok(productService.getAllCategories());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ProductService.java::getAllCategories"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Public",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProductCategoryRepository::findAllByOrderByNameAsc",
+      "ProductService::getAllCategories"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/products/paged",
+    "controller": "ProductController",
+    "handler": "getProductsPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 40,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(productService.getProductsPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ProductService.java::getProductsPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProductRepository::findAll",
+      "ProductService::getProductsPaged",
+      "ProductService::mapToResponse"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/products/{id}",
+    "controller": "ProductController",
+    "handler": "deleteProduct",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 68,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<Void>",
+    "body": "\n        productService.deleteProduct(id);\n        return ResponseEntity.noContent().build();\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ProductService.java::deleteProduct"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Sản phẩm"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProductRepository::existsById",
+      "ProductRepository::findLockedById",
+      "ProductRepository::save",
+      "ProductService::deleteProduct"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/products/{id}",
+    "controller": "ProductController",
+    "handler": "updateProduct",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 60,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody ProductRequest request",
+    "return": "ResponseEntity<ProductResponse>",
+    "body": "\n        return ResponseEntity.ok(productService.updateProduct(id, request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ProductService.java::updateProduct"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Sản phẩm"
+      ],
+      [
+        "ResourceNotFoundException",
+        "Biến thể"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProductRepository::findLockedById",
+      "ProductRepository::save",
+      "ProductService::mapToResponse",
+      "ProductService::updateProduct",
+      "ProductService::validateVariant"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/products/{id}/stock",
+    "controller": "ProductController",
+    "handler": "adjustStock",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 75,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody StockAdjustRequest request",
+    "return": "ResponseEntity<ProductResponse>",
+    "body": "\n        return ResponseEntity.ok(productService.adjustStock(id, request.getDelta() != null ? request.getDelta() : 0));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ProductService.java::adjustStock"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Sản phẩm"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProductRepository::findLockedById",
+      "ProductRepository::save",
+      "ProductService::adjustStock",
+      "ProductService::mapToResponse"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/products/{id}/variants",
+    "controller": "ProductController",
+    "handler": "getProductVariants",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 83,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<List<com.smartbox.backend.dto.response.ProductVariantResponse>>",
+    "body": "\n        return ResponseEntity.ok(productService.getVariantsByProductId(id));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/ProductService.java::getVariantsByProductId"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Sản phẩm"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "Public",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProductRepository::findById",
+      "ProductService::getVariantsByProductId"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/products/{id}/variants/{variantId}/stock",
+    "controller": "ProductController",
+    "handler": "adjustVariant",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/ProductController.java",
+    "line": 29,
+    "signature": "@PathVariable UUID id,@PathVariable UUID variantId,@RequestBody StockAdjustRequest request",
+    "return": "Map<String,Object>",
+    "body": "\n        return variantInventory.adjust(id,variantId,request.getDelta());\n    ",
+    "calls": [],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "Public list vẫn có thể chứa inactive; lọc isActive/variant.isActive. ProductResponse chưa expose hasWeightSensor. SKU stock dùng variant, không product.stockQuantity; update cần ID variant cũ, delete soft deactivate.",
+    "helperErrors": [],
+    "reachableMethods": []
+  },
+  {
+    "method": "GET",
+    "path": "/api/promotions",
+    "controller": "PromotionController",
+    "handler": "getAllPromotions",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/PromotionController.java",
+    "line": 28,
+    "signature": "",
+    "return": "ResponseEntity<List<PromotionResponse>>",
+    "body": "\n        return ResponseEntity.ok(promotionService.getAllPromotions());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PromotionService.java::getAllPromotions"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "CRUD/validate hiện có; customer bị RBAC chặn cả POST validate; checkout không sử dụng coupon. Date parsing legacy có fallback, không coi là validation chặt.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "PromotionRepository::findAllByOrderByCreatedAtDesc",
+      "PromotionService::getAllPromotions",
+      "PromotionService::mapToResponse"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/promotions",
+    "controller": "PromotionController",
+    "handler": "createPromotion",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/PromotionController.java",
+    "line": 48,
+    "signature": "\n            @RequestBody PromotionRequest request",
+    "return": "ResponseEntity<PromotionResponse>",
+    "body": "\n        return ResponseEntity.ok(promotionService.createPromotion(request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PromotionService.java::createPromotion"
+    ],
+    "errors": [
+      [
+        "AppException",
+        "Mã khuyến mãi không được để trống."
+      ],
+      [
+        "AppException",
+        "Mã khuyến mãi '"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "CRUD/validate hiện có; customer bị RBAC chặn cả POST validate; checkout không sử dụng coupon. Date parsing legacy có fallback, không coi là validation chặt.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "Mã khuyến mãi '"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "Mã khuyến mãi không được để trống."
+      }
+    ],
+    "reachableMethods": [
+      "PromotionRepository::existsByCodeIgnoreCase",
+      "PromotionRepository::save",
+      "PromotionService::createPromotion",
+      "PromotionService::mapToResponse",
+      "PromotionService::parseDate"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/promotions/paged",
+    "controller": "PromotionController",
+    "handler": "getPromotionsPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/PromotionController.java",
+    "line": 34,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(promotionService.getPromotionsPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PromotionService.java::getPromotionsPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "CRUD/validate hiện có; customer bị RBAC chặn cả POST validate; checkout không sử dụng coupon. Date parsing legacy có fallback, không coi là validation chặt.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "PromotionRepository::findAll",
+      "PromotionService::getPromotionsPaged",
+      "PromotionService::mapToResponse"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/promotions/validate",
+    "controller": "PromotionController",
+    "handler": "validateAndCalculate",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/PromotionController.java",
+    "line": 76,
+    "signature": "\n            @RequestBody ValidateCouponRequest request",
+    "return": "ResponseEntity<ValidateCouponResponse>",
+    "body": "\n        return ResponseEntity.ok(promotionService.validateAndCalculate(request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PromotionService.java::validateAndCalculate"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "CRUD/validate hiện có; customer bị RBAC chặn cả POST validate; checkout không sử dụng coupon. Date parsing legacy có fallback, không coi là validation chặt.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "PromotionRepository::findByCodeIgnoreCase",
+      "PromotionService::validateAndCalculate"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/promotions/{id}",
+    "controller": "PromotionController",
+    "handler": "deletePromotion",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/PromotionController.java",
+    "line": 63,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<Void>",
+    "body": "\n        promotionService.deletePromotion(id);\n        return ResponseEntity.noContent().build();\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PromotionService.java::deletePromotion"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Mã khuyến mãi"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "CRUD/validate hiện có; customer bị RBAC chặn cả POST validate; checkout không sử dụng coupon. Date parsing legacy có fallback, không coi là validation chặt.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "PromotionRepository::deleteById",
+      "PromotionRepository::existsById",
+      "PromotionService::deletePromotion"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/promotions/{id}",
+    "controller": "PromotionController",
+    "handler": "getPromotionById",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/PromotionController.java",
+    "line": 42,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<PromotionResponse>",
+    "body": "\n        return ResponseEntity.ok(promotionService.getPromotionById(id));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PromotionService.java::getPromotionById"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Mã khuyến mãi"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager/support_agent/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "CRUD/validate hiện có; customer bị RBAC chặn cả POST validate; checkout không sử dụng coupon. Date parsing legacy có fallback, không coi là validation chặt.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "PromotionRepository::findById",
+      "PromotionService::getPromotionById",
+      "PromotionService::mapToResponse"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/promotions/{id}",
+    "controller": "PromotionController",
+    "handler": "updatePromotion",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/PromotionController.java",
+    "line": 55,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody PromotionRequest request",
+    "return": "ResponseEntity<PromotionResponse>",
+    "body": "\n        return ResponseEntity.ok(promotionService.updatePromotion(id, request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PromotionService.java::updatePromotion"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Mã khuyến mãi"
+      ],
+      [
+        "AppException",
+        "Mã khuyến mãi '"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "CRUD/validate hiện có; customer bị RBAC chặn cả POST validate; checkout không sử dụng coupon. Date parsing legacy có fallback, không coi là validation chặt.",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "Mã khuyến mãi '"
+      }
+    ],
+    "reachableMethods": [
+      "PromotionRepository::existsByCodeIgnoreCase",
+      "PromotionRepository::findById",
+      "PromotionRepository::save",
+      "PromotionService::mapToResponse",
+      "PromotionService::parseDate",
+      "PromotionService::updatePromotion"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/promotions/{id}/toggle",
+    "controller": "PromotionController",
+    "handler": "toggleActive",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/PromotionController.java",
+    "line": 70,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<PromotionResponse>",
+    "body": "\n        return ResponseEntity.ok(promotionService.toggleActive(id));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/PromotionService.java::toggleActive"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Mã khuyến mãi"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/product_manager",
+    "status": "IMPLEMENTED",
+    "notes": "CRUD/validate hiện có; customer bị RBAC chặn cả POST validate; checkout không sử dụng coupon. Date parsing legacy có fallback, không coi là validation chặt.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "PromotionRepository::findById",
+      "PromotionRepository::save",
+      "PromotionService::mapToResponse",
+      "PromotionService::toggleActive"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/reports/{code}",
+    "controller": "RevenueReportController",
+    "handler": "definition",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/RevenueReportController.java",
+    "line": 18,
+    "signature": "@PathVariable String code",
+    "return": "Map<String,Object>",
+    "body": "return reports.definition(code);",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/RevenueReportService.java::definition"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Báo cáo"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "RevenueReportService::definition"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/reports/{code}/export",
+    "controller": "RevenueReportController",
+    "handler": "export",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/RevenueReportController.java",
+    "line": 19,
+    "signature": "@PathVariable String code,@Valid @RequestBody Export request",
+    "return": "ResponseEntity<byte[]>",
+    "body": "\n        reports.definition(code);var report=reports.data(request.params());\n        String extension=\"PDF\".equals(request.format())?\"pdf\":\"xlsx\";\n        String filename=code+\"_\"+report.from().format(DateTimeFormatter.BASIC_ISO_DATE)+\"_\"+report.to().format(DateTimeFormatter.BASIC_ISO_DATE)+\".\"+extension;\n        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,\"attachment; filename=\\\"\"+filename+\"\\\"\")\n            .contentType(MediaType.parseMediaType(\"PDF\".equals(request.format())?\"application/pdf\":\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"))\n            .body(reports.export(report,request.format()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/RevenueReportService.java::definition",
+      "backend/src/main/java/com/smartbox/backend/service/RevenueReportService.java::data",
+      "backend/src/main/java/com/smartbox/backend/service/RevenueReportService.java::export"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Báo cáo"
+      ],
+      [
+        "IllegalStateException",
+        "INVALID_REPORT_TEMPLATE"
+      ],
+      [
+        "BadRequestException",
+        "INVALID_REPORT_FORMAT"
+      ]
+    ],
+    "effects": [],
+    "valid": true,
+    "demo": false,
+    "access": "super_admin/accountant",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_REPORT_FORMAT"
+      },
+      {
+        "http": 401,
+        "messagePrefix": "Yêu cầu đăng nhập"
+      },
+      {
+        "http": 503,
+        "messagePrefix": "REPORT_FONT_NOT_CONFIGURED"
+      }
+    ],
+    "reachableMethods": [
+      "CommerceRepository::list",
+      "CommerceRepository::one",
+      "CurrentActor::get",
+      "JdbcTemplate::queryForList",
+      "NamedParameterJdbcTemplate::queryForList",
+      "RevenueReportService::data",
+      "RevenueReportService::definition",
+      "RevenueReportService::error",
+      "RevenueReportService::export",
+      "RevenueReportService::pdf",
+      "RevenueReportService::xlsx",
+      "String::isBlank"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/settings",
+    "controller": "SettingsController",
+    "handler": "getSettings",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/SettingsController.java",
+    "line": 25,
+    "signature": "",
+    "return": "ResponseEntity<SystemSettingsResponse>",
+    "body": "\n        return ResponseEntity.ok(settingsService.getSettings());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/SettingsService.java::getSettings"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin",
+    "status": "IMPLEMENTED",
+    "notes": "Template DB legacy không nối Thymeleaf outbox. test-send có thể success=true trong simulation: phải xét isRealSent. Không có CRUD shipping/payment/category ở controller này.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "MessageTemplateRepository::findAll",
+      "PaymentMethodRepository::findAll",
+      "SettingsService::getSettings",
+      "ShippingMethodRepository::findAll"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/settings/templates",
+    "controller": "SettingsController",
+    "handler": "getAllTemplates",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/SettingsController.java",
+    "line": 31,
+    "signature": "",
+    "return": "ResponseEntity<List<MessageTemplate>>",
+    "body": "\n        return ResponseEntity.ok(settingsService.getAllTemplates());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/SettingsService.java::getAllTemplates"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin",
+    "status": "IMPLEMENTED",
+    "notes": "Template DB legacy không nối Thymeleaf outbox. test-send có thể success=true trong simulation: phải xét isRealSent. Không có CRUD shipping/payment/category ở controller này.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "MessageTemplateRepository::findAll",
+      "SettingsService::getAllTemplates"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/settings/templates",
+    "controller": "SettingsController",
+    "handler": "saveTemplate",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/SettingsController.java",
+    "line": 43,
+    "signature": "@RequestBody TemplateUpdateRequest request",
+    "return": "ResponseEntity<MessageTemplate>",
+    "body": "\n        return ResponseEntity.ok(settingsService.saveTemplate(request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/SettingsService.java::saveTemplate"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin",
+    "status": "IMPLEMENTED",
+    "notes": "Template DB legacy không nối Thymeleaf outbox. test-send có thể success=true trong simulation: phải xét isRealSent. Không có CRUD shipping/payment/category ở controller này.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "MessageTemplateRepository::findByCode",
+      "MessageTemplateRepository::save",
+      "SettingsService::saveTemplate"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/settings/templates/{code}",
+    "controller": "SettingsController",
+    "handler": "getTemplateByCode",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/SettingsController.java",
+    "line": 37,
+    "signature": "@PathVariable String code",
+    "return": "ResponseEntity<MessageTemplate>",
+    "body": "\n        return ResponseEntity.ok(settingsService.getTemplateByCode(code));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/SettingsService.java::getTemplateByCode"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Mẫu thông báo"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin",
+    "status": "IMPLEMENTED",
+    "notes": "Template DB legacy không nối Thymeleaf outbox. test-send có thể success=true trong simulation: phải xét isRealSent. Không có CRUD shipping/payment/category ở controller này.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "MessageTemplateRepository::findByCode",
+      "SettingsService::getTemplateByCode"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/settings/templates/{code}/reset-default",
+    "controller": "SettingsController",
+    "handler": "resetTemplateToDefault",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/SettingsController.java",
+    "line": 49,
+    "signature": "@PathVariable String code",
+    "return": "ResponseEntity<MessageTemplate>",
+    "body": "\n        return ResponseEntity.ok(settingsService.resetToDefault(code));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/SettingsService.java::resetToDefault"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Mẫu thông báo"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin",
+    "status": "IMPLEMENTED",
+    "notes": "Template DB legacy không nối Thymeleaf outbox. test-send có thể success=true trong simulation: phải xét isRealSent. Không có CRUD shipping/payment/category ở controller này.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "MessageTemplateRepository::findByCode",
+      "MessageTemplateRepository::save",
+      "SettingsService::resetToDefault"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/settings/templates/{code}/test-send",
+    "controller": "SettingsController",
+    "handler": "testSendTemplate",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/SettingsController.java",
+    "line": 55,
+    "signature": "\n            @PathVariable String code,\n            @RequestBody TestSendTemplateRequest request",
+    "return": "ResponseEntity<TestSendResponse>",
+    "body": "\n        request.setTemplateCode(code);\n        return ResponseEntity.ok(settingsService.testSendTemplate(request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/SettingsService.java::testSendTemplate"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin",
+    "status": "PARTIAL",
+    "notes": "Template DB legacy không nối Thymeleaf outbox. test-send có thể success=true trong simulation: phải xét isRealSent. Không có CRUD shipping/payment/category ở controller này.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "EmailService::sendHtmlEmail",
+      "JavaMailSender::createMimeMessage",
+      "JavaMailSender::send",
+      "MessageTemplateRepository::findByCode",
+      "SettingsService::testSendTemplate",
+      "String::trim"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/users",
+    "controller": "UserController",
+    "handler": "getAllUsers",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/UserController.java",
+    "line": 33,
+    "signature": "",
+    "return": "ResponseEntity<List<UserProfileResponse>>",
+    "body": "\n        return ResponseEntity.ok(userService.getAllUsers());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/UserService.java::getAllUsers"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent; support chỉ khóa customer",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProfileRepository::findAllByOrderByCreatedAtDesc",
+      "UserService::getAllUsers",
+      "UserService::mapToResponse"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/users/paged",
+    "controller": "UserController",
+    "handler": "getUsersPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/UserController.java",
+    "line": 39,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(userService.getUsersPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/UserService.java::getUsersPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent; support chỉ khóa customer",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "ProfileRepository::findAll",
+      "UserService::getUsersPaged",
+      "UserService::mapToResponse"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/users/staff",
+    "controller": "UserController",
+    "handler": "createStaffUser",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/UserController.java",
+    "line": 69,
+    "signature": "@RequestBody @Valid CreateStaffRequest request",
+    "return": "ResponseEntity<UserProfileResponse>",
+    "body": "\n        return ResponseEntity.ok(userService.createStaffUser(request));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/UserService.java::createStaffUser"
+    ],
+    "errors": [
+      [
+        "AppException",
+        "INVALID_STAFF_ROLE"
+      ],
+      [
+        "AppException",
+        "INITIAL_PASSWORD_REQUIRED: Mật khẩu phải dài 12–128 ký tự"
+      ],
+      [
+        "AppException",
+        "EMAIL_ALREADY_EXISTS"
+      ]
+    ],
+    "effects": [],
+    "valid": true,
+    "demo": false,
+    "access": "super_admin",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INITIAL_PASSWORD_REQUIRED: Mật khẩu phải dài 12–128 ký tự"
+      },
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_STAFF_ROLE"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "EMAIL_ALREADY_EXISTS"
+      }
+    ],
+    "reachableMethods": [
+      "ProfileRepository::existsByEmail",
+      "ProfileRepository::findById",
+      "ProfileRepository::saveAndFlush",
+      "UserService::afterCompletion",
+      "UserService::createStaffUser",
+      "UserService::mapToResponse"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/users/{id}/details",
+    "controller": "UserController",
+    "handler": "getUser360Details",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/UserController.java",
+    "line": 47,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<Customer360Response>",
+    "body": "\n        return ResponseEntity.ok(userService.getUser360Details(id));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/UserService.java::getUser360Details"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Người dùng"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent; support chỉ khóa customer",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [],
+    "reachableMethods": [
+      "DeviceRepository::findByOwnerIdOrderByCreatedAtDesc",
+      "DeviceService::getDevicesByOwnerId",
+      "DeviceService::mapToResponse",
+      "OrderItemRepository::findByOrderId",
+      "OrderRepository::findByUserIdOrderByCreatedAtDesc",
+      "OrderService::getOrdersByUserId",
+      "OrderService::mapToResponse",
+      "PaymentRepository::findByOrderId",
+      "ProfileRepository::findById",
+      "UserService::getUser360Details",
+      "UserService::mapToResponse",
+      "WarrantyClaimRepository::findAllByOrderByCreatedAtDesc",
+      "WarrantyService::getClaimsByDeviceIds",
+      "WarrantyService::mapToResponse"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/users/{id}/role",
+    "controller": "UserController",
+    "handler": "updateRole",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/UserController.java",
+    "line": 61,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody RoleUpdateRequest request",
+    "return": "ResponseEntity<UserProfileResponse>",
+    "body": "\n        return ResponseEntity.ok(userService.updateRole(id, request.getRole()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/UserService.java::updateRole"
+    ],
+    "errors": [
+      [
+        "AppException",
+        "INVALID_ROLE"
+      ],
+      [
+        "AppException",
+        "CANNOT_CHANGE_OWN_ROLE"
+      ],
+      [
+        "ResourceNotFoundException",
+        "Người dùng"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "INVALID_ROLE"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "CANNOT_CHANGE_OWN_ROLE"
+      }
+    ],
+    "reachableMethods": [
+      "ProfileRepository::findById",
+      "ProfileRepository::save",
+      "UserService::mapToResponse",
+      "UserService::updateRole"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/users/{id}/send-reset-otp",
+    "controller": "UserController",
+    "handler": "sendResetOtp",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/UserController.java",
+    "line": 76,
+    "signature": "@PathVariable UUID id",
+    "return": "ResponseEntity<SendOtpResponse>",
+    "body": "\n        return ResponseEntity.ok(userService.sendResetPasswordOtp(id));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/UserService.java::sendResetPasswordOtp"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Người dùng"
+      ],
+      [
+        "AppException",
+        "EMAIL_REQUIRED"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent; support chỉ khóa customer",
+    "status": "PARTIAL",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "EMAIL_REQUIRED"
+      }
+    ],
+    "reachableMethods": [
+      "ProfileRepository::findById",
+      "UserService::sendResetPasswordOtp"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/users/{id}/toggle-lock",
+    "controller": "UserController",
+    "handler": "toggleLock",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/UserController.java",
+    "line": 53,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody LockUpdateRequest request",
+    "return": "ResponseEntity<UserProfileResponse>",
+    "body": "\n        return ResponseEntity.ok(userService.toggleLock(id, request.getIsLocked(), request.getReason()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/UserService.java::toggleLock"
+    ],
+    "errors": [
+      [
+        "AppException",
+        "LOCK_STATE_REQUIRED"
+      ],
+      [
+        "AppException",
+        "CANNOT_LOCK_OWN_ACCOUNT"
+      ],
+      [
+        "ResourceNotFoundException",
+        "Người dùng"
+      ],
+      [
+        "AppException",
+        "SUPPORT_CAN_ONLY_LOCK_CUSTOMERS"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent; support chỉ khóa customer",
+    "status": "IMPLEMENTED",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 400,
+        "messagePrefix": "LOCK_STATE_REQUIRED"
+      },
+      {
+        "http": 403,
+        "messagePrefix": "SUPPORT_CAN_ONLY_LOCK_CUSTOMERS"
+      },
+      {
+        "http": 409,
+        "messagePrefix": "CANNOT_LOCK_OWN_ACCOUNT"
+      }
+    ],
+    "reachableMethods": [
+      "ProfileRepository::findById",
+      "ProfileRepository::save",
+      "UserService::mapToResponse",
+      "UserService::toggleLock"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/users/{id}/verify-reset-password",
+    "controller": "UserController",
+    "handler": "verifyResetPassword",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/UserController.java",
+    "line": 82,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody VerifyResetPasswordRequest request",
+    "return": "ResponseEntity<ResetPasswordResponse>",
+    "body": "\n        return ResponseEntity.ok(userService.verifyOtpAndResetPassword(id, request.getOtp(), request.getNewPassword()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/UserService.java::verifyOtpAndResetPassword"
+    ],
+    "errors": [
+      [
+        "AppException",
+        "AUTH_PROVIDER_RECOVERY_REQUIRED: Chưa có tích hợp reset hotline an toàn; không báo thành công khi mật khẩu chưa đổi"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent; support chỉ khóa customer",
+    "status": "PARTIAL",
+    "notes": "",
+    "helperErrors": [
+      {
+        "http": 503,
+        "messagePrefix": "AUTH_PROVIDER_RECOVERY_REQUIRED: Chưa có tích hợp reset hotline an toàn; không báo thành công khi mật khẩu chưa đổi"
+      }
+    ],
+    "reachableMethods": [
+      "UserService::verifyOtpAndResetPassword"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/warranties/claims",
+    "controller": "WarrantyController",
+    "handler": "getClaims",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/WarrantyController.java",
+    "line": 36,
+    "signature": "",
+    "return": "ResponseEntity<List<ClaimResponse>>",
+    "body": "\n        return ResponseEntity.ok(warrantyService.getClaims());\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/WarrantyService.java::getClaims"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent/technician; mutation technician chỉ claim được giao",
+    "status": "IMPLEMENTED",
+    "notes": "Staff-only; lookup không phải public API. Technician mutation chỉ claim được giao; chưa có customer create claim/warranty issuance khi bán.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "WarrantyClaimRepository::findAllByOrderByCreatedAtDesc",
+      "WarrantyService::getClaims",
+      "WarrantyService::mapToResponse"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/warranties/claims/paged",
+    "controller": "WarrantyController",
+    "handler": "getClaimsPaged",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/WarrantyController.java",
+    "line": 42,
+    "signature": "\n            @Parameter(description = \"Chỉ số trang (0-based)\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,\n            @Parameter(description = \"Số lượng bản ghi mỗi trang\") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size",
+    "return": "ResponseEntity<Map<String, Object>>",
+    "body": "\n        return ResponseEntity.ok(warrantyService.getClaimsPaged(page, size));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/WarrantyService.java::getClaimsPaged"
+    ],
+    "errors": [],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent/technician; mutation technician chỉ claim được giao",
+    "status": "IMPLEMENTED",
+    "notes": "Staff-only; lookup không phải public API. Technician mutation chỉ claim được giao; chưa có customer create claim/warranty issuance khi bán.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "WarrantyClaimRepository::findAll",
+      "WarrantyService::getClaimsPaged",
+      "WarrantyService::mapToResponse"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/warranties/claims/{id}/assign",
+    "controller": "WarrantyController",
+    "handler": "assignTechnician",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/WarrantyController.java",
+    "line": 50,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody AssignTechnicianRequest request",
+    "return": "ResponseEntity<ClaimResponse>",
+    "body": "\n        return ResponseEntity.ok(warrantyService.assignTechnician(id, request.getTechnicianId()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/WarrantyService.java::assignTechnician"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Kỹ thuật viên"
+      ],
+      [
+        "ResourceNotFoundException",
+        "Khiếu nại bảo hành"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent",
+    "status": "IMPLEMENTED",
+    "notes": "Staff-only; lookup không phải public API. Technician mutation chỉ claim được giao; chưa có customer create claim/warranty issuance khi bán.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "WarrantyClaimRepository::findById",
+      "WarrantyClaimRepository::save",
+      "WarrantyService::assignTechnician",
+      "WarrantyService::mapToResponse"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/warranties/claims/{id}/notes",
+    "controller": "WarrantyController",
+    "handler": "updateNotes",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/WarrantyController.java",
+    "line": 66,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody NotesUpdateRequest request",
+    "return": "ResponseEntity<ClaimResponse>",
+    "body": "\n        return ResponseEntity.ok(warrantyService.addInternalNote(id, request.getNotes()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/WarrantyService.java::addInternalNote"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Khiếu nại bảo hành"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent/technician; mutation technician chỉ claim được giao",
+    "status": "IMPLEMENTED",
+    "notes": "Staff-only; lookup không phải public API. Technician mutation chỉ claim được giao; chưa có customer create claim/warranty issuance khi bán.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "WarrantyClaimRepository::findById",
+      "WarrantyClaimRepository::save",
+      "WarrantyService::addInternalNote",
+      "WarrantyService::authorizeClaim",
+      "WarrantyService::mapToResponse"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/warranties/claims/{id}/status",
+    "controller": "WarrantyController",
+    "handler": "updateClaimStatus",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/WarrantyController.java",
+    "line": 58,
+    "signature": "\n            @PathVariable UUID id,\n            @RequestBody ClaimStatusUpdateRequest request",
+    "return": "ResponseEntity<ClaimResponse>",
+    "body": "\n        return ResponseEntity.ok(warrantyService.updateClaimStatus(id, request.getStatus()));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/WarrantyService.java::updateClaimStatus"
+    ],
+    "errors": [
+      [
+        "ResourceNotFoundException",
+        "Khiếu nại bảo hành"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent/technician; mutation technician chỉ claim được giao",
+    "status": "IMPLEMENTED",
+    "notes": "Staff-only; lookup không phải public API. Technician mutation chỉ claim được giao; chưa có customer create claim/warranty issuance khi bán.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "WarrantyClaimRepository::findById",
+      "WarrantyClaimRepository::save",
+      "WarrantyService::authorizeClaim",
+      "WarrantyService::mapToResponse",
+      "WarrantyService::updateClaimStatus"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/warranties/lookup",
+    "controller": "WarrantyController",
+    "handler": "lookupWarrantyBySerial",
+    "source": "backend/src/main/java/com/smartbox/backend/controller/WarrantyController.java",
+    "line": 29,
+    "signature": "\n            @Parameter(description = \"Mã Serial Number của thiết bị (VD: DBX-98C377AD9D60)\") @RequestParam String serial",
+    "return": "ResponseEntity<WarrantyLookupResponse>",
+    "body": "\n        return ResponseEntity.ok(warrantyService.lookupWarrantyBySerial(serial));\n    ",
+    "calls": [
+      "backend/src/main/java/com/smartbox/backend/service/WarrantyService.java::lookupWarrantyBySerial"
+    ],
+    "errors": [
+      [
+        "IllegalArgumentException",
+        "Mã Serial thiết bị không được để trống"
+      ],
+      [
+        "ResourceNotFoundException",
+        "Bảo hành"
+      ],
+      [
+        "ResourceNotFoundException",
+        "Thiết bị"
+      ]
+    ],
+    "effects": [],
+    "valid": false,
+    "demo": false,
+    "access": "super_admin/support_agent/technician; mutation technician chỉ claim được giao",
+    "status": "IMPLEMENTED",
+    "notes": "Staff-only; lookup không phải public API. Technician mutation chỉ claim được giao; chưa có customer create claim/warranty issuance khi bán.",
+    "helperErrors": [],
+    "reachableMethods": [
+      "DeviceRepository::findBySerialNumber",
+      "WarrantyRepository::findByDeviceId",
+      "WarrantyService::lookupWarrantyBySerial",
+      "WarrantyService::maskName",
+      "WarrantyService::maskPhone"
+    ]
+  }
+]
