@@ -36,6 +36,7 @@ public class Profile {
     @Column(name = "default_address")
     private String defaultAddress;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::public.user_role")
     @Column(name = "role", nullable = false)
     private String role;
 

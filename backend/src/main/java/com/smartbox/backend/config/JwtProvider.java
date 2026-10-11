@@ -28,6 +28,7 @@ public class JwtProvider {
     private long refreshExpirationMs;
 
     private SecretKey getSigningKey() {
+        if (jwtSecret == null || jwtSecret.isBlank()) throw new IllegalStateException("JWT signing is not configured");
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(jwtSecret);
@@ -96,11 +97,7 @@ public class JwtProvider {
 
     public UUID extractUserId(String token) {
         Claims claims = extractClaims(token);
-        try {
-            return UUID.fromString(claims.getSubject());
-        } catch (Exception e) {
-            return null;
-        }
+        return UUID.fromString(claims.getSubject());
     }
 
     public String extractEmail(String token) {

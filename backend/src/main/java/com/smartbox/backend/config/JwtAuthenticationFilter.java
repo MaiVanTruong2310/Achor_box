@@ -1,137 +1,70 @@
 package com.smartbox.backend.config;
 
-import com.smartbox.backend.exception.ForbiddenException;
-import com.smartbox.backend.exception.UnauthorizedException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import com.smartbox.backend.exception.*;
+import com.smartbox.backend.repository.ProfileRepository;
+import com.smartbox.backend.security.SupabaseAuthGateway;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
-
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Component
-@Order(1)
-@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private final JwtProvider jwtProvider;
-    private final HandlerExceptionResolver resolver;
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
-
-    public JwtAuthenticationFilter(JwtProvider jwtProvider,
-                                   @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
-        this.jwtProvider = jwtProvider;
-        this.resolver = resolver;
+    private final SupabaseAuthGateway provider;
+    private final ProfileRepository profiles;
+    private final HandlerExceptionResolver errors;
+    public JwtAuthenticationFilter(SupabaseAuthGateway provider,ProfileRepository profiles,@Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors) {
+        this.provider=provider;this.profiles=profiles;this.errors=errors;
     }
-
-    // Danh sách các URL công khai cho phép truy cập tự do (không cần token)
-    private static final List<String> PUBLIC_URL_PATTERNS = Arrays.asList(
-            "/api/auth/login",
-            "/api/auth/refresh-token",
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/v3/api-docs/**",
-            "/v3/api-docs",
-            "/error",
-            "/favicon.ico"
-    );
-
-    // Danh sách các URL cho phép xem thông tin bằng phương thức GET (không cần token)
-    private static final List<String> PUBLIC_GET_URL_PATTERNS = Arrays.asList(
-            "/api/dashboard/**",
-            "/api/products/**",
-            "/api/content/**",
-            "/api/promotions/**",
-            "/api/warranties/**",
-            "/api/devices/**",
-            "/api/orders/**",
-            "/api/users/**",
-            "/api/settings/**",
-            "/api/audit-logs/**"
-    );
-
+    public static boolean publicPath(HttpServletRequest request) {
+        String path=request.getRequestURI();
+        if("OPTIONS".equals(request.getMethod())) return true;
+        if(path.startsWith("/swagger-ui")||path.startsWith("/v3/api-docs")||Set.of("/error","/favicon.ico").contains(path))return true;
+        if("POST".equals(request.getMethod()) && Set.of("/api/auth/login","/api/auth/refresh-token","/api/payments/callback").contains(path))return true;
+        return "GET".equals(request.getMethod()) && (path.equals("/api/products")||path.equals("/api/products/categories")||path.matches("/api/products/[0-9a-fA-F-]{36}/variants"));
+    }
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-
-        String path = request.getRequestURI();
-        String method = request.getMethod();
-
-        // 1. Cho phép tất cả request OPTIONS (CORS Preflight) đi qua
-        if ("OPTIONS".equalsIgnoreCase(method)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // 2. Kiểm tra các URL công khai cố định (Login, Refresh-Token, Swagger)
-        for (String pattern : PUBLIC_URL_PATTERNS) {
-            if (pathMatcher.match(pattern, path)) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-        }
-
-        // 3. Kiểm tra các URL xem thông tin công khai bằng GET (Sản phẩm, Bài viết, Khuyến mãi)
-        if ("GET".equalsIgnoreCase(method)) {
-            for (String pattern : PUBLIC_GET_URL_PATTERNS) {
-                if (pathMatcher.match(pattern, path)) {
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-            }
-        }
-
-        // 4. Nếu không thuộc các URL công khai -> BẮT BUỘC PHẢI CÓ JWT TOKEN
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            resolver.resolveException(request, response, null,
-                    new UnauthorizedException("Truy cập bị từ chối: Thao tác này yêu cầu đăng nhập. Vui lòng đính kèm Bearer JWT Token vào Header 'Authorization'!"));
-            return;
-        }
-
-        String token = authHeader.substring(7).trim();
-
-        if (!jwtProvider.validateToken(token)) {
-            resolver.resolveException(request, response, null,
-                    new UnauthorizedException("Token xác thực không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại để lấy token mới!"));
-            return;
-        }
-
-        // 5. Token hợp lệ -> Trích xuất claims và kiểm tra phân quyền RBAC
+    protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {
+        if(publicPath(request) && (request.getHeader("Authorization")==null || "POST".equals(request.getMethod()) || "OPTIONS".equals(request.getMethod()))) {chain.doFilter(request,response);return;}
         try {
-            UUID userId = jwtProvider.extractUserId(token);
-            String email = jwtProvider.extractEmail(token);
-            String role = jwtProvider.extractRole(token);
-
-            request.setAttribute("CURRENT_USER_ID", userId);
-            request.setAttribute("CURRENT_USER_EMAIL", email);
-            request.setAttribute("CURRENT_USER_ROLE", role);
-
-            // Kiểm tra phân quyền RBAC: Nếu role là "customer" cố truy cập API nhạy cảm của quản trị viên
-            if ("customer".equalsIgnoreCase(role)) {
-                if (path.startsWith("/api/users/staff") || path.startsWith("/api/audit-logs") || path.contains("/toggle-lock") || path.contains("/role")) {
-                    resolver.resolveException(request, response, null,
-                            new ForbiddenException("Truy cập bị cấm (403 Forbidden): Tài khoản khách hàng không có quyền thực thi thao tác quản trị nội bộ này!"));
-                    return;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Không thể trích xuất claims từ token: {}", e.getMessage());
-        }
-
-        filterChain.doFilter(request, response);
+            String header=request.getHeader("Authorization");
+            if(header==null||!header.startsWith("Bearer "))throw new UnauthorizedException("Yêu cầu Bearer access token");
+            UUID id=provider.identity(header.substring(7));
+            var profile=profiles.findById(id).orElseThrow(()->new UnauthorizedException("AUTH_PROFILE_MISSING"));
+            if(Boolean.TRUE.equals(profile.getIsLocked())) throw new UnauthorizedException("ACCOUNT_LOCKED");
+            String role=profile.getRole();
+            if(!Set.of("super_admin","product_manager","support_agent","technician","accountant","customer").contains(role)) throw new ForbiddenException("INVALID_ROLE");
+            authorize(request,role);
+            request.setAttribute("CURRENT_USER_ID",id);request.setAttribute("CURRENT_USER_ROLE",role);request.setAttribute("CURRENT_USER_EMAIL",profile.getEmail());
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(id,null,List.of(new SimpleGrantedAuthority("ROLE_"+role))));
+        } catch(AppException ex) {errors.resolveException(request,response,null,ex);return;}
+        catch(Exception ex) {errors.resolveException(request,response,null,new UnauthorizedException("INVALID_ACCESS_TOKEN"));return;}
+        chain.doFilter(request,response);
+    }
+    private void authorize(HttpServletRequest req,String role) {
+        String path=req.getRequestURI();boolean read="GET".equals(req.getMethod());
+        if(publicPath(req) || path.startsWith("/api/auth/"))return;
+        Set<String> allowed;
+        if(path.startsWith("/api/users")&&(path.endsWith("/role")||path.equals("/api/users/staff"))) allowed=Set.of("super_admin");
+        else if(path.startsWith("/api/users")) allowed=Set.of("super_admin","support_agent");
+        else if(path.startsWith("/api/audit-logs")) allowed=read?Set.of("super_admin","accountant"):Set.of("super_admin");
+        else if(path.startsWith("/api/settings")) allowed=Set.of("super_admin");
+        else if(path.startsWith("/api/products")) allowed=read?Set.of("super_admin","product_manager","support_agent","accountant"):Set.of("super_admin","product_manager");
+        else if(path.startsWith("/api/promotions")) allowed=read?Set.of("super_admin","product_manager","support_agent","accountant"):Set.of("super_admin","product_manager");
+        else if(path.startsWith("/api/content")) allowed=Set.of("super_admin","product_manager");
+        else if(path.startsWith("/api/warranties")) allowed=Set.of("super_admin","support_agent","technician");
+        else if((path.equals("/api/orders") && read) || path.equals("/api/orders/paged")) allowed=Set.of("super_admin","support_agent","accountant");
+        else if(path.matches("/api/orders/[^/]+/(status|tracking)")) allowed=Set.of("super_admin","support_agent");
+        else if(path.startsWith("/api/dashboard")||path.startsWith("/api/reports")||path.equals("/api/admin/dashboard"))allowed=Set.of("super_admin","accountant");
+        else if(path.equals("/api/devices")||path.equals("/api/devices/paged")||path.equals("/api/devices/events")||path.matches("/api/devices/[^/]+/status"))allowed=Set.of("super_admin","technician");
+        else return; // Customer-facing services enforce ownership and action-specific roles.
+        if(!allowed.contains(role)) throw new ForbiddenException("Vai trò không có quyền truy cập chức năng này");
     }
 }

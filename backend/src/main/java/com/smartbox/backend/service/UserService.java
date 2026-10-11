@@ -37,20 +37,9 @@ public class UserService {
     private final WarrantyService warrantyService;
     private final AuditLogService auditLogService;
     private final EmailService emailService;
-
-    // Cache tạm thời lưu mã OTP Hotline theo userId (hạn dùng 5 phút)
-    private static class OtpEntry {
-        final String code;
-        final long expireAt;
-
-        OtpEntry(String code, long expireAt) {
-            this.code = code;
-            this.expireAt = expireAt;
-        }
-    }
-
-    private final Map<UUID, OtpEntry> otpCache = new ConcurrentHashMap<>();
-    private final SecureRandom secureRandom = new SecureRandom();
+    private final com.smartbox.backend.security.SupabaseAuthGateway authProvider;
+    private final com.smartbox.backend.security.CurrentActor actors;
+    private final com.smartbox.backend.repository.CommerceRepository commerce;
 
     @Transactional(readOnly = true)
     public List<UserProfileResponse> getAllUsers() {
@@ -91,81 +80,46 @@ public class UserService {
 
     @Transactional
     public UserProfileResponse toggleLock(UUID id, Boolean isLocked, String reason) {
+        actors.get().requireRoles("super_admin","support_agent");
+        if(isLocked==null)throw new AppException(400,"LOCK_STATE_REQUIRED");
+        if(id.equals(actors.get().id()))throw new AppException(409,"CANNOT_LOCK_OWN_ACCOUNT");
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Người dùng", "id", id));
+        if("support_agent".equals(actors.get().role())&&!"customer".equals(profile.getRole()))throw new AppException(403,"SUPPORT_CAN_ONLY_LOCK_CUSTOMERS");
         profile.setIsLocked(isLocked);
         Profile saved = profileRepository.save(profile);
 
-        // Ghi log kiểm toán
-        try {
-            auditLogService.logAction(AuditLogRequest.builder()
-                    .actorId(null)
-                    .action(Boolean.TRUE.equals(isLocked) ? "LOCK_USER" : "UNLOCK_USER")
-                    .targetTable("profiles")
-                    .targetId(id)
-                    .meta(reason != null && !reason.trim().isEmpty() 
-                            ? "{\"reason\": \"" + reason + "\", \"user_name\": \"" + saved.getFullName() + "\"}"
-                            : "{\"user_name\": \"" + saved.getFullName() + "\"}")
-                    .build());
-        } catch (Exception ex) {
-            log.warn("Không thể ghi audit log: {}", ex.getMessage());
-        }
+        commerce.audit(actors.get().id(),Boolean.TRUE.equals(isLocked)?"LOCK_USER":"UNLOCK_USER","profiles",id,reason);
 
         return mapToResponse(saved);
     }
 
     @Transactional
     public UserProfileResponse updateRole(UUID id, String role) {
+        actors.get().requireRoles("super_admin");
+        if(role==null||java.util.Arrays.stream(UserRole.values()).noneMatch(r->r.getValue().equals(role)))throw new AppException(400,"INVALID_ROLE");
+        if(id.equals(actors.get().id()))throw new AppException(409,"CANNOT_CHANGE_OWN_ROLE");
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Người dùng", "id", id));
         profile.setRole(role);
+        commerce.audit(actors.get().id(),"CHANGE_USER_ROLE","profiles",id,role);
         return mapToResponse(profileRepository.save(profile));
     }
 
     @Transactional
     public UserProfileResponse createStaffUser(CreateStaffRequest req) {
-        if (req.getEmail() == null || req.getEmail().trim().isEmpty()) {
-            throw new AppException(400, "Email không được để trống.");
-        }
-        String email = req.getEmail().trim().toLowerCase();
-        if (profileRepository.existsByEmail(email)) {
-            throw new AppException(400, "Email '" + email + "' đã tồn tại trên hệ thống!");
-        }
-
-        UserRole roleEnum = UserRole.fromString(req.getRole());
-        if (roleEnum == null) {
-            roleEnum = UserRole.SUPPORT_AGENT;
-        }
-
-        Profile newProfile = Profile.builder()
-                .id(UUID.randomUUID())
-                .fullName(req.getFullName() != null ? req.getFullName().trim() : "Nhân viên mới")
-                .email(email)
-                .phone(req.getPhone())
-                .role(roleEnum.getValue())
-                .defaultAddress(req.getDefaultAddress())
-                .isLocked(false)
-                .is2faEnabled(false)
-                .build();
-
-        Profile saved = profileRepository.save(newProfile);
-
-        // Ghi log kiểm toán
-        try {
-            auditLogService.logAction(AuditLogRequest.builder()
-                    .actorId(null)
-                    .action("CREATE_STAFF_ACCOUNT")
-                    .targetTable("profiles")
-                    .targetId(saved.getId())
-                    .meta("{\"user_name\": \"" + saved.getFullName() + "\", \"email\": \"" + saved.getEmail() + "\", \"role\": \"" + saved.getRole() + "\"}")
-                    .build());
-        } catch (Exception ex) {
-            log.warn("Không thể ghi audit log khi tạo nhân viên: {}", ex.getMessage());
-        }
-
-        log.info("[STAFF PROVISIONING] Đã cấp thành công tài khoản nhân viên {} ({}) với vai trò {}",
-                saved.getFullName(), saved.getEmail(), saved.getRole());
-
+        actors.get().requireRoles("super_admin");
+        if(!java.util.Set.of("super_admin","product_manager","support_agent","technician","accountant").contains(req.getRole()))throw new AppException(400,"INVALID_STAFF_ROLE");
+        if(req.getInitialPassword()==null||req.getInitialPassword().length()<12||req.getInitialPassword().length()>128)throw new AppException(400,"INITIAL_PASSWORD_REQUIRED: Mật khẩu phải dài 12–128 ký tự");
+        String email=req.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
+        if(profileRepository.existsByEmail(email))throw new AppException(409,"EMAIL_ALREADY_EXISTS");
+        UUID id=authProvider.createStaff(email,req.getInitialPassword(),req.getFullName());
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization(){
+            @Override public void afterCompletion(int status){if(status==STATUS_ROLLED_BACK){try{authProvider.deleteProvisionedUser(id);}catch(Exception ex){log.error("Auth provisioning compensation failed for {}",id);}}}
+        });
+        Profile profile=profileRepository.findById(id).orElseGet(()->Profile.builder().id(id).isLocked(false).is2faEnabled(false).build());
+        profile.setEmail(email);profile.setFullName(req.getFullName());profile.setPhone(req.getPhone());profile.setDefaultAddress(req.getDefaultAddress());profile.setRole(req.getRole());
+        Profile saved=profileRepository.saveAndFlush(profile);
         return mapToResponse(saved);
     }
 
@@ -173,94 +127,20 @@ public class UserService {
     // HOTLINE PASSWORD RESET WITH EMAIL OTP
     // -------------------------------------------------------------
     public SendOtpResponse sendResetPasswordOtp(UUID id) {
-        Profile profile = profileRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Người dùng", "id", id));
-
-        String targetEmail = profile.getEmail();
-        if (targetEmail == null || targetEmail.trim().isEmpty()) {
-            targetEmail = "user_" + id.toString().substring(0, 8) + "@smartbox.vn";
-            profile.setEmail(targetEmail);
-            profileRepository.save(profile);
-        }
-
-        // Sinh mã OTP ngẫu nhiên 6 chữ số
-        String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
-        long expireAt = System.currentTimeMillis() + (5 * 60 * 1000); // 5 phút
-        otpCache.put(id, new OtpEntry(otp, expireAt));
-
-        // Gửi email HTML thật qua SMTP
-        boolean isEmailSent = emailService.sendResetPasswordOtpEmail(targetEmail, profile.getFullName(), otp);
-
-        String statusMsg = isEmailSent
-                ? "Đã gửi mã OTP xác thực qua Email: " + targetEmail
-                : "Đã phát mã OTP xác thực cho: " + targetEmail + (targetEmail.endsWith("@smartbox.vn") ? " (Email nội bộ demo)" : " (Vui lòng kiểm tra hộp thư)");
-
-        log.info("[HOTLINE OTP] Mã OTP xác thực reset mật khẩu cho khách hàng {} ({} - SĐT: {}): {} [Email sent: {}]",
-                profile.getFullName(), targetEmail, profile.getPhone(), otp, isEmailSent);
-
-        return SendOtpResponse.builder()
-                .success(true)
-                .message(statusMsg)
-                .email(targetEmail)
-                .previewOtp(otp)
-                .emailSent(isEmailSent)
-                .build();
+        actors.get().requireRoles("super_admin","support_agent");
+        var profile=profileRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Người dùng","id",id));
+        if(profile.getEmail()==null||profile.getEmail().isBlank())throw new AppException(400,"EMAIL_REQUIRED");
+        authProvider.recovery(profile.getEmail());
+        return SendOtpResponse.builder().success(true).message("Đã yêu cầu Supabase Auth gửi liên kết khôi phục mật khẩu; khách hàng tự xác minh qua email.").email(profile.getEmail()).emailSent(true).previewOtp(null).build();
     }
 
-    @Transactional
     public ResetPasswordResponse verifyOtpAndResetPassword(UUID id, String otp, String newPassword) {
-        Profile profile = profileRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Người dùng", "id", id));
-
-        OtpEntry entry = otpCache.get(id);
-        if (entry == null) {
-            throw new AppException(400, "Chưa phát mã OTP hoặc phiên đã hết hạn. Vui lòng bấm 'Gửi mã OTP'!");
-        }
-        if (System.currentTimeMillis() > entry.expireAt) {
-            otpCache.remove(id);
-            throw new AppException(400, "Mã OTP đã hết hạn (quá 5 phút). Vui lòng gửi lại mã mới!");
-        }
-        if (!entry.code.trim().equals(otp != null ? otp.trim() : "")) {
-            throw new AppException(400, "Mã OTP không chính xác! Vui lòng đối soát lại với khách hàng.");
-        }
-
-        // OTP HỢP LỆ -> Xóa khỏi cache
-        otpCache.remove(id);
-
-        String effectivePassword = (newPassword != null && !newPassword.trim().isEmpty())
-                ? newPassword.trim()
-                : "SmartBox@123456";
-
-        // Ghi log kiểm toán
-        try {
-            auditLogService.logAction(AuditLogRequest.builder()
-                    .actorId(null)
-                    .action("HOTLINE_RESET_PASSWORD")
-                    .targetTable("profiles")
-                    .targetId(id)
-                    .meta("{\"user_name\": \"" + profile.getFullName() + "\", \"user_phone\": \"" + profile.getPhone() + "\"}")
-                    .build());
-        } catch (Exception ex) {
-            log.warn("Không thể ghi audit log reset password: {}", ex.getMessage());
-        }
-
-        log.info("[HOTLINE RESET PASSWORD] Đã đổi mật khẩu thành công cho user {} (ID: {}) -> Mật khẩu mới: {}",
-                profile.getFullName(), id, effectivePassword);
-
-        return ResetPasswordResponse.builder()
-                .success(true)
-                .message("Đặt lại mật khẩu thành công qua hotline xác thực OTP.")
-                .updatedPassword(effectivePassword)
-                .build();
+        throw new AppException(503, "AUTH_PROVIDER_RECOVERY_REQUIRED: Chưa có tích hợp reset hotline an toàn; không báo thành công khi mật khẩu chưa đổi");
     }
 
     public UserProfileResponse mapToResponse(Profile p) {
         String email = p.getEmail();
-        if (email == null || email.trim().isEmpty()) {
-            email = (p.getPhone() != null && !p.getPhone().isEmpty()) 
-                    ? p.getPhone() + "@smartbox.vn" 
-                    : "user_" + p.getId().toString().substring(0, 8) + "@smartbox.vn";
-        }
+
 
         return UserProfileResponse.builder()
                 .id(p.getId())
