@@ -19,6 +19,10 @@ public class OrderItemResponse {
 
     @Schema(description = "ID sản phẩm")
     private UUID productId;
+    private UUID variantId;
+    private String sku;
+    private String variantName;
+    private BigDecimal subtotal;
 
     @Schema(description = "Tên sản phẩm", example = "SmartBox Home Standard")
     private String productName;

@@ -41,6 +41,8 @@ public class WarrantyService {
     private final WarrantyClaimRepository claimRepository;
     private final DeviceRepository deviceRepository;
     private final WarrantyRepository warrantyRepository;
+    private final com.smartbox.backend.repository.ProfileRepository profiles;
+    private final com.smartbox.backend.security.CurrentActor actors;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional(readOnly = true)
@@ -68,6 +70,10 @@ public class WarrantyService {
 
     @Transactional
     public ClaimResponse assignTechnician(UUID claimId, UUID technicianId) {
+        actors.get().requireRoles("super_admin","support_agent");
+        if(technicianId==null)throw new com.smartbox.backend.exception.BadRequestException("TECHNICIAN_REQUIRED");
+        var technician=profiles.findById(technicianId).orElseThrow(()->new ResourceNotFoundException("Kỹ thuật viên","id",technicianId));
+        if(!"technician".equals(technician.getRole())||Boolean.TRUE.equals(technician.getIsLocked()))throw new com.smartbox.backend.exception.BadRequestException("INVALID_TECHNICIAN");
         WarrantyClaim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
         claim.setAssignedTo(technicianId);
@@ -77,9 +83,12 @@ public class WarrantyService {
 
     @Transactional
     public ClaimResponse updateClaimStatus(UUID claimId, String status) {
+        if(status==null||!java.util.Set.of("new","assigned","in_progress","resolved","rejected").contains(status))throw new com.smartbox.backend.exception.BadRequestException("INVALID_CLAIM_STATUS");
         WarrantyClaim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
+        authorizeClaim(claim);
         claim.setStatus(status);
+        claim.setResolvedAt(null);
         if ("resolved".equalsIgnoreCase(status) || "rejected".equalsIgnoreCase(status)) {
             claim.setResolvedAt(OffsetDateTime.now());
         }
@@ -90,12 +99,13 @@ public class WarrantyService {
     public ClaimResponse addInternalNote(UUID claimId, String notes) {
         WarrantyClaim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
+        authorizeClaim(claim);
         claim.setInternalNotes(notes);
         return mapToResponse(claimRepository.save(claim));
     }
 
     public ClaimResponse mapToResponse(WarrantyClaim c) {
-        List<String> parsedImages = Collections.singletonList("https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500");
+        List<String> parsedImages = Collections.emptyList();
         if (c.getImages() != null && !c.getImages().isEmpty()) {
             try {
                 parsedImages = objectMapper.readValue(c.getImages(), new TypeReference<List<String>>() {});
@@ -106,12 +116,12 @@ public class WarrantyService {
 
         Warranty warranty = c.getWarranty();
         Device device = warranty != null ? warranty.getDevice() : null;
-        String serialNumber = device != null ? device.getSerialNumber() : "BOX-2026-001";
-        String deviceName = device != null && device.getName() != null ? device.getName() : "Hộp Smart Delivery Box";
+        String serialNumber = device != null ? device.getSerialNumber() : null;
+        String deviceName = device != null ? device.getName() : null;
 
-        String customerName = "Khách hàng SmartBox";
-        String customerPhone = "0901234567";
-        String customerAddress = "Hà Nội";
+        String customerName = null;
+        String customerPhone = null;
+        String customerAddress = null;
 
         if (warranty != null && warranty.getOrderItem() != null && warranty.getOrderItem().getOrder() != null) {
             var ord = warranty.getOrderItem().getOrder();
@@ -154,9 +164,14 @@ public class WarrantyService {
                 .customerPhone(customerPhone)
                 .customerAddress(customerAddress)
                 .faultCategory(faultCat)
-                .warrantyStartDate(warranty != null ? warranty.getStartDate() : LocalDate.now().minusDays(30))
-                .warrantyEndDate(warranty != null ? warranty.getEndDate() : LocalDate.now().plusDays(335))
+                .warrantyStartDate(warranty != null ? warranty.getStartDate() : null)
+                .warrantyEndDate(warranty != null ? warranty.getEndDate() : null)
                 .build();
+    }
+
+    private void authorizeClaim(WarrantyClaim claim) {
+        var actor=actors.get();actor.requireRoles("super_admin","support_agent","technician");
+        if("technician".equals(actor.role())&&!actor.id().equals(claim.getAssignedTo()))throw new com.smartbox.backend.exception.ForbiddenException("CLAIM_NOT_ASSIGNED_TO_TECHNICIAN");
     }
 
     @Transactional(readOnly = true)
@@ -171,36 +186,23 @@ public class WarrantyService {
             Device d = deviceOpt.get();
             Optional<Warranty> wOpt = warrantyRepository.findByDeviceId(d.getId());
 
-            LocalDate startDate = wOpt.map(Warranty::getStartDate)
-                    .orElse(d.getCreatedAt() != null ? d.getCreatedAt().toLocalDate() : LocalDate.of(2026, 1, 15));
-            LocalDate endDate = wOpt.map(Warranty::getEndDate)
-                    .orElse(startDate.plusMonths(12));
-            String status = wOpt.map(Warranty::getStatus).orElse("active");
+            if(wOpt.isEmpty()) throw new ResourceNotFoundException("Bảo hành", "serial", cleanSerial);
+            LocalDate startDate = wOpt.orElseThrow().getStartDate();
+            LocalDate endDate = wOpt.orElseThrow().getEndDate();
+            String status = wOpt.orElseThrow().getStatus();
 
             long remainingDays = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
-            boolean isValid = !"expired".equalsIgnoreCase(status) && remainingDays >= 0;
+            boolean isValid = "active".equalsIgnoreCase(status) && remainingDays >= 0 && !LocalDate.now().isBefore(startDate);
 
-            String prodName = d.getProduct() != null ? d.getProduct().getName() : "Anchor Box Pro IoT (Bản Cao Cấp)";
-            String ownerName = d.getOwner() != null ? maskName(d.getOwner().getFullName()) : "Nguyễn V***";
-            String ownerPhone = d.getOwner() != null ? maskPhone(d.getOwner().getPhone()) : "090****567";
+            String prodName = d.getProduct() != null ? d.getProduct().getName() : null;
+            String ownerName = d.getOwner() != null ? maskName(d.getOwner().getFullName()) : null;
+            String ownerPhone = d.getOwner() != null ? maskPhone(d.getOwner().getPhone()) : null;
 
-            List<String> specs = new ArrayList<>(Arrays.asList(
-                    "Chip vi điều khiển: ESP32-S3 Dual-Core 240MHz Wi-Fi/BLE",
-                    "Cơ cấu chốt khóa: Solenoid 12V DC trợ lực Servo 90°",
-                    "Cảm biến cửa: Cảm biến từ MC-38 chống cạy phá",
-                    "Bàn phím: Ma trận 4x4 I2C PCF8574 bọc kim loại",
-                    "Màn hình: LCD 1602 I2C Backlight xanh",
-                    "Chuẩn kháng nước: IP54 ngoài trời có mái che",
-                    "Nguồn cấp: Adapter 12V 2A DC Jack 5.5x2.1mm"
-            ));
-            if (prodName.toLowerCase().contains("pro") || (d.getWeightKg() != null && d.getWeightKg() > 0)) {
-                specs.add("Cảm biến tải trọng: LoadCell HX711 24-bit chống tráo bưu phẩm");
-            }
-
+            List<String> specs = Collections.emptyList();
             return WarrantyLookupResponse.builder()
                     .serialNumber(d.getSerialNumber())
                     .productName(prodName)
-                    .variantName("Size M (Tiêu chuẩn 85L)")
+                    .variantName(null)
                     .status(isValid ? "active" : "expired")
                     .statusLabel(isValid ? "Bảo hành chính hãng hợp lệ" : "Hết hạn bảo hành")
                     .startDate(startDate)
@@ -209,55 +211,14 @@ public class WarrantyService {
                     .isValid(isValid)
                     .ownerNameMasked(ownerName)
                     .ownerPhoneMasked(ownerPhone)
-                    .locationLabel(d.getLocationLabel() != null ? d.getLocationLabel() : "Hà Nội")
-                    .deviceStatus(d.getStatus() != null ? d.getStatus() : "online")
+                    .locationLabel(d.getLocationLabel())
+                    .deviceStatus(d.getStatus())
                     .hardwareSpecs(specs)
-                    .features(Arrays.asList(
-                            "Đổi mới 1-1 trong 30 ngày nếu lỗi do nhà sản xuất",
-                            "Miễn phí bảo dưỡng và thay thế Servo/Solenoid chính hãng",
-                            "Hỗ trợ cập nhật Firmware OTA từ xa trọn đời",
-                            "Kỹ thuật viên hỗ trợ tận nơi trong 24h (Hà Nội & TP.HCM)"
-                    ))
+                    .features(Collections.emptyList())
                     .build();
         }
 
-        // Demo fallback cho các mã serial hợp lệ trong đồ án (ví dụ DBX-98C377AD9D60, BOX_001)
-        LocalDate demoStart = LocalDate.of(2026, 1, 10);
-        LocalDate demoEnd = demoStart.plusMonths(12);
-        long remainingDays = ChronoUnit.DAYS.between(LocalDate.now(), demoEnd);
-        boolean isValid = remainingDays >= 0;
-
-        return WarrantyLookupResponse.builder()
-                .serialNumber(cleanSerial)
-                .productName("Anchor Box Pro IoT (Bản Cao Cấp)")
-                .variantName("Size M (Tiêu chuẩn 85L)")
-                .status(isValid ? "active" : "expired")
-                .statusLabel(isValid ? "Bảo hành chính hãng hợp lệ" : "Hết hạn bảo hành")
-                .startDate(demoStart)
-                .endDate(demoEnd)
-                .remainingDays(Math.max(0, remainingDays))
-                .isValid(isValid)
-                .ownerNameMasked("Trần V***")
-                .ownerPhoneMasked("098****312")
-                .locationLabel("Hà Nội, Việt Nam")
-                .deviceStatus("online")
-                .hardwareSpecs(Arrays.asList(
-                        "Chip vi điều khiển: ESP32-S3 Dual-Core 240MHz Wi-Fi/BLE",
-                        "Cơ cấu chốt khóa: Solenoid 12V DC trợ lực Servo 90°",
-                        "Cảm biến cửa: Cảm biến từ MC-38 chống cạy phá",
-                        "Cảm biến tải trọng: LoadCell HX711 24-bit chống tráo bưu phẩm",
-                        "Bàn phím: Ma trận 4x4 I2C PCF8574 bọc kim loại",
-                        "Màn hình: LCD 1602 I2C Backlight xanh",
-                        "Chuẩn kháng nước: IP54 ngoài trời có mái che",
-                        "Nguồn cấp: Adapter 12V 2A DC Jack 5.5x2.1mm"
-                ))
-                .features(Arrays.asList(
-                        "Đổi mới 1-1 trong 30 ngày nếu lỗi phần cứng",
-                        "Bảo hành điện tử chính hãng Anchor Box 12 tháng",
-                        "Hỗ trợ kỹ thuật qua Hotline và ứng dụng di động",
-                        "Cập nhật Firmware hệ thống tự động"
-                ))
-                .build();
+        throw new ResourceNotFoundException("Thiết bị", "serial", cleanSerial);
     }
 
     private String maskName(String name) {
@@ -268,7 +229,7 @@ public class WarrantyService {
     }
 
     private String maskPhone(String phone) {
-        if (phone == null || phone.trim().length() < 7) return "090****567";
+        if (phone == null || phone.trim().length() < 7) return null;
         String p = phone.trim();
         return p.substring(0, 3) + "****" + p.substring(p.length() - 3);
     }

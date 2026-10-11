@@ -37,6 +37,11 @@ public class ProductVariant {
     @Builder.Default
     private Integer stockQuantity = 0;
 
+    @Column(name="is_active",nullable=false)
+    @Builder.Default private Boolean isActive = true;
+    @Column(name="size") private String size;
+    @Column(name="capacity_liter") private Integer capacityLiter;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;

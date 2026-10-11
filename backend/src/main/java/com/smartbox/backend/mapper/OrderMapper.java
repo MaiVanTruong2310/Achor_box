@@ -20,16 +20,17 @@ public class OrderMapper {
                 items.stream().map(i -> OrderItemResponse.builder()
                         .id(i.getId())
                         .productId(i.getProductId())
-                        .productName(i.getProduct() != null ? i.getProduct().getName() : null)
+                        .productName(i.getProductNameSnapshot()!=null?i.getProductNameSnapshot():i.getProduct()!=null?i.getProduct().getName():null)
+                        .variantId(i.getVariantId()).sku(i.getSkuSnapshot()).variantName(i.getVariantNameSnapshot())
                         .quantity(i.getQuantity())
                         .unitPrice(i.getUnitPrice())
                         .build()).toList();
 
         List<Payment> payments = order.getPayments();
         Payment firstPayment = (payments != null && !payments.isEmpty()) ? payments.get(0) : null;
-        String paymentMethod = firstPayment != null && firstPayment.getProvider() != null ? firstPayment.getProvider() : "vnpay";
-        String paymentStatus = firstPayment != null && firstPayment.getStatus() != null ? firstPayment.getStatus() : ("completed".equalsIgnoreCase(order.getStatus()) ? "paid" : "pending");
-        String transactionRef = firstPayment != null && firstPayment.getTransactionRef() != null ? firstPayment.getTransactionRef() : "TRX-" + order.getId().toString().substring(0, 8);
+        String paymentMethod = firstPayment != null ? firstPayment.getProvider() : null;
+        String paymentStatus = firstPayment != null ? firstPayment.getStatus() : null;
+        String transactionRef = firstPayment != null ? firstPayment.getTransactionRef() : null;
 
         return OrderResponse.builder()
                 .id(order.getId())

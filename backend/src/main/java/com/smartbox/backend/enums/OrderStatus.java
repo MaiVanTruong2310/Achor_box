@@ -7,6 +7,8 @@ import lombok.Getter;
 @Getter
 public enum OrderStatus {
     PENDING("pending", "Chờ xử lý"),
+    AWAITING_PAYMENT("awaiting_payment", "Chờ thanh toán"),
+    PAID("paid", "Đã thanh toán"),
     CONFIRMED("confirmed", "Đã xác nhận"),
     PROCESSING("processing", "Đang đóng gói"),
     SHIPPING("shipping", "Đang giao hàng"),
@@ -38,6 +40,6 @@ public enum OrderStatus {
                 return s;
             }
         }
-        return PENDING;
+        throw new IllegalArgumentException("Trạng thái đơn hàng không hợp lệ: " + text);
     }
 }

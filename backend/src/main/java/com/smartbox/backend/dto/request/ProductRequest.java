@@ -38,6 +38,7 @@ public class ProductRequest {
 
     @Schema(description = "Trạng thái kinh doanh", example = "true")
     private Boolean isActive;
+    private Boolean hasWeightSensor;
 
     @Schema(description = "Danh sách các biến thể kích cỡ sản phẩm (Size S/M/L)")
     private List<ProductVariantRequest> variants;
