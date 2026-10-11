@@ -28,6 +28,7 @@ public class Order {
     @Column(name = "user_id")
     private UUID userId;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::public.order_status")
     @Column(name = "status", nullable = false)
     @Builder.Default
     private String status = "pending";
@@ -44,6 +45,8 @@ public class Order {
     @Column(name = "total", nullable = false)
     @Builder.Default
     private BigDecimal total = BigDecimal.ZERO;
+
+    @Column(name="paid_at") private OffsetDateTime paidAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

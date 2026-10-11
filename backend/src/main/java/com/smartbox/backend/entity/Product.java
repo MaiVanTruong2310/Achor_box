@@ -37,6 +37,7 @@ public class Product {
     @Column(name = "price", nullable = false)
     private BigDecimal price;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
     @Column(name = "images", columnDefinition = "jsonb")
     private String images;
 
@@ -47,6 +48,8 @@ public class Product {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+    @Column(name="has_weight_sensor",nullable=false)
+    @Builder.Default private Boolean hasWeightSensor = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

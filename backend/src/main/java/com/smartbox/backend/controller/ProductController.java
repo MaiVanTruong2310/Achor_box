@@ -24,6 +24,12 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
+    private final com.smartbox.backend.service.VariantInventoryService variantInventory;
+
+    @PatchMapping("/{id}/variants/{variantId}/stock")
+    public Map<String,Object> adjustVariant(@PathVariable UUID id,@PathVariable UUID variantId,@RequestBody StockAdjustRequest request) {
+        return variantInventory.adjust(id,variantId,request.getDelta());
+    }
 
     @GetMapping
     @Operation(summary = "Lấy danh sách tất cả sản phẩm")

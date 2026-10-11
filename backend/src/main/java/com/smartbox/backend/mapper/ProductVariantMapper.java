@@ -19,6 +19,7 @@ public class ProductVariantMapper {
                 .productId(v.getProductId())
                 .variantName(v.getVariantName())
                 .sku(v.getSku())
+                .isActive(v.getIsActive()).size(v.getSize()).capacityLiter(v.getCapacityLiter())
                 .priceDelta(delta)
                 .calculatedPrice(calculatedPrice)
                 .stockQuantity(v.getStockQuantity() != null ? v.getStockQuantity() : 0)

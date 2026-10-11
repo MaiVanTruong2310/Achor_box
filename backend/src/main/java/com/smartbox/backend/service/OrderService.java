@@ -31,6 +31,8 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final PaymentRepository paymentRepository;
+    private final OrderWorkflowService workflow;
+    private final FulfillmentService fulfillment;
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrders() {
@@ -56,19 +58,19 @@ public class OrderService {
     @Transactional
     @CacheEvict(value = "dashboardStats", allEntries = true)
     public OrderResponse updateOrderStatus(UUID id, String status) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng", "id", id));
-        order.setStatus(status);
-        return mapToResponse(orderRepository.save(order));
+        if ("cancelled".equalsIgnoreCase(status)) {
+            workflow.cancel(id, "ADMIN_CANCELLATION");
+            // JDBC mutation shares the JPA transaction; fetch after the mutation.
+            return mapToResponse(orderRepository.findById(id).orElseThrow());
+        }
+        throw new com.smartbox.backend.exception.ConflictException("USE_WORKFLOW_ACTION: Thanh toán, duyệt ticket và giao hàng phải dùng API nghiệp vụ tương ứng");
     }
 
     @Transactional
     @CacheEvict(value = "dashboardStats", allEntries = true)
     public OrderResponse updateTrackingNumber(UUID id, String trackingNumber) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng", "id", id));
-        order.setTrackingNumber(trackingNumber);
-        return mapToResponse(orderRepository.save(order));
+        fulfillment.tracking(id,trackingNumber);
+        return mapToResponse(orderRepository.findById(id).orElseThrow());
     }
 
     public OrderResponse mapToResponse(Order o) {
@@ -76,33 +78,35 @@ public class OrderService {
         List<Payment> payments = paymentRepository.findByOrderId(o.getId());
 
         Payment firstPayment = payments.isEmpty() ? null : payments.get(0);
-        String paymentMethod = firstPayment != null && firstPayment.getProvider() != null ? firstPayment.getProvider() : "vnpay";
-        String paymentStatus = firstPayment != null && firstPayment.getStatus() != null ? firstPayment.getStatus() : ("completed".equalsIgnoreCase(o.getStatus()) ? "paid" : "pending");
-        String transactionRef = firstPayment != null && firstPayment.getTransactionRef() != null ? firstPayment.getTransactionRef() : "TRX-" + o.getId().toString().substring(0, 8);
+        String paymentMethod = firstPayment != null ? firstPayment.getProvider() : null;
+        String paymentStatus = firstPayment != null ? firstPayment.getStatus() : null;
+        String transactionRef = firstPayment != null ? firstPayment.getTransactionRef() : null;
 
         List<OrderItemResponse> itemDTOs = items.stream().map(it -> OrderItemResponse.builder()
                 .id(it.getId())
                 .productId(it.getProductId())
-                .productName(it.getProduct() != null ? it.getProduct().getName() : "Hộp Smart Delivery Box")
+                .productName(it.getProductNameSnapshot() != null ? it.getProductNameSnapshot() : it.getProduct() != null ? it.getProduct().getName() : null)
+                .variantId(it.getVariantId()).sku(it.getSkuSnapshot()).variantName(it.getVariantNameSnapshot())
+                .subtotal(it.getUnitPrice().multiply(java.math.BigDecimal.valueOf(it.getQuantity())))
                 .quantity(it.getQuantity())
                 .unitPrice(it.getUnitPrice())
                 .build()
         ).collect(Collectors.toList());
 
         String itemsSummary = itemDTOs.isEmpty()
-                ? "1x Hộp Smart Delivery Box"
+                ? ""
                 : itemDTOs.stream().map(i -> i.getQuantity() + "x " + i.getProductName()).collect(Collectors.joining(", "));
 
-        String customerName = o.getCustomer() != null ? o.getCustomer().getFullName() : "Khách hàng SmartBox";
-        String customerPhone = o.getCustomer() != null ? o.getCustomer().getPhone() : "0901234567";
+        String customerName = o.getCustomer() != null ? o.getCustomer().getFullName() : null;
+        String customerPhone = o.getCustomer() != null ? o.getCustomer().getPhone() : null;
 
         return OrderResponse.builder()
                 .id(o.getId())
                 .userId(o.getUserId())
                 .customerName(customerName)
                 .customerPhone(customerPhone)
-                .shippingAddress(o.getShippingAddress() != null ? o.getShippingAddress() : "Trụ sở SmartBox VN")
-                .trackingNumber(o.getTrackingNumber() != null ? o.getTrackingNumber() : "VNPOST-" + o.getId().toString().substring(0, 6).toUpperCase())
+                .shippingAddress(o.getShippingAddress())
+                .trackingNumber(o.getTrackingNumber())
                 .status(o.getStatus())
                 .total(o.getTotal())
                 .paymentMethod(paymentMethod)

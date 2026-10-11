@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly=true)
 public class ContentService {
 
     private final ArticleRepository articleRepository;
@@ -64,7 +65,7 @@ public class ContentService {
         } else {
             list = articleRepository.findAllByOrderByCreatedAtDesc();
         }
-        return list.stream().map(this::mapToArticleResponse).collect(Collectors.toList());
+        return list.stream().filter(a->status==null||status.isBlank()||status.equalsIgnoreCase("all")||status.equals(a.getStatus())).map(this::mapToArticleResponse).collect(Collectors.toList());
     }
 
     public Map<String, Object> getArticlesPaged(int page, int size) {

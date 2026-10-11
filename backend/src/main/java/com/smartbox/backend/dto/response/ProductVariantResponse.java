@@ -34,4 +34,7 @@ public class ProductVariantResponse {
 
     @Schema(description = "Số lượng tồn kho của kích cỡ này", example = "20")
     private Integer stockQuantity;
+    private Boolean isActive;
+    private String size;
+    private Integer capacityLiter;
 }

@@ -32,6 +32,7 @@ public class Warranty {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::public.warranty_status")
     @Column(name = "status", nullable = false)
     @Builder.Default
     private String status = "active";

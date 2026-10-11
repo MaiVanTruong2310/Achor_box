@@ -27,9 +27,11 @@ public class WarrantyClaim {
     @Column(name = "description", nullable = false, columnDefinition = "text")
     private String description;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
     @Column(name = "images", columnDefinition = "jsonb")
     private String images;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::public.claim_status")
     @Column(name = "status", nullable = false)
     @Builder.Default
     private String status = "new";
