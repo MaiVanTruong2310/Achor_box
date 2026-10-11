@@ -18,7 +18,7 @@ import java.util.UUID;
 @Getter
 public class JwtProvider {
 
-    @Value("${smartbox.jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    @Value("${smartbox.jwt.secret:}")
     private String jwtSecret;
 
     @Value("${smartbox.jwt.access-expiration-ms:86400000}")
@@ -28,6 +28,7 @@ public class JwtProvider {
     private long refreshExpirationMs;
 
     private SecretKey getSigningKey() {
+        if (jwtSecret == null || jwtSecret.isBlank()) throw new IllegalStateException("JWT signing is not configured");
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(jwtSecret);
@@ -96,11 +97,7 @@ public class JwtProvider {
 
     public UUID extractUserId(String token) {
         Claims claims = extractClaims(token);
-        try {
-            return UUID.fromString(claims.getSubject());
-        } catch (Exception e) {
-            return null;
-        }
+        return UUID.fromString(claims.getSubject());
     }
 
     public String extractEmail(String token) {

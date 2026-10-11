@@ -32,6 +32,6 @@ public class CreateStaffRequest {
     @Schema(description = "Địa chỉ làm việc / chi nhánh", example = "Tầng 5, Tòa SmartBox Tower, Hà Nội")
     private String defaultAddress;
 
-    @Schema(description = "Mật khẩu ban đầu (nếu bỏ trống mặc định là Admin@123456)", example = "Admin@123456")
+    @Schema(description = "Mật khẩu ban đầu bắt buộc, dài 12–128 ký tự; được Auth provider băm và lưu trữ")
     private String initialPassword;
 }

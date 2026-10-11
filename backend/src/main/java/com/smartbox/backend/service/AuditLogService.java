@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
+    private final com.smartbox.backend.security.CurrentActor actors;
 
     @Transactional(readOnly = true)
     public List<AuditLogResponse> getRecentLogs() {
@@ -40,7 +41,7 @@ public class AuditLogService {
     @Transactional
     public AuditLogResponse logAction(AuditLogRequest req) {
         AuditLog log = AuditLog.builder()
-                .actorId(req.getActorId())
+                .actorId(actors.get().id())
                 .action(req.getAction())
                 .targetTable(req.getTargetTable())
                 .targetId(req.getTargetId())
@@ -55,8 +56,8 @@ public class AuditLogService {
         return AuditLogResponse.builder()
                 .id(a.getId())
                 .actorId(a.getActorId())
-                .actorName(a.getActor() != null ? a.getActor().getFullName() : "Admin Hệ Thống")
-                .actorRole(a.getActor() != null ? a.getActor().getRole() : "super_admin")
+                .actorName(a.getActor() != null ? a.getActor().getFullName() : null)
+                .actorRole(a.getActor() != null ? a.getActor().getRole() : null)
                 .action(a.getAction())
                 .targetTable(a.getTargetTable())
                 .targetId(a.getTargetId())

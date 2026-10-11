@@ -33,6 +33,7 @@ public class AuditLog {
     @Column(name = "target_id")
     private UUID targetId;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
     @Column(name = "meta", columnDefinition = "jsonb")
     private String meta;
 
