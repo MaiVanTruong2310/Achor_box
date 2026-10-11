@@ -1,0 +1,97 @@
+{
+  "requiredTopLevelDocuments": 21,
+  "present": 21,
+  "missing": [],
+  "operationsSource": 114,
+  "operationsRuntime": 114,
+  "operationSections": 114,
+  "routeDifference": [],
+  "schemas": 70,
+  "brokenLocalLinks": [],
+  "unbalancedMarkdownFences": [],
+  "invalidExampleJSON": [],
+  "unexpectedScriptCharacters": [],
+  "applicationFilesCompared": 277,
+  "applicationFilesChanged": [],
+  "priorTestXML": [
+    {
+      "name": "com.smartbox.backend.BackendApplicationTests",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-09T18:19:33.539Z"
+    },
+    {
+      "name": "com.smartbox.backend.CommerceIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-09T18:19:45.410Z"
+    },
+    {
+      "name": "com.smartbox.backend.DashboardAndEmailTests",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-09T18:19:48.355Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresCommerceIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-09T18:19:49.220Z"
+    },
+    {
+      "name": "com.smartbox.backend.SecurityTests",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-09T18:20:03.716Z"
+    }
+  ],
+  "allChecksPassed": true,
+  "contrastChecks": [
+    {
+      "pair": "text/background",
+      "ratio": 18.55,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "pair": "muted/surface",
+      "ratio": 7.88,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "pair": "white/blue",
+      "ratio": 5.08,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "pair": "cyan-button",
+      "ratio": 11.63,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "pair": "focus/surface",
+      "ratio": 11.31,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "pair": "control-border/surface",
+      "ratio": 3.85,
+      "minimum": 3,
+      "pass": true
+    }
+  ]
+}
