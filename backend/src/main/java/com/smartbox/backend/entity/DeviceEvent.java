@@ -27,6 +27,7 @@ public class DeviceEvent {
     @Column(name = "event_type", nullable = false)
     private String eventType;
 
+    @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
     @Column(name = "payload", columnDefinition = "jsonb")
     private String payload;
 
