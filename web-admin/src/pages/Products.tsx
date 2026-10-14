@@ -1,3 +1,4 @@
+import {adminRequest} from '../services/adminRequest';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Package,
@@ -276,6 +277,7 @@ export const Products: React.FC = () => {
   };
 
   // Modal State for Stock Movement (In / Out)
+  const [operationError,setOperationError]=useState(''),[operationBusy,setOperationBusy]=useState(false),[stockVariantId,setStockVariantId]=useState('');
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [stockTargetProduct, setStockTargetProduct] = useState<ExtendedProduct | null>(null);
   const [stockMovementType, setStockMovementType] = useState<'in' | 'out'>('in');
@@ -336,91 +338,10 @@ export const Products: React.FC = () => {
   });
 
   // Load all data
-  const loadAllData = async () => {
-    setLoading(true);
-    try {
-      const [prodsData, catsData, couponsData, combosData, logsData] = await Promise.all([
-        productsService.getProducts(),
-        productsService.getCategories(),
-        productsService.getCoupons(),
-        productsService.getCombos(),
-        productsService.getStockTransactions()
-      ]);
-
-      // Enrich products with sample variants & SEO if missing
-      const enrichedProds: ExtendedProduct[] = prodsData.map((p, idx) => {
-        const defaultSlug = p.name
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '');
-
-        const hasVariants = p.variants && p.variants.length > 0;
-        const variants: ProductVariant[] = hasVariants
-          ? p.variants!
-          : [
-              {
-                id: `var-${p.id}-1`,
-                sku: `${p.sku}-S`,
-                name: 'Size S (Nhỏ - 45L)',
-                variant_name: 'Size S (Nhỏ - 45L)',
-                capacity: 'Standard 45L',
-                price_adjustment: 0,
-                price_delta: 0,
-                stock_quantity: Math.floor(p.stock_quantity * 0.4)
-              },
-              {
-                id: `var-${p.id}-2`,
-                sku: `${p.sku}-M`,
-                name: 'Size M (Vừa - 85L)',
-                variant_name: 'Size M (Vừa - 85L)',
-                capacity: 'Pro 85L',
-                price_adjustment: 400000,
-                price_delta: 400000,
-                stock_quantity: Math.floor(p.stock_quantity * 0.4)
-              },
-              {
-                id: `var-${p.id}-3`,
-                sku: `${p.sku}-L`,
-                name: 'Size L (Lớn - 150L)',
-                variant_name: 'Size L (Lớn - 150L)',
-                capacity: 'Enterprise 150L',
-                price_adjustment: 900000,
-                price_delta: 900000,
-                stock_quantity: Math.floor(p.stock_quantity * 0.2)
-              }
-            ];
-
-        const seo: ProductSEO = p.seo || {
-          meta_title: `${p.name} - Hộp Giao Nhận Hàng Thông Minh SmartBox IoT`,
-          meta_description:
-            p.description ||
-            `Mua ngay ${p.name} chính hãng SmartBox với cảm biến tự động, camera an ninh và khóa điện tử ESP32. Bảo hành 12 tháng.`,
-          slug: defaultSlug || `smartbox-product-${idx + 1}`,
-          keywords: ['smartbox', 'hộp nhận hàng', 'iot', 'esp32', p.sku.toLowerCase()],
-          canonical_url: `https://smartbox.vn/products/${defaultSlug || p.sku.toLowerCase()}`
-        };
-
-        return {
-          ...p,
-          variants,
-          seo,
-          is_featured: idx === 0 || idx === 1
-        };
-      });
-
-      setProducts(enrichedProds);
-      setCategories(catsData);
-      setCoupons(couponsData);
-      setCombos(combosData);
-      setStockLogs(logsData);
-    } catch (err) {
-      console.error('Error loading product management data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadAllData = async () => {setLoading(true);setOperationError('');try{
+ const [products,categories,coupons,logs]=await Promise.all([productsService.getProducts(),productsService.getCategories(),productsService.getCoupons(),productsService.getStockTransactions()]);
+ setProducts(products.map(p=>({...p,variants:p.variants||[]})));setCategories(categories);setCoupons(coupons);setCombos([]);setStockLogs(logs);
+ }catch(e){setOperationError((e as Error).message);}finally{setLoading(false);}};
 
   useEffect(() => {
     loadAllData();
@@ -559,178 +480,23 @@ export const Products: React.FC = () => {
     setIsProductModalOpen(true);
   };
 
-  const handleSaveProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const matchedCategory = categories.find(
-      (c) => c.id === productForm.category_id || c.name === productForm.category_name
-    );
-    const targetCategoryId =
-      matchedCategory?.id || (productForm.category_id?.length === 36 ? productForm.category_id : undefined);
+  const handleSaveProduct = async (e:React.FormEvent) => {e.preventDefault();if(operationBusy)return;setOperationBusy(true);setOperationError('');try{
+ const category=categories.find(c=>c.id===productForm.category_id||c.name===productForm.category_name);
+ const payload={category_id:category?.id,sku:productForm.sku,name:productForm.name,description:productForm.description,price:Number(productForm.price),images:productForm.images,is_active:productForm.is_active,variants:productForm.variants.map(v=>({...v,id:v.id&&v.id.length===36?v.id:undefined}))};
+ if(modalMode==='create')await productsService.createProduct({...payload,stock_quantity:Number(productForm.stock_quantity)});
+ else if(editingId)await productsService.updateProduct(editingId,payload);
+ setIsProductModalOpen(false);await loadAllData();
+ }catch(e){setOperationError((e as Error).message);}finally{setOperationBusy(false);}};
 
-    // Auto-generate slug if empty
-    const finalSlug =
-      productForm.seo.slug ||
-      productForm.name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-
-    const finalSEO: ProductSEO = {
-      ...productForm.seo,
-      meta_title: productForm.seo.meta_title || `${productForm.name} - SmartBox IoT`,
-      meta_description:
-        productForm.seo.meta_description ||
-        productForm.description ||
-        `Sản phẩm ${productForm.name} chính hãng SmartBox IoT.`,
-      slug: finalSlug,
-      canonical_url: `https://smartbox.vn/products/${finalSlug}`
-    };
-
-    if (modalMode === 'create') {
-      const newProductPayload: Partial<Product> = {
-        category_id: targetCategoryId,
-        sku: productForm.sku,
-        name: productForm.name,
-        description: productForm.description,
-        price: Number(productForm.price),
-        discount_price: productForm.discount_price ? Number(productForm.discount_price) : null,
-        stock_quantity: Number(productForm.stock_quantity),
-        images: productForm.images,
-        is_active: productForm.is_active,
-        is_featured: productForm.is_featured,
-        variants: productForm.variants,
-        seo: finalSEO
-      };
-
-      const res = await productsService.createProduct(newProductPayload);
-      const createdItem: ExtendedProduct = res.data
-        ? { ...res.data, category_name: matchedCategory?.name || productForm.category_name, variants: productForm.variants, seo: finalSEO }
-        : {
-            id: `prod-local-${Date.now()}`,
-            category_id: targetCategoryId || null,
-            category_name: matchedCategory?.name || productForm.category_name,
-            sku: productForm.sku,
-            name: productForm.name,
-            description: productForm.description,
-            price: Number(productForm.price),
-            discount_price: productForm.discount_price ? Number(productForm.discount_price) : null,
-            stock_quantity: Number(productForm.stock_quantity),
-            images: productForm.images,
-            is_active: productForm.is_active,
-            is_featured: productForm.is_featured,
-            variants: productForm.variants,
-            seo: finalSEO,
-            created_at: new Date().toISOString()
-          };
-
-      setProducts([createdItem, ...products]);
-
-      // Record creation stock log
-      await productsService.addStockTransaction({
-        id: `tx-${Date.now().toString().slice(-6)}`,
-        product_id: createdItem.id,
-        product_name: createdItem.name,
-        sku: createdItem.sku,
-        transaction_type: 'in',
-        delta: createdItem.stock_quantity,
-        previous_stock: 0,
-        new_stock: createdItem.stock_quantity,
-        reason: 'Khởi tạo sản phẩm & nhập tồn kho ban đầu',
-        created_at: new Date().toISOString(),
-        created_by: profile?.full_name || 'Tổng Quản Trị Hệ Thống'
-      });
-    } else if (modalMode === 'edit' && editingId) {
-      await productsService.updateProduct(editingId, {
-        sku: productForm.sku,
-        name: productForm.name,
-        category_id: targetCategoryId,
-        price: Number(productForm.price),
-        discount_price: productForm.discount_price ? Number(productForm.discount_price) : null,
-        stock_quantity: Number(productForm.stock_quantity),
-        description: productForm.description,
-        images: productForm.images,
-        is_active: productForm.is_active,
-        is_featured: productForm.is_featured,
-        variants: productForm.variants,
-        seo: finalSEO
-      });
-
-      setProducts(
-        products.map((p) => {
-          if (p.id === editingId) {
-            return {
-              ...p,
-              sku: productForm.sku,
-              name: productForm.name,
-              category_id: targetCategoryId || p.category_id,
-              category_name: matchedCategory?.name || productForm.category_name,
-              price: Number(productForm.price),
-              discount_price: productForm.discount_price ? Number(productForm.discount_price) : null,
-              stock_quantity: Number(productForm.stock_quantity),
-              description: productForm.description,
-              images: productForm.images,
-              is_active: productForm.is_active,
-              is_featured: productForm.is_featured,
-              variants: productForm.variants,
-              seo: finalSEO
-            };
-          }
-          return p;
-        })
-      );
-    }
-
-    setIsProductModalOpen(false);
-  };
-
-  const handleDeleteProduct = async (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi cơ sở dữ liệu?')) {
-      setProducts(products.filter((p) => p.id !== id));
-      await productsService.deleteProduct(id);
-    }
-  };
+  const handleDeleteProduct = async (id:string) => {if(!confirm('Ngừng bán sản phẩm này?'))return;try{await productsService.deleteProduct(id);await loadAllData();}catch(e){setOperationError((e as Error).message);}};
 
   // -------------------------------------------------------------
   // Stock Adjustment Handlers
   // -------------------------------------------------------------
-  const handleQuickAdjustStock = async (prod: ExtendedProduct, delta: number) => {
-    const prevStock = prod.stock_quantity;
-    const nextStock = Math.max(0, prevStock + delta);
-    const reason = delta > 0 ? `Nhập kho nhanh (+${delta} sản phẩm)` : `Xuất kho nhanh (${delta} sản phẩm)`;
-
-    setProducts(
-      products.map((p) => {
-        if (p.id === prod.id) {
-          return { ...p, stock_quantity: nextStock };
-        }
-        return p;
-      })
-    );
-
-    await productsService.updateStock(prod.id, delta, reason, profile?.full_name || 'Admin');
-
-    const newTx: StockTransaction = {
-      id: `tx-${Date.now().toString().slice(-6)}`,
-      product_id: prod.id,
-      product_name: prod.name,
-      sku: prod.sku,
-      transaction_type: delta > 0 ? 'in' : 'out',
-      delta: Math.abs(delta),
-      previous_stock: prevStock,
-      new_stock: nextStock,
-      reason,
-      created_at: new Date().toISOString(),
-      created_by: profile?.full_name || 'Tổng Quản Trị Hệ Thống'
-    };
-
-    setStockLogs([newTx, ...stockLogs]);
-    await productsService.addStockTransaction(newTx);
-  };
+  const handleQuickAdjustStock = async (prod:ExtendedProduct,delta:number) => {if(prod.variants?.length){handleOpenDetailedStockModal(prod);setStockMovementDelta(Math.abs(delta));setStockMovementType(delta>0?'in':'out');return;}try{await productsService.updateStock(prod.id,delta);await loadAllData();}catch(e){setOperationError((e as Error).message);}};
 
   const handleOpenDetailedStockModal = (prod: ExtendedProduct) => {
-    setStockTargetProduct(prod);
+    setStockTargetProduct(prod);setStockVariantId(prod.variants?.[0]?.id||'');setOperationError('');
     setStockMovementType('in');
     setStockMovementDelta(10);
     setStockMovementReason('Nhập lô sản xuất xưởng');
@@ -738,44 +504,11 @@ export const Products: React.FC = () => {
     setIsStockModalOpen(true);
   };
 
-  const handleExecuteStockMovement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stockTargetProduct) return;
-
-    const deltaValue = stockMovementType === 'in' ? Math.abs(stockMovementDelta) : -Math.abs(stockMovementDelta);
-    const prevStock = stockTargetProduct.stock_quantity;
-    const nextStock = Math.max(0, prevStock + deltaValue);
-    const finalReason = stockMovementNotes ? `${stockMovementReason}: ${stockMovementNotes}` : stockMovementReason;
-
-    setProducts(
-      products.map((p) => {
-        if (p.id === stockTargetProduct.id) {
-          return { ...p, stock_quantity: nextStock };
-        }
-        return p;
-      })
-    );
-
-    await productsService.updateStock(stockTargetProduct.id, deltaValue, finalReason, profile?.full_name || 'Admin');
-
-    const newTx: StockTransaction = {
-      id: `tx-${Date.now().toString().slice(-6)}`,
-      product_id: stockTargetProduct.id,
-      product_name: stockTargetProduct.name,
-      sku: stockTargetProduct.sku,
-      transaction_type: stockMovementType,
-      delta: Math.abs(deltaValue),
-      previous_stock: prevStock,
-      new_stock: nextStock,
-      reason: finalReason,
-      created_at: new Date().toISOString(),
-      created_by: profile?.full_name || 'Tổng Quản Trị Hệ Thống'
-    };
-
-    setStockLogs([newTx, ...stockLogs]);
-    await productsService.addStockTransaction(newTx);
-    setIsStockModalOpen(false);
-  };
+  const handleExecuteStockMovement = async (e:React.FormEvent) => {e.preventDefault();if(!stockTargetProduct||operationBusy)return;setOperationBusy(true);setOperationError('');try{
+ const delta=stockMovementType==='in'?Math.abs(stockMovementDelta):-Math.abs(stockMovementDelta);
+ if(stockTargetProduct.variants?.length){if(!stockVariantId)throw new Error('Chọn SKU cần điều chỉnh.');await adminRequest('/products/'+stockTargetProduct.id+'/variants/'+stockVariantId+'/stock',{method:'PATCH',body:JSON.stringify({delta})});}
+ else await productsService.updateStock(stockTargetProduct.id,delta);
+ setIsStockModalOpen(false);await loadAllData();}catch(e){setOperationError((e as Error).message);}finally{setOperationBusy(false);}};
 
   // -------------------------------------------------------------
   // Variant Management Helper in Modal
@@ -942,6 +675,7 @@ export const Products: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+{operationError&&<p role="alert">{operationError}</p>}
       {/* 1. Header & Quick Actions */}
       <div
         className="card"
@@ -2571,6 +2305,7 @@ export const Products: React.FC = () => {
                         className="input-field"
                         style={{ margin: 0, borderRadius: '8px' }}
                         value={productForm.stock_quantity}
+                        disabled={modalMode==='edit'}
                         onChange={(e) => setProductForm({ ...productForm, stock_quantity: Number(e.target.value) })}
                       />
                     </div>
@@ -2691,6 +2426,7 @@ export const Products: React.FC = () => {
                             className="input-field"
                             style={{ margin: 0, padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px' }}
                             value={v.stock_quantity}
+                            disabled={Boolean(v.id&&v.id.length===36)}
                             onChange={(e) => handleUpdateVariant(idx, 'stock_quantity', Number(e.target.value))}
                           />
                         </div>
@@ -3077,7 +2813,7 @@ export const Products: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleExecuteStockMovement} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleExecuteStockMovement} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>{operationError&&<p role="alert">{operationError}</p>}{stockTargetProduct.variants?.length?<label>SKU<select className="input-field" value={stockVariantId} disabled={operationBusy} onChange={e=>setStockVariantId(e.target.value)}>{stockTargetProduct.variants.map(v=><option key={v.id} value={v.id}>{v.sku} · Tồn khả dụng {v.stock_quantity}</option>)}</select></label>:null}<fieldset disabled={operationBusy} style={{border:0,padding:0}}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
                   Loại Giao Dịch
@@ -3134,7 +2870,7 @@ export const Products: React.FC = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
-                  Số Lượng Biến Động (Hiện tại: <strong>{stockTargetProduct.stock_quantity}</strong> cái)
+                  Số Lượng Biến Động (Hiện tại: <strong>{stockTargetProduct.variants?.find(v=>v.id===stockVariantId)?.stock_quantity??stockTargetProduct.stock_quantity}</strong> cái)
                 </label>
                 <input
                   type="number"
@@ -3197,7 +2933,7 @@ export const Products: React.FC = () => {
                   Xác Nhận Cập Nhật Kho
                 </button>
               </div>
-            </form>
+            </fieldset></form>
           </div>
         </div>
       )}

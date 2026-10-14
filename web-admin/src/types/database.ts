@@ -8,7 +8,7 @@ export type UserRole =
 
 export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
   super_admin: '/dashboard',
-  technician: '/devices',
+  technician: '/delivery-installations',
   product_manager: '/products',
   support_agent: '/warranties',
   accountant: '/orders',

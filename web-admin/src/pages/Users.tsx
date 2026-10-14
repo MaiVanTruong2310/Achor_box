@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import {adminCatalogApi} from '../services/adminCatalogApi';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Users,
   Search,
@@ -48,6 +49,8 @@ export const UsersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
 
+  const [page,setPage]=useState(0),[totalPages,setTotalPages]=useState(0),[totalElements,setTotalElements]=useState(0),[listError,setListError]=useState('');
+ const requestVersion=useRef(0);
   // Modal 1: Hồ Sơ Khách Hàng 360°
   const [selectedUserFor360, setSelectedUserFor360] = useState<ExtendedProfile | null>(null);
   const [customer360Data, setCustomer360Data] = useState<Customer360Details | null>(null);
@@ -75,36 +78,14 @@ export const UsersPage: React.FC = () => {
 
   // Load all users
   const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const [data, allOrders, allDevices] = await Promise.all([
-        usersService.getUsers(),
-        ordersService.getOrders().catch(() => []),
-        devicesService.getDevices().catch(() => [])
-      ]);
+ const request=++requestVersion.current;setLoading(true);setListError('');
+ try { const data=await adminCatalogApi.users(page,searchTerm,roleFilter,statusFilter);
+ if(request===requestVersion.current){setUsers(data.content);setTotalPages(data.totalPages);setTotalElements(data.totalElements);}}
+ catch(e){if(request===requestVersion.current){setUsers([]);setListError((e as Error).message);}}
+ finally{if(request===requestVersion.current)setLoading(false);}
+ };
 
-      // Enrich users with order and device counts
-      const enriched: ExtendedProfile[] = data.map((u) => {
-        const userOrders = allOrders.filter((o) => o.user_id === u.id);
-        const userDevices = allDevices.filter((d) => d.owner_id === u.id);
-        return {
-          ...u,
-          total_orders: userOrders.length,
-          owned_devices: userDevices.map((d) => d.serial_number || d.name || 'BOX-IoT')
-        };
-      });
-
-      setUsers(enriched);
-    } catch (err) {
-      console.error('Error loading users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  useEffect(()=>{const timer=setTimeout(()=>{loadUsers();},300);return()=>{clearTimeout(timer);requestVersion.current++;};},[page,searchTerm,statusFilter,roleFilter]);
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -117,45 +98,7 @@ export const UsersPage: React.FC = () => {
   // -------------------------------------------------------------
   // SMART SEARCH: Prioritize Phone Number
   // -------------------------------------------------------------
-  const filteredUsers = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-
-    return users.filter((u) => {
-      // Role Filter
-      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
-
-      // Status Filter
-      if (statusFilter === 'active' && u.is_locked) return false;
-      if (statusFilter === 'locked' && !u.is_locked) return false;
-
-      if (!term) return true;
-
-      // Clean digits from search input to check phone match
-      const isDigitSearch = /^[\d+]+$/.test(term);
-      if (isDigitSearch) {
-        // High priority phone match
-        const cleanPhone = (u.phone || '').replace(/[\s.-]/g, '');
-        if (cleanPhone.includes(term.replace(/[\s.-]/g, ''))) return true;
-      }
-
-      // Check email
-      if (u.email && u.email.toLowerCase().includes(term)) return true;
-
-      // Check full name
-      if (u.full_name && u.full_name.toLowerCase().includes(term)) return true;
-
-      // Check phone (general)
-      if (u.phone && u.phone.toLowerCase().includes(term)) return true;
-
-      // Check default address
-      if (u.default_address && u.default_address.toLowerCase().includes(term)) return true;
-
-      // Check device serials
-      if (u.owned_devices && u.owned_devices.some((d) => d.toLowerCase().includes(term))) return true;
-
-      return false;
-    });
-  }, [users, searchTerm, statusFilter, roleFilter]);
+  const filteredUsers = users;
 
   // -------------------------------------------------------------
   // MODAL 1: Open Customer 360° View
@@ -277,6 +220,7 @@ export const UsersPage: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+{listError&&<p role="alert">{listError}</p>}<div style={{display:'flex',gap:12,alignItems:'center'}}><span>{totalElements} kết quả · Trang {totalPages===0?0:page+1}/{totalPages}</span><button className="btn btn-secondary" disabled={loading||page===0} onClick={()=>setPage(p=>p-1)}>Trước</button><button className="btn btn-secondary" disabled={loading||page+1>=totalPages} onClick={()=>setPage(p=>p+1)}>Sau</button><small>Số liệu trên trang hiện tại</small></div>
       {/* 1. Header & Title */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
@@ -406,11 +350,11 @@ export const UsersPage: React.FC = () => {
               }}
               placeholder="Nhập Số Điện Thoại (Ưu tiên), Email hoặc Tên khách..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {setSearchTerm(e.target.value);setPage(0);}}
             />
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm('')}
+                onClick={() => {setSearchTerm('');setPage(0);}}
                 style={{
                   position: 'absolute',
                   right: '10px',
@@ -429,7 +373,7 @@ export const UsersPage: React.FC = () => {
 
           <select
             value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+            onChange={(e) => {setRoleFilter(e.target.value);setPage(0);}}
             className="input-field"
             style={{ margin: 0, width: 'auto', borderRadius: '10px', fontSize: '0.8125rem' }}
           >
@@ -449,7 +393,7 @@ export const UsersPage: React.FC = () => {
           ].map((st) => (
             <button
               key={st.id}
-              onClick={() => setStatusFilter(st.id)}
+              onClick={() => {setStatusFilter(st.id);setPage(0);}}
               className={`btn ${statusFilter === st.id ? 'btn-primary' : 'btn-secondary'}`}
               style={{ padding: '6px 14px', fontSize: '0.8125rem', borderRadius: '8px' }}
             >

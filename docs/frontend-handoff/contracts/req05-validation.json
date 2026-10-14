@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-14",
+  "scope": "REQ-05 parallel dashboard, variant/SKU adaptation, admin UI",
+  "backend": {
+    "tests": 358,
+    "skipped": 5,
+    "failures": 0,
+    "errors": 0,
+    "passed": 353
+  },
+  "dashboardSuites": [
+    {
+      "name": "com.smartbox.backend.DashboardAndEmailTests",
+      "tests": "10",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresDashboardTests",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0"
+    }
+  ],
+  "frontend": {
+    "adminApiTests": 10,
+    "failed": 0,
+    "typescript": "passed",
+    "productionBuild": "passed; existing chunk size/dynamic import warnings"
+  },
+  "verified": [
+    "Vietnam day and 30-day paid_at boundaries",
+    "Eligible order status filtering",
+    "Variant grouping and deterministic ties",
+    "Active parent/variant low stock <=5 including zero",
+    "Four concurrent queries, MDC and ERROR trace",
+    "1500ms partial timeout, interruption and recovery",
+    "Demo-only sequential/delay/fail including Spring property binding",
+    "60 simultaneous requests <=2000ms, 200 partial or 503, recovery",
+    "HTTP authentication, roles, date validation and demo gate",
+    "Frontend preserves null vs zero, no caching/fallback, date/mode and 503"
+  ],
+  "limits": [
+    "Database tests used owned disposable PostgreSQL; real Supabase was not modified",
+    "Revenue includes eligible mock/Sandbox orders; not net refund-adjusted revenue",
+    "JDBC interruption is not guaranteed to cancel database queries; configure statement_timeout for deployment",
+    "Browser UI was typechecked and built; no live authenticated browser walkthrough",
+    "Email disabled locally; no SMTP end-to-end test against Mailpit this turn"
+  ]
+}

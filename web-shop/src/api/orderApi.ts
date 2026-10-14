@@ -1,153 +1,38 @@
-import { API_CONFIG, delay } from './client';
-import { Order, CreateOrderPayload } from '../types/order';
-import { MOCK_ORDERS } from '../mocks/orders';
-
-const STORAGE_ORDERS_KEY = 'smartbox_shop_orders';
-
-const getLocalOrders = (): Order[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_ORDERS_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(MOCK_ORDERS));
-      return MOCK_ORDERS;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return MOCK_ORDERS;
-  }
-};
-
-const saveLocalOrders = (orders: Order[]) => {
-  try {
-    localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(orders));
-  } catch (err) {
-    console.error('Failed to persist orders', err);
-  }
-};
-
+import { Order, CreateOrderPayload, OrderStatus } from '../types/order';
+import { customerRequest, CustomerApiError } from './customerClient';
+import type {CheckoutSession} from './paymentApi';
+export interface OrderPage { content: Order[]; page: number; size: number; totalElements: number; totalPages: number }
+function adapt(row: any): Order {
+  const snapshot = row.shippingAddressSnapshot;
+  return { id: row.id, code: row.id, userId: row.userId, status: String(row.status).toUpperCase() as OrderStatus,
+    items: (row.items || []).map((i: any) => ({ productId: i.productId, variantId: i.variantId, sku: i.sku, name: [i.productName, i.variantName].filter(Boolean).join(' · '), price: Number(i.unitPrice), quantity: i.quantity, image: '' })),
+    shippingAddress: { fullName: snapshot?.recipientName || '', phone: snapshot?.phone || '', email: snapshot?.email || '', address: snapshot?.addressLine || row.shippingAddress || '', note: snapshot?.installationNote || '' },
+    shippingFee: 0, subtotal: Number(row.total), total: Number(row.total), paymentMethod: row.payment?.provider==='vnpay'?'VNPAY':'BANK_TRANSFER', paymentStatus: row.paidAt ? 'PAID' : 'UNPAID',
+    statusHistory: (row.statusHistory || []).map((h: any) => ({ status: String(h.status).toUpperCase() as OrderStatus, timestamp: h.timestamp, note: '' })),
+    timeline: row.timeline || [], payment: row.payment || null, deliveryInstallation: row.deliveryInstallation || null, createdAt: row.createdAt, updatedAt: row.updatedAt };
+}
 export const orderApi = {
-  /**
-   * Tạo đơn hàng mới
-   */
   async createOrder(payload: CreateOrderPayload): Promise<Order> {
-    if (API_CONFIG.useMock) {
-      await delay(400);
-      const subtotal = payload.items.reduce((sum, it) => sum + it.price * it.quantity, 0);
-      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-      const nowStr = new Date().toISOString();
-      const newOrder: Order = {
-        id: `ord-${Date.now()}`,
-        code: `SBOX-ORD-2026-${randomSuffix}`,
-        userId: 'usr-001',
-        items: payload.items,
-        shippingAddress: payload.shippingAddress,
-        paymentMethod: payload.paymentMethod,
-        paymentStatus: 'UNPAID',
-        shippingFee: 0, // Miễn phí giao hàng toàn quốc
-        subtotal,
-        total: subtotal,
-        status: 'PENDING',
-        statusHistory: [
-          {
-            status: 'PENDING',
-            timestamp: new Date().toLocaleString('vi-VN'),
-            note: 'Đơn hàng mới được tạo thành công trên hệ thống'
-          }
-        ],
-        createdAt: nowStr,
-        updatedAt: nowStr
-      };
-
-      const current = getLocalOrders();
-      const updated = [newOrder, ...current];
-      saveLocalOrders(updated);
-      return newOrder;
-    }
-
-    const res = await fetch(`${API_CONFIG.baseUrl}/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('Không thể tạo đơn hàng');
-    return res.json();
+    if (payload.items.some(i => !i.variantId)) throw new Error('Giỏ hàng cũ chưa có phiên bản thiết bị hợp lệ. Vui lòng chọn lại sản phẩm.');
+    const body = { items: payload.items.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
+      ...(payload.addressId ? { addressId: payload.addressId } : { shippingDetails: { label: 'Địa chỉ trên đơn', recipientName: payload.shippingAddress.fullName, phone: payload.shippingAddress.phone, addressLine: payload.shippingAddress.address, installationNote: payload.shippingAddress.note || '', isDefault: false } }) };
+    return adapt(await customerRequest('/orders', { method: 'POST', body: JSON.stringify(body) }));
   },
-
-  /**
-   * Lấy danh sách đơn hàng của người dùng hiện tại
-   */
-  async getMyOrders(): Promise<Order[]> {
-    if (API_CONFIG.useMock) {
-      await delay(250);
-      return getLocalOrders();
-    }
-
-    const res = await fetch(`${API_CONFIG.baseUrl}/orders/my-orders`);
-    if (!res.ok) throw new Error('Không thể tải danh sách đơn hàng');
-    return res.json();
+  async checkout(id: string): Promise<CheckoutSession> {
+    const storageKey = `smartbox_checkout_key:${id}`; let key = sessionStorage.getItem(storageKey);
+    if (!key) { key = crypto.randomUUID(); sessionStorage.setItem(storageKey, key); }
+    return customerRequest<CheckoutSession>(`/orders/${id}/checkout`, { method: 'POST', headers: { 'Idempotency-Key': key } });
   },
-
-  /**
-   * Lấy chi tiết một đơn hàng theo ID hoặc Mã đơn
-   */
-  async getOrderById(idOrCode: string): Promise<Order | null> {
-    if (API_CONFIG.useMock) {
-      await delay(200);
-      const orders = getLocalOrders();
-      const order = orders.find(
-        (o) => o.id === idOrCode || o.code.toLowerCase() === idOrCode.toLowerCase()
-      );
-      return order || null;
-    }
-
-    const res = await fetch(`${API_CONFIG.baseUrl}/orders/${idOrCode}`);
-    if (!res.ok) {
-      if (res.status === 404) return null;
-      throw new Error('Không thể tải chi tiết đơn hàng');
-    }
-    return res.json();
+  async getMyOrders(page = 0): Promise<OrderPage> {
+    const result = await customerRequest<any>(`/customer/orders?page=${page}&size=20`);
+    return { ...result, content: result.content.map(adapt) };
   },
-
-  /**
-   * Hủy đơn hàng (nếu đang ở trạng thái PENDING)
-   */
-  async cancelOrder(orderId: string, reason?: string): Promise<Order> {
-    if (API_CONFIG.useMock) {
-      await delay(300);
-      const orders = getLocalOrders();
-      const idx = orders.findIndex((o) => o.id === orderId);
-      if (idx === -1) throw new Error('Không tìm thấy đơn hàng cần hủy');
-      
-      const order = orders[idx];
-      if (order.status !== 'PENDING' && order.status !== 'CONFIRMED') {
-        throw new Error('Chỉ có thể hủy đơn hàng khi đơn chưa được xử lý đóng gói');
-      }
-
-      const updatedOrder: Order = {
-        ...order,
-        status: 'CANCELLED',
-        statusHistory: [
-          ...order.statusHistory,
-          {
-            status: 'CANCELLED',
-            timestamp: new Date().toLocaleString('vi-VN'),
-            note: reason || 'Khách hàng yêu cầu hủy đơn qua giao diện web'
-          }
-        ],
-        updatedAt: new Date().toISOString()
-      };
-
-      orders[idx] = updatedOrder;
-      saveLocalOrders(orders);
-      return updatedOrder;
-    }
-
-    const res = await fetch(`${API_CONFIG.baseUrl}/orders/${orderId}/cancel`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason })
-    });
-    if (!res.ok) throw new Error('Không thể hủy đơn hàng');
-    return res.json();
+  async getOrderById(id: string): Promise<Order | null> {
+    try { return adapt(await customerRequest(`/customer/orders/${id}`)); }
+    catch (e) { if (e instanceof CustomerApiError && e.status === 404) return null; throw e; }
+  },
+  async cancelOrder(id: string, reason: string): Promise<Order> {
+    await customerRequest(`/orders/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
+    const result = await this.getOrderById(id); if (!result) throw new Error('Không tải được trạng thái đơn.'); return result;
   }
 };

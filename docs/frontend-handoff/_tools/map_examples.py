@@ -57,7 +57,7 @@ def shape(e):
     if c=='ContentController'and m=='DELETE':
         message=re.search(r'"message",\s*"([^"]+)"',e['body']);return {'success':True,'message':message.group(1)}
     if c=='RevenueReportController':return {'code':'RPT_REVENUE_DAILY','name':'<tên report từ metadata>','params':[{'name':'<param name>','dataType':'<DATE|UUID|LONG|DECIMAL>','required':True,'maxDays':None}]}
-    if c=='ConcurrentDashboardController':return {'date':'<yyyy-MM-dd>','revenueToday':None,'orderCountByStatus':None,'top5Products':None,'lowStockProducts':None,'partial':True,'failedParts':['<failed part name>'],'elapsedMs':0}
+    if c=='ConcurrentDashboardController':return {'date':'<yyyy-MM-dd>','revenueToday':None,'orderCountByStatus':None,'top5Variants':None,'lowStockVariants':None,'partial':True,'failedParts':['<failed part name>'],'elapsedMs':0}
     raise ValueError((c,h))
 inventory=json.loads((OUT/'contracts/source-inventory.json').read_text(encoding='utf-8'))
 doc=(OUT/'06-API-CONTRACTS.md').read_text(encoding='utf-8');sections=re.split(r'(?=^### API-\d+)',doc,flags=re.M);examples={}

@@ -9,6 +9,7 @@ import { PageHeroHeader } from '../components/layout/PageHeroHeader';
 
 export const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -16,7 +17,7 @@ export const ProductsPage: React.FC = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      setLoading(true);
+      setLoading(true); setError('');
       try {
         const data = await productApi.getProducts({
           category: selectedCategory,
@@ -35,7 +36,7 @@ export const ProductsPage: React.FC = () => {
 
         setProducts(sorted);
       } catch (err) {
-        console.error('Failed to load products', err);
+        setError(err instanceof Error ? err.message : 'Không tải được danh mục sản phẩm.');
       } finally {
         setLoading(false);
       }
@@ -46,6 +47,7 @@ export const ProductsPage: React.FC = () => {
 
   return (
     <>
+      {error && <p role="alert" className="container form-error">{error}</p>}
       <PageHeroHeader
         badge="Thế hệ Anchor Box 2026 chính hãng"
         badgeIcon={<Sparkles size={13} />}

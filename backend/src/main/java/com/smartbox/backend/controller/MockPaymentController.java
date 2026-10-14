@@ -29,6 +29,7 @@ public class MockPaymentController {
     public Map<String,Object> detail(@PathVariable UUID id) {
         var payment=db.one("SELECT * FROM public.payments WHERE id=?",id);
         orders.owned(uuid(payment.get("order_id")),actors.get(),false);
+        if(!"mock".equals(payment.get("provider")))throw new com.smartbox.backend.exception.ForbiddenException("MOCK_CALLBACK_PROVIDER_MISMATCH");
         return payment;
     }
 

@@ -24,6 +24,7 @@ class BackendApplicationTests {
         props.add("spring.datasource.url",POSTGRES::getJdbcUrl);props.add("spring.datasource.username",POSTGRES::getUsername);props.add("spring.datasource.password",POSTGRES::getPassword);
     }
     @Autowired JdbcTemplate jdbc;
+    @Autowired org.springframework.core.env.Environment environment;
     @Autowired org.springframework.boot.test.web.client.TestRestTemplate http;
     @Autowired com.smartbox.backend.repository.ProfileRepository profiles;
     @Autowired com.smartbox.backend.repository.ProductRepository products;
@@ -31,7 +32,7 @@ class BackendApplicationTests {
     @Autowired com.smartbox.backend.service.PaymentService payments;
 
     @BeforeAll static void migrate(@Autowired JdbcTemplate jdbc) throws Exception {
-        for(String migration:java.util.List.of("001_order_enum.sql","002_commerce.sql","003_iot.sql","004_delivery_installation.sql","005_installation_completion_guard.sql","006_customer_account.sql","007_tracking_warranty_variant_specs.sql","008_customer_warranty_claims.sql"))
+        for(String migration:java.util.List.of("001_order_enum.sql","002_commerce.sql","003_iot.sql","004_delivery_installation.sql","005_installation_completion_guard.sql","006_customer_account.sql","007_tracking_warranty_variant_specs.sql","008_customer_warranty_claims.sql","009_vnpay_sandbox.sql","010_sales_invoices.sql"))
             jdbc.execute(new String(BackendApplicationTests.class.getResourceAsStream("/db/migration/"+migration).readAllBytes(),StandardCharsets.UTF_8));
     }
 
@@ -57,6 +58,26 @@ class BackendApplicationTests {
         var output=java.nio.file.Path.of("build/audit/delivery-installation-openapi.json");java.nio.file.Files.createDirectories(output.getParent());
         java.nio.file.Files.writeString(output,new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(spec));
 	}
+
+    @Test void dashboardHttpUsesRolesDateValidationAndDemoGate(){
+        var staff=profile("super_admin");var accountant=profile("accountant");var customer=profile("customer");
+        org.mockito.Mockito.when(identity.identity("dashboard-staff")).thenReturn(staff);
+        org.mockito.Mockito.when(identity.identity("dashboard-accountant")).thenReturn(accountant);
+        org.mockito.Mockito.when(identity.identity("dashboard-customer")).thenReturn(customer);
+        String path="/api/admin/dashboard?date=2026-10-07";
+        org.junit.jupiter.api.Assertions.assertEquals(401,call(path,org.springframework.http.HttpMethod.GET,null,null,null,null).getStatusCode().value());
+        org.junit.jupiter.api.Assertions.assertEquals(403,call(path,org.springframework.http.HttpMethod.GET,"dashboard-customer",null,null,null).getStatusCode().value());
+        for(String token:java.util.List.of("dashboard-staff","dashboard-accountant")) {
+            var result=call(path,org.springframework.http.HttpMethod.GET,token,null,null,null);
+            org.junit.jupiter.api.Assertions.assertEquals(200,result.getStatusCode().value());
+            org.junit.jupiter.api.Assertions.assertEquals("2026-10-07",result.getBody().get("date"));
+            org.junit.jupiter.api.Assertions.assertEquals(false,result.getBody().get("partial"));
+            org.junit.jupiter.api.Assertions.assertTrue(result.getBody().containsKey("top5Variants"));
+            org.junit.jupiter.api.Assertions.assertTrue(result.getBody().containsKey("lowStockVariants"));
+        }
+        org.junit.jupiter.api.Assertions.assertEquals(environment.acceptsProfiles(org.springframework.core.env.Profiles.of("demo"))?200:400,call(path+"&mode=sequential",org.springframework.http.HttpMethod.GET,"dashboard-staff",null,null,null).getStatusCode().value());
+        org.junit.jupiter.api.Assertions.assertEquals(400,call("/api/admin/dashboard?date=invalid",org.springframework.http.HttpMethod.GET,"dashboard-staff",null,null,null).getStatusCode().value());
+    }
 
     @Test void deliveryHttpUsesDatabaseRolesScopesHeadersAndValidation(){
         java.util.UUID customer=profile("customer"),staff=profile("super_admin"),tech=profile("technician"),other=profile("technician");

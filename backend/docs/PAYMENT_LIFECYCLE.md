@@ -1,6 +1,8 @@
 # Payment — vòng đời giao dịch và chế độ giả lập
 
-Backend hiện dùng provider `mock` trong mọi profile; chưa tích hợp nhận tiền thật hoặc chuyển tiền hoàn qua VNPay/ngân hàng. Profile `demo` chỉ bật endpoint tạo kết quả giả lập, không biến mock thành provider thật. Các nút giả lập cần profile demo và `PAYMENT_HMAC_SECRET` tối thiểu 32 ký tự.
+**Cập nhật:** đã có lựa chọn VNPAY Sandbox; xem [cấu hình/hợp đồng mới](VNPAY_SANDBOX.md). Nội dung bên dưới là vòng đời kiểm chứng của chế độ mock. Chưa tích hợp nhận tiền production hoặc Refund API.
+
+Với `PAYMENT_PROVIDER=mock`, profile `demo` bật endpoint tạo kết quả giả lập; các nút này cần `PAYMENT_HMAC_SECRET` tối thiểu 32 ký tự và không được xác nhận giao dịch VNPAY.
 
 ## Vòng đời đã kiểm tra
 

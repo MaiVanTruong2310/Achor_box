@@ -1,24 +1,31 @@
+import { SalesInvoiceModal } from '../../components/SalesInvoiceModal';
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { orderApi } from '../../api/orderApi';
-import { Order, ORDER_STATUS_LABELS } from '../../types/order';
+import { paymentApi, PAYMENT_LABELS, paymentLabel,redirectToPayment } from '../../api/paymentApi';
+import { usePaymentMode } from '../../context/PaymentModeContext';
+import { Order, ORDER_STATUS_LABELS, DELIVERY_LABELS } from '../../types/order';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { Badge } from '../../components/ui/Badge';
 import { ArrowLeft, Clock, MapPin, Truck } from 'lucide-react';
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { mode } = usePaymentMode();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [invoiceOpen,setInvoiceOpen]=useState(false);
+  const location = useLocation();
+  const [error, setError] = useState((location.state as { error?: string } | null)?.error || '');
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    orderApi.getOrderById(id).then((data) => {
-      setOrder(data);
-      setLoading(false);
-    });
+    setLoading(true); setOrder(null);
+    let active = true;
+    const load = () => orderApi.getOrderById(id).then(data => { if (active) setOrder(data); }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
+    void load(); const timer = setInterval(() => { if (!document.hidden) void load(); }, 15000);
+    return () => { active = false; clearInterval(timer); };
   }, [id]);
 
   if (loading) {
@@ -28,7 +35,7 @@ export const OrderDetailPage: React.FC = () => {
   if (!order) {
     return (
       <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '32px', textAlign: 'center' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 700 }}>Không tìm thấy đơn hàng</h3>
+        {error && <p role="alert">{error}</p>}<h3 style={{ fontSize: '16px', fontWeight: 700 }}>Không tìm thấy đơn hàng</h3>
         <Link to="/account/orders" className="btn btn-secondary btn-sm" style={{ marginTop: '12px' }}>
           Quay lại danh sách đơn
         </Link>
@@ -61,6 +68,15 @@ export const OrderDetailPage: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      {order.status === 'PENDING' && <button className="btn btn-primary" disabled={cancelling || !mode} onClick={async () => { setCancelling(true); setError(''); try { const checkout=await orderApi.checkout(order.id); if(!redirectToPayment(checkout))setOrder(await orderApi.getOrderById(order.id)); } catch (e) { setError(e instanceof Error ? e.message : 'Không checkout được đơn.'); } finally { setCancelling(false); } }}>Tiếp tục checkout</button>}
+      <div>{order.status === 'AWAITING_PAYMENT' && order.payment?.provider === 'vnpay' && order.payment.status === 'pending' && <button className="btn btn-primary" disabled={cancelling} onClick={async()=>{setCancelling(true);setError('');try{redirectToPayment(await paymentApi.session(order.id));}catch(e){setError((e as Error).message);}finally{setCancelling(false);}}}>Tiếp tục thanh toán VNPAY Sandbox</button>}</div><section><h3>Tiến độ giao và lắp đặt</h3>{order.deliveryInstallation ? <><p>{order.status === 'CANCELLED' ? 'Công việc đã đóng vì đơn bị hủy' : DELIVERY_LABELS[order.deliveryInstallation.status] || order.deliveryInstallation.status}</p>{['scheduledAt', 'startedAt', 'deliveredAt', 'installedAt', 'completedAt'].map(field => { const value = order.deliveryInstallation?.[field as 'scheduledAt']; return value ? <p key={field}>{{ scheduledAt: 'Lịch hẹn', startedAt: 'Nhận việc', deliveredAt: 'Đã giao', installedAt: 'Đã lắp đặt', completedAt: 'Nghiệm thu đạt' }[field]}: {new Date(value).toLocaleString('vi-VN')}</p> : null; })}</> : <p>Chưa có lịch giao và lắp đặt.</p>}</section>
+      {order.payment && <section><h3>Giao dịch thanh toán</h3><p>{paymentLabel(order.payment)}</p><p>{PAYMENT_LABELS[order.payment.status] || order.payment.status}</p>{order.payment.expiresAt && <p>Hạn thanh toán: {new Date(order.payment.expiresAt).toLocaleString('vi-VN')}</p>}{order.payment.refund && <p>{order.payment.refund.status === 'COMPLETED' ? 'Đã ghi nhận đối soát hoàn tiền' : 'Đang chờ hoàn tiền'} · {Number(order.payment.refund.amount).toLocaleString('vi-VN')} đ {order.payment.isSimulated && '(giả lập)'}</p>}
+        {mode?.demoActionsEnabled && order.payment.provider === 'mock' && order.payment.status === 'pending' && <div><p>Các nút sau chỉ tạo kết quả giả lập phục vụ demo.</p>{(['SUCCESS','FAILED'] as const).map(result => <button key={result} className="btn btn-secondary" disabled={cancelling} onClick={async () => { setCancelling(true); setError(''); try { await paymentApi.simulate(order.payment!.id,result); setOrder(await orderApi.getOrderById(order.id)); } catch (e) { setError(e instanceof Error ? e.message : 'Không nhận được kết quả giả lập.'); try { setOrder(await orderApi.getOrderById(order.id)); } catch { /* Show unknown result; never fabricate success. */ } } finally { setCancelling(false); } }}>{result === 'SUCCESS' ? 'Giả lập thành công' : 'Giả lập thất bại'}</button>)}</div>}
+        {order.payment.provider === 'mock' && !mode?.demoActionsEnabled && <p>Chưa bật thao tác demo trên máy chủ. Không chuyển tiền thật cho giao dịch này.</p>}
+      </section>}
+      {order.paymentStatus === 'PAID' && <button className="btn btn-secondary" onClick={()=>setInvoiceOpen(true)}>Xem / In hóa đơn bán hàng</button>}
+      {invoiceOpen && <SalesInvoiceModal orderId={order.id} onClose={()=>setInvoiceOpen(false)}/>}
       {/* Back button */}
       <div>
         <Link
@@ -94,7 +110,7 @@ export const OrderDetailPage: React.FC = () => {
               {statusMeta.label}
             </Badge>
 
-            {(order.status === 'PENDING' || order.status === 'CONFIRMED') && (
+            {(order.status === 'PENDING' || order.status === 'AWAITING_PAYMENT') && (
               <button
                 onClick={handleCancelOrder}
                 disabled={cancelling}
@@ -126,8 +142,8 @@ export const OrderDetailPage: React.FC = () => {
             <div style={{ fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Truck size={15} /> Hình thức thanh toán &amp; Vận chuyển
             </div>
-            <div><strong>Phương thức:</strong> {order.paymentMethod === 'COD' ? 'Thanh toán COD' : 'Chuyển khoản'}</div>
-            <div><strong>Trạng thái:</strong> {order.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}</div>
+            <div><strong>Phương thức:</strong> {order.payment?paymentLabel(order.payment):'Chưa thanh toán'}</div>
+            <div><strong>Trạng thái:</strong> {order.payment ? (PAYMENT_LABELS[order.payment.status] || order.payment.status) : 'Chưa checkout'}</div>
             <div><strong>Vận chuyển:</strong> Giao hàng tiêu chuẩn toàn quốc (Miễn phí)</div>
           </div>
         </div>
@@ -172,7 +188,7 @@ export const OrderDetailPage: React.FC = () => {
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {order.statusHistory.map((h, idx) => (
+            {(order.timeline || []).map((h, idx) => (
               <div
                 key={idx}
                 style={{
@@ -185,12 +201,12 @@ export const OrderDetailPage: React.FC = () => {
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)', marginTop: '6px', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                    {ORDER_STATUS_LABELS[h.status]?.label || h.status}
+                    {h.source === 'ORDER' ? ORDER_STATUS_LABELS[h.action.toUpperCase() as keyof typeof ORDER_STATUS_LABELS]?.label || h.action : ({ CREATED: 'PO Ticket được tạo', APPROVE: 'Đã phê duyệt PO Ticket', RETURN: 'Yêu cầu bổ sung thông tin', RESUBMIT: 'Đã gửi giải trình', REJECT: 'PO Ticket bị từ chối', ASSIGN: 'Đã phân công giao/lắp', START: 'Nhân viên đã nhận việc', DELIVER: 'Đã giao thiết bị', INSTALL: 'Đã lắp đặt', ACCEPT: 'Nghiệm thu đạt', FAIL: 'Cần điều chỉnh công việc', REASSIGN: 'Đã phân công lại', ORDER_CANCELLED: 'Công việc đóng vì hủy đơn' } as Record<string,string>)[h.action] || h.action}
                   </div>
-                  <div style={{ color: 'var(--text-secondary)' }}>{h.note}</div>
+                  <div style={{ color: 'var(--text-secondary)' }}>{h.source === 'PO_TICKET' ? 'Phê duyệt đơn' : h.source === 'DELIVERY_INSTALLATION' ? 'Giao và lắp đặt' : 'Đơn hàng'}{h.attempt ? ` · Lần thực hiện ${h.attempt}` : ''}</div>
                 </div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                  {h.timestamp}
+                  {new Date(h.occurredAt).toLocaleString('vi-VN')}
                 </div>
               </div>
             ))}

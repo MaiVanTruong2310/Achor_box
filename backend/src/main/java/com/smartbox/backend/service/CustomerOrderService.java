@@ -20,9 +20,9 @@ public class CustomerOrderService {
         actors.get().requireRoles("customer");var result=new LinkedHashMap<>(orders.detail(id));
         // Do not include staff identifiers, internal ticket notes or shipment administration data.
         result.remove("ticket");result.remove("shipment");
-        var payments=db.list("SELECT id,provider,status,amount,paid_at AS \"paidAt\",expires_at AS \"expiresAt\" FROM public.payments WHERE order_id=? AND expires_at IS NOT NULL",id);
+        var payments=db.list("SELECT id,provider,provider_environment AS environment,status,amount,transaction_ref AS \"transactionRef\",paid_at AS \"paidAt\",expires_at AS \"expiresAt\" FROM public.payments WHERE order_id=? AND expires_at IS NOT NULL",id);
         if(!payments.isEmpty()){
-            var payment=new LinkedHashMap<>(payments.getFirst());payment.put("isSimulated","mock".equals(payment.get("provider")));
+            var payment=new LinkedHashMap<>(payments.getFirst());payment.put("isSimulated","mock".equals(payment.get("provider"))||"sandbox".equals(payment.get("environment")));
             var refunds=db.list("SELECT status,amount,completed_at AS \"completedAt\" FROM public.refunds WHERE payment_id=?",payment.get("id"));payment.put("refund",refunds.isEmpty()?null:refunds.getFirst());result.put("payment",payment);
         }else result.put("payment",null);
         var jobs=db.list("SELECT id FROM public.delivery_installations WHERE order_id=?",id);
@@ -30,6 +30,12 @@ public class CustomerOrderService {
         result.put("statusHistory",db.list("SELECT to_status AS status,created_at AS timestamp FROM public.order_status_history WHERE order_id=? ORDER BY created_at,id",id));
         result.put("timeline",tracking.timeline(id).get("events"));
         return result;
+    }
+    @Transactional(readOnly=true)
+    public Map<String,Object> paymentOrder(UUID payment){
+        actors.get().requireRoles("customer");
+        var row=db.one("SELECT p.order_id FROM public.payments p JOIN public.orders o ON o.id=p.order_id WHERE p.id=? AND o.user_id=?",payment,actors.get().id());
+        return detail(UUID.fromString(row.get("order_id").toString()));
     }
     @Transactional(readOnly=true)
     public Map<String,Object> list(int page,int size){

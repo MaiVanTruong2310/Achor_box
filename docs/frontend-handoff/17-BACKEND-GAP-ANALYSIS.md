@@ -1,5 +1,7 @@
 # 17 — Backend gaps và rủi ro tích hợp
 
+**Cập nhật DeliveryInstallation:** phần giao/lắp đặt PLANNED trong snapshot này đã được triển khai. Xem [cập nhật và hợp đồng hiện tại](DELIVERY-INSTALLATION-IMPLEMENTED.md).
+
 Snapshot10/10/2026. Có code không đồng nghĩa provider/hardware production đã kiểm chứng. Nhiệm vụ này chỉ phân tích; không sửa ứng dụng. API mới ở [Proposed Contract](contracts/PROPOSED-API.md).
 
 | ID / ưu tiên | Bằng chứng hiện trạng | Tác động frontend / cần hoàn thiện | Trạng thái / gate |

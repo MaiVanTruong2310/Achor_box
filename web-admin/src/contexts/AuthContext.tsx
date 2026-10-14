@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured, clearAllAuthTokens, isSessionExpired, pruneLegacyLocalStorageAuth } from '../services/supabase';
 import { Profile, UserRole } from '../types/database';
+import { adminRequest } from '../services/adminRequest';
 
 interface AuthContextType {
   user: User | null;
@@ -24,16 +25,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Tham chiếu bộ đếm thời gian tự động đăng xuất khi token hết hạn
   const sessionExpiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
+  const fetchUserProfile = async (userId: string,token?:string): Promise<Profile | null> => {
     try {
-      const { data, error: profileErr } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileErr) return null;
-      return data as Profile;
+      const p=await adminRequest<any>('/auth/me',token?{headers:{Authorization:`Bearer ${token}`}}:{});
+      if(p.id!==userId)return null;
+      return {id:p.id,full_name:p.fullName,email:p.email,phone:p.phone,avatar_url:p.avatarUrl,default_address:p.defaultAddress,role:p.role,is_locked:p.isLocked,is_2fa_enabled:p.is2faEnabled,created_at:p.createdAt,updated_at:p.updatedAt};
     } catch (err) {
       return null;
     }
@@ -132,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         scheduleSessionExpiry(session.expires_at);
 
         setUser(session.user);
-        const prof = await fetchUserProfile(session.user.id);
+        const prof = await fetchUserProfile(session.user.id,session.access_token);
 
         if (prof?.is_locked) {
           await handleSessionExpired('Tài khoản của bạn đã bị khóa.');
@@ -172,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (session.user) {
         setUser(session.user);
-        const prof = await fetchUserProfile(session.user.id);
+        const prof = await fetchUserProfile(session.user.id,session.access_token);
 
         if (prof?.is_locked) {
           await handleSessionExpired('Tài khoản của bạn đã bị khóa.');
@@ -242,7 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { success: false, error: 'Token đăng nhập không hợp lệ hoặc đã hết hạn.' };
         }
 
-        const prof = await fetchUserProfile(data.user.id);
+        const prof = await fetchUserProfile(data.user.id,data.session?.access_token);
 
         if (!prof) {
           await handleSessionExpired('Không tìm thấy hồ sơ tài khoản. Vui lòng liên hệ hỗ trợ.');

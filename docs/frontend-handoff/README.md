@@ -1,5 +1,23 @@
 # SmartBox — bộ bàn giao frontend
 
+**Hóa đơn bán hàng:** [HTML/logo/snapshot, xem/in và tải](../../backend/docs/SALES_INVOICE.md) đã có cho admin và khách sở hữu đơn; cần migration 010 và cấu hình cửa hàng. Không còn nút xuất VAT giả lập trong chi tiết đơn.
+
+**Cập nhật REQ-05:** [Dashboard bốn phần theo biến thể/SKU](../../backend/docs/REQ05_DASHBOARD.md) đã nối vào web-admin `/dashboard`; có timeout/partial, 503 và demo sequential/delay/fail. [Kiểm chứng](contracts/req05-validation.json).
+
+**Cập nhật VNPAY:** [Sandbox checkout, IPN và ReturnURL](../../backend/docs/VNPAY_SANDBOX.md) đã có trong source. Cần migration 009; chưa thử callback từ VNPAY thật vì chưa có IPN HTTPS công khai. [Kiểm chứng](contracts/vnpay-validation.json).
+
+**Đánh giá đầy đủ theo yêu cầu ban đầu:** xem [coverage hiện tại và khoảng trống còn lại](../../backend/docs/CURRENT_REQUIREMENTS_COVERAGE.md). Luồng bán hàng cốt lõi đã có; chưa đánh dấu toàn bộ checklist quản trị/đề cương IoT là hoàn tất.
+
+**Cập nhật quản trị:** [claim khách/Cloudinary, CRUD cấu hình, tìm kiếm/phân trang và kho](../../backend/docs/ADMIN_COMMERCE_COMPLETION.md). Admin đã bỏ ghi Supabase trực tiếp; cần migration 008 và cấu hình Cloudinary backend. [Kết quả kiểm thử](contracts/admin-commerce-validation.json).
+
+**Cập nhật mới:** [Timeline, bảo hành sau nghiệm thu, thông số SKU và dashboard công việc](TRACKING-WARRANTY-SPECS-IMPLEMENTED.md) đã triển khai; nội dung cập nhật thay thế các gap tương ứng trong snapshot cũ.
+
+**Cập nhật Payment:** [kiểm chứng vòng đời và giao diện giả lập](PAYMENT-VERIFIED.md). API/giao diện hiện tại hiển thị rõ mock và trạng thái hoàn tiền.
+
+**Cập nhật Customer Account:** [backend và web-shop đã nối API thật](CUSTOMER-ACCOUNT-IMPLEMENTED.md): đăng ký, hồ sơ, địa chỉ, mật khẩu và tiến độ đơn hàng. Đọc cập nhật này trước các mô tả snapshot cũ.
+
+**Cập nhật triển khai:** [Delivery & Installation đã có backend và web-admin](DELIVERY-INSTALLATION-IMPLEMENTED.md). Nội dung cập nhật này thay thế các phần PLANNED và luồng hoàn tất đơn khi giao trong snapshot bên dưới; xem hợp đồng mới trước khi tích hợp.
+
 Ngày snapshot: **10/10/2026**, nguồn trực tiếp `backend/src`, `web-shop/src`, `web-admin/src`, database.sql, migrations và bốn tài liệu người dùng. Nhiệm vụ này chỉ tạo tài liệu/prototype, không sửa ứng dụng hoặc database.
 
 ## Đọc theo vai trò
@@ -50,6 +68,6 @@ Phiên xem trước đang phục vụ cục bộ tại [Landing](http://127.0.0.
 
 ## Thuật ngữ
 
-Product=dòng Base/Pro; ProductVariant=SKU S/M/L có kho/giá; Device=thiết bị serial vật lý; Order=mua thiết bị; PO Ticket=phê duyệt đã thanh toán; Shipment=flow giao vận đang code; Delivery Installation=công việc giao+lắp+nghiệm thu cần bổ sung; Package=bưu kiện mà thiết bị nhận sau khi sử dụng; ACK=phản hồi firmware theo commandId; Outbox=sự kiện lưu cùng transaction rồi worker gửi.
+Product=dòng Base/Pro; ProductVariant=SKU S/M/L có kho/giá; Device=thiết bị serial vật lý; Order=mua thiết bị; PO Ticket=phê duyệt đã thanh toán; Shipment=flow giao vận; Delivery Installation=công việc giao+lắp+nghiệm thu đã triển khai; Package=bưu kiện mà thiết bị nhận sau khi sử dụng; ACK=phản hồi firmware theo commandId; Outbox=sự kiện lưu cùng transaction rồi worker gửi.
 
 UUID/example JSON dùng placeholder. Không có seed khách hàng/sản phẩm/giá/địa chỉ từ requirements. Secret không thuộc bộ bàn giao; xem backend `.env.example` để cấu hình ở môi trường riêng.

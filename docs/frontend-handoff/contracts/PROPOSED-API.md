@@ -1,5 +1,7 @@
 # Proposed API Contract — CHƯA TRIỂN KHAI
 
+**Cập nhật:** DeliveryInstallation đã triển khai; hợp đồng đề xuất bên dưới được thay thế bởi [hợp đồng hiện tại](../../../backend/docs/DELIVERY_INSTALLATION.md). Các đề xuất khác vẫn thuộc snapshot cũ.
+
 Các endpoint dưới đây chưa tồn tại trong114operations đã audit. Nghiệp vụ giao+lắp là **PLANNED**; paths/DTO/error codes là **PROPOSED**, cần backend chốt. Không gọi từ frontend production và không đưa vào danh sách IMPLEMENTED.
 
 ## Delivery Installation

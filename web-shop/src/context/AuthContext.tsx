@@ -7,7 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData) => Promise<string>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -19,6 +19,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    const ended = () => setUser(null);
+    window.addEventListener('smartbox:session-ended', ended);
     const initAuth = async () => {
       try {
         const currentUser = await authApi.getCurrentUser();
@@ -30,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     initAuth();
+    return () => window.removeEventListener('smartbox:session-ended', ended);
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
@@ -45,8 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (data: RegisterData) => {
     setIsLoading(true);
     try {
-      const res = await authApi.register(data);
-      setUser(res.user);
+      return await authApi.register(data);
     } finally {
       setIsLoading(false);
     }

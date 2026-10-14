@@ -448,8 +448,8 @@
       "date": "<yyyy-MM-dd>",
       "revenueToday": null,
       "orderCountByStatus": null,
-      "top5Products": null,
-      "lowStockProducts": null,
+      "top5Variants": null,
+      "lowStockVariants": null,
       "partial": true,
       "failedParts": [
         "<failed part name>"

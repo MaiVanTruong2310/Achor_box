@@ -1,0 +1,113 @@
+{
+  "scope": "Customer Account final aggregate run; isolated test databases only; no production migration applied",
+  "aggregate": {
+    "tests": 182,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 92
+  },
+  "testSuites": [
+    {
+      "name": "com.smartbox.backend.BackendApplicationTests",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "6",
+      "timestamp": "2026-10-13T17:59:20.276Z"
+    },
+    {
+      "name": "com.smartbox.backend.CommerceIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-13T17:59:25.492Z"
+    },
+    {
+      "name": "com.smartbox.backend.CustomerAccountIntegrationTests",
+      "tests": "26",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-13T17:59:26.402Z"
+    },
+    {
+      "name": "com.smartbox.backend.CustomerAuthGatewayTests",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-13T17:59:27.293Z"
+    },
+    {
+      "name": "com.smartbox.backend.DashboardAndEmailTests",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-13T17:59:27.621Z"
+    },
+    {
+      "name": "com.smartbox.backend.DeliveryInstallationIntegrationTests",
+      "tests": "33",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-13T17:59:20.287Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresCommerceIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "20",
+      "timestamp": "2026-10-13T17:59:25.467Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresCustomerAccountIntegrationTests",
+      "tests": "28",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "28",
+      "timestamp": "2026-10-13T17:59:25.477Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresDeliveryInstallationIntegrationTests",
+      "tests": "35",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "35",
+      "timestamp": "2026-10-13T17:59:25.488Z"
+    },
+    {
+      "name": "com.smartbox.backend.SecurityTests",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-13T17:59:28.366Z"
+    }
+  ],
+  "skips": "Docker/WSL unavailable: full HTTP and PostgreSQL suites skipped; H2 timezone-specific checks skipped by design. Skips are not verification.",
+  "earlierFocusedRuns": {
+    "postgresCustomerAccount": "Passed 27 tests before Docker interruption, prior to final legacy-draft snapshot case; rerun final 28 required when Docker works.",
+    "backendHttp": "Passed all 6 HTTP/startup tests before Docker interruption; last aggregate skipped these.",
+    "authGateway": "Passed and rerun in final aggregate against local provider fixture."
+  },
+  "frontend": {
+    "shopBuild": "PASS",
+    "apiTransportTests": {
+      "passed": 6,
+      "failed": 0
+    },
+    "adminBuild": "PASS"
+  },
+  "openapiOperationsWithoutDemo": 140,
+  "newCustomerAccountOperations": 12,
+  "realSupabaseAndMailEndToEnd": "Not performed",
+  "remainingDeploymentRequirements": [
+    "Apply migration 006 after backup/test copy",
+    "Configure Supabase Auth SMTP, redirect allowlist and Reset Password TokenHash template",
+    "Rerun full PostgreSQL and HTTP suites with working Docker"
+  ]
+}

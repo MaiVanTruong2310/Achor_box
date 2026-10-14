@@ -1,5 +1,7 @@
 # 18 — Acceptance test cases
 
+**Cập nhật DeliveryInstallation:** phần giao/lắp đặt PLANNED trong snapshot này đã được triển khai. Xem [cập nhật và hợp đồng hiện tại](DELIVERY-INSTALLATION-IMPLEMENTED.md).
+
 Đây là bộ test bàn giao, không báo đã chạy tất cả. “Source test” chỉ là bằng chứng test tồn tại và kết quả lịch sử nếu cóXML; các case frontend/newjob/provider/hardware vẫn phải chạy ở phase tương ứng. Dữ liệu test do team tạo riêng, không copy khách/sản phẩm/giá từ requirements. Shared setup: ít nhất2customer, từng role nội bộ, SKU active/inactive có stock, serial chưabán/đãbán, orderworkflow2/legacy1; credential riêng không ghi vào artifact.
 
 | ID / module / trạng thái | Setup → thao tác | Kết quả mong đợi / evidence |

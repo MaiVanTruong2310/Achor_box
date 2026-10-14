@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { SalesInvoiceModal } from '../components/SalesInvoiceModal';
+import {adminCatalogApi} from '../services/adminCatalogApi';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ShoppingBag,
   Search,
@@ -22,28 +24,32 @@ import {
 } from 'lucide-react';
 import { Order, OrderStatus } from '../types/database';
 import { ordersService, ExtendedOrder } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Orders: React.FC = () => {
+  const { profile } = useAuth();
+  const [invoiceOrder,setInvoiceOrder]=useState<string|null>(null);
   const [orders, setOrders] = useState<ExtendedOrder[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  const [page,setPage]=useState(0),[totalPages,setTotalPages]=useState(0),[totalElements,setTotalElements]=useState(0),[listError,setListError]=useState('');
+ const requestVersion=useRef(0);
   // Modal State
   const [selectedOrder, setSelectedOrder] = useState<ExtendedOrder | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const loadOrders = async () => {
-    setLoading(true);
-    const data = await ordersService.getOrders();
-    setOrders(data);
-    setLoading(false);
-  };
+ const request=++requestVersion.current;setLoading(true);setListError('');
+ try { const data=await adminCatalogApi.orders(page,searchTerm,statusFilter,paymentFilter);
+ if(request===requestVersion.current){setOrders(data.content);setTotalPages(data.totalPages);setTotalElements(data.totalElements);}}
+ catch(e){if(request===requestVersion.current){setOrders([]);setListError((e as Error).message);}}
+ finally{if(request===requestVersion.current)setLoading(false);}
+ };
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
+  useEffect(()=>{const timer=setTimeout(()=>{loadOrders();},300);return()=>{clearTimeout(timer);requestVersion.current++;};},[page,searchTerm,statusFilter,paymentFilter]);
 
   // Financial totals for accountant
   const paidRevenue = orders
@@ -60,44 +66,11 @@ export const Orders: React.FC = () => {
     alert('Đã xuất file đối soát tài chính: "BaoCao_DoiSoat_DoanhThu_2026-03.xlsx" thành công!');
   };
 
-  const handleConfirmPayment = async (orderId: string) => {
-    setOrders(orders.map(o => o.id === orderId ? { ...o, payment_status: 'paid', status: 'completed' } : o));
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, payment_status: 'paid', status: 'completed' });
-    }
-    await ordersService.updateOrderStatus(orderId, 'completed');
-  };
-
-  const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
-    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
-    }
-    await ordersService.updateOrderStatus(orderId, newStatus);
-  };
-
-  const filteredOrders = orders.filter(ord => {
-    const matchesSearch =
-      ord.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ord.customer?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ord.customer?.phone?.includes(searchTerm) ||
-      ord.tracking_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ord.transaction_ref?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesPayment =
-      paymentFilter === 'all' ||
-      (paymentFilter === 'paid' && ord.payment_status === 'paid') ||
-      (paymentFilter === 'pending' && ord.payment_status === 'pending') ||
-      (paymentFilter === 'vnpay' && ord.payment_method === 'vnpay') ||
-      (paymentFilter === 'cod' && ord.payment_method === 'cod');
-
-    const matchesStatus = statusFilter === 'all' || ord.status === statusFilter;
-
-    return matchesSearch && matchesPayment && matchesStatus;
-  });
+  const filteredOrders = orders;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+{listError&&<p role="alert">{listError}</p>}<div style={{display:'flex',gap:12,alignItems:'center'}}><span>{totalElements} kết quả · Trang {totalPages===0?0:page+1}/{totalPages}</span><button className="btn btn-secondary" disabled={loading||page===0} onClick={()=>setPage(p=>p-1)}>Trước</button><button className="btn btn-secondary" disabled={loading||page+1>=totalPages} onClick={()=>setPage(p=>p+1)}>Sau</button><small>Số liệu trên trang hiện tại</small></div>
       {/* Header */}
       <div className="section-header">
         <div className="section-title-group">
@@ -110,6 +83,7 @@ export const Orders: React.FC = () => {
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>
               Theo dõi đơn hàng, cổng thanh toán và trạng thái giao vận.
+              Giao dịch VNPAY Sandbox phục vụ kiểm thử, không phải doanh thu thực.
             </p>
           </div>
         </div>
@@ -138,7 +112,7 @@ export const Orders: React.FC = () => {
 
         <div className="kpi-card accent-amber" style={{ animationDelay: '80ms' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-            Chờ Thu Hộ (COD)
+            Chờ thanh toán
           </div>
           <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--accent-amber)', marginTop: '4px' }}>
             {pendingRevenue.toLocaleString('vi-VN')} ₫
@@ -184,7 +158,7 @@ export const Orders: React.FC = () => {
               style={{ paddingLeft: '38px', margin: 0 }}
               placeholder="Tìm theo mã đơn, khách hàng, số điện thoại, vận đơn..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {setSearchTerm(e.target.value);setPage(0);}}
             />
           </div>
         </div>
@@ -194,13 +168,14 @@ export const Orders: React.FC = () => {
             className="input-field"
             style={{ width: 'auto', padding: '6px 12px', fontSize: '0.8125rem', margin: 0 }}
             value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
+            onChange={(e) => {setPaymentFilter(e.target.value);setPage(0);}}
           >
             <option value="all">Tất cả thanh toán</option>
             <option value="paid">Đã thanh toán</option>
-            <option value="pending">Chờ thu tiền (COD)</option>
-            <option value="vnpay">Cổng VNPAY</option>
-            <option value="cod">Tiền mặt (COD)</option>
+            <option value="pending">Chờ thanh toán</option>
+            <option value="mock">Giả lập</option>
+            <option value="vnpay">VNPAY Sandbox</option>
+
           </select>
 
           {[
@@ -211,7 +186,7 @@ export const Orders: React.FC = () => {
           ].map((st) => (
             <button
               key={st.id}
-              onClick={() => setStatusFilter(st.id)}
+              onClick={() => {setStatusFilter(st.id);setPage(0);}}
               className={`btn ${statusFilter === st.id ? 'btn-primary' : 'btn-secondary'}`}
               style={{ padding: '6px 12px', fontSize: '0.8125rem' }}
             >
@@ -259,6 +234,7 @@ export const Orders: React.FC = () => {
 
                   <td style={{ padding: '14px 18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                      {ord.payment_method === 'vnpay_sandbox' && <span className="badge badge-warning">VNPAY Sandbox</span>}
                       {ord.payment_method === 'vnpay' && (
                         <span style={{
                           display: 'inline-flex',
@@ -296,7 +272,7 @@ export const Orders: React.FC = () => {
                       {ord.payment_status === 'paid' ? (
                         <span style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>✓ Đã Quyết Toán</span>
                       ) : (
-                        <span style={{ color: 'var(--accent-amber)', fontWeight: 600 }}>⏳ Chờ Shipper Thu Tiền</span>
+                        <span style={{ color: 'var(--accent-amber)', fontWeight: 600 }}>{ord.payment_status||'Chưa thanh toán'}</span>
                       )}
                     </div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -478,7 +454,7 @@ export const Orders: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <div>
                   <span style={{ color: 'var(--text-muted)' }}>Cổng thanh toán: </span>
-                  <strong>{selectedOrder.payment_method.toUpperCase()}</strong>
+                  <strong>{selectedOrder.payment_method?.toUpperCase()||'Chưa thanh toán'}</strong>
                 </div>
                 <div>
                   <span style={{ color: 'var(--text-muted)' }}>Mã tham chiếu: </span>
@@ -491,7 +467,7 @@ export const Orders: React.FC = () => {
                 <div>
                   <span style={{ color: 'var(--text-muted)' }}>Trạng thái tiền: </span>
                   <strong style={{ color: selectedOrder.payment_status === 'paid' ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>
-                    {selectedOrder.payment_status === 'paid' ? 'Đã Quyết Toán Xong' : 'Chờ Thu Tiền Mặt'}
+                    {selectedOrder.payment_status === 'paid' ? 'Đã ghi nhận thanh toán' : selectedOrder.payment_status||'Chưa thanh toán'}
                   </strong>
                 </div>
               </div>
@@ -501,24 +477,16 @@ export const Orders: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
                 className="btn btn-secondary"
-                onClick={() => alert('Đã tạo và tải về Hóa đơn Giá trị gia tăng điện tử (VAT e-Invoice)!')}
+                onClick={() => setInvoiceOrder(selectedOrder.id)}
+                disabled={!['paid','refund_required','refunded'].includes(selectedOrder.payment_status || '')}
                 style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
               >
                 <Download size={15} />
-                <span>In Hóa Đơn VAT</span>
+                <span>Xem / In hóa đơn bán hàng</span>
               </button>
 
               <div style={{ display: 'flex', gap: '10px' }}>
-                {selectedOrder.payment_status === 'pending' && (
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleConfirmPayment(selectedOrder.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
-                  >
-                    <PackageCheck size={16} />
-                    <span>Xác Nhận Đã Thu Tiền</span>
-                  </button>
-                )}
+                {(profile?.role === 'super_admin' || profile?.role === 'support_agent') && <a className="btn btn-primary" href="/delivery-installations">Giao & Lắp đặt / Nghiệm thu</a>}
                 <button className="btn btn-secondary" onClick={() => setIsDetailModalOpen(false)}>
                   Đóng
                 </button>
@@ -527,6 +495,7 @@ export const Orders: React.FC = () => {
           </div>
         </div>
       )}
+      {invoiceOrder && <SalesInvoiceModal orderId={invoiceOrder} onClose={()=>setInvoiceOrder(null)}/>}
     </div>
   );
 };

@@ -112,36 +112,13 @@ export function isSessionExpired(session: { expires_at?: number } | null | undef
 pruneLegacyLocalStorageAuth();
 
 /**
- * Upload an image file to Supabase Storage 'products' bucket and returns its public CDN URL
+ * Legacy function name retained for callers; upload is authorized by the backend.
  */
 export async function uploadProductImageToSupabase(file: File): Promise<{ url: string; error?: string }> {
-  if (!isSupabaseConfigured) {
-    const mockUrl = URL.createObjectURL(file);
-    return { url: mockUrl };
-  }
-
   try {
-    const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const fileName = `prod_${Date.now()}_${cleanName}`;
-
-    const { error } = await supabase.storage
-      .from('products')
-      .upload(fileName, file, {
-        contentType: file.type || 'image/png',
-        upsert: true,
-        cacheControl: '3600'
-      });
-
-    if (error) {
-      console.error('Supabase Storage Error:', error);
-      return { url: '', error: error.message };
-    }
-
-    const { data: publicData } = supabase.storage
-      .from('products')
-      .getPublicUrl(fileName);
-
-    return { url: publicData.publicUrl };
+    const { adminRequest }=await import('./adminRequest');
+    const form=new FormData();form.append('file',file);
+    return await adminRequest<{url:string}>('/products/images',{method:'POST',body:form});
   } catch (err: any) {
     console.error('Unexpected Storage Error:', err);
     return { url: '', error: err.message || 'Lỗi kết nối tải ảnh' };
