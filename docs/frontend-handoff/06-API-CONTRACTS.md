@@ -1,5 +1,7 @@
 # 06 — API contracts thực tế và dự kiến
 
+**Cập nhật:** 16 API DeliveryInstallation đã triển khai; xem [hợp đồng hiện tại](../../backend/docs/DELIVERY_INSTALLATION.md). Catalog còn lại là snapshot 10/10/2026.
+
 ## Mục lục
 
 - [Quy ước](#quy-ước)
@@ -39,13 +41,13 @@ Shared error handling: 400 body/type/UUID/validation; 401 thiếu/sai token/lock
 | API-013 | `GET /api/orders/{id}` | `CommerceController.detail` | IMPLEMENTED |
 | API-014 | `POST /api/orders/{id}/cancel` | `CommerceController.cancel` | IMPLEMENTED |
 | API-015 | `POST /api/orders/{id}/checkout` | `CommerceController.checkout` | IMPLEMENTED |
-| API-016 | `POST /api/orders/{id}/devices` | `CommerceController.assign` | IMPLEMENTED |
+| API-016 | `POST /api/orders/{id}/devices` | `CommerceController.assign` | DEPRECATED: 409 |
 | API-017 | `GET /api/orders/{id}/history` | `CommerceController.history` | IMPLEMENTED |
 | API-018 | `POST /api/orders/{id}/items` | `CommerceController.add` | IMPLEMENTED |
 | API-019 | `DELETE /api/orders/{id}/items/{variantId}` | `CommerceController.remove` | IMPLEMENTED |
 | API-020 | `PATCH /api/orders/{id}/items/{variantId}` | `CommerceController.quantity` | IMPLEMENTED |
-| API-021 | `POST /api/orders/{id}/shipment/deliver` | `CommerceController.deliver` | PARTIAL |
-| API-022 | `POST /api/orders/{id}/shipment/ship` | `CommerceController.ship` | IMPLEMENTED |
+| API-021 | `POST /api/orders/{id}/shipment/deliver` | `CommerceController.deliver` | DEPRECATED: 409 |
+| API-022 | `POST /api/orders/{id}/shipment/ship` | `CommerceController.ship` | DEPRECATED: 409 |
 | API-023 | `POST /api/payments/callback` | `CommerceController.callback` | IMPLEMENTED |
 | API-024 | `GET /api/tickets` | `CommerceController.tickets` | IMPLEMENTED |
 | API-025 | `GET /api/tickets/{id}` | `CommerceController.ticket` | IMPLEMENTED |
@@ -1129,73 +1131,8 @@ Các nhánh còn phụ thuộc điều kiện và role của endpoint; đây là
 **Side effects qua helper/service:** `audit_logs`, `checkout_keys`, `order_status_history`, `orders`, `payments`. JPA/provider có thể có thêm tác động như mô tả module; SQL này được commit theo transaction service.
 ### API-016 — POST `/api/orders/{id}/devices`
 
-**Module/mục đích:** Liên kết device với item đã bán. **Trạng thái:** IMPLEMENTED.
+**Đã ngừng mutation:** endpoint này hiện trả 409, không gắn serial/ship/hoàn tất đơn. Dùng [DeliveryInstallation](../../backend/docs/DELIVERY_INSTALLATION.md).
 
-**Quyền:** super_admin/support_agent/technician. **Màn hình:** AdminSerialAssignment.
-
-**Source:** [CommerceController.assign](../../backend/src/main/java/com/smartbox/backend/controller/CommerceController.java) dòng 56; service: `backend/src/main/java/com/smartbox/backend/service/FulfillmentService.java::assign`.
-
-**Authentication/headers:** Authorization: Bearer <accessToken> bắt buộc; profile hợp lệ, chưa khóa. Content-Type: application/json khi gửi body. X-Trace-Id tùy chọn. CORS hiện chưa expose trace/retry/download response headers.
-
-**Parameters/headers:**
-
-| Tên | Vị trí | Kiểu | Required/default/constraint |
-|---|---|---|---|
-| `id` | path | string(uuid) | required=True; Không khai báo trong schema; xem service/rules |
-
-**Request body/validation:** DeviceAssignment; controller @Valid = True.
-
-| Field | Kiểu | Required | Constraint |
-|---|---|---|---|
-| `orderItemId` | string(uuid) | Có | Không khai báo trong schema; xem service/rules |
-| `deviceId` | string(uuid) | Có | Không khai báo trong schema; xem service/rules |
-
-Ví dụ body **placeholder minh họa**, thay bằng dữ liệu hợp lệ:
-```json
-{
-  "orderItemId": "<UUID>",
-  "deviceId": "<UUID>"
-}
-```
-
-**Preconditions/business:** Order confirmed, serial chưa bán, đúng product và variant; không vượt quantity. Gắn sold_order_item_id nhưng chưa owner trước deliver.
-
-**Side effects:** Các bảng ghi trực tiếp tìm thấy trong service handler: devices.
-
-**Idempotency:** Không có Idempotency-Key trong handler này. Không tự retry mutation khi timeout; đọc lại để xác định kết quả. Toggle/review/create có thể đổi trạng thái hoặc tạo trùng nếu replay.
-
-**Pagination/sorting:** Không có pagination/sort query trong handler; thứ tự theo service hoặc DB.
-
-**Success HTTP:** 200; response signature `Map<String,Object>`. Schema Springdoc:
-
-Ví dụ shape bổ sung từ SQL/Map source; mọi giá trị là placeholder, không phải dữ liệu kinh doanh:
-```json
-{
-  "assigned": true
-}
-```
-
-Map schema cần đối chiếu [MAP-RESPONSES.md](contracts/MAP-RESPONSES.md); keys ở ví dụ đã đối chiếu SQL/Map; null và giá trị placeholder không chứng minh trạng thái live.
-
-**Errors/UI:** shared 400/401/403/404/409/429/503/500 chỉ khi nhánh có code; request timeout không chứng minh mutation rollback. Dùng message + HTTP, show traceId; 401 refresh một lần single-flight, 403 không fallback Supabase, 409 reload state/stock; không thông báo success nếu bị reject.
-
-Literals ngay trong handler: `ConflictException`: `ORDER_NOT_CONFIRMED`; `ConflictException`: `DEVICE_ALREADY_SOLD`; `ConflictException`: `DEVICE_PRODUCT_MISMATCH`; `ConflictException`: `DEVICE_VARIANT_MISMATCH`; `ConflictException`: `ITEM_DEVICE_LIMIT`. Các helper/service được gọi có thêm lỗi như rules.
-
-
-**Lỗi business qua helper/service (source, không phải errorCode field):**
-
-| HTTP | Tiền tố message literal |
-|---|---|
-| 401 | `Yêu cầu đăng nhập` |
-| 409 | `DEVICE_ALREADY_SOLD` |
-| 409 | `DEVICE_PRODUCT_MISMATCH` |
-| 409 | `DEVICE_VARIANT_MISMATCH` |
-| 409 | `ITEM_DEVICE_LIMIT` |
-| 409 | `ORDER_NOT_CONFIRMED` |
-
-Các nhánh còn phụ thuộc điều kiện và role của endpoint; đây là literal trích từ code, không chứng minh đã gọi được mọi nhánh. Lỗi validation/auth/DB chung xem Quy ước và [07](07-BUSINESS-RULES.md).
-
-**Side effects qua helper/service:** `devices`. JPA/provider có thể có thêm tác động như mô tả module; SQL này được commit theo transaction service.
 ### API-017 — GET `/api/orders/{id}/history`
 
 **Module/mục đích:** Đọc lịch sử trạng thái đơn. **Trạng thái:** IMPLEMENTED.
@@ -1523,178 +1460,12 @@ Các nhánh còn phụ thuộc điều kiện và role của endpoint; đây là
 **Side effects qua helper/service:** `inventory_movements`, `order_items`, `orders`, `product_variants`. JPA/provider có thể có thêm tác động như mô tả module; SQL này được commit theo transaction service.
 ### API-021 — POST `/api/orders/{id}/shipment/deliver`
 
-**Module/mục đích:** Ghi nhận giao đủ serial; chưa có nghiệm thu lắp đặt. **Trạng thái:** PARTIAL.
+**Đã ngừng mutation:** endpoint này hiện trả 409, không gắn serial/ship/hoàn tất đơn. Dùng [DeliveryInstallation](../../backend/docs/DELIVERY_INSTALLATION.md).
 
-**Quyền:** super_admin/support_agent. **Màn hình:** AdminShipment legacy.
-
-**Source:** [CommerceController.deliver](../../backend/src/main/java/com/smartbox/backend/controller/CommerceController.java) dòng 54; service: `backend/src/main/java/com/smartbox/backend/service/FulfillmentService.java::delivered`.
-
-**Authentication/headers:** Authorization: Bearer <accessToken> bắt buộc; profile hợp lệ, chưa khóa. X-Trace-Id tùy chọn. CORS hiện chưa expose trace/retry/download response headers.
-
-**Parameters/headers:**
-
-| Tên | Vị trí | Kiểu | Required/default/constraint |
-|---|---|---|---|
-| `id` | path | string(uuid) | required=True; Không khai báo trong schema; xem service/rules |
-
-**Request body/validation:** Không có body; controller @Valid = False.
-
-**Preconditions/business:** Shipment SHIPPED, số devices gắn order item phải bằng quantity; hoàn thành shipment và order, owner được gắn lúc này. Chưa kiểm tra lắp đặt/ACK/nghiệm thu, vì vậy PARTIAL so với nghiệp vụ mới.
-
-**Side effects:** Các bảng ghi trực tiếp tìm thấy trong service handler: devices, shipment_history, shipments.
-
-**Idempotency:** Có guard terminal trong service. Khi timeout đọc lại trạng thái trước retry; không suy diễn mọi tham số khác vẫn được chấp nhận. Xem literal lỗi và source bên dưới.
-
-**Pagination/sorting:** Không có pagination/sort query trong handler; thứ tự theo service hoặc DB.
-
-**Success HTTP:** 200; response signature `Map<String,Object>`. Schema Springdoc:
-
-Ví dụ shape bổ sung từ SQL/Map source; mọi giá trị là placeholder, không phải dữ liệu kinh doanh:
-```json
-{
-  "id": "<UUID>",
-  "orderId": "<UUID>",
-  "userId": "<UUID>",
-  "status": "pending",
-  "shippingAddress": "<địa chỉ do khách nhập>",
-  "total": 0,
-  "totalAmount": 0,
-  "paidAt": null,
-  "expiresAt": "<ISO8601 timestamp>",
-  "createdAt": "<ISO8601 timestamp>",
-  "updatedAt": "<ISO8601 timestamp>",
-  "items": [
-    {
-      "id": "<UUID>",
-      "productId": "<UUID>",
-      "variantId": "<UUID>",
-      "sku": "<SKU>",
-      "productName": "<snapshot>",
-      "variantName": "<snapshot>",
-      "size": null,
-      "capacityLiter": null,
-      "unitPrice": 0,
-      "quantity": 1,
-      "subtotal": 0
-    }
-  ],
-  "ticket": [],
-  "shipment": []
-}
-```
-
-Map schema cần đối chiếu [MAP-RESPONSES.md](contracts/MAP-RESPONSES.md); keys ở ví dụ đã đối chiếu SQL/Map; null và giá trị placeholder không chứng minh trạng thái live.
-
-**Errors/UI:** shared 400/401/403/404/409/429/503/500 chỉ khi nhánh có code; request timeout không chứng minh mutation rollback. Dùng message + HTTP, show traceId; 401 refresh một lần single-flight, 403 không fallback Supabase, 409 reload state/stock; không thông báo success nếu bị reject.
-
-Literals ngay trong handler: `ConflictException`: `SHIPMENT_NOT_SHIPPED`; `ConflictException`: `DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE`. Các helper/service được gọi có thêm lỗi như rules.
-
-
-**Lỗi business qua helper/service (source, không phải errorCode field):**
-
-| HTTP | Tiền tố message literal |
-|---|---|
-| 401 | `Yêu cầu đăng nhập` |
-| 409 | `DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE` |
-| 409 | `INVALID_ORDER_TRANSITION: ` |
-| 409 | `SHIPMENT_NOT_SHIPPED` |
-
-Các nhánh còn phụ thuộc điều kiện và role của endpoint; đây là literal trích từ code, không chứng minh đã gọi được mọi nhánh. Lỗi validation/auth/DB chung xem Quy ước và [07](07-BUSINESS-RULES.md).
-
-**Side effects qua helper/service:** `audit_logs`, `devices`, `email_outbox`, `order_status_history`, `orders`, `shipment_history`, `shipments`. JPA/provider có thể có thêm tác động như mô tả module; SQL này được commit theo transaction service.
 ### API-022 — POST `/api/orders/{id}/shipment/ship`
 
-**Module/mục đích:** Ghi nhận shipment đang giao theo flow cũ. **Trạng thái:** IMPLEMENTED.
+**Đã ngừng mutation:** endpoint này hiện trả 409, không gắn serial/ship/hoàn tất đơn. Dùng [DeliveryInstallation](../../backend/docs/DELIVERY_INSTALLATION.md).
 
-**Quyền:** super_admin/support_agent. **Màn hình:** AdminShipment.
-
-**Source:** [CommerceController.ship](../../backend/src/main/java/com/smartbox/backend/controller/CommerceController.java) dòng 52; service: `backend/src/main/java/com/smartbox/backend/service/FulfillmentService.java::ship`.
-
-**Authentication/headers:** Authorization: Bearer <accessToken> bắt buộc; profile hợp lệ, chưa khóa. Content-Type: application/json khi gửi body. X-Trace-Id tùy chọn. CORS hiện chưa expose trace/retry/download response headers.
-
-**Parameters/headers:**
-
-| Tên | Vị trí | Kiểu | Required/default/constraint |
-|---|---|---|---|
-| `id` | path | string(uuid) | required=True; Không khai báo trong schema; xem service/rules |
-
-**Request body/validation:** Shipment; controller @Valid = True.
-
-| Field | Kiểu | Required | Constraint |
-|---|---|---|---|
-| `carrier` | string | Có | maxLength=200, minLength=0 |
-| `trackingNumber` | string | Có | maxLength=200, minLength=0 |
-
-Ví dụ body **placeholder minh họa**, thay bằng dữ liệu hợp lệ:
-```json
-{
-  "carrier": "<string>",
-  "trackingNumber": "<string>"
-}
-```
-
-**Preconditions/business:** Order confirmed, shipment PREPARING; ghi carrier/tracking, SHIPPED và email. Đây là shipment cũ, không tương đương công việc delivery_installations.
-
-**Side effects:** Các bảng ghi trực tiếp tìm thấy trong service handler: orders, shipment_history, shipments.
-
-**Idempotency:** Không có Idempotency-Key trong handler này. Không tự retry mutation khi timeout; đọc lại để xác định kết quả. Toggle/review/create có thể đổi trạng thái hoặc tạo trùng nếu replay.
-
-**Pagination/sorting:** Không có pagination/sort query trong handler; thứ tự theo service hoặc DB.
-
-**Success HTTP:** 200; response signature `Map<String,Object>`. Schema Springdoc:
-
-Ví dụ shape bổ sung từ SQL/Map source; mọi giá trị là placeholder, không phải dữ liệu kinh doanh:
-```json
-{
-  "id": "<UUID>",
-  "orderId": "<UUID>",
-  "userId": "<UUID>",
-  "status": "pending",
-  "shippingAddress": "<địa chỉ do khách nhập>",
-  "total": 0,
-  "totalAmount": 0,
-  "paidAt": null,
-  "expiresAt": "<ISO8601 timestamp>",
-  "createdAt": "<ISO8601 timestamp>",
-  "updatedAt": "<ISO8601 timestamp>",
-  "items": [
-    {
-      "id": "<UUID>",
-      "productId": "<UUID>",
-      "variantId": "<UUID>",
-      "sku": "<SKU>",
-      "productName": "<snapshot>",
-      "variantName": "<snapshot>",
-      "size": null,
-      "capacityLiter": null,
-      "unitPrice": 0,
-      "quantity": 1,
-      "subtotal": 0
-    }
-  ],
-  "ticket": [],
-  "shipment": []
-}
-```
-
-Map schema cần đối chiếu [MAP-RESPONSES.md](contracts/MAP-RESPONSES.md); keys ở ví dụ đã đối chiếu SQL/Map; null và giá trị placeholder không chứng minh trạng thái live.
-
-**Errors/UI:** shared 400/401/403/404/409/429/503/500 chỉ khi nhánh có code; request timeout không chứng minh mutation rollback. Dùng message + HTTP, show traceId; 401 refresh một lần single-flight, 403 không fallback Supabase, 409 reload state/stock; không thông báo success nếu bị reject.
-
-Literals ngay trong handler: `ConflictException`: `ORDER_NOT_CONFIRMED`; `ConflictException`: `SHIPMENT_NOT_PREPARING`. Các helper/service được gọi có thêm lỗi như rules.
-
-
-**Lỗi business qua helper/service (source, không phải errorCode field):**
-
-| HTTP | Tiền tố message literal |
-|---|---|
-| 401 | `Yêu cầu đăng nhập` |
-| 409 | `ORDER_NOT_CONFIRMED` |
-| 409 | `SHIPMENT_NOT_PREPARING` |
-
-Các nhánh còn phụ thuộc điều kiện và role của endpoint; đây là literal trích từ code, không chứng minh đã gọi được mọi nhánh. Lỗi validation/auth/DB chung xem Quy ước và [07](07-BUSINESS-RULES.md).
-
-**Side effects qua helper/service:** `email_outbox`, `orders`, `shipment_history`, `shipments`. JPA/provider có thể có thêm tác động như mô tả module; SQL này được commit theo transaction service.
 ### API-023 — POST `/api/payments/callback`
 
 **Module/mục đích:** Xác minh HMAC và xử lý kết quả payment. **Trạng thái:** IMPLEMENTED.
@@ -2263,8 +2034,8 @@ Ví dụ shape bổ sung từ SQL/Map source; mọi giá trị là placeholder, 
   "date": "<yyyy-MM-dd>",
   "revenueToday": null,
   "orderCountByStatus": null,
-  "top5Products": null,
-  "lowStockProducts": null,
+  "top5Variants": null,
+  "lowStockVariants": null,
   "partial": true,
   "failedParts": [
     "<failed part name>"
@@ -7556,3 +7327,5 @@ Literals ngay trong handler: `ResourceNotFoundException`: `Khiếu nại bảo h
 **Errors/UI:** shared 400/401/403/404/409/429/503/500 chỉ khi nhánh có code; request timeout không chứng minh mutation rollback. Dùng message + HTTP, show traceId; 401 refresh một lần single-flight, 403 không fallback Supabase, 409 reload state/stock; không thông báo success nếu bị reject.
 
 Literals ngay trong handler: `IllegalArgumentException`: `Mã Serial thiết bị không được để trống`; `ResourceNotFoundException`: `Bảo hành`; `ResourceNotFoundException`: `Thiết bị`. Các helper/service được gọi có thêm lỗi như rules.
+
+REQ-05 cập nhật theo SKU: contract chi tiết tại [REQ05_DASHBOARD.md](../../backend/docs/REQ05_DASHBOARD.md). `mode=sequential` chỉ có ở profile demo; frontend dùng API này trực tiếp, không cache kết quả để đo thời gian và không đổi null lỗi thành 0.

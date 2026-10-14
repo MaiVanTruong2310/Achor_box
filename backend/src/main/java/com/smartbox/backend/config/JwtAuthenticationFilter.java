@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if("OPTIONS".equals(request.getMethod())) return true;
         if(path.startsWith("/swagger-ui")||path.startsWith("/v3/api-docs")||Set.of("/error","/favicon.ico").contains(path))return true;
         if("POST".equals(request.getMethod()) && Set.of("/api/auth/login","/api/auth/refresh-token","/api/auth/register","/api/auth/forgot-password","/api/auth/reset-password","/api/payments/callback").contains(path))return true;
-        return "GET".equals(request.getMethod()) && (path.equals("/api/payments/mode")||path.equals("/api/products")||path.equals("/api/products/categories")||path.matches("/api/products/[0-9a-fA-F-]{36}/variants"));
+        return "GET".equals(request.getMethod()) && (path.equals("/api/payments/vnpay/ipn")||path.equals("/api/payments/vnpay/return")||path.equals("/api/payments/mode")||path.equals("/api/products")||path.equals("/api/products/categories")||path.matches("/api/products/[0-9a-fA-F-]{36}/variants"));
     }
     @Override
     protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {

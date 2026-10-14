@@ -33,6 +33,7 @@ public class CommerceController {
     public Map<String,Object> remove(@PathVariable UUID id,@PathVariable UUID variantId) {return orders.remove(id,variantId);}
     @PostMapping("/api/orders/{id}/checkout")
     public Map<String,Object> checkout(@PathVariable UUID id,@RequestHeader(value="Idempotency-Key",required=false) String key) {return payments.checkout(id,key);}
+    @GetMapping("/api/orders/{id}/payment-session") public Map<String,Object> paymentSession(@PathVariable UUID id){return payments.session(id);}
     @PostMapping("/api/orders/{id}/cancel")
     public Map<String,Object> cancel(@PathVariable UUID id,@Valid @RequestBody CommerceRequests.Reason request) {return orders.cancel(id,request.reason());}
     @PostMapping("/api/payments/callback")

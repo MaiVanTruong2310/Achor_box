@@ -12,7 +12,7 @@ import java.util.Map;
 public class ConcurrentDashboardController {
     private final ConcurrentDashboardService dashboard;
     @GetMapping("/api/admin/dashboard")
-    public Map<String,Object> dashboard(@RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate date) {
-        return dashboard.dashboard(date==null?LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")):date);
+    public Map<String,Object> dashboard(@RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate date,@RequestParam(defaultValue="parallel") String mode) {
+        return dashboard.dashboard(date==null?LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")):date,mode);
     }
 }

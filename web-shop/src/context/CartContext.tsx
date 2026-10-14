@@ -57,6 +57,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...prev,
           {
             productId: product.id,
+            variantId: product.variantId,
             sku: product.sku,
             name: product.name,
             price: product.price,

@@ -62,7 +62,7 @@ TokenPOST `{id:<UUID>}`; remove/read/preference controllervoid→HTTP200 không 
 
 ## ConcurrentDashboardService
 
-`{date:"yyyy-MM-dd",revenueToday:number|null,orderCountByStatus:object|null,top5Products:array|null,lowStockProducts:array|null,partial:boolean,failedParts:string[],elapsedMs:long}`. Counts đủ6 core UPPERCASE và có thể legacy labels. Toprows `{productId,name,quantitySold}`; name có thể NULL legacy item no snapshot. Lowstock `{variantId,productId,name,sku,stock}`. Arrayrỗng là không có data, null là lỗi/timeout; không gộp hai trạng thái.
+`{date:"yyyy-MM-dd",revenueToday:number|null,orderCountByStatus:object|null,top5Variants:array|null,lowStockVariants:array|null,partial:boolean,failedParts:string[],elapsedMs:long}`. Counts đủ6 core UPPERCASE. Toprows `{variantId,productId,name,variantName,sku,quantitySold}`; name có thể NULL legacy item no snapshot. Lowstock `{variantId,productId,name,sku,stock}`. Arrayrỗng là không có data, null là lỗi/timeout; không gộp hai trạng thái.
 
 ## Reports
 
@@ -77,3 +77,5 @@ Pagedwrappers từ PaginationUtil: `content,currentPage,totalElements,totalPages
 Normal AppException: `{code:409,message:"INSUFFICIENT_STOCK: ...",timestamp:"<local datetime>"}`; data null bị Json Include omit. Beanvalidation `{code:400,message:"Dữ liệu đầu vào không hợp lệ",data:{"items[0].quantity":"..."},timestamp:"..."}`. timestamp normal LocalDateTime không offset, khác reportOffsetDateTimeUTC+7: đừngconvertnaive như UTC. Source GlobalExceptionHandler/ApiResponse.
 
 ResponseheaderX-Trace-Id hiện không được CORS exposed headers nên cross-originJS có thể không đọc được; Content-Disposition cũng không exposed. Bổ sung backend config trước khiUI đọc file name/trace; download fallback file name tự dựng from request ed range hợp lệ.
+
+Dashboard có thêm `demo:boolean,mode:parallel|sequential`. Xem [REQ05_DASHBOARD.md](../../../backend/docs/REQ05_DASHBOARD.md).

@@ -8,8 +8,8 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState('an.nguyen@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -87,6 +87,8 @@ export const LoginPage: React.FC = () => {
           )}
 
           {/* Form */}
+          {(location.state as { message?: string } | null)?.message && <p role="status">{(location.state as { message?: string }).message}</p>}
+          <Link to="/forgot-password">Quên mật khẩu?</Link>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">Địa chỉ Email</label>

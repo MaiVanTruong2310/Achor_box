@@ -1,66 +1,15 @@
-import { API_CONFIG, delay } from './client';
 import { Product } from '../types/product';
-import { MOCK_PRODUCTS } from '../mocks/products';
-
+import { customerRequest } from './customerClient';
+async function catalog(): Promise<Product[]> {
+  const rows = await customerRequest<any[]>('/products', {}, false);
+  return rows.filter(p => p.isActive).flatMap(p => (p.variants || []).filter((v: any) => v.isActive).map((v: any): Product => ({
+    id: v.id, variantId: v.id, parentProductId: p.id, sku: v.sku, name: `${p.name} · ${v.variantName}`, subtitle: v.variantName, description: p.description || '', price: Number(v.calculatedPrice ?? Number(p.price) + Number(v.priceDelta || 0)),
+    inStock: v.stockQuantity > 0, stockQuantity: v.stockQuantity, images: v.images?.length ? v.images : p.images || [], category: 'box', tags: [],
+    dimensions: { width: Number(v.widthCm || 0), height: Number(v.heightCm || 0), depth: Number(v.depthCm || 0), weight: Number(v.weightKg || 0), maxLoadWeight: Number(v.maxLoadKg || 0) }, features: [{ title: (v.hasWeightSensor ?? p.hasWeightSensor) ? 'Có cảm biến trọng lượng' : 'Không có cảm biến trọng lượng', description: 'Theo cấu hình phiên bản thiết bị' }], specs: [...(v.size ? [{ name: 'Kích cỡ', value: v.size }] : []), ...(v.capacityLiter ? [{ name: 'Dung tích', value: `${v.capacityLiter} L` }] : []), ...(v.modelTier ? [{ name: 'Phiên bản', value: v.modelTier }] : [])], boxIncludes: [], warrantyMonths: Number(v.warrantyMonths || 0)
+  })));
+}
 export const productApi = {
-  /**
-   * Lấy danh sách sản phẩm
-   */
-  async getProducts(params?: { category?: string; search?: string }): Promise<Product[]> {
-    if (API_CONFIG.useMock) {
-      await delay(250);
-      let list = [...MOCK_PRODUCTS];
-      if (params?.category && params.category !== 'all') {
-        list = list.filter((p) => p.category === params.category);
-      }
-      if (params?.search) {
-        const q = params.search.toLowerCase().trim();
-        list = list.filter(
-          (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.sku.toLowerCase().includes(q) ||
-            p.subtitle.toLowerCase().includes(q)
-        );
-      }
-      return list;
-    }
-
-    const res = await fetch(`${API_CONFIG.baseUrl}/products`);
-    if (!res.ok) throw new Error('Không thể tải danh sách sản phẩm');
-    return res.json();
-  },
-
-  /**
-   * Lấy chi tiết sản phẩm theo ID hoặc SKU
-   */
-  async getProductById(idOrSku: string): Promise<Product | null> {
-    if (API_CONFIG.useMock) {
-      await delay(200);
-      const product = MOCK_PRODUCTS.find(
-        (p) => p.id === idOrSku || p.sku.toLowerCase() === idOrSku.toLowerCase()
-      );
-      return product || null;
-    }
-
-    const res = await fetch(`${API_CONFIG.baseUrl}/products/${idOrSku}`);
-    if (!res.ok) {
-      if (res.status === 404) return null;
-      throw new Error('Không thể tải thông tin sản phẩm');
-    }
-    return res.json();
-  },
-
-  /**
-   * Lấy sản phẩm nổi bật (Featured) cho trang chủ
-   */
-  async getFeaturedProducts(): Promise<Product[]> {
-    if (API_CONFIG.useMock) {
-      await delay(200);
-      return MOCK_PRODUCTS.filter((p) => p.category === 'box');
-    }
-
-    const res = await fetch(`${API_CONFIG.baseUrl}/products?featured=true`);
-    if (!res.ok) throw new Error('Không thể tải sản phẩm nổi bật');
-    return res.json();
-  }
+  async getProducts(params?: { category?: string; search?: string }): Promise<Product[]> { const rows = await catalog(); const q = params?.search?.toLowerCase() || ''; return rows.filter(p => (params?.category == null || params.category === 'all' || p.category === params.category) && `${p.name} ${p.sku}`.toLowerCase().includes(q)); },
+  async getProductById(id: string): Promise<Product | null> { return (await catalog()).find(p => p.id === id || p.sku === id) || null; },
+  async getFeaturedProducts(): Promise<Product[]> { return (await catalog()).slice(0, 4); }
 };

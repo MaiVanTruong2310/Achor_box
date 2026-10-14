@@ -2,6 +2,10 @@
 
 ## Migration trước khi chạy ứng dụng
 
+Hóa đơn bán hàng HTML: chạy `010_sales_invoices.sql` sau 001–009; điền `INVOICE_SHOP_*` trước lần lập đầu tiên. Xem [mẫu, API và cấu hình](SALES_INVOICE.md).
+
+VNPAY Sandbox: chạy `009_vnpay_sandbox.sql` sau 001–008 trước bản mới; xem [cấu hình và IPN/ReturnURL](VNPAY_SANDBOX.md). Provider có thể là mock hoặc VNPAY Sandbox. Mô tả mock-only trong snapshot cũ bên dưới được thay thế bởi cập nhật này.
+
 Quản trị bán hàng/claim ảnh: chạy `008_customer_warranty_claims.sql` sau 001–007. Xem [hợp đồng API và Cloudinary](ADMIN_COMMERCE_COMPLETION.md). Có thể nạp `backend/.env` bằng `run-local.ps1`; Spring tự nó không đọc file này.
 
 Timeline/bảo hành/thông số SKU/dashboard: chạy migration `007_tracking_warranty_variant_specs.sql` sau 001–006 trước bản backend mới. Xem [hướng dẫn và hợp đồng](TRACKING_WARRANTY_SPECS_BACKLOG.md), đặc biệt policy bảo hành và duplicate warranty/device trước migration.
@@ -81,7 +85,7 @@ GET `/api/reports/RPT_REVENUE_DAILY` trả ParamSet từ DB. POST `/api/reports/
 
 Có thể dùng XLSX; customerId UUID và minAmount DECIMAL là tham số tùy chọn. Khoảng ngày mặc định tối đa 92 ngày theo metadata. Trả tất cả lỗi params trong một lần; bind typed parameters, không nối dữ liệu client thành SQL. Definition/query chỉ DBA được sửa; template phải SELECT đơn. Doanh thu đơn hợp lệ dùng paid_at UTC+7; tiền đã thu/đã hoàn/dòng tiền hiển thị riêng, có ngày 0 doanh thu.
 
-GET `/api/admin/dashboard?date=2026-10-10` (super_admin/accountant) có revenueToday/orderCountByStatus/top5Products/lowStockProducts/partial/failedParts/elapsedMs. Bốn phần chạy song song, pool 4, queue 50, timeout 1500 ms; phần lỗi null, không mất kết quả tốt. Quá tải trả 503. Timeout response không đồng nghĩa truy vấn JDBC đã hủy; cần statement_timeout ở DB và kiểm thử tải trước production.
+GET `/api/admin/dashboard?date=2026-10-10` (super_admin/accountant) có revenueToday/orderCountByStatus/top5Variants/lowStockVariants/partial/failedParts/elapsedMs. Bốn phần chạy song song, pool 4, queue 50, timeout 1500 ms; phần lỗi null, không mất kết quả tốt. Quá tải trả 503. Timeout response không đồng nghĩa truy vấn JDBC đã hủy; cần statement_timeout ở DB và kiểm thử tải trước production.
 
 ## IoT, notifications và hợp đồng firmware
 
@@ -100,3 +104,5 @@ Payload command có commandId/action/requested_by/timestamp. Firmware phải th�
 ## Thay đổi mà frontend cần xử lý
 
 Frontend chưa sửa trong lần này. Login phải dùng tài khoản Supabase thật; API private cần Bearer. Demo password và OTP preview bị loại bỏ; recovery đi qua Supabase email link. Legacy hotline verify-reset trả 503 thay vì trả thành công giả. Các status mutation paid/confirmed/completed qua PATCH cũ trả conflict hướng sang workflow actions. Soft delete product/variant giữ FK; cập nhật product cần gửi ID variant cũ để giữ identity. Product stock không đại diện stock SKU. Tích hợp callback, checkout key, ticket, shipment, dashboard partial và các trạng thái mới theo bảng API trên. Không ghi trực tiếp orders/payments/stock từ frontend nếu muốn giữ invariants.
+
+REQ-05: xem [hướng dẫn dashboard](REQ05_DASHBOARD.md) để cấu hình demo delay/fail, so sánh tuần tự và quy tắc thống kê SKU.

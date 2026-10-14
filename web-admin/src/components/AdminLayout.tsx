@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Package,
   ShoppingBag,
+  Truck,
   Users,
   FileText,
   History,
@@ -59,6 +60,8 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
+  { path: '/variant-specifications', name: 'Thông số biến thể', icon: <Package size={21} strokeWidth={1.8} />, roles: ['super_admin','product_manager'] },
+  { path: '/delivery-installations', name: 'Giao & Lắp đặt', roleNames: { technician: 'Công việc Giao & Lắp', support_agent: 'Điều phối Giao & Lắp' }, icon: <Truck size={21} strokeWidth={1.8} />, roles: ['super_admin','support_agent','technician'] },
   {
     path: '/dashboard',
     name: 'Tổng quan Báo cáo',
@@ -273,16 +276,6 @@ const ALL_SYSTEM_NOTIFICATIONS: NotificationItem[] = [
     title: 'Biên bản Thu hộ COD Đơn vị Vận chuyển',
     message: 'Bưu cục VNPost / GHTK đã gửi bảng kê đối soát tiền mặt thu hộ kỳ 1 tháng 3, cần xác nhận khớp lệnh.',
     time: '35 phút trước',
-    type: 'order',
-    unread: true,
-    link: '/orders',
-    roles: ['super_admin', 'accountant'],
-  },
-  {
-    id: 'n-acc-3',
-    title: 'Phát hành Hóa đơn Điện tử VAT',
-    message: 'Hệ thống đã tự động xuất hóa đơn điện tử VAT hợp lệ #INV-2026-042 cho đơn hàng phân phối.',
-    time: '1 giờ trước',
     type: 'order',
     unread: true,
     link: '/orders',

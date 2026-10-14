@@ -1,5 +1,7 @@
 # 04 — State machines
 
+**Cập nhật DeliveryInstallation:** phần giao/lắp đặt PLANNED trong snapshot này đã được triển khai. Xem [cập nhật và hợp đồng hiện tại](DELIVERY-INSTALLATION-IMPLEMENTED.md).
+
 ## Mục lục
 
 Order; Payment; Ticket; Refund; Shipment; Delivery Installation; Device/Command; Package. Literal wire casing giữ đúng source.

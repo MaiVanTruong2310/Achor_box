@@ -139,7 +139,7 @@ export const OrderSuccessPage: React.FC = () => {
               <div style={{ color: 'var(--text-muted)', marginBottom: '4px' }}>Địa chỉ nhận hàng:</div>
               <div style={{ color: 'var(--text-main)', lineHeight: 1.4 }}>{order.shippingAddress.address}</div>
               <div style={{ color: 'var(--text-muted)', marginTop: '6px' }}>
-                Phương thức: <strong>{order.paymentMethod === 'COD' ? 'Thanh toán COD khi nhận hàng' : 'Chuyển khoản'}</strong>
+                Phương thức: <strong>{order.payment?.isSimulated ? 'Giả lập — không thu tiền thật' : 'Xem thông tin giao dịch trên trang đơn hàng'}</strong>
               </div>
             </div>
           </div>

@@ -31,7 +31,7 @@ D1=`Đề cương đồ án tốt nghiệp.docx` (mục Mục đích/Nội dung/
 | R23 | D3M7 CMS/banner/review/FAQ | ContentController/ContentService | IMPLEMENTED admin; public CMS endpoints MISSING |
 | R24 | D4REQ04 DBParamSet/PDF/XLSX/timezone | RevenueReportService,report_definitions/report_params | IMPLEMENTED OpenPDF/POI; Jasper jrxml/Liquibase không dùng |
 | R25 | D4REQ04 thêm params không Java | typed conversion + template SQL metadata | IMPLEMENTED DATE/UUID/LONG/DECIMAL; report code/range fields cố định; mới data type cần Java |
-| R26 | D4REQ05 four parts/timeout/MDC | ConcurrentDashboardService,DashboardExecutorConfig | IMPLEMENTED; demo sequential/delay config yêu cầu gốc MISSING |
+| R26 | D4REQ05 four parts/timeout/MDC | ConcurrentDashboardService,DashboardExecutorConfig | IMPLEMENTED; variant/SKU, demo sequential/delay/fail + admin UI; xem backend/docs/REQ05_DASHBOARD.md |
 | R27 | D3M9 settings/category/shipping/payment | SettingsService read/template; category GET | PARTIAL CRUD config MISSING; shipping ngoài trái quyết định giao nội bộ nếu marketing sử dụng |
 | R28 | D3 expansion2FA/IP/OTA/AI | Fields/mocks không chứng minh chức năng | PROPOSED/out of MVP; không quảng cáo đã có |
 | R29 | Prompt account/address/register | Shop gọi auth/register,auth/me không tồn tại | MISSING; đề xuất profile/address APIs; Supabase signUp profile FK phải xác minh |

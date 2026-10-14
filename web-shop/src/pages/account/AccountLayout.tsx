@@ -83,6 +83,8 @@ export const AccountLayout: React.FC = () => {
             </div>
 
             {/* Nav links */}
+            <NavLink to="/account/addresses" className="btn btn-secondary">Địa chỉ giao & lắp đặt</NavLink>
+            <NavLink to="/account/password" className="btn btn-secondary">Đổi mật khẩu</NavLink>
             <NavLink
               to="/account"
               end

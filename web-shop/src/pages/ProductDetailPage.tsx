@@ -113,7 +113,7 @@ export const ProductDetailPage: React.FC = () => {
               ) : (
                 <Badge variant="rose">Tạm hết hàng</Badge>
               )}
-              <Badge variant="blue">Bảo hành {product.warrantyMonths} tháng</Badge>
+              {product.warrantyMonths > 0 && <Badge variant="blue">Bảo hành {product.warrantyMonths} tháng</Badge>}
             </div>
 
             <h1
@@ -170,7 +170,7 @@ export const ProductDetailPage: React.FC = () => {
               <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Kích thước</div>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
-                  {product.dimensions.width} x {product.dimensions.depth} x {product.dimensions.height} cm
+                  {product.dimensions.width > 0 && product.dimensions.depth > 0 && product.dimensions.height > 0 ? `${product.dimensions.width} x ${product.dimensions.depth} x ${product.dimensions.height} cm` : 'Chưa đủ thông tin'}
                 </div>
               </div>
               <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
@@ -182,7 +182,7 @@ export const ProductDetailPage: React.FC = () => {
               <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Trọng lượng hộp</div>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
-                  {product.dimensions.weight} kg
+                  {product.dimensions.weight > 0 ? `${product.dimensions.weight} kg` : 'Chưa có thông tin'}
                 </div>
               </div>
             </div>

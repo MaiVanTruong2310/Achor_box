@@ -1,0 +1,143 @@
+{
+  "scope": "Final full backend run after tracking, acceptance warranty, variant specifications and backlog implementation",
+  "aggregate": {
+    "tests": 264,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4
+  },
+  "testSuites": [
+    {
+      "name": "com.smartbox.backend.BackendApplicationTests",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:56:37.900Z"
+    },
+    {
+      "name": "com.smartbox.backend.CommerceIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-14T03:57:03.212Z"
+    },
+    {
+      "name": "com.smartbox.backend.CustomerAccountIntegrationTests",
+      "tests": "26",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-14T03:57:07.029Z"
+    },
+    {
+      "name": "com.smartbox.backend.CustomerAuthGatewayTests",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:57:08.903Z"
+    },
+    {
+      "name": "com.smartbox.backend.DashboardAndEmailTests",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:57:09.023Z"
+    },
+    {
+      "name": "com.smartbox.backend.DeliveryInstallationIntegrationTests",
+      "tests": "39",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-14T03:57:09.664Z"
+    },
+    {
+      "name": "com.smartbox.backend.DemoPaymentHttpTests",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:56:56.875Z"
+    },
+    {
+      "name": "com.smartbox.backend.PaymentLifecycleTests",
+      "tests": "29",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-14T03:57:12.340Z"
+    },
+    {
+      "name": "com.smartbox.backend.PaymentModeTests",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:57:13.716Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresCommerceIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:57:13.971Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresCustomerAccountIntegrationTests",
+      "tests": "28",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:57:29.129Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresDeliveryInstallationIntegrationTests",
+      "tests": "41",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:57:49.476Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresPaymentLifecycleTests",
+      "tests": "29",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:58:31.457Z"
+    },
+    {
+      "name": "com.smartbox.backend.SecurityTests",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:58:52.018Z"
+    },
+    {
+      "name": "com.smartbox.backend.VariantSpecificationsTests",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-14T03:58:52.292Z"
+    }
+  ],
+  "frontend": {
+    "shopBuild": "PASS",
+    "adminBuild": "PASS",
+    "transportTests": {
+      "passed": 10,
+      "failed": 0
+    }
+  },
+  "productionMigrationApplied": false,
+  "hardwareEndToEnd": "Deferred by user; not performed",
+  "defaultWarrantyMonths": 12,
+  "migration": "007_tracking_warranty_variant_specs.sql"
+}

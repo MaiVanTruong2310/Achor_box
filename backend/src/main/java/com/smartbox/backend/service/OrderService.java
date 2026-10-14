@@ -54,6 +54,7 @@ public class OrderService {
         String filter=status==null||status.isBlank()?"":com.smartbox.backend.enums.OrderStatus.fromString(status).getValue();
         String paymentFilter=payment==null?"":payment.trim().toLowerCase(java.util.Locale.ROOT);
         if(!paymentFilter.isEmpty()&&!java.util.Set.of("pending","paid","failed","expired","mock","vnpay","cod","momo").contains(paymentFilter))throw new com.smartbox.backend.exception.BadRequestException("INVALID_PAYMENT_FILTER");
+        if("paid".equals(paymentFilter))paymentFilter="success";
         Page<OrderResponse> pageResult = orderRepository.search(term,com.smartbox.backend.common.AdminSearch.like(term),filter,paymentFilter,PageRequest.of(page,size)).map(this::mapToResponse);
         return PaginationUtil.toMap(pageResult);
     }
@@ -88,8 +89,8 @@ public class OrderService {
         List<Payment> payments = paymentRepository.findByOrderId(o.getId());
 
         Payment firstPayment = payments.isEmpty() ? null : payments.get(0);
-        String paymentMethod = firstPayment != null ? firstPayment.getProvider() : null;
-        String paymentStatus = firstPayment != null ? firstPayment.getStatus() : null;
+        String paymentMethod = firstPayment != null ? ("vnpay".equals(firstPayment.getProvider())&&"sandbox".equals(firstPayment.getProviderEnvironment())?"vnpay_sandbox":firstPayment.getProvider()) : null;
+        String paymentStatus = firstPayment != null ? ("success".equals(firstPayment.getStatus())?"paid":firstPayment.getStatus()) : null;
         String transactionRef = firstPayment != null ? firstPayment.getTransactionRef() : null;
 
         List<OrderItemResponse> itemDTOs = items.stream().map(it -> OrderItemResponse.builder()

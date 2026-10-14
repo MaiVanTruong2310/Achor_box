@@ -1,0 +1,65 @@
+{
+  "scope": "Current backend full test run, isolated databases; no production migration applied",
+  "openapiOperationsWithoutDemo": 128,
+  "deliveryInstallationOperations": 16,
+  "testSuites": [
+    {
+      "name": "com.smartbox.backend.BackendApplicationTests",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-13T17:33:16.640Z"
+    },
+    {
+      "name": "com.smartbox.backend.CommerceIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-13T17:33:32.594Z"
+    },
+    {
+      "name": "com.smartbox.backend.DashboardAndEmailTests",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-13T17:33:35.924Z"
+    },
+    {
+      "name": "com.smartbox.backend.DeliveryInstallationIntegrationTests",
+      "tests": "33",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "timestamp": "2026-10-13T17:33:36.537Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresCommerceIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-13T17:33:38.518Z"
+    },
+    {
+      "name": "com.smartbox.backend.PostgresDeliveryInstallationIntegrationTests",
+      "tests": "35",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-13T17:33:54.524Z"
+    },
+    {
+      "name": "com.smartbox.backend.SecurityTests",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-10-13T17:34:30.260Z"
+    }
+  ],
+  "frontendValidation": "TypeScript and Vite production build passed",
+  "hardwareEndToEnd": "Not performed"
+}

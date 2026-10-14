@@ -1,37 +1,44 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { orderApi } from '../api/orderApi';
+import { CustomerAddress, customerApi } from '../api/customerApi';
+import { usePaymentMode } from '../context/PaymentModeContext';
+import {redirectToPayment} from '../api/paymentApi';
 import { OrderSummary } from '../components/cart/OrderSummary';
-import { ArrowLeft, Banknote } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
   const { items, itemCount, subtotal, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  const { mode, error: paymentModeError } = usePaymentMode();
   const navigate = useNavigate();
 
-  const [fullName, setFullName] = useState(user?.fullName || 'Nguyễn Văn An');
-  const [phone, setPhone] = useState(user?.phone || '0912345678');
-  const [email, setEmail] = useState(user?.email || 'an.nguyen@example.com');
-  const [address, setAddress] = useState(user?.address || 'Số 12 Chùa Bộc, Quang Trung, Đống Đa, Hà Nội');
+  const [fullName, setFullName] = useState(user?.fullName || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const email = user?.email || '';
+  const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BANK_TRANSFER'>('COD');
+  const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
+  const [addressId, setAddressId] = useState('');
+  const [addressError, setAddressError] = useState('');
+  const choose = (id: string, rows = addresses) => { setAddressId(id); const a = rows.find(x => x.id === id); if (a) { setFullName(a.recipientName); setPhone(a.phone); setAddress(a.addressLine); setNote(a.installationNote || ''); } };
+  useEffect(() => { if (user) { setFullName(user.fullName || ''); setPhone(user.phone || ''); } if (user) void customerApi.addresses().then(rows => { setAddresses(rows); const a = rows.find(x => x.isDefault); if (a) choose(a.id, rows); }).catch(e => setAddressError(e.message)); }, [user?.id]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  if (items.length === 0) {
-    navigate('/cart');
-    return null;
-  }
+  if (isLoading) return <p>Đang kiểm tra phiên đăng nhập…</p>;
+  if (!user) return <Navigate to="/login" state={{ from: { pathname: '/checkout' } }} replace />;
+  if (items.length === 0) return <Navigate to="/cart" replace />;
 
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!fullName.trim()) errs.fullName = 'Vui lòng nhập họ và tên người nhận';
     if (!phone.trim()) {
       errs.phone = 'Vui lòng nhập số điện thoại';
-    } else if (!/^[0-9]{10,11}$/.test(phone.replace(/\s+/g, ''))) {
-      errs.phone = 'Số điện thoại không hợp lệ (10-11 số)';
+    } else if (!/^\+?[0-9 ()-]{8,30}$/.test(phone)) {
+      errs.phone = 'Số điện thoại không hợp lệ';
     }
     if (!address.trim()) errs.address = 'Vui lòng nhập địa chỉ nhận hàng chi tiết';
     setErrors(errs);
@@ -40,6 +47,7 @@ export const CheckoutPage: React.FC = () => {
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!mode || submitting) return;
     if (!validate()) return;
 
     setSubmitting(true);
@@ -53,12 +61,13 @@ export const CheckoutPage: React.FC = () => {
           address,
           note
         },
-        paymentMethod,
+        addressId: addressId || undefined,
+        paymentMethod: mode.provider==='vnpay'?'VNPAY':'BANK_TRANSFER',
         note
       });
 
-      clearCart();
-      navigate(`/order-success/${order.id}`, { state: { order } });
+      try { const checkout=await orderApi.checkout(order.id); clearCart(); if(!redirectToPayment(checkout))navigate(`/account/orders/${order.id}`); }
+      catch (error) { navigate(`/account/orders/${order.id}`, { state: { error: error instanceof Error ? error.message : 'Đơn đã tạo, chưa xác nhận được checkout. Hãy kiểm tra trạng thái trước khi thử lại.' } }); }
     } catch (err: any) {
       alert(err.message || 'Có lỗi xảy ra khi tạo đơn hàng');
     } finally {
@@ -90,6 +99,10 @@ export const CheckoutPage: React.FC = () => {
           Thông tin đặt hàng &amp; Giao nhận
         </h1>
 
+        {addressError && <p role="alert" className="form-error">{addressError}</p>}
+        {paymentModeError && <p role="alert" className="form-error">{paymentModeError}</p>}
+        <p><Link to="/account/addresses">Quản lý sổ địa chỉ</Link></p>
+        <label>Địa chỉ giao và lắp đặt<select className="form-input" value={addressId} disabled={submitting} onChange={e => choose(e.target.value)}><option value="">Nhập địa chỉ khác cho đơn này</option>{addresses.map(a => <option key={a.id} value={a.id}>{a.label} · {a.addressLine}</option>)}</select></label>
         <form onSubmit={handleSubmitOrder}>
           <div
             style={{
@@ -122,7 +135,7 @@ export const CheckoutPage: React.FC = () => {
                       type="text"
                       className="form-input"
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={!!addressId || submitting} onChange={(e) => setFullName(e.target.value)}
                       placeholder="Nguyễn Văn An"
                     />
                     {errors.fullName && <div className="form-error">{errors.fullName}</div>}
@@ -134,7 +147,7 @@ export const CheckoutPage: React.FC = () => {
                       type="text"
                       className="form-input"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      disabled={!!addressId || submitting} onChange={(e) => setPhone(e.target.value)}
                       placeholder="0912 345 678"
                     />
                     {errors.phone && <div className="form-error">{errors.phone}</div>}
@@ -147,7 +160,7 @@ export const CheckoutPage: React.FC = () => {
                     type="email"
                     className="form-input"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    disabled
                     placeholder="email@example.com"
                   />
                 </div>
@@ -158,7 +171,7 @@ export const CheckoutPage: React.FC = () => {
                     type="text"
                     className="form-input"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    disabled={!!addressId || submitting} onChange={(e) => setAddress(e.target.value)}
                     placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành"
                   />
                   {errors.address && <div className="form-error">{errors.address}</div>}
@@ -170,57 +183,13 @@ export const CheckoutPage: React.FC = () => {
                     rows={2}
                     className="form-textarea"
                     value={note}
-                    onChange={(e) => setNote(e.target.value)}
+                    disabled={!!addressId || submitting} onChange={(e) => setNote(e.target.value)}
                     placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi giao..."
                   />
                 </div>
               </div>
 
-              {/* Payment Method */}
-              <div
-                style={{
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '24px'
-                }}
-              >
-                <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '18px' }}>
-                  2. Phương thức thanh toán
-                </h2>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {/* Option: COD */}
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '14px 16px',
-                      border: paymentMethod === 'COD' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: paymentMethod === 'COD' ? 'var(--primary-light)' : 'var(--bg-surface)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      checked={paymentMethod === 'COD'}
-                      onChange={() => setPaymentMethod('COD')}
-                    />
-                    <Banknote size={20} style={{ color: 'var(--primary)' }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px' }}>
-                        Thanh toán khi nhận hàng (COD)
-                      </div>
-                      <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                        Kiểm tra thiết bị đầy đủ và thanh toán trực tiếp cho nhân viên giao hàng.
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
+              <p>Đơn sẽ chuyển sang chờ thanh toán. Tiến độ giao và lắp đặt hiển thị sau khi thanh toán được xác nhận và đơn được phê duyệt.</p>
             </div>
 
             {/* Right: Order Review & Submit */}
@@ -232,11 +201,11 @@ export const CheckoutPage: React.FC = () => {
                 actionButton={
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || !mode}
                     className="btn btn-primary btn-lg"
                     style={{ width: '100%' }}
                   >
-                    {submitting ? 'Đang xử lý đơn...' : 'Đặt hàng ngay'}
+                    {submitting ? 'Đang xử lý đơn...' : mode?.provider==='vnpay'?'Thanh toán VNPAY Sandbox':'Đặt hàng ngay'}
                   </button>
                 }
               />

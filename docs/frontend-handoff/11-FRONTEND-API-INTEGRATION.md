@@ -1,5 +1,7 @@
 # 11 — API integration matrix và adapter strategy
 
+**Cập nhật DeliveryInstallation:** phần giao/lắp đặt PLANNED trong snapshot này đã được triển khai. Xem [cập nhật và hợp đồng hiện tại](DELIVERY-INSTALLATION-IMPLEMENTED.md).
+
 ## Screen → action → API
 
 | Screen/action | API thật hoặc trạng thái | Request | Response/use | Error handling |

@@ -1,4 +1,6 @@
 export type OrderStatus =
+  | 'AWAITING_PAYMENT'
+  | 'PAID'
   | 'PENDING'     // Chờ xác nhận
   | 'CONFIRMED'   // Đã xác nhận
   | 'PROCESSING'  // Đang chuẩn bị
@@ -7,6 +9,8 @@ export type OrderStatus =
   | 'CANCELLED';  // Đã hủy
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, { label: string; color: string; description: string }> = {
+  AWAITING_PAYMENT: { label: 'Chờ thanh toán', color: 'amber', description: 'Đơn đang chờ xác nhận thanh toán' },
+  PAID: { label: 'Đã thanh toán', color: 'sky', description: 'Chờ duyệt đơn và phân công giao/lắp đặt' },
   PENDING: {
     label: 'Chờ xác nhận',
     color: 'amber',
@@ -28,9 +32,9 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, { label: string; color: st
     description: 'Đơn hàng đang trên đường vận chuyển tới địa chỉ'
   },
   COMPLETED: {
-    label: 'Giao thành công',
+    label: 'Đã nghiệm thu',
     color: 'emerald',
-    description: 'Khách hàng đã nhận thiết bị và kích hoạt bảo hành'
+    description: 'Giao và lắp đặt đã được nghiệm thu đạt'
   },
   CANCELLED: {
     label: 'Đã hủy',
@@ -40,6 +44,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, { label: string; color: st
 };
 
 export interface OrderItem {
+  variantId?: string;
   productId: string;
   sku: string;
   name: string;
@@ -58,12 +63,15 @@ export interface ShippingAddress {
 }
 
 export interface Order {
+  timeline?: { id: string; source: string; action: string; occurredAt: string; attempt?: number }[];
+  payment?: import('../api/paymentApi').PaymentInfo | null;
+  deliveryInstallation?: DeliveryProgress | null;
   id: string;
   code: string;
   userId?: string;
   items: OrderItem[];
   shippingAddress: ShippingAddress;
-  paymentMethod: 'COD' | 'BANK_TRANSFER';
+  paymentMethod: 'COD' | 'BANK_TRANSFER' | 'VNPAY';
   paymentStatus: 'UNPAID' | 'PAID';
   shippingFee: number;
   subtotal: number;
@@ -79,8 +87,12 @@ export interface Order {
 }
 
 export interface CreateOrderPayload {
+  addressId?: string;
   items: OrderItem[];
   shippingAddress: ShippingAddress;
-  paymentMethod: 'COD' | 'BANK_TRANSFER';
+  paymentMethod: 'COD' | 'BANK_TRANSFER' | 'VNPAY';
   note?: string;
 }
+
+export interface DeliveryProgress { status: string; scheduledAt: string; startedAt: string | null; deliveredAt: string | null; installedAt: string | null; completedAt: string | null; customerAccepted: boolean }
+export const DELIVERY_LABELS: Record<string, string> = { ASSIGNED: 'Đã lên lịch', IN_PROGRESS: 'Đang giao và lắp đặt', DELIVERED: 'Đã giao thiết bị', INSTALLED: 'Đã lắp đặt, chờ nghiệm thu', COMPLETED: 'Đã nghiệm thu đạt', FAILED: 'Cần điều chỉnh lịch thực hiện' };

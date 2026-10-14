@@ -11,6 +11,8 @@ export interface ProductFeature {
 }
 
 export interface Product {
+  variantId?: string;
+  parentProductId?: string;
   id: string;
   sku: string;
   name: string;

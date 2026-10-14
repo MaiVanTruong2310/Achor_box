@@ -1,5 +1,7 @@
 # 10 — Frontend screen requirements
 
+**Cập nhật DeliveryInstallation:** phần giao/lắp đặt PLANNED trong snapshot này đã được triển khai. Xem [cập nhật và hợp đồng hiện tại](DELIVERY-INSTALLATION-IMPLEMENTED.md).
+
 ## Quy ước chung
 
 Mỗi màn hình có initial/loading/success/empty/error, 401/403, offline/timeouts và mobile. Formdirty preserve sau error; mutationpendingdisable chính nút liên quan, không freeze toàn site. Màn hình PLANNED thiết kếđược như ng production feature flag off, không mock làm nguồn dữ liệu đúng. Cácroute dưới đây là **route UI đề xuất**, không backendAPI. CTA/chọnthiếtbị sử dụng API thật ở[11](11-FRONTEND-API-INTEGRATION.md).

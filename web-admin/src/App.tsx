@@ -8,8 +8,10 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Devices } from './pages/Devices';
 import { Warranties } from './pages/Warranties';
+import { VariantSpecificationsPage } from './pages/VariantSpecifications';
 import { Products } from './pages/Products';
 import { Orders } from './pages/Orders';
+import { DeliveryInstallations } from './pages/DeliveryInstallations';
 import { UsersPage } from './pages/Users';
 import { ContentPage } from './pages/Content';
 import { AuditLogsPage } from './pages/AuditLogs';
@@ -49,6 +51,8 @@ export const App: React.FC = () => {
               }
             >
               <Route path="/admin" element={<RoleDefaultRedirect />} />
+              <Route path="variant-specifications" element={<ProtectedRoute allowedRoles={['super_admin','product_manager']}><VariantSpecificationsPage /></ProtectedRoute>} />
+              <Route path="delivery-installations" element={<ProtectedRoute allowedRoles={['super_admin','support_agent','technician']}><DeliveryInstallations /></ProtectedRoute>} />
               <Route path="/admin/guide" element={<ProductShowcaseAndGuide initialTab="guide" standalone={false} />} />
               <Route path="/admin/warranty" element={<ProductShowcaseAndGuide initialTab="warranty" standalone={false} />} />
               
