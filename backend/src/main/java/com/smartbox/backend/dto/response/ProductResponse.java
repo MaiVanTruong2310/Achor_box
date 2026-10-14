@@ -45,6 +45,7 @@ public class ProductResponse {
 
     @Schema(description = "Trạng thái đang kinh doanh", example = "true")
     private Boolean isActive;
+    private Boolean hasWeightSensor;
 
     @Schema(description = "Ngày tạo")
     private OffsetDateTime createdAt;

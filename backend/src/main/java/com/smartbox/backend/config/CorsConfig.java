@@ -24,10 +24,11 @@ public class CorsConfig {
         config.setAllowCredentials(true);
         config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         config.setAllowedHeaders(Arrays.asList(
-                "Origin", "Content-Type", "Accept", "Authorization", "Idempotency-Key", "X-Trace-Id",
+                "Origin", "Content-Type", "Accept", "Authorization", "Idempotency-Key", "If-Match", "X-Trace-Id",
                 "X-Requested-With", "Access-Control-Request-Method", "Access-Control-Request-Headers"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setExposedHeaders(Arrays.asList("X-Trace-Id","Retry-After","Content-Disposition"));
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -25,5 +25,18 @@ public class VariantInventoryService {
         db.audit(actor.id(),"STOCK_ADJUSTED","product_variants",variant,Integer.toString(delta));
         return db.one("SELECT id,product_id,stock_quantity FROM public.product_variants WHERE id=?",variant);
     }
+    @Transactional(readOnly=true)
+    public List<Map<String,Object>> movements() {
+        actors.get().requireRoles("super_admin","product_manager","accountant");
+        return db.list("""
+            SELECT m.id,m.variant_id AS "variantId",v.product_id AS "productId",p.name AS "productName",v.sku,
+            m.delta,m.reason,m.created_at AS "createdAt",a.full_name AS "actorName",
+            v.stock_quantity-SUM(m.delta) OVER(PARTITION BY m.variant_id ORDER BY m.created_at DESC,m.id DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "previousStock",
+            v.stock_quantity-SUM(m.delta) OVER(PARTITION BY m.variant_id ORDER BY m.created_at DESC,m.id DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)+m.delta AS "newStock"
+            FROM public.inventory_movements m JOIN public.product_variants v ON v.id=m.variant_id
+            JOIN public.products p ON p.id=v.product_id LEFT JOIN public.profiles a ON a.id=m.actor_id
+            ORDER BY m.created_at DESC,m.id DESC LIMIT 500
+            """);
+    }
 }
 

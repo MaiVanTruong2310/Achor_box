@@ -14,6 +14,8 @@ import java.util.Map;
 @RestControllerAdvice
 @lombok.extern.slf4j.Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Object>> imageTooLarge(Exception ex){return ResponseEntity.status(413).body(ApiResponse.error(413,"IMAGE_MAX_5_MB"));}
     @ExceptionHandler(ReportParamsException.class)
     public ResponseEntity<Map<String,Object>> reportParams(ReportParamsException ex) {
         return ResponseEntity.badRequest().body(Map.of("code","INVALID_REPORT_PARAMS","message","Tham số báo cáo không hợp lệ","errors",ex.getErrors(),"timestamp",java.time.OffsetDateTime.now(java.time.ZoneOffset.ofHours(7))));

@@ -26,7 +26,7 @@ public class DeviceWorkflowService {
     @Transactional
     public Map<String,Object> register(Registration request) {
         actors.get().requireRoles("super_admin","technician");
-        var variant=db.one("SELECT * FROM public.product_variants WHERE id=?",request.variantId());UUID id=UUID.randomUUID();
+        var variant=db.one("SELECT * FROM public.product_variants WHERE id=? FOR UPDATE",request.variantId());UUID id=UUID.randomUUID();
         db.update("INSERT INTO public.devices(id,product_id,product_variant_id,serial_number,name,mqtt_topic_id) VALUES(?,?,?,?,?,?)",id,variant.get("product_id"),request.variantId(),request.serialNumber(),request.name(),request.mqttTopicId());
         return Map.of("deviceId",id,"serialNumber",request.serialNumber());
     }
@@ -49,7 +49,7 @@ public class DeviceWorkflowService {
         if(!mqttEnabled)throw new AppException(503,"MQTT_NOT_CONFIGURED");
         if(device.get("activated_at")==null)throw new ConflictException("DEVICE_NOT_ACTIVATED");
         if(device.get("mqtt_topic_id")==null || !"online".equals(device.get("status")))throw new ConflictException("DEVICE_OFFLINE");
-        if("TARE".equals(control.command()) && !Boolean.TRUE.equals(db.one("SELECT has_weight_sensor FROM public.products WHERE id=?",device.get("product_id")).get("has_weight_sensor")))throw new BadRequestException("WEIGHT_SENSOR_NOT_SUPPORTED");
+        if("TARE".equals(control.command()) && !Boolean.TRUE.equals(db.one("SELECT COALESCE(v.has_weight_sensor,p.has_weight_sensor) AS has_weight_sensor FROM public.products p LEFT JOIN public.product_variants v ON v.id=? WHERE p.id=?",device.get("product_variant_id"),device.get("product_id")).get("has_weight_sensor")))throw new BadRequestException("WEIGHT_SENSOR_NOT_SUPPORTED");
         UUID actor=actors.get().id();
         var existing=db.list("SELECT * FROM public.device_commands WHERE device_id=? AND requested_by=? AND request_key=?",id,actor,control.requestKey());
         if(!existing.isEmpty()) {

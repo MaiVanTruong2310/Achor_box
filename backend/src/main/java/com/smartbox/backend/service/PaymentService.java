@@ -27,10 +27,12 @@ public class PaymentService {
     private final CurrentActor actors;
     private final OutboxService outbox;
     private final ObjectMapper json;
+    private final org.springframework.core.env.Environment environment;
     @Value("${smartbox.payment.hmac-secret:}") private String secret;
     @Value("${smartbox.payment.timeout-minutes:15}") private int timeoutMinutes;
     @Value("${smartbox.public-url:http://localhost:8080}") private String publicUrl;
     @Value("${smartbox.demo.fail-after-paid:false}") private boolean failAfterPaid;
+    public Map<String,Object> mode(){return Map.of("provider","mock","isSimulated",true,"demoActionsEnabled",Arrays.asList(environment.getActiveProfiles()).contains("demo")&&secret!=null&&secret.length()>=32);}
 
     @Transactional
     public Map<String,Object> checkout(UUID id,String key) {
@@ -47,6 +49,7 @@ public class PaymentService {
             if(stored.get("response")!=null) return readResponse(stored.get("response").toString());
         }
         orders.editable(order);
+        orders.freezeAddress(order);
         if(db.list("SELECT id FROM public.order_items WHERE order_id=?",id).isEmpty() || money(order.get("total")).signum()<=0)
             throw new ConflictException("ORDER_NOT_CHECKOUTABLE: Đơn cần sản phẩm và tổng tiền dương");
         UUID payment=UUID.randomUUID(); var expires=now().plusMinutes(timeoutMinutes);
@@ -56,6 +59,7 @@ public class PaymentService {
         Map<String,Object> response=new LinkedHashMap<>();
         response.put("orderId",id.toString()); response.put("status","awaiting_payment");
         response.put("paymentId",payment.toString()); response.put("amount",order.get("total"));
+        response.putAll(mode());
         response.put("paymentUrl",publicUrl+"/mock-payment/payments/"+payment); response.put("expiresAt",expires.toString());
         try {
             db.update("UPDATE public.checkout_keys SET order_id=?,payment_id=?,response=?,created_at=?,expires_at=? WHERE key=?",id,payment,json.writeValueAsString(response),now(),now().plusHours(24),key);

@@ -10,8 +10,11 @@ public final class CommerceRequests {
     private CommerceRequests() {}
     public record Item(@NotNull UUID variantId, @Min(1) @Max(99) int quantity) {}
     public record Quantity(@Min(1) @Max(99) int quantity) {}
-    public record CreateOrder(@NotBlank @Size(max=2000) String shippingAddress,
-                              @NotEmpty @Size(max=100) List<@Valid Item> items) {}
+    public record CreateOrder(@Size(max=2000) String shippingAddress,
+                              @NotEmpty @Size(max=100) List<@Valid Item> items,
+                              UUID addressId, @Valid CustomerRequests.Address shippingDetails) {
+        public CreateOrder(String shippingAddress,List<Item> items){this(shippingAddress,items,null,null);}
+    }
     public record Callback(@NotNull UUID paymentId, @NotNull UUID orderId,
                            @NotNull @DecimalMin("0") BigDecimal amount,
                            @Pattern(regexp="SUCCESS|FAILED") @NotNull String result,

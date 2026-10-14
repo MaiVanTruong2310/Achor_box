@@ -1,6 +1,6 @@
 CREATE DOMAIN public.order_status AS varchar;
-CREATE TABLE public.profiles(id uuid PRIMARY KEY,email text,full_name text);
-CREATE TABLE public.products(id uuid PRIMARY KEY,name text NOT NULL,price numeric NOT NULL,is_active boolean NOT NULL);
+CREATE TABLE public.profiles(id uuid PRIMARY KEY,email text,full_name text,phone text,role text DEFAULT 'customer',is_locked boolean DEFAULT false,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
+CREATE TABLE public.products(id uuid PRIMARY KEY,name text NOT NULL,price numeric NOT NULL,category_id uuid,is_active boolean NOT NULL);
 CREATE TABLE public.product_variants(id uuid PRIMARY KEY,product_id uuid REFERENCES public.products(id),variant_name text NOT NULL,sku text UNIQUE NOT NULL,price_delta numeric NOT NULL,stock_quantity integer NOT NULL);
 CREATE TABLE public.orders(id uuid PRIMARY KEY,user_id uuid REFERENCES public.profiles(id),status public.order_status NOT NULL,shipping_address text,total numeric NOT NULL,tracking_number text,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
 CREATE TABLE public.order_items(id uuid PRIMARY KEY,order_id uuid REFERENCES public.orders(id),product_id uuid REFERENCES public.products(id),variant_id uuid REFERENCES public.product_variants(id),quantity integer NOT NULL,unit_price numeric NOT NULL);
@@ -13,3 +13,7 @@ CREATE TABLE public.device_events(id uuid PRIMARY KEY,device_id uuid,event_type 
 CREATE TABLE public.notifications(id uuid PRIMARY KEY,user_id uuid,device_id uuid,type text,title text,body text,is_read boolean DEFAULT false,created_at timestamptz DEFAULT now());
 CREATE TABLE public.notification_preferences(user_id uuid,event_type text,enabled boolean DEFAULT true,PRIMARY KEY(user_id,event_type));
 
+
+CREATE TABLE public.warranty_policies(id uuid PRIMARY KEY,category_id uuid,duration_months integer NOT NULL DEFAULT 12);
+CREATE DOMAIN public.warranty_status AS varchar;
+CREATE TABLE public.warranties(id uuid PRIMARY KEY,order_item_id uuid REFERENCES public.order_items(id),device_id uuid REFERENCES public.devices(id),start_date date NOT NULL,end_date date NOT NULL,status public.warranty_status DEFAULT 'active');

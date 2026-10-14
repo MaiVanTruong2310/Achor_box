@@ -33,6 +33,7 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final OrderWorkflowService workflow;
     private final FulfillmentService fulfillment;
+    private final com.smartbox.backend.security.CurrentActor actors;
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrders() {
@@ -43,8 +44,17 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getOrdersPaged(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<OrderResponse> pageResult = orderRepository.findAll(pageable).map(this::mapToResponse);
+        return getOrdersPaged(page,size,null,null,null);
+    }
+    @Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public Map<String,Object> getOrdersPaged(int page,int size,String search,String status,String payment) {
+        actors.get().requireRoles("super_admin","support_agent","accountant");
+        com.smartbox.backend.common.AdminSearch.page(page,size);
+        String term=com.smartbox.backend.common.AdminSearch.term(search);
+        String filter=status==null||status.isBlank()?"":com.smartbox.backend.enums.OrderStatus.fromString(status).getValue();
+        String paymentFilter=payment==null?"":payment.trim().toLowerCase(java.util.Locale.ROOT);
+        if(!paymentFilter.isEmpty()&&!java.util.Set.of("pending","paid","failed","expired","mock","vnpay","cod","momo").contains(paymentFilter))throw new com.smartbox.backend.exception.BadRequestException("INVALID_PAYMENT_FILTER");
+        Page<OrderResponse> pageResult = orderRepository.search(term,com.smartbox.backend.common.AdminSearch.like(term),filter,paymentFilter,PageRequest.of(page,size)).map(this::mapToResponse);
         return PaginationUtil.toMap(pageResult);
     }
 

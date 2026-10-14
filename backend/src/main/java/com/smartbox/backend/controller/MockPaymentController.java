@@ -17,7 +17,7 @@ import static com.smartbox.backend.service.OrderWorkflowService.*;
 @RestController
 @Profile("demo")
 @RequiredArgsConstructor
-@RequestMapping("/mock-payment/payments")
+@RequestMapping({"/mock-payment/payments","/api/mock-payment/payments"})
 public class MockPaymentController {
     private final CommerceRepository db;
     private final OrderWorkflowService orders;
