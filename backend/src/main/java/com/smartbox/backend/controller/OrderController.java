@@ -34,8 +34,9 @@ public class OrderController {
     @Operation(summary = "Lấy danh sách đơn hàng có phân trang dạng Map<String, Object>")
     public ResponseEntity<Map<String, Object>> getOrdersPaged(
             @Parameter(description = "Chỉ số trang (0-based)") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
-            @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
-        return ResponseEntity.ok(orderService.getOrdersPaged(page, size));
+            @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
+            @RequestParam(required=false) String search,@RequestParam(required=false) String status,@RequestParam(required=false) String payment) {
+        return ResponseEntity.ok(orderService.getOrdersPaged(page, size,search,status,payment));
     }
 
     @PatchMapping("/{id}/status")

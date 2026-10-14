@@ -38,7 +38,7 @@ public class ProductMapper {
                 .price(p.getPrice())
                 .images(images)
                 .stockQuantity(p.getStockQuantity())
-                .isActive(p.getIsActive())
+                .isActive(p.getIsActive()).hasWeightSensor(p.getHasWeightSensor())
                 .createdAt(p.getCreatedAt())
                 .variants(variantResponses)
                 .build();

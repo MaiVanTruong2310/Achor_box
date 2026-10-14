@@ -43,19 +43,27 @@ public class WarrantyService {
     private final WarrantyRepository warrantyRepository;
     private final com.smartbox.backend.repository.ProfileRepository profiles;
     private final com.smartbox.backend.security.CurrentActor actors;
+    private final com.smartbox.backend.repository.CommerceRepository db;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    @Transactional(readOnly=true)
+    public List<Map<String,Object>> technicians(){
+        actors.get().requireRoles("super_admin","support_agent");
+        return db.list("SELECT id,full_name AS \"fullName\",phone FROM public.profiles WHERE CAST(role AS text)='technician' AND is_locked=false ORDER BY full_name,id");
+    }
 
     @Transactional(readOnly = true)
     public List<ClaimResponse> getClaims() {
-        return claimRepository.findAllByOrderByCreatedAtDesc().stream()
+        var actor=actors.get();actor.requireRoles("super_admin","support_agent","technician");
+        return ("technician".equals(actor.role())?claimRepository.findByAssignedToOrderByCreatedAtDesc(actor.id()):claimRepository.findAllByOrderByCreatedAtDesc()).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> getClaimsPaged(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<ClaimResponse> pageResult = claimRepository.findAll(pageable).map(this::mapToResponse);
+        var actor=actors.get();actor.requireRoles("super_admin","support_agent","technician");
+        Pageable pageable = com.smartbox.backend.common.AdminSearch.page(page,size);
+        Page<ClaimResponse> pageResult = ("technician".equals(actor.role())?claimRepository.findByAssignedTo(actor.id(),pageable):claimRepository.findAll(pageable)).map(this::mapToResponse);
         return PaginationUtil.toMap(pageResult);
     }
 
@@ -78,6 +86,7 @@ public class WarrantyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
         claim.setAssignedTo(technicianId);
         claim.setStatus("in_progress");
+        db.audit(actors.get().id(),"WARRANTY_CLAIM_ASSIGNED","warranty_claims",claimId,technicianId.toString());
         return mapToResponse(claimRepository.save(claim));
     }
 
@@ -88,6 +97,7 @@ public class WarrantyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
         authorizeClaim(claim);
         claim.setStatus(status);
+        db.audit(actors.get().id(),"WARRANTY_CLAIM_STATUS_CHANGED","warranty_claims",claimId,status);
         claim.setResolvedAt(null);
         if ("resolved".equalsIgnoreCase(status) || "rejected".equalsIgnoreCase(status)) {
             claim.setResolvedAt(OffsetDateTime.now());
@@ -100,7 +110,9 @@ public class WarrantyService {
         WarrantyClaim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
         authorizeClaim(claim);
+        if(notes==null||notes.length()>10000)throw new com.smartbox.backend.exception.BadRequestException("INVALID_CLAIM_NOTES");
         claim.setInternalNotes(notes);
+        db.audit(actors.get().id(),"WARRANTY_CLAIM_NOTE_CHANGED","warranty_claims",claimId,"Internal note updated");
         return mapToResponse(claimRepository.save(claim));
     }
 
@@ -122,6 +134,10 @@ public class WarrantyService {
         String customerName = null;
         String customerPhone = null;
         String customerAddress = null;
+        if(c.getCustomerId()!=null) {
+            var customer=profiles.findById(c.getCustomerId());
+            if(customer.isPresent()){customerName=customer.get().getFullName();customerPhone=customer.get().getPhone();customerAddress=customer.get().getDefaultAddress();}
+        }
 
         if (warranty != null && warranty.getOrderItem() != null && warranty.getOrderItem().getOrder() != null) {
             var ord = warranty.getOrderItem().getOrder();
@@ -191,8 +207,8 @@ public class WarrantyService {
             LocalDate endDate = wOpt.orElseThrow().getEndDate();
             String status = wOpt.orElseThrow().getStatus();
 
-            long remainingDays = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
-            boolean isValid = "active".equalsIgnoreCase(status) && remainingDays >= 0 && !LocalDate.now().isBefore(startDate);
+            long remainingDays = ChronoUnit.DAYS.between(LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")), endDate);
+            boolean isValid = "active".equalsIgnoreCase(status) && remainingDays >= 0 && !LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).isBefore(startDate);
 
             String prodName = d.getProduct() != null ? d.getProduct().getName() : null;
             String ownerName = d.getOwner() != null ? maskName(d.getOwner().getFullName()) : null;

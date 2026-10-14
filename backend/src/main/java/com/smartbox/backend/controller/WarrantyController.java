@@ -25,6 +25,7 @@ import java.util.UUID;
 public class WarrantyController {
 
     private final WarrantyService warrantyService;
+    @GetMapping("/technicians") public List<Map<String,Object>> technicians(){return warrantyService.technicians();}
 
     @GetMapping("/lookup")
     @Operation(summary = "Tra cứu thông tin bảo hành điện tử theo Serial Number của thiết bị")

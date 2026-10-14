@@ -29,6 +29,35 @@ public class SupabaseAuthGateway {
     public Map<String,Object> password(String email,String password) {return exchange("password",Map.of("email",email,"password",password));}
     public Map<String,Object> refresh(String refreshToken) {return exchange("refresh_token",Map.of("refresh_token",refreshToken));}
     @SuppressWarnings("unchecked")
+    public void register(String email,String password,String name,String phone,String redirect) {
+        configured();
+        try{client.post().uri(builder->builder.path("/signup").queryParam("redirect_to",redirect).build()).header("apikey",key)
+            .body(Map.of("email",email,"password",password,"data",Map.of("full_name",name,"phone",phone==null?"":phone)))
+            .retrieve().toBodilessEntity();}
+        catch(RestClientResponseException ex){if(ex.getStatusCode().value()==429)throw new AppException(429,"AUTH_RATE_LIMITED");throw new AppException(400,"AUTH_REGISTRATION_FAILED");}
+        catch(org.springframework.web.client.ResourceAccessException ex){throw new AppException(503,"AUTH_PROVIDER_UNAVAILABLE");}
+    }
+    @SuppressWarnings("unchecked")
+    public Map<String,Object> user(String token) {
+        configured();
+        try{return client.get().uri("/user").header("apikey",key).header("Authorization","Bearer "+token).retrieve().body(Map.class);}
+        catch(RestClientResponseException ex){throw new UnauthorizedException("INVALID_ACCESS_TOKEN");}
+        catch(org.springframework.web.client.ResourceAccessException ex){throw new AppException(503,"AUTH_PROVIDER_UNAVAILABLE");}
+    }
+    public void updatePassword(String token,String password){
+        configured();
+        try{client.put().uri("/user").header("apikey",key).header("Authorization","Bearer "+token).body(Map.of("password",password)).retrieve().toBodilessEntity();}
+        catch(RestClientResponseException ex){throw new AppException(400,"AUTH_PASSWORD_UPDATE_FAILED");}
+        catch(org.springframework.web.client.ResourceAccessException ex){throw new AppException(503,"AUTH_PROVIDER_UNAVAILABLE");}
+    }
+    @SuppressWarnings("unchecked")
+    public Map<String,Object> verifyRecovery(String hash){
+        configured();
+        try{return client.post().uri("/verify").header("apikey",key).body(Map.of("type","recovery","token_hash",hash)).retrieve().body(Map.class);}
+        catch(RestClientResponseException ex){throw new UnauthorizedException("RECOVERY_LINK_INVALID_OR_EXPIRED");}
+        catch(org.springframework.web.client.ResourceAccessException ex){throw new AppException(503,"AUTH_PROVIDER_UNAVAILABLE");}
+    }
+    @SuppressWarnings("unchecked")
     private Map<String,Object> exchange(String grant,Map<String,String> body) {
         configured();
         try {return client.post().uri("/token?grant_type="+grant).header("apikey",key).body(body).retrieve().body(Map.class);}
@@ -67,8 +96,12 @@ public class SupabaseAuthGateway {
         client.delete().uri("/admin/users/"+id).header("apikey",serviceKey).header("Authorization","Bearer "+serviceKey).retrieve().toBodilessEntity();
     }
     public void recovery(String email) {
+        recovery(email,null);
+    }
+    public void recovery(String email,String redirect) {
         configured();
-        try{client.post().uri("/recover").header("apikey",key).body(Map.of("email",email)).retrieve().toBodilessEntity();}
-        catch(RestClientResponseException ex){throw new AppException(503,"AUTH_RECOVERY_UNAVAILABLE");}
+        try{client.post().uri(builder->{builder.path("/recover");if(redirect!=null)builder.queryParam("redirect_to",redirect);return builder.build();}).header("apikey",key).body(Map.of("email",email)).retrieve().toBodilessEntity();}
+        catch(RestClientResponseException ex){if(ex.getStatusCode().value()==429)throw new AppException(429,"AUTH_RATE_LIMITED");throw new AppException(503,"AUTH_RECOVERY_UNAVAILABLE");}
+        catch(org.springframework.web.client.ResourceAccessException ex){throw new AppException(503,"AUTH_PROVIDER_UNAVAILABLE");}
     }
 }

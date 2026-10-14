@@ -42,7 +42,7 @@ public class MqttDeviceService {
         } else {
             Boolean detected=data.get("package_detected") instanceof Boolean b?b:null;
             Double weight=number(data.get("weight")),distance=number(data.get("distance_cm"));
-            boolean weightEnabled=Boolean.TRUE.equals(db.one("SELECT has_weight_sensor FROM public.products WHERE id=?",device.get("product_id")).get("has_weight_sensor"));
+            boolean weightEnabled=Boolean.TRUE.equals(db.one("SELECT COALESCE(v.has_weight_sensor,p.has_weight_sensor) AS has_weight_sensor FROM public.products p LEFT JOIN public.product_variants v ON v.id=? WHERE p.id=?",device.get("product_variant_id"),device.get("product_id")).get("has_weight_sensor"));
             if(!weightEnabled)weight=null;
             db.update("INSERT INTO public.sensor_readings VALUES(?,?,?,?,?,CAST(? AS jsonb),?)",UUID.randomUUID(),id,weight,distance,device.get("door_status"),new String(bytes,StandardCharsets.UTF_8),now());
             db.update("UPDATE public.devices SET package_detected=COALESCE(?,package_detected),weight_kg=COALESCE(?,weight_kg) WHERE id=?",detected,weight,id);

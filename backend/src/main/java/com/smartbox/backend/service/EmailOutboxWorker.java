@@ -76,6 +76,10 @@ public class EmailOutboxWorker {
             case "ORDER_REFUNDED" -> "Xác nhận hoàn tiền";
             case "ORDER_SHIPPED" -> "Đơn hàng đang được giao";
             case "ORDER_DELIVERED" -> "Đơn hàng đã giao thành công";
+            case "INSTALLATION_SCHEDULED" -> "Lịch giao và lắp đặt SmartBox";
+            case "DEVICE_DELIVERED" -> "Thiết bị đã giao, đang lắp đặt";
+            case "INSTALLATION_DELAYED" -> "Điều chỉnh lịch giao và lắp đặt";
+            case "INSTALLATION_COMPLETED" -> "SmartBox đã được lắp đặt và nghiệm thu";
             default -> "Cập nhật đơn hàng";
         };
     }

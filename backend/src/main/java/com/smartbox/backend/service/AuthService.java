@@ -19,6 +19,7 @@ import java.util.UUID;
 public class AuthService {
     private final SupabaseAuthGateway provider;
     private final ProfileRepository profiles;
+    private final CustomerIdentityService identities;
     public LoginResponse login(LoginRequest request) {
         var session=provider.password(request.getEmail().trim().toLowerCase(java.util.Locale.ROOT),request.getPassword());
         var profile=profile(session);
@@ -41,7 +42,7 @@ public class AuthService {
     }
     private Profile profile(Map<String,Object> session) {
         if(!(session.get("user") instanceof Map<?,?> user) || user.get("id")==null) throw new UnauthorizedException("AUTH_PROFILE_MISSING");
-        var profile=profiles.findById(UUID.fromString(user.get("id").toString())).orElseThrow(()->new UnauthorizedException("AUTH_PROFILE_MISSING"));
+        var profile=identities.ensure(user);
         if(Boolean.TRUE.equals(profile.getIsLocked())) throw new UnauthorizedException("ACCOUNT_LOCKED");
         return profile;
     }

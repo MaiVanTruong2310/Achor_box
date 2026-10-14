@@ -42,6 +42,15 @@ public class ProductVariant {
     @Column(name="size") private String size;
     @Column(name="capacity_liter") private Integer capacityLiter;
 
+    @Column(name="model_tier") private String modelTier;
+    @Column(name="width_cm") private BigDecimal widthCm;
+    @Column(name="height_cm") private BigDecimal heightCm;
+    @Column(name="depth_cm") private BigDecimal depthCm;
+    @Column(name="weight_kg") private BigDecimal weightKg;
+    @Column(name="max_load_kg") private BigDecimal maxLoadKg;
+    @Column(name="has_weight_sensor") private Boolean hasWeightSensor;
+    @Column(name="warranty_months") private Integer warrantyMonths;
+    @Column(name="images") private String variantImages;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;

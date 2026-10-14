@@ -2,6 +2,14 @@
 
 ## Migration trước khi chạy ứng dụng
 
+Quản trị bán hàng/claim ảnh: chạy `008_customer_warranty_claims.sql` sau 001–007. Xem [hợp đồng API và Cloudinary](ADMIN_COMMERCE_COMPLETION.md). Có thể nạp `backend/.env` bằng `run-local.ps1`; Spring tự nó không đọc file này.
+
+Timeline/bảo hành/thông số SKU/dashboard: chạy migration `007_tracking_warranty_variant_specs.sql` sau 001–006 trước bản backend mới. Xem [hướng dẫn và hợp đồng](TRACKING_WARRANTY_SPECS_BACKLOG.md), đặc biệt policy bảo hành và duplicate warranty/device trước migration.
+
+Customer Account đã triển khai: xem [hợp đồng và cấu hình Auth/email](CUSTOMER_ACCOUNT.md). Sau 001–005, chạy `006_customer_account.sql` trước bản ứng dụng mới; cấu hình template Reset Password theo tài liệu để dùng quên mật khẩu.
+
+Delivery & Installation đã triển khai: xem [hợp đồng và hướng dẫn](DELIVERY_INSTALLATION.md). Sau 001–003, áp dụng `004_delivery_installation.sql` rồi `005_installation_completion_guard.sql` trên bản sao để kiểm tra trước khi cập nhật database thật; chạy schema trước bản ứng dụng mới.
+
 Các script nằm ở `src/main/resources/db/migration`; **chưa áp dụng vào database của người dùng**. Không có Flyway tự chạy. `spring.jpa.hibernate.ddl-auto=none` giữ nguyên dữ liệu.
 
 1. Backup database, thử trên bản sao và đối chiếu schema thực tế với `database.sql` trước.
@@ -31,6 +39,8 @@ Nếu Docker mới từ chối Docker API của Testcontainers, build đã đặ
 
 ## API thương mại mới
 
+Payment: xem [vòng đời, đối soát nội bộ và nhãn giả lập](PAYMENT_LIFECYCLE.md). Provider hiện luôn mock; profile demo cần HMAC secret hợp lệ và bật jobs nếu muốn trình diễn timeout tự động.
+
 Mọi API dưới đây cần `Authorization: Bearer <Supabase access token>`, ngoại trừ callback. Không chấp nhận userId/role/price từ client. Giữ đường dẫn API cũ nhưng khóa các thao tác bỏ qua thanh toán/duyệt. Response của API thương mại mới dùng Map/JSON; các field nghiệp vụ trong `items` có snapshot, đối tượng ticket/shipment vẫn có các tên cột snake_case.
 
 | Method/path | Nội dung/quyền |
@@ -48,9 +58,9 @@ Mọi API dưới đây cần `Authorization: Bearer <Supabase access token>`, n
 | POST `/api/tickets/{id}/approve` | super_admin/support_agent; confirmed và tạo shipment |
 | POST `/api/tickets/{id}/return` hoặc `/reject` | super_admin/support_agent; `{reason}` |
 | POST `/api/tickets/{id}/resubmit` | Chủ đơn RETURNED; `{reason}`; tăng vòng duyệt |
-| POST `/api/orders/{id}/devices` | Nhân viên: `{orderItemId,deviceId}`; cùng product/variant, serial chưa bán |
-| POST `/api/orders/{id}/shipment/ship` | super_admin/support_agent: `{carrier,trackingNumber}` |
-| POST `/api/orders/{id}/shipment/deliver` | super_admin/support_agent; đủ serial theo quantity mới completed và gắn owner |
+| POST `/api/orders/{id}/devices` | Đã ngừng mutation: 409; dùng DeliveryInstallation |
+| POST `/api/orders/{id}/shipment/ship` | Đã ngừng mutation: 409; dùng DeliveryInstallation |
+| POST `/api/orders/{id}/shipment/deliver` | Đã ngừng mutation: 409; chỉ nghiệm thu đạt mới completed |
 | PATCH `/api/products/{id}/variants/{variantId}/stock` | super_admin/product_manager: `{delta}`; ghi inventory movement |
 | GET `/api/admin/refunds` | super_admin/accountant; phân trang |
 | POST `/api/admin/refunds/{id}/complete` | `{providerRef}`; chỉ sau đối soát hoàn tiền thực tế |

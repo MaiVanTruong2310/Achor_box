@@ -21,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.smartbox.backend.repository.ProfileRepository profiles;
+    private final com.smartbox.backend.security.CurrentActor actors;
+    @GetMapping("/me") public com.smartbox.backend.entity.Profile me(){return profiles.findById(actors.get().id()).orElseThrow();}
 
     @PostMapping("/login")
     @Operation(summary = "Đăng nhập hệ thống (Cấp phát cặp Access Token và Refresh Token cho mọi vai trò)")

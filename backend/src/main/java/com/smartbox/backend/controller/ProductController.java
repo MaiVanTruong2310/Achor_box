@@ -25,6 +25,11 @@ public class ProductController {
 
     private final ProductService productService;
     private final com.smartbox.backend.service.VariantInventoryService variantInventory;
+    private final com.smartbox.backend.service.ClaimImageStorage imageStorage;
+    private final com.smartbox.backend.security.CurrentActor actors;
+    @GetMapping("/inventory-movements") public java.util.List<Map<String,Object>> movements(){return variantInventory.movements();}
+    @PostMapping(value="/images",consumes="multipart/form-data")
+    public Map<String,String> upload(@RequestPart("file") org.springframework.web.multipart.MultipartFile file){actors.get().requireRoles("super_admin","product_manager");return Map.of("url",imageStorage.upload(file).secureUrl());}
 
     @PatchMapping("/{id}/variants/{variantId}/stock")
     public Map<String,Object> adjustVariant(@PathVariable UUID id,@PathVariable UUID variantId,@RequestBody StockAdjustRequest request) {

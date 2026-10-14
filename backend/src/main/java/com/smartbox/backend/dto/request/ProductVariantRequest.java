@@ -31,4 +31,13 @@ public class ProductVariantRequest {
     private Boolean isActive;
     private String size;
     private Integer capacityLiter;
+    private String modelTier;
+    private BigDecimal widthCm;
+    private BigDecimal heightCm;
+    private BigDecimal depthCm;
+    private BigDecimal weightKg;
+    private BigDecimal maxLoadKg;
+    private Boolean hasWeightSensor;
+    private Integer warrantyMonths;
+    private java.util.List<String> images;
 }

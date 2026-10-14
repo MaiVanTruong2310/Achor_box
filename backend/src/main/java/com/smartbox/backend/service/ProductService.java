@@ -33,6 +33,9 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final com.smartbox.backend.repository.CommerceRepository commerce;
     private final ProductCategoryRepository categoryRepository;
+    private final VariantSpecificationService specifications;
+    private final AcceptanceWarrantyService warranties;
+    private final com.smartbox.backend.security.CurrentActor actors;
     private final com.smartbox.backend.repository.ProductVariantRepository variantRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -57,6 +60,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
+        actors.get().requireRoles("super_admin","product_manager");
         String imagesJson = "[]";
         if (request.getImages() != null && !request.getImages().isEmpty()) {
             try {
@@ -94,14 +98,17 @@ public class ProductService {
                             .stockQuantity(vr.getStockQuantity() != null ? vr.getStockQuantity() : 0)
                             .build())
                     .toList();
-            variantRepository.saveAll(variantEntities);
+            for(int i=0;i<variantEntities.size();i++) VariantSpecifications.apply(variantEntities.get(i),request.getVariants().get(i));
+            variantRepository.saveAllAndFlush(variantEntities);
+            for(var variant:variantEntities) recordInitialStock(variant);
         }
-
+        commerce.audit(actors.get().id(),"PRODUCT_CREATED","products",saved.getId(),saved.getSku());
         return mapToResponse(saved);
     }
 
     @Transactional
     public ProductResponse updateProduct(UUID id, ProductRequest request) {
+        actors.get().requireRoles("super_admin","product_manager");
         Product product = productRepository.findLockedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", "id", id));
 
@@ -112,7 +119,8 @@ public class ProductService {
         if(request.getPrice()!=null && request.getPrice().signum()<0 || request.getStockQuantity()!=null && request.getStockQuantity()<0)
             throw new com.smartbox.backend.exception.BadRequestException("INVALID_PRODUCT_PRICE_OR_STOCK");
         if (request.getPrice() != null) product.setPrice(request.getPrice());
-        if (request.getStockQuantity() != null) product.setStockQuantity(request.getStockQuantity());
+        if (request.getStockQuantity() != null && !java.util.Objects.equals(request.getStockQuantity(),product.getStockQuantity()))
+            throw new com.smartbox.backend.exception.ConflictException("USE_STOCK_ADJUSTMENT: Tồn kho phải thay đổi qua thao tác điều chỉnh kho");
         if (request.getIsActive() != null) product.setIsActive(request.getIsActive());
         if (request.getHasWeightSensor() != null) product.setHasWeightSensor(request.getHasWeightSensor());
 
@@ -137,11 +145,15 @@ public class ProductService {
                 if (!id.equals(variant.getProductId())) throw new com.smartbox.backend.exception.BadRequestException("VARIANT_PRODUCT_MISMATCH");
                 variant.setVariantName(vr.getVariantName()); variant.setSku(vr.getSku());
                 if(vr.getPriceDelta()!=null) variant.setPriceDelta(vr.getPriceDelta());
-                if(vr.getStockQuantity()!=null) variant.setStockQuantity(vr.getStockQuantity());
+                if(vr.getId()==null) variant.setStockQuantity(vr.getStockQuantity()!=null?vr.getStockQuantity():0);
+                else if(vr.getStockQuantity()!=null && !java.util.Objects.equals(vr.getStockQuantity(),variant.getStockQuantity()))
+                    throw new com.smartbox.backend.exception.ConflictException("USE_VARIANT_STOCK_ADJUSTMENT");
                 if(vr.getIsActive()!=null) variant.setIsActive(vr.getIsActive());
                 if(vr.getSize()!=null) variant.setSize(vr.getSize());
                 if(vr.getCapacityLiter()!=null) variant.setCapacityLiter(vr.getCapacityLiter());
+                specifications.applyTo(variant,vr);
                 variantRepository.saveAndFlush(variant); retained.add(variant.getId());
+                if(vr.getId()==null) recordInitialStock(variant);
             }
             for(var old : current) {
                 if(!retained.contains(old.getId())) {
@@ -152,11 +164,13 @@ public class ProductService {
             }
         }
 
+        commerce.audit(actors.get().id(),"PRODUCT_UPDATED","products",id,"Metadata; tồn kho giữ nguyên");
         return mapToResponse(updated);
     }
 
     @Transactional
     public void deleteProduct(UUID id) {
+        actors.get().requireRoles("super_admin","product_manager");
         if (!productRepository.existsById(id)) {
             throw new ResourceNotFoundException("Sản phẩm", "id", id);
         }
@@ -166,10 +180,13 @@ public class ProductService {
             var locked=variantRepository.findLockedById(v.getId()).orElseThrow();
             locked.setIsActive(false);variantRepository.save(locked);
         }
+        commerce.audit(actors.get().id(),"PRODUCT_DISABLED","products",id,"Soft delete");
     }
 
     @Transactional
     public ProductResponse adjustStock(UUID id, int delta) {
+        actors.get().requireRoles("super_admin","product_manager");
+        if(delta==0||delta < -100000||delta>100000)throw new com.smartbox.backend.exception.BadRequestException("INVALID_STOCK_DELTA");
         Product product = productRepository.findLockedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", "id", id));
 
@@ -178,7 +195,14 @@ public class ProductService {
         int newStock = Math.addExact(product.getStockQuantity() != null ? product.getStockQuantity() : 0, delta);
         if(newStock < 0) throw new com.smartbox.backend.exception.ConflictException("INSUFFICIENT_STOCK");
         product.setStockQuantity(newStock);
+        commerce.audit(actors.get().id(),"LEGACY_STOCK_ADJUSTED","products",id,Integer.toString(delta));
         return mapToResponse(productRepository.save(product));
+    }
+
+    private void recordInitialStock(com.smartbox.backend.entity.ProductVariant variant) {
+        if(variant.getStockQuantity()!=null && variant.getStockQuantity()>0)
+            commerce.update("INSERT INTO public.inventory_movements(id,variant_id,order_id,delta,reason,actor_id,created_at) VALUES(?,?,NULL,?,?,?,?)",
+                UUID.randomUUID(),variant.getId(),variant.getStockQuantity(),"INITIAL_STOCK",actors.get().id(),OrderWorkflowService.now());
     }
 
     @Transactional(readOnly = true)
@@ -187,7 +211,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", "id", productId));
         List<com.smartbox.backend.entity.ProductVariant> variants = variantRepository.findByProductIdOrderByPriceDeltaAsc(productId);
         return variants.stream()
-                .map(v -> com.smartbox.backend.mapper.ProductVariantMapper.toResponse(v, product.getPrice()))
+                .map(v -> variantResponse(v,product))
                 .toList();
     }
 
@@ -219,7 +243,7 @@ public class ProductService {
 
         List<com.smartbox.backend.entity.ProductVariant> variants = variantRepository.findByProductIdOrderByPriceDeltaAsc(p.getId());
         List<com.smartbox.backend.dto.response.ProductVariantResponse> variantResponses = variants.stream()
-                .map(v -> com.smartbox.backend.mapper.ProductVariantMapper.toResponse(v, p.getPrice()))
+                .map(v -> variantResponse(v,p))
                 .toList();
 
         return ProductResponse.builder()
@@ -232,9 +256,14 @@ public class ProductService {
                 .price(p.getPrice())
                 .images(parsedImages)
                 .stockQuantity(p.getStockQuantity())
-                .isActive(p.getIsActive())
+                .isActive(p.getIsActive()).hasWeightSensor(p.getHasWeightSensor())
                 .createdAt(p.getCreatedAt())
                 .variants(variantResponses)
                 .build();
+    }
+    private com.smartbox.backend.dto.response.ProductVariantResponse variantResponse(com.smartbox.backend.entity.ProductVariant v,Product p){
+        var response=com.smartbox.backend.mapper.ProductVariantMapper.toResponse(v,p.getPrice());
+        response.setHasWeightSensor(v.getHasWeightSensor()!=null?v.getHasWeightSensor():p.getHasWeightSensor());
+        response.setWarrantyMonths(warranties.months(commerce.one("SELECT * FROM public.product_variants WHERE id=?",v.getId())));return response;
     }
 }

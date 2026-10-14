@@ -20,7 +20,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private final ObjectMapper json;
     @Override protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain chain) throws ServletException,IOException {
         String path=req.getRequestURI();
-        if(!"POST".equals(req.getMethod())||!java.util.Set.of("/api/auth/login","/api/auth/refresh-token","/api/payments/callback").contains(path)){chain.doFilter(req,res);return;}
+        boolean image=path.equals("/api/products/images")||path.matches("/api/customer/warranties/[0-9a-fA-F-]{36}/images");
+        if(!"POST".equals(req.getMethod())||(!image&&!java.util.Set.of("/api/auth/login","/api/auth/refresh-token","/api/auth/register","/api/auth/forgot-password","/api/auth/reset-password","/api/auth/change-password","/api/payments/callback").contains(path))){chain.doFilter(req,res);return;}
         long now=System.nanoTime();String key=req.getRemoteAddr()+":"+path;
         Window window=windows.compute(key,(ignored,previous)->previous==null||now-previous.start()>60_000_000_000L?new Window(now,1):new Window(previous.start(),previous.count()+1));
         int maximum=path.contains("payments")?120:10;

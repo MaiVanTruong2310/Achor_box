@@ -20,6 +20,8 @@ public class OrderWorkflowService {
     private final OrderStateMachine states;
     private final CurrentActor actors;
     private final OutboxService outbox;
+    private final CustomerAccountService customers;
+    private final AcceptanceWarrantyService warranties;
     @Value("${smartbox.orders.draft-minutes:30}") private int draftMinutes;
 
     public static UUID uuid(Object value) { return value == null ? null : UUID.fromString(value.toString()); }
@@ -45,8 +47,9 @@ public class OrderWorkflowService {
             quantity(total); quantities.put(item.variantId(), total);
         }
         UUID id = UUID.randomUUID();
-        db.update("INSERT INTO public.orders(id,user_id,status,shipping_address,total,expires_at,workflow_version) VALUES(?,?,CAST(? AS public.order_status),?,0,?,2)",
-            id,user,"pending",request.shippingAddress(),now().plusMinutes(draftMinutes));
+        var snapshot=customers.snapshot(user,request.addressId(),request.shippingDetails(),request.shippingAddress());
+        db.update("INSERT INTO public.orders(id,user_id,status,shipping_address,shipping_address_snapshot,source_address_id,total,expires_at,workflow_version) VALUES(?,?,CAST(? AS public.order_status),?,?,?,0,?,2)",
+            id,user,"pending",snapshot.get("addressLine"),customers.serialize(snapshot),request.addressId(),now().plusMinutes(draftMinutes));
         for (var entry : quantities.entrySet()) addLocked(id,entry.getKey(),entry.getValue(),user);
         recalculate(id);
         history(id,null,"pending",user.toString(),"ORDER_CREATED");
@@ -73,6 +76,7 @@ public class OrderWorkflowService {
         if (existing.isEmpty()) {
             db.update("INSERT INTO public.order_items(id,order_id,product_id,variant_id,quantity,unit_price,sku_snapshot,product_name_snapshot,variant_name_snapshot,size_snapshot,capacity_liter_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                 UUID.randomUUID(),orderId,variant.get("product_id"),variantId,amount,price,variant.get("sku"),variant.get("product_name"),variant.get("variant_name"),variant.get("size"),variant.get("capacity_liter"));
+            db.update("UPDATE public.order_items SET warranty_months_snapshot=? WHERE order_id=? AND variant_id=?",warranties.months(variant),orderId,variantId);
         } else db.update("UPDATE public.order_items SET quantity=? WHERE id=?",previous+amount,existing.getFirst().get("id"));
     }
 
@@ -112,6 +116,16 @@ public class OrderWorkflowService {
         if (!"pending".equals(order.get("status")) || !time(order.get("expires_at")).isAfter(now()))
             throw new ConflictException("ORDER_NOT_EDITABLE: Đơn không còn cho phép sửa sản phẩm");
     }
+    /** Existing pre-migration drafts get a contact snapshot at checkout; never re-read saved addresses. */
+    public void freezeAddress(Map<String,Object> order) {
+        if(order.get("shipping_address_snapshot")==null){
+            var snapshot=customers.snapshot(uuid(order.get("user_id")),null,null,Objects.toString(order.get("shipping_address"),null));
+            db.update("UPDATE public.orders SET shipping_address_snapshot=? WHERE id=?",customers.serialize(snapshot),order.get("id"));
+        } else {
+            var snapshot=customers.readSnapshot(order.get("shipping_address_snapshot"));
+            if(!Objects.equals(snapshot.get("addressLine"),order.get("shipping_address")))throw new ConflictException("ADDRESS_SNAPSHOT_MISMATCH");
+        }
+    }
     public void moveStock(UUID variant,int delta,UUID order,UUID actor,String reason) {
         if (delta==0) return;
         int changed=db.update("UPDATE public.product_variants SET stock_quantity=stock_quantity+? WHERE id=? AND stock_quantity+?>=0",delta,variant,delta);
@@ -123,6 +137,8 @@ public class OrderWorkflowService {
     }
     public void transition(Map<String,Object> order,String target,String actor,String reason) {
         UUID id=uuid(order.get("id")); String from=order.get("status").toString();
+        if("completed".equals(target)&&db.list("SELECT id FROM public.delivery_installations WHERE order_id=? AND status='COMPLETED' AND customer_accepted=true",id).isEmpty())
+            throw new ConflictException("INSTALLATION_ACCEPTANCE_REQUIRED");
         states.requireTransition(from,target);
         db.update("UPDATE public.orders SET status=CAST(? AS public.order_status),updated_at=? WHERE id=?",target,now(),id);
         history(id,from,target,actor,reason); order.put("status",target);
@@ -156,6 +172,11 @@ public class OrderWorkflowService {
             requestRefund(order,reason);
         } else db.update("UPDATE public.payments SET status='expired' WHERE order_id=? AND status='pending'",id);
         transition(order,"cancelled",actor.id().toString(),reason); release(order,actor.id(),"CANCELLED");
+        for(var job:db.list("SELECT * FROM public.delivery_installations WHERE order_id=? FOR UPDATE",id)) {
+            long version=((Number)job.get("version")).longValue()+1;
+            db.update("UPDATE public.delivery_installations SET status='FAILED',failure_reason='ORDER_CANCELLED',version=?,updated_at=? WHERE id=?",version,now(),job.get("id"));
+            db.update("INSERT INTO public.delivery_installation_history VALUES(?,?,?,?,?,?,?,?,?,?)",UUID.randomUUID(),job.get("id"),actor.id(),"ORDER_CANCELLED",job.get("status"),"FAILED","Đơn hàng đã hủy",job.get("attempt"),version,now());
+        }
         for(var ticket:db.list("SELECT id FROM public.approval_tickets WHERE order_id=? AND status IN ('PENDING','RETURNED')",id))
             db.update("INSERT INTO public.ticket_history VALUES(?,?,?,?,?,?)",UUID.randomUUID(),ticket.get("id"),"CANCELLED",actor.id(),reason,now());
         db.update("UPDATE public.approval_tickets SET status='REJECTED',reason=?,updated_at=? WHERE order_id=? AND status IN ('PENDING','RETURNED')",reason,now(),id);
@@ -190,6 +211,7 @@ public class OrderWorkflowService {
         var o=db.order(id,false); Map<String,Object> response=new LinkedHashMap<>();
         response.put("id",id); response.put("orderId",id); response.put("userId",o.get("user_id"));
         response.put("status",o.get("status")); response.put("shippingAddress",o.get("shipping_address"));
+        response.put("shippingAddressSnapshot",customers.readSnapshot(o.get("shipping_address_snapshot")));
         response.put("total",o.get("total")); response.put("totalAmount",o.get("total"));
         response.put("paidAt",o.get("paid_at")); response.put("expiresAt",o.get("expires_at"));
         response.put("createdAt",o.get("created_at")); response.put("updatedAt",o.get("updated_at"));

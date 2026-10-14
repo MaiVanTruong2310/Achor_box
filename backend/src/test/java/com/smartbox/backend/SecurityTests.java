@@ -21,7 +21,7 @@ class SecurityTests {
     UUID user=UUID.randomUUID();
     @BeforeEach void setup(){
         provider=mock(SupabaseAuthGateway.class);profiles=mock(ProfileRepository.class);
-        filter=new JwtAuthenticationFilter(provider,profiles,(req,res,handler,error)->{res.setStatus(((AppException)error).getCode());return new ModelAndView();});
+        filter=new JwtAuthenticationFilter(provider,profiles,(req,res,handler,error)->{res.setStatus(((AppException)error).getCode());return new ModelAndView();},mock(com.smartbox.backend.service.CustomerIdentityService.class));
     }
     @AfterEach void cleanup(){SecurityContextHolder.clearContext();}
     int request(String method,String path,String token) throws Exception {
@@ -39,6 +39,6 @@ class SecurityTests {
     @Test void knownDemoPasswordCannotBypassProvider(){
         var request=LoginRequest.builder().email("somebody@smartbox.test").password("TestOnly-Passw0rd!").build();
         when(provider.password(anyString(),anyString())).thenThrow(new UnauthorizedException("BAD_PASSWORD"));
-        assertThrows(UnauthorizedException.class,()->new AuthService(provider,profiles).login(request));verifyNoInteractions(profiles);
+        assertThrows(UnauthorizedException.class,()->new AuthService(provider,profiles,mock(com.smartbox.backend.service.CustomerIdentityService.class)).login(request));verifyNoInteractions(profiles);
     }
 }

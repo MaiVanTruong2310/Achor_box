@@ -50,8 +50,16 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getUsersPaged(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<UserProfileResponse> pageResult = profileRepository.findAll(pageable).map(this::mapToResponse);
+        return getUsersPaged(page,size,null,null,null);
+    }
+    @Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public Map<String,Object> getUsersPaged(int page,int size,String search,String role,Boolean locked) {
+        actors.get().requireRoles("super_admin","support_agent");
+        com.smartbox.backend.common.AdminSearch.page(page,size);
+        String term=com.smartbox.backend.common.AdminSearch.term(search);
+        String filter=role==null?"":role.trim();
+        if(!filter.isEmpty()&&!java.util.Set.of("customer","super_admin","product_manager","support_agent","technician","accountant").contains(filter))throw new com.smartbox.backend.exception.BadRequestException("INVALID_ROLE_FILTER");
+        Page<UserProfileResponse> pageResult = profileRepository.search(term,com.smartbox.backend.common.AdminSearch.like(term),filter,locked,PageRequest.of(page,size)).map(this::mapToResponse);
         return PaginationUtil.toMap(pageResult);
     }
 
