@@ -1,8 +1,20 @@
 package com.smartbox.backend;
 
-import com.smartbox.backend.dto.request.*;
+import com.smartbox.backend.dto.request.admin.*;
+import com.smartbox.backend.dto.request.auth.*;
+import com.smartbox.backend.dto.request.catalog.*;
+import com.smartbox.backend.dto.request.commerce.*;
+import com.smartbox.backend.dto.request.customer.*;
+import com.smartbox.backend.dto.request.device.*;
+import com.smartbox.backend.dto.request.warranty.*;
 import com.smartbox.backend.exception.*;
-import com.smartbox.backend.service.*;
+import com.smartbox.backend.service.admin.*;
+import com.smartbox.backend.service.auth.*;
+import com.smartbox.backend.service.catalog.*;
+import com.smartbox.backend.service.commerce.*;
+import com.smartbox.backend.service.customer.*;
+import com.smartbox.backend.service.device.*;
+import com.smartbox.backend.service.warranty.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.*;
@@ -25,7 +37,7 @@ class CustomerAccountIntegrationTests extends CommerceIntegrationTests {
         var saved=accounts.saveAddress(null,address("Người nhận ban đầu",true));UUID addressId=uuid(saved.get("id"));
         var order=orders.create(new CommerceRequests.CreateOrder(null,List.of(new CommerceRequests.Item(variant,1)),addressId,null));UUID id=uuid(order.get("id"));
         accounts.saveAddress(addressId,new CustomerRequests.Address("Nơi khác","Người mới","0999999999","Địa chỉ khác",null,true));
-        payments.checkout(id,"snapshot-checkout");
+        approve(id);payments.checkout(id,"snapshot-checkout");
         accounts.updateProfile(new CustomerRequests.ProfileUpdate("Hồ sơ mới","0988888888"));accounts.deleteAddress(addressId);
         var view=customerOrders.detail(id);var snapshot=(Map<?,?>)view.get("shippingAddressSnapshot");
         assertEquals("Người nhận ban đầu",snapshot.get("recipientName"));assertEquals("0912345678",snapshot.get("phone"));assertEquals("Địa chỉ giao và lắp đặt",snapshot.get("addressLine"));
@@ -54,7 +66,7 @@ class CustomerAccountIntegrationTests extends CommerceIntegrationTests {
     }
     @Test void existingDraftSnapshotsAtCheckoutWithoutRewritingHistoricalOrders(){
         UUID id=order(1);jdbc.update("UPDATE public.orders SET shipping_address_snapshot=NULL WHERE id=?",id);
-        accounts.updateProfile(new CustomerRequests.ProfileUpdate("Liên hệ lúc checkout","0911111111"));payments.checkout(id,"pre-migration-draft");
+        accounts.updateProfile(new CustomerRequests.ProfileUpdate("Liên hệ lúc checkout","0911111111"));approve(id);payments.checkout(id,"pre-migration-draft");
         accounts.updateProfile(new CustomerRequests.ProfileUpdate("Liên hệ thay đổi","0922222222"));
         var snapshot=(Map<?,?>)customerOrders.detail(id).get("shippingAddressSnapshot");assertEquals("Liên hệ lúc checkout",snapshot.get("recipientName"));assertEquals("0911111111",snapshot.get("phone"));
     }

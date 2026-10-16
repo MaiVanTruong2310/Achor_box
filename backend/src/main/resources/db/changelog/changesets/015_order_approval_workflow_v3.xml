@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="015-order-enum-customer-decision-pending" author="smartbox" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM pg_type WHERE typname = 'order_status'
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            ALTER TYPE public.order_status ADD VALUE IF NOT EXISTS 'customer_decision_pending';
+        </sql>
+    </changeSet>
+
+    <changeSet id="015-product-manager-column" author="smartbox">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="products" columnName="manager_id"/>
+            </not>
+        </preConditions>
+        <sql>
+            ALTER TABLE public.products ADD COLUMN manager_id uuid REFERENCES public.profiles(id);
+            CREATE INDEX IF NOT EXISTS idx_products_manager_id ON public.products(manager_id);
+        </sql>
+    </changeSet>
+
+    <changeSet id="015-approval-tickets-expand-status" author="smartbox">
+        <sql>
+            ALTER TABLE public.approval_tickets DROP CONSTRAINT IF EXISTS approval_tickets_status_check;
+            ALTER TABLE public.approval_tickets ADD CONSTRAINT approval_tickets_status_check
+                CHECK(status IN ('PENDING','RETURNED','APPROVED','REJECTED','PARTIALLY_REJECTED','CANCELLED'));
+        </sql>
+    </changeSet>
+
+    <changeSet id="015-order-item-approvals-table" author="smartbox">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="order_item_approvals"/>
+            </not>
+        </preConditions>
+        <sql>
+            CREATE TABLE public.order_item_approvals (
+                id uuid PRIMARY KEY,
+                ticket_id uuid NOT NULL REFERENCES public.approval_tickets(id) ON DELETE CASCADE,
+                order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+                order_item_id uuid NOT NULL REFERENCES public.order_items(id) ON DELETE CASCADE,
+                product_id uuid NOT NULL REFERENCES public.products(id),
+                manager_id uuid REFERENCES public.profiles(id),
+                status text NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING','APPROVED','REJECTED')),
+                reviewed_by uuid REFERENCES public.profiles(id),
+                reason text,
+                reviewed_at timestamptz,
+                created_at timestamptz NOT NULL DEFAULT now()
+            );
+
+            CREATE INDEX idx_item_approvals_ticket ON public.order_item_approvals(ticket_id);
+            CREATE INDEX idx_item_approvals_order ON public.order_item_approvals(order_id);
+            CREATE INDEX idx_item_approvals_manager ON public.order_item_approvals(manager_id);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

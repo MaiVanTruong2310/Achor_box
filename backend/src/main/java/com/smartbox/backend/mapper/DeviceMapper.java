@@ -1,7 +1,7 @@
 package com.smartbox.backend.mapper;
 
-import com.smartbox.backend.dto.response.DeviceEventResponse;
-import com.smartbox.backend.dto.response.DeviceResponse;
+import com.smartbox.backend.dto.response.device.DeviceEventResponse;
+import com.smartbox.backend.dto.response.device.DeviceResponse;
 import com.smartbox.backend.entity.Device;
 import com.smartbox.backend.entity.DeviceEvent;
 

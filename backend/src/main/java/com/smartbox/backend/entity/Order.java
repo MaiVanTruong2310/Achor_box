@@ -46,7 +46,8 @@ public class Order {
     @Builder.Default
     private BigDecimal total = BigDecimal.ZERO;
 
-    @Column(name="paid_at") private OffsetDateTime paidAt;
+    @Column(name = "paid_at")
+    private OffsetDateTime paidAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

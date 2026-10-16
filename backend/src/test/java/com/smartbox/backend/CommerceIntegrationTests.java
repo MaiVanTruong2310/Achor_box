@@ -1,11 +1,17 @@
 package com.smartbox.backend;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smartbox.backend.dto.request.CommerceRequests;
+import com.smartbox.backend.dto.request.commerce.CommerceRequests;
 import com.smartbox.backend.exception.*;
 import com.smartbox.backend.repository.CommerceRepository;
 import com.smartbox.backend.security.CurrentActor;
-import com.smartbox.backend.service.*;
+import com.smartbox.backend.service.admin.*;
+import com.smartbox.backend.service.auth.*;
+import com.smartbox.backend.service.catalog.*;
+import com.smartbox.backend.service.commerce.*;
+import com.smartbox.backend.service.customer.*;
+import com.smartbox.backend.service.device.*;
+import com.smartbox.backend.service.warranty.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
@@ -108,7 +114,17 @@ class CommerceIntegrationTests {
     UUID order(int quantity){return UUID.fromString(orders.create(new CommerceRequests.CreateOrder("Địa chỉ kiểm thử",List.of(new CommerceRequests.Item(variant,quantity)))).get("id").toString());}
     int stock(){return jdbc.queryForObject("SELECT stock_quantity FROM public.product_variants WHERE id=?",Integer.class,variant);}
     long count(String table){return jdbc.queryForObject("SELECT count(*) FROM public."+table,Long.class);}
+    void approve(UUID orderId){
+        var list=jdbc.queryForList("SELECT id FROM public.approval_tickets WHERE order_id=? AND status='PENDING'",UUID.class,orderId);
+        if(!list.isEmpty()){
+            var prev=actors.actor.get();
+            actors.staff();
+            tickets.act(list.getFirst(),"APPROVE",null);
+            if(prev!=null)actors.actor.set(prev);else actors.customer();
+        }
+    }
     CommerceRequests.Callback callback(UUID id,String key,String result){
+        approve(id);
         var checkout=payments.checkout(id,key);UUID payment=UUID.fromString(checkout.get("paymentId").toString());BigDecimal amount=new BigDecimal(checkout.get("amount").toString());
         return new CommerceRequests.Callback(payment,id,amount,result,payments.sign(payment,id,amount,result));
     }
@@ -116,7 +132,7 @@ class CommerceIntegrationTests {
     @Autowired VariantInventoryService inventory;
     @Autowired DeviceWorkflowService devices;
     @Test void deliveryLinksSerialOwnerAndCommandTimesOutWithoutBroker(){
-        UUID id=order(1);payments.callback(callback(id,"K","SUCCESS"));actors.staff();tickets.act(ticket(),"APPROVE",null);
+        UUID id=order(1);payments.callback(callback(id,"K","SUCCESS"));actors.staff();
         UUID device=UUID.fromString(devices.register(new DeviceWorkflowService.Registration("TEST-DELIVERY",variant,"delivery_box/delivery","Thiết bị kiểm thử")).get("deviceId").toString());
         UUID item=jdbc.queryForObject("SELECT id FROM public.order_items WHERE order_id=?",UUID.class,id);
         assertThrows(ConflictException.class,()->fulfillment.ship(id,new CommerceRequests.Shipment("Đơn vị kiểm thử","TEST-TRACKING")));
@@ -158,11 +174,11 @@ class CommerceIntegrationTests {
         assertThrows(BadRequestException.class,()->orders.add(jdbc.queryForObject("SELECT id FROM public.orders",UUID.class),variant,99));assertEquals(8,stock());
     }
     @Test void checkoutIdempotencyCallbackSignatureAndTicketOutboxExactlyOnce(){
-        UUID id=order(1);var initial=payments.checkout(id,"KEY-1");assertEquals(initial,payments.checkout(id,"KEY-1"));assertEquals(1,count("payments"));
+        UUID id=order(1);approve(id);var initial=payments.checkout(id,"KEY-1");assertEquals(initial,payments.checkout(id,"KEY-1"));assertEquals(1,count("payments"));
         var event=callback(id,"KEY-1","SUCCESS");
         assertThrows(UnauthorizedException.class,()->payments.callback(new CommerceRequests.Callback(event.paymentId(),id,event.amount(),"SUCCESS","00")));
         payments.callback(event);payments.callback(event);assertEquals(1,count("approval_tickets"));assertEquals(1,count("email_outbox"));
-        assertEquals("paid",orders.detail(id).get("status"));
+        assertEquals("confirmed",orders.detail(id).get("status"));
         assertThrows(ConflictException.class,()->orders.add(id,variant,1));
         assertThrows(ConflictException.class,()->payments.checkout(order(1),"KEY-1"));
     }
@@ -177,12 +193,11 @@ class CommerceIntegrationTests {
         assertEquals("cancelled",orders.detail(id).get("status"));assertEquals("refund_required",jdbc.queryForObject("SELECT status FROM public.payments",String.class));
     }
     @Test void ticketReturnResubmitRejectAndRefund(){
-        UUID id=order(1);payments.callback(callback(id,"K","SUCCESS"));actors.staff();
-        tickets.act(ticket(),"RETURN","Cần xác minh địa chỉ");actors.customer();tickets.act(ticket(),"RESUBMIT","Địa chỉ đã xác nhận");
-        assertThrows(ConflictException.class,()->orders.setQuantity(id,variant,2));actors.staff();tickets.act(ticket(),"REJECT","Không đáp ứng giao hàng");
-        assertEquals(10,stock());assertEquals(1,count("refunds"));assertThrows(ConflictException.class,()->tickets.act(ticket(),"APPROVE",null));
-        UUID refund=jdbc.queryForObject("SELECT id FROM public.refunds",UUID.class);fulfillment.completeRefund(refund,"TEST-REFUND");fulfillment.completeRefund(refund,"TEST-REFUND");
-        assertEquals("refunded",jdbc.queryForObject("SELECT status FROM public.payments",String.class));
+        UUID id=order(1);UUID t=ticket();actors.staff();
+        tickets.act(t,"RETURN","Cần xác minh địa chỉ");actors.customer();tickets.act(t,"RESUBMIT","Địa chỉ đã xác nhận");
+        assertThrows(ConflictException.class,()->orders.setQuantity(id,variant,2));actors.staff();tickets.act(t,"REJECT","Không đáp ứng giao hàng");
+        assertEquals(10,stock());assertEquals(0,count("refunds"));assertThrows(ConflictException.class,()->tickets.act(t,"APPROVE",null));
+        assertEquals("cancelled",orders.detail(id).get("status"));
     }
     @Test void concurrentInventoryCannotOversell() throws Exception {
         jdbc.update("UPDATE public.product_variants SET stock_quantity=1 WHERE id=?",variant);
@@ -203,7 +218,7 @@ class CommerceIntegrationTests {
         actors.staff();outbox.resend(mail);assertEquals(0,jdbc.queryForObject("SELECT attempts FROM public.email_outbox",Integer.class));
     }
     @Test void crossOwnerAndCustomerReviewDenied(){
-        UUID id=order(1);payments.callback(callback(id,"K","SUCCESS"));assertThrows(ForbiddenException.class,()->tickets.act(ticket(),"APPROVE",null));
+        UUID id=order(1);assertThrows(ForbiddenException.class,()->tickets.act(ticket(),"APPROVE",null));
         actors.actor.set(new CurrentActor.Actor(UUID.randomUUID(),"customer"));assertThrows(ForbiddenException.class,()->orders.detail(id));
     }
     @Test void amountMismatchAndMissingKeyCannotMutate(){
@@ -217,7 +232,7 @@ class CommerceIntegrationTests {
         var target=org.springframework.test.util.AopTestUtils.getTargetObject(payments);
         org.springframework.test.util.ReflectionTestUtils.setField(target,"failAfterPaid",true);
         try{assertThrows(IllegalStateException.class,()->payments.callback(event));}finally{org.springframework.test.util.ReflectionTestUtils.setField(target,"failAfterPaid",false);}
-        assertEquals("awaiting_payment",orders.detail(id).get("status"));assertEquals(0,count("email_outbox"));assertEquals(0,count("approval_tickets"));assertEquals(2,count("order_status_history"));
+        assertEquals("awaiting_payment",orders.detail(id).get("status"));assertEquals(0,count("email_outbox"));assertEquals(1,count("approval_tickets"));assertEquals(2,count("order_status_history"));
         assertEquals("pending",jdbc.queryForObject("SELECT status FROM public.payments",String.class));
     }
     @Test void concurrentCallbackAndTimeoutLeaveConsistentStockAndRefund() throws Exception {
@@ -230,10 +245,10 @@ class CommerceIntegrationTests {
             var timeout=pool.submit(()->{barrier.await();payments.expire(id);return true;});
             assertTrue(callback.get(10,TimeUnit.SECONDS));assertTrue(timeout.get(10,TimeUnit.SECONDS));
         }
-        assertEquals(10,stock());assertEquals("cancelled",orders.detail(id).get("status"));assertEquals(1,count("refunds"));assertEquals(0,count("approval_tickets"));
+        assertEquals(10,stock());assertEquals("cancelled",orders.detail(id).get("status"));assertEquals(1,count("refunds"));assertEquals(1,count("approval_tickets"));
     }
     @Test void concurrentTicketReviewHasOnlyOneFinalDecision() throws Exception {
-        UUID id=order(1);payments.callback(callback(id,"K","SUCCESS"));UUID ticket=ticket();
+        UUID id=order(1);UUID ticket=ticket();
         try(var pool=Executors.newFixedThreadPool(2)){
             var barrier=new CyclicBarrier(2);java.util.function.Function<String,Callable<Boolean>> task=action->()->{actors.staff();barrier.await();try{tickets.act(ticket,action,"Kiểm thử đồng thời");return true;}catch(ConflictException ex){return false;}finally{actors.actor.remove();}};
             var a=pool.submit(task.apply("APPROVE"));var b=pool.submit(task.apply("REJECT"));assertNotEquals(a.get(10,TimeUnit.SECONDS),b.get(10,TimeUnit.SECONDS));
@@ -255,14 +270,10 @@ class CommerceIntegrationTests {
     @Test void reportCollectsValidationErrorsAndExportsNumericXlsx() throws Exception {
         actors.staff();var error=assertThrows(ReportParamsException.class,()->reports.data(Map.of("toDate","10/10/2026","customerId","bad")));assertEquals(3,error.getErrors().size());
         var report=new RevenueReportService.Report(java.time.LocalDate.of(2026,10,1),java.time.LocalDate.of(2026,10,2),List.of(new RevenueReportService.Day(java.time.LocalDate.of(2026,10,1),1,new BigDecimal("1200000")),new RevenueReportService.Day(java.time.LocalDate.of(2026,10,2),0,BigDecimal.ZERO)),new BigDecimal("1200000"),BigDecimal.ZERO);
-        try(var workbook=new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(reports.export(report,"XLSX")))){assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC,workbook.getSheetAt(0).getRow(1).getCell(2).getCellType());}
-        var font=java.nio.file.Path.of("C:/Windows/Fonts/arial.ttf");
-        if(java.nio.file.Files.exists(font)) {
-            Object reportTarget=org.springframework.test.util.AopTestUtils.getTargetObject(reports);
-            org.springframework.test.util.ReflectionTestUtils.setField(reportTarget,"fontPath",font.toString());
-            var bytes=reports.export(report,"PDF");var reader=new com.lowagie.text.pdf.PdfReader(bytes);assertEquals(1,reader.getNumberOfPages());reader.close();
-            java.nio.file.Files.createDirectories(java.nio.file.Path.of("build/audit"));java.nio.file.Files.write(java.nio.file.Path.of("build/audit/revenue-test.pdf"),bytes);
-        }
+        try(var workbook=new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(reports.export(report,"XLSX")))){boolean numericRevenue=false;for(var row:workbook.getSheetAt(0))for(var cell:row)if(cell.getCellType()==org.apache.poi.ss.usermodel.CellType.NUMERIC&&cell.getNumericCellValue()==1200000)numericRevenue=true;assertTrue(numericRevenue,"Revenue must remain numeric in Jasper XLSX");}
+        var bytes=reports.export(report,"PDF");var reader=new com.lowagie.text.pdf.PdfReader(bytes);assertEquals(1,reader.getNumberOfPages());reader.close();
+        java.nio.file.Files.createDirectories(java.nio.file.Path.of("build/audit"));java.nio.file.Files.write(java.nio.file.Path.of("build/audit/revenue-test.pdf"),bytes);
+
     }
     @Test void reportUsesVietnamMidnightAndIncludesZeroDays(){
         boolean postgres=jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<Boolean>) c->c.getMetaData().getDatabaseProductName().equals("PostgreSQL"));org.junit.jupiter.api.Assumptions.assumeTrue(postgres,"Time-zone SQL is verified on PostgreSQL");

@@ -37,7 +37,7 @@
   <table><thead><tr><th class="number">STT</th><th>Sản phẩm / biến thể</th><th class="right">SL</th><th class="right">Đơn giá</th><th class="right">Thành tiền</th></tr></thead>
     <tbody><tr th:each="item,status : ${invoice.items}"><td class="number" th:text="${status.count}"></td><td class="break"><b th:text="${item.name}"></b><p th:text="${item.variant}"></p><p class="sku" th:text="'SKU: ' + ${item.sku}"></p></td><td class="right" th:text="${item.quantity}"></td><td class="right" th:text="${item.price}"></td><td class="right" th:text="${item.subtotal}"></td></tr></tbody>
   </table>
-  <div class="total"><div><p>Tổng giá trị hàng hóa <span th:text="${invoice.total}"></span></p><p style="margin-top:10px">Tổng thanh toán</p><p class="amount" th:text="${invoice.total}"></p></div></div>
+  <div class="total"><div><p>Tổng giá trị hàng hóa <span th:text="${invoice.subtotal ?: invoice.total}"></span></p><p th:if="${invoice.discount != null}" style="color:#b91c1c;margin:6px 0">Giảm giá voucher <span th:if="${invoice.voucherCode != null}" th:text="'(' + ${invoice.voucherCode} + ')'"></span>: <span th:text="'- ' + ${invoice.discount}"></span></p><p style="margin-top:10px">Tổng thanh toán</p><p class="amount" th:text="${invoice.total}"></p></div></div>
   <section class="payment break"><h2>Thanh toán</h2><p>Hình thức: <b th:text="${invoice.paymentMethod}"></b></p><p>Mã giao dịch: <span th:text="${invoice.transactionRef}"></span></p><p>Đã ghi nhận thanh toán tại thời điểm lập hóa đơn.</p></section>
   <footer><p>Cảm ơn quý khách đã lựa chọn <b th:text="${invoice.shop.name}"></b>!</p><p>Chứng từ bán hàng của cửa hàng. Không phải hóa đơn điện tử VAT.</p></footer>
 </main></body></html>

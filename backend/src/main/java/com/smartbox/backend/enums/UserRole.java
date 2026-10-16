@@ -6,11 +6,9 @@ import lombok.Getter;
 
 @Getter
 public enum UserRole {
-    SUPER_ADMIN("super_admin", "Tổng Quản Trị Hệ Thống"),
-    PRODUCT_MANAGER("product_manager", "Quản Lý Sản Phẩm & Kho"),
-    TECHNICIAN("technician", "Kỹ Thuật Viên IoT"),
-    SUPPORT_AGENT("support_agent", "Nhân Viên CSKH & Hỗ Trợ"),
-    ACCOUNTANT("accountant", "Kế Toán & Đối Soát Doanh Thu"),
+    SUPER_ADMIN("super_admin", "Admin"),
+    PRODUCT_MANAGER("product_manager", "PO"),
+    TECHNICIAN("technician", "Technician"),
     CUSTOMER("customer", "Khách Hàng");
 
     private final String value;

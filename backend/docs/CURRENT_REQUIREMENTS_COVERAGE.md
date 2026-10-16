@@ -67,3 +67,7 @@ Nguồn source tiêu biểu: CustomerAccountService, OrderWorkflowService, Payme
 ## Hóa đơn bán hàng HTML
 
 Đã bổ sung API lập/idempotent và tải HTML, snapshot bất biến, quyền admin/kế toán/hỗ trợ và khách sở hữu đơn, xem/in/Lưu PDF ở cả hai frontend. Logo từ tài sản cửa hàng hiện có. Cần migration 010 và cấu hình INVOICE_SHOP_*; chưa áp dụng vào Supabase thật. Xem [hợp đồng và cấu hình](SALES_INVOICE.md), [kết quả kiểm thử](../../docs/frontend-handoff/contracts/sales-invoice-validation.json). Không tích hợp nhà cung cấp hóa đơn điện tử VAT.
+
+## Cập nhật quản trị hợp nhất, khách hàng và role
+
+[ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md) là mô tả hiện tại: 3 role nhân viên Admin/PO/Technician, customer cho người mua; khách hàng tách khỏi user, tùy chọn username/email/password tại form thêm khách; thông báo/processing history/email dùng API thật và báo cáo Jasper PDF/XLSX. Cần 011–012; chưa áp dụng Supabase thật. Xem ma trận quyền mới trước các mô tả support/accountant của snapshot cũ.

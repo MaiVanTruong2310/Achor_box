@@ -80,6 +80,7 @@ public class SupabaseAuthGateway {
         catch(RestClientResponseException ex) {throw new UnauthorizedException("INVALID_ACCESS_TOKEN");}
     }
     @SuppressWarnings("unchecked")
+    public UUID createCustomer(String email,String password,String name){return createStaff(email,password,name);}
     public UUID createStaff(String email,String password,String name) {
         configured();if(serviceKey.isBlank())throw new AppException(503,"AUTH_ADMIN_NOT_CONFIGURED");
         try {

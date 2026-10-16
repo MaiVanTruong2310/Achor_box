@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="000-base-schema" author="smartbox">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="profiles"/>
+            </not>
+        </preConditions>
+        <sql splitStatements="false">
+CREATE SCHEMA IF NOT EXISTS auth;
+CREATE TABLE IF NOT EXISTS auth.users(id uuid PRIMARY KEY);
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE public.user_role AS ENUM ('super_admin','product_manager','technician','support_agent','accountant','customer');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'device_status') THEN
+        CREATE TYPE public.device_status AS ENUM ('online','offline','maintenance','error');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+        CREATE TYPE public.order_status AS ENUM ('pending','confirmed','processing','shipping','delivered','completed','cancelled','refunded');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'warranty_status') THEN
+        CREATE TYPE public.warranty_status AS ENUM ('active','expired','void');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'claim_status') THEN
+        CREATE TYPE public.claim_status AS ENUM ('new','in_progress','resolved','rejected');
+    END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid NOT NULL,
+  full_name text,
+  phone text,
+  avatar_url text,
+  default_address text,
+  role public.user_role NOT NULL DEFAULT 'customer'::user_role,
+  is_locked boolean NOT NULL DEFAULT false,
+  is_2fa_enabled boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  email character varying,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  actor_id uuid,
+  action text NOT NULL,
+  target_table text,
+  target_id uuid,
+  meta jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT audit_logs_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.product_categories (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text NOT NULL UNIQUE,
+  CONSTRAINT product_categories_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.products (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  category_id uuid,
+  sku text NOT NULL UNIQUE,
+  name text NOT NULL,
+  description text,
+  price numeric NOT NULL,
+  images jsonb,
+  stock_quantity integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT products_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.product_variants (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  product_id uuid,
+  variant_name text NOT NULL,
+  sku text NOT NULL UNIQUE,
+  price_delta numeric NOT NULL DEFAULT 0,
+  stock_quantity integer NOT NULL DEFAULT 0,
+  CONSTRAINT product_variants_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.promotions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  code text NOT NULL UNIQUE,
+  description text,
+  discount_percent numeric,
+  discount_amount numeric,
+  min_order_amount numeric,
+  max_discount_amount numeric,
+  start_date timestamp with time zone,
+  end_date timestamp with time zone,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT promotions_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.orders (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  status public.order_status NOT NULL DEFAULT 'pending'::order_status,
+  total numeric NOT NULL,
+  shipping_address text,
+  promotion_id uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  cancelled_at timestamp with time zone,
+  cancel_reason text,
+  CONSTRAINT orders_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.order_items (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  order_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  variant_id uuid,
+  quantity integer NOT NULL,
+  unit_price numeric NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT order_items_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.payments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  order_id uuid NOT NULL,
+  amount numeric NOT NULL,
+  provider text NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text,
+  transaction_ref text,
+  raw_response jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  expires_at timestamp with time zone,
+  CONSTRAINT payments_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.devices (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  product_id uuid,
+  owner_id uuid,
+  serial_number text NOT NULL UNIQUE,
+  name text,
+  location_label text,
+  status public.device_status NOT NULL DEFAULT 'offline'::device_status,
+  battery_level integer,
+  firmware_version text,
+  last_seen_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  door_status text NOT NULL DEFAULT 'closed'::text,
+  lock_status text NOT NULL DEFAULT 'locked'::text,
+  weight_kg double precision NOT NULL DEFAULT 0,
+  package_detected boolean NOT NULL DEFAULT false,
+  scale_ready boolean NOT NULL DEFAULT false,
+  device_state text NOT NULL DEFAULT 'starting'::text,
+  mqtt_topic_id text,
+  CONSTRAINT devices_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.device_commands (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  device_id uuid NOT NULL,
+  command text NOT NULL,
+  requested_by uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  claimed_at timestamp with time zone,
+  CONSTRAINT device_commands_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  device_id uuid,
+  type text NOT NULL,
+  title text NOT NULL,
+  body text,
+  is_read boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT notifications_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.warranty_policies (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  category_id uuid,
+  duration_months integer NOT NULL,
+  terms text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT warranty_policies_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.warranties (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  order_item_id uuid,
+  device_id uuid,
+  status public.warranty_status NOT NULL DEFAULT 'active'::warranty_status,
+  start_date timestamp with time zone NOT NULL,
+  end_date timestamp with time zone NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT warranties_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.warranty_claims (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  warranty_id uuid NOT NULL,
+  assigned_to uuid,
+  status public.claim_status NOT NULL DEFAULT 'new'::claim_status,
+  issue_description text NOT NULL,
+  resolution_notes text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT warranty_claims_pkey PRIMARY KEY (id)
+);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

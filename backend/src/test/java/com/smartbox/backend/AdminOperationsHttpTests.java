@@ -1,6 +1,6 @@
 package com.smartbox.backend;
 
-import com.smartbox.backend.service.ClaimImageStorage;
+import com.smartbox.backend.service.warranty.ClaimImageStorage;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -51,7 +51,7 @@ class AdminOperationsHttpTests extends BackendApplicationTests {
         assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.warranty_claim_images WHERE warranty_id=?",Integer.class,warranty));
     }
     @Test void assignedTechnicianOnlyReadsAndChangesOwnClaims(){
-        UUID owner=actor("customer","tech-claim-owner"),tech=actor("technician","claim-tech"),other=actor("technician","claim-tech-other");actor("support_agent","claim-support");
+        UUID owner=actor("customer","tech-claim-owner"),tech=actor("technician","claim-tech"),other=actor("technician","claim-tech-other");actor("product_manager","claim-support");
         var claim=postClaim(warranty(owner,true),"tech-claim-owner",UUID.randomUUID().toString(),List.of(),200);
         assertEquals(200,call("/api/warranties/claims/"+claim.get("id")+"/assign",HttpMethod.PATCH,"claim-support",Map.of("technicianId",tech),null,null).getStatusCode().value());
         var mine=call("/api/warranties/claims/paged",HttpMethod.GET,"claim-tech",null,null,null).getBody();assertEquals(1,((Number)mine.get("totalElements")).intValue());

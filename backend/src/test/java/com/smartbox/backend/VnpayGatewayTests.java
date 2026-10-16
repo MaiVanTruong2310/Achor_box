@@ -1,5 +1,5 @@
 package com.smartbox.backend;
-import com.smartbox.backend.service.VnpayGateway;
+import com.smartbox.backend.service.commerce.VnpayGateway;
 import com.smartbox.backend.exception.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;

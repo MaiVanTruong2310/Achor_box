@@ -1,5 +1,11 @@
 package com.smartbox.backend;
-import com.smartbox.backend.service.*;
+import com.smartbox.backend.service.admin.*;
+import com.smartbox.backend.service.auth.*;
+import com.smartbox.backend.service.catalog.*;
+import com.smartbox.backend.service.commerce.*;
+import com.smartbox.backend.service.customer.*;
+import com.smartbox.backend.service.device.*;
+import com.smartbox.backend.service.warranty.*;
 import com.smartbox.backend.repository.CommerceRepository;
 import com.smartbox.backend.security.CurrentActor;
 import com.fasterxml.jackson.databind.ObjectMapper;

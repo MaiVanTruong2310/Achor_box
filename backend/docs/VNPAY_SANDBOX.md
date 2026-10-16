@@ -33,7 +33,7 @@ https://<backend-public-host>/api/payments/vnpay/ipn
 
 Không gửi URL localhost làm IPN. Không tự nhận thanh toán thành công khi IPN chưa về. Khi dùng proxy/tunnel, `vnp_IpAddr` hiện lấy remote address của request (loopback quy về 127.0.0.1); không tin trực tiếp header X-Forwarded-For từ client. Có thể cấu hình proxy tin cậy khi triển khai.
 
-Spring không tự nạp `.env`; dùng `backend/run-local.ps1` hoặc export các biến vào cấu hình chạy. Java 21, backend 8080, shop 5174, admin 5173. Giữ các giá trị DB/Auth/Cloudinary đã thiết lập trước đó; SMTP/jobs không bắt buộc để nhận IPN nhưng jobs cần bật để tự thu hồi kho khi quá hạn.
+Backend hiện tự nạp `backend/.env` khi chạy từ backend/source_code; cũng có thể dùng `backend/run-local.ps1` hoặc export các biến vào cấu hình chạy. Java 21, backend 8080, shop 5174, admin 5173. Giữ các giá trị DB/Auth/Cloudinary đã thiết lập trước đó; SMTP/jobs không bắt buộc để nhận IPN nhưng jobs cần bật để tự thu hồi kho khi quá hạn.
 
 ## Migration
 

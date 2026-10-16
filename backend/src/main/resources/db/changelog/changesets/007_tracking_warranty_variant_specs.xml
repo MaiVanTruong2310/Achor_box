@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="007-tracking-warranty-variant-specs" author="smartbox">
+        <sql splitStatements="false">
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS model_tier text CHECK(model_tier IN ('BASE','PRO'));
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS width_cm numeric CHECK(width_cm>0);
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS height_cm numeric CHECK(height_cm>0);
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS depth_cm numeric CHECK(depth_cm>0);
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS weight_kg numeric CHECK(weight_kg>0);
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS max_load_kg numeric CHECK(max_load_kg>0);
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS images text;
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS has_weight_sensor boolean;
+ALTER TABLE public.product_variants ADD COLUMN IF NOT EXISTS warranty_months integer CHECK(warranty_months BETWEEN 1 AND 120);
+
+DO $$ BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_variant_model_sensor') THEN
+  ALTER TABLE public.product_variants ADD CONSTRAINT ck_variant_model_sensor CHECK(model_tier IS NULL OR (has_weight_sensor IS NOT NULL AND has_weight_sensor=(model_tier='PRO')));
+ END IF;
+END $$;
+
+ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS warranty_months_snapshot integer CHECK(warranty_months_snapshot BETWEEN 1 AND 120);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_warranty_device ON public.warranties(device_id);
+ALTER TABLE public.warranties ADD COLUMN IF NOT EXISTS acceptance_job_id uuid REFERENCES public.delivery_installations(id);
+ALTER TABLE public.warranties ADD COLUMN IF NOT EXISTS accepted_at timestamptz;
+ALTER TABLE public.warranties ADD COLUMN IF NOT EXISTS duration_months integer CHECK(duration_months BETWEEN 1 AND 120);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

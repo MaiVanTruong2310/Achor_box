@@ -1,7 +1,7 @@
 package com.smartbox.backend;
 import com.smartbox.backend.entity.ProductVariant;
-import com.smartbox.backend.dto.request.ProductVariantRequest;
-import com.smartbox.backend.service.VariantSpecifications;
+import com.smartbox.backend.dto.request.catalog.ProductVariantRequest;
+import com.smartbox.backend.service.catalog.VariantSpecifications;
 import com.smartbox.backend.exception.BadRequestException;
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;

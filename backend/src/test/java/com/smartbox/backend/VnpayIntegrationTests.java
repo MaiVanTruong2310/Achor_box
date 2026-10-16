@@ -1,6 +1,12 @@
 package com.smartbox.backend;
-import com.smartbox.backend.service.*;
-import com.smartbox.backend.dto.request.CommerceRequests;
+import com.smartbox.backend.service.admin.*;
+import com.smartbox.backend.service.auth.*;
+import com.smartbox.backend.service.catalog.*;
+import com.smartbox.backend.service.commerce.*;
+import com.smartbox.backend.service.customer.*;
+import com.smartbox.backend.service.device.*;
+import com.smartbox.backend.service.warranty.*;
+import com.smartbox.backend.dto.request.commerce.CommerceRequests;
 import com.smartbox.backend.exception.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;

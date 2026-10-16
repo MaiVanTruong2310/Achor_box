@@ -12,8 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.jupiter.api.BeforeAll;
 import java.nio.charset.StandardCharsets;
 
-@SpringBootTest(properties={"smartbox.jobs.enabled=false","smartbox.mqtt.enabled=false","smartbox.fcm.enabled=false","smartbox.payment.hmac-secret=test-http-only-secret-at-least-thirty-two-characters","smartbox.cors.origins=http://localhost:5174"},webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(properties={"smartbox.env-file.enabled=false","smartbox.jobs.enabled=false","smartbox.mqtt.enabled=false","smartbox.fcm.enabled=false","smartbox.payment.hmac-secret=test-http-only-secret-at-least-thirty-two-characters","smartbox.cors.origins=http://localhost:5174"},webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers(disabledWithoutDocker=true)
+@org.springframework.test.annotation.DirtiesContext(classMode=org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
 class BackendApplicationTests {
 
     @Container static final PostgreSQLContainer<?> POSTGRES=new PostgreSQLContainer<>("postgres:16-alpine")
@@ -29,10 +30,10 @@ class BackendApplicationTests {
     @Autowired com.smartbox.backend.repository.ProfileRepository profiles;
     @Autowired com.smartbox.backend.repository.ProductRepository products;
     @org.springframework.test.context.bean.override.mockito.MockitoBean com.smartbox.backend.security.SupabaseAuthGateway identity;
-    @Autowired com.smartbox.backend.service.PaymentService payments;
+    @Autowired com.smartbox.backend.service.commerce.PaymentService payments;
 
     @BeforeAll static void migrate(@Autowired JdbcTemplate jdbc) throws Exception {
-        for(String migration:java.util.List.of("001_order_enum.sql","002_commerce.sql","003_iot.sql","004_delivery_installation.sql","005_installation_completion_guard.sql","006_customer_account.sql","007_tracking_warranty_variant_specs.sql","008_customer_warranty_claims.sql","009_vnpay_sandbox.sql","010_sales_invoices.sql"))
+        for(String migration:java.util.List.of("001_order_enum.sql","002_commerce.sql","003_iot.sql","004_delivery_installation.sql","005_installation_completion_guard.sql","006_customer_account.sql","007_tracking_warranty_variant_specs.sql","008_customer_warranty_claims.sql","009_vnpay_sandbox.sql","010_sales_invoices.sql","011_customer_directory.sql","012_staff_roles.sql"))
             jdbc.execute(new String(BackendApplicationTests.class.getResourceAsStream("/db/migration/"+migration).readAllBytes(),StandardCharsets.UTF_8));
     }
 
@@ -60,7 +61,7 @@ class BackendApplicationTests {
 	}
 
     @Test void dashboardHttpUsesRolesDateValidationAndDemoGate(){
-        var staff=profile("super_admin");var accountant=profile("accountant");var customer=profile("customer");
+        var staff=profile("super_admin");var accountant=profile("product_manager");var customer=profile("customer");
         org.mockito.Mockito.when(identity.identity("dashboard-staff")).thenReturn(staff);
         org.mockito.Mockito.when(identity.identity("dashboard-accountant")).thenReturn(accountant);
         org.mockito.Mockito.when(identity.identity("dashboard-customer")).thenReturn(customer);

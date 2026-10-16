@@ -6,7 +6,7 @@
 
 Áp dụng [010_sales_invoices.sql](../src/main/resources/db/migration/010_sales_invoices.sql) sau 001–009. Migration chỉ đã được kiểm thử trên PostgreSQL tạm; chưa chạy vào Supabase của người dùng. Dự án không tự chạy migration.
 
-Điền thông tin thực trong `backend/.env`, khởi động bằng `run-local.ps1` để nạp biến môi trường:
+Điền thông tin thực trong `backend/.env`, khởi động lại backend từ backend/source_code để nạp biến môi trường (hoặc dùng `run-local.ps1`):
 
 ```dotenv
 INVOICE_SHOP_NAME=SmartBox
