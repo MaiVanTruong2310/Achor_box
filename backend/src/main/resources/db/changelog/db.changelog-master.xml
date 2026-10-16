@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="db/changelog/changesets/000_base_schema.xml"/>
+    <include file="db/changelog/changesets/001_order_enum.xml"/>
+    <include file="db/changelog/changesets/002_commerce.xml"/>
+    <include file="db/changelog/changesets/003_iot.xml"/>
+    <include file="db/changelog/changesets/004_delivery_installation.xml"/>
+    <include file="db/changelog/changesets/005_installation_completion_guard.xml"/>
+    <include file="db/changelog/changesets/006_customer_account.xml"/>
+    <include file="db/changelog/changesets/007_tracking_warranty_variant_specs.xml"/>
+    <include file="db/changelog/changesets/008_customer_warranty_claims.xml"/>
+    <include file="db/changelog/changesets/009_vnpay_sandbox.xml"/>
+    <include file="db/changelog/changesets/010_sales_invoices.xml"/>
+    <include file="db/changelog/changesets/011_customer_directory.xml"/>
+    <include file="db/changelog/changesets/012_staff_roles.xml"/>
+    <include file="db/changelog/changesets/013_smartbox_catalog_seed.xml"/>
+    <include file="db/changelog/changesets/014_claim_status_assigned.xml"/>
+    <include file="db/changelog/changesets/015_order_approval_workflow_v3.xml"/>
+    <include file="db/changelog/changesets/016_remove_catalog_seed_data.xml"/>
+
+</databaseChangeLog>

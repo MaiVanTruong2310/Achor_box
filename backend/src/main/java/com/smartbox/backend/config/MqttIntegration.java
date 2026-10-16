@@ -2,8 +2,8 @@ package com.smartbox.backend.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartbox.backend.repository.CommerceRepository;
-import com.smartbox.backend.service.DeviceWorkflowService.CommandCreated;
-import com.smartbox.backend.service.MqttDeviceService;
+import com.smartbox.backend.service.device.DeviceWorkflowService.CommandCreated;
+import com.smartbox.backend.service.device.MqttDeviceService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import static com.smartbox.backend.service.OrderWorkflowService.*;
+import static com.smartbox.backend.service.commerce.OrderWorkflowService.*;
 
 @Component
 @Slf4j
@@ -56,11 +56,32 @@ public class MqttIntegration implements MqttCallbackExtended {
             client.publish(command.get("mqtt_topic_id")+"/command",payload,1,false);
         } catch(Exception ex){devices.publishFailed(id);}
     }
-    @Scheduled(fixedDelay=500) public void retry() {
+    @Scheduled(fixedDelayString = "${smartbox.mqtt.retry-delay-ms:5000}")
+    public void retry() {
         devices.expireCommands();
-        if(!client.isConnected()){connect();return;}
-        for(var row:db.list("SELECT id FROM public.device_commands WHERE status IN('PENDING','SENT') AND next_attempt_at<=? ORDER BY created_at LIMIT 50",now()))publish(uuid(row.get("id")));
+        if (!client.isConnected()) {
+            connect();
+            return;
+        }
+        for (var row : db.list("SELECT id FROM public.device_commands WHERE status IN('PENDING','SENT') AND next_attempt_at<=? ORDER BY created_at LIMIT 50", now())) {
+            publish(uuid(row.get("id")));
+        }
     }
-    @Scheduled(fixedDelay=30000) public void health(){devices.markOffline(90);}
-    @PreDestroy public void stop(){try{if(client.isConnected())client.disconnect().waitForCompletion(1000);client.close();}catch(MqttException ex){log.warn("MQTT shutdown failed");}}
+
+    @Scheduled(fixedDelay = 30000)
+    public void health() {
+        devices.markOffline(90);
+    }
+
+    @PreDestroy
+    public void stop() {
+        try {
+            if (client.isConnected()) {
+                client.disconnect().waitForCompletion(1000);
+            }
+            client.close();
+        } catch (MqttException ex) {
+            log.warn("MQTT shutdown failed ({})", ex.getMessage());
+        }
+    }
 }

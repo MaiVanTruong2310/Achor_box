@@ -23,7 +23,9 @@ public class WarrantyClaim {
 
     @Column(name = "warranty_id")
     private UUID warrantyId;
-    @Column(name="customer_id") private UUID customerId;
+
+    @Column(name = "customer_id")
+    private UUID customerId;
 
     @Column(name = "description", nullable = false, columnDefinition = "text")
     private String description;

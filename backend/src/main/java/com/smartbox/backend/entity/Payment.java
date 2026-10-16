@@ -15,7 +15,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class Payment {
-    @Column(name="provider_environment") private String providerEnvironment;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -34,6 +33,9 @@ public class Payment {
 
     @Column(name = "provider")
     private String provider;
+
+    @Column(name = "provider_environment")
+    private String providerEnvironment;
 
     @Column(name = "transaction_ref")
     private String transactionRef;

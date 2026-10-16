@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="008-customer-warranty-claims" author="smartbox">
+        <sql splitStatements="false">
+ALTER TABLE public.warranty_claims ADD COLUMN IF NOT EXISTS customer_id uuid REFERENCES public.profiles(id);
+ALTER TABLE public.warranty_claims ADD COLUMN IF NOT EXISTS request_key uuid;
+ALTER TABLE public.warranty_claims ADD COLUMN IF NOT EXISTS request_hash text;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_customer_claim_request ON public.warranty_claims(customer_id,request_key);
+CREATE TABLE IF NOT EXISTS public.warranty_claim_images (
+ id uuid PRIMARY KEY,
+ owner_id uuid NOT NULL REFERENCES public.profiles(id),
+ warranty_id uuid NOT NULL REFERENCES public.warranties(id),
+ claim_id uuid REFERENCES public.warranty_claims(id),
+ public_id text NOT NULL UNIQUE,
+ secure_url text NOT NULL,
+ created_at timestamptz NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_claim_images_owner ON public.warranty_claim_images(owner_id,warranty_id,created_at);
+ALTER TABLE public.warranty_claim_images ENABLE ROW LEVEL SECURITY;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -31,8 +31,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.apache.poi:poi-ooxml:5.4.0'
 	implementation 'com.github.librepdf:openpdf:2.0.3'
+	implementation 'net.sf.jasperreports:jasperreports:6.21.3'
+	implementation 'net.sf.jasperreports:jasperreports-fonts:6.21.3'
 	implementation 'com.google.auth:google-auth-library-oauth2-http:1.30.1'
 	testRuntimeOnly 'com.h2database:h2'
 	testImplementation 'org.springframework.security:spring-security-test'
@@ -47,9 +50,10 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	// ---- Database driver ----
+	// ---- Database driver & migration ----
 	// Driver kết nối PostgreSQL (Supabase)
 	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.liquibase:liquibase-core'
 
 	// ---- Testing ----
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -68,6 +72,8 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Never import local production credentials/providers into automated tests.
+	systemProperty 'smartbox.env-file.enabled', 'false'
 	// Docker 29+ requires API >=1.44; use a configurable client API for test containers.
 	systemProperty 'api.version', System.getenv('DOCKER_API_VERSION') ?: '1.44'
 }

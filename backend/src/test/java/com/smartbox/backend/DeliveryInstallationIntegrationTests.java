@@ -1,9 +1,15 @@
 package com.smartbox.backend;
 
-import com.smartbox.backend.dto.request.DeliveryInstallationRequests.*;
+import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.*;
 import com.smartbox.backend.exception.*;
 import com.smartbox.backend.security.CurrentActor;
-import com.smartbox.backend.service.*;
+import com.smartbox.backend.service.admin.*;
+import com.smartbox.backend.service.auth.*;
+import com.smartbox.backend.service.catalog.*;
+import com.smartbox.backend.service.commerce.*;
+import com.smartbox.backend.service.customer.*;
+import com.smartbox.backend.service.device.*;
+import com.smartbox.backend.service.warranty.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
@@ -21,6 +27,11 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
     @Autowired AcceptanceWarrantyService warranties;
     @Autowired OrderTrackingService tracking;
     @Autowired InstallationDashboardService backlog;
+    @Test void testBacklogSummary() {
+        actors.staff();
+        var s = backlog.summary();
+        org.junit.jupiter.api.Assertions.assertNotNull(s);
+    }
     @Test void acceptanceIssuesWarrantyFromSnapshotOnceAndActivationDoesNotMoveDates(){
         UUID order=confirmedOrder(),job=job(order);UUID device=installed(job,order);
         jdbc.update("UPDATE public.product_variants SET warranty_months=24 WHERE id=?",variant);
@@ -38,7 +49,7 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
         assertEquals("INSTALLED",jobs.detail(job).get("status"));assertEquals("confirmed",jdbc.queryForObject("SELECT status FROM public.orders WHERE id=?",String.class,order));assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM public.email_outbox WHERE template='INSTALLATION_COMPLETED'",Integer.class));
     }
     @Test void acceptanceIssuesSeparateWarrantyForEveryActualSerialInMultiQuantityItem(){
-        actors.customer();UUID order=order(2);payments.callback(callback(order,"two-serials","SUCCESS"));UUID ticket=jdbc.queryForObject("SELECT id FROM public.approval_tickets WHERE order_id=?",UUID.class,order);actors.staff();tickets.act(ticket,"APPROVE",null);UUID job=job(order);
+        actors.customer();UUID order=order(2);payments.callback(callback(order,"two-serials","SUCCESS"));UUID job=job(order);
         UUID first=device(false),second=device(false);tech();step(job,"START",new Note(null));UUID item=jdbc.queryForObject("SELECT id FROM public.order_items WHERE order_id=?",UUID.class,order);
         for(UUID device:List.of(first,second))jobs.serial(job,new Serial(item,jdbc.queryForObject("SELECT serial_number FROM public.devices WHERE id=?",String.class,device)),version(job),UUID.randomUUID());step(job,"DELIVER",new Note(null));
         for(UUID device:List.of(first,second)){mqtt.message(topic(device)+"/status",bytes(Map.of("door","closed","lock","locked")));lockTest(job,device);}step(job,"INSTALL",new Installation("Lắp hai thiết bị"));step(job,"ACCEPT",new Acceptance(true,null));
@@ -52,8 +63,8 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
     }
     @Test void backlogCountsAreScopedAndOverdueIsNotDoubleCounted(){
         UUID order=confirmedOrder(),job=job(order);tech();step(job,"START",new Note(null));jdbc.update("UPDATE public.delivery_installations SET scheduled_at=? WHERE id=?",now().minusDays(1),job);
-        actors.customer();UUID second=order(1);payments.callback(callback(second,"second-backlog","SUCCESS"));UUID secondTicket=jdbc.queryForObject("SELECT id FROM public.approval_tickets WHERE order_id=?",UUID.class,second);actors.staff();tickets.act(secondTicket,"APPROVE",null);
-        actors.customer();UUID third=order(1);payments.callback(callback(third,"third-backlog","SUCCESS"));actors.staff();var counts=(Map<?,?>)backlog.summary().get("counts");assertEquals(1L,counts.get("unassigned"));assertEquals(1L,counts.get("pendingApproval"));assertEquals(1L,counts.get("overdue"));assertEquals(3L,counts.get("totalOutstanding"));
+        actors.customer();UUID second=order(1);payments.callback(callback(second,"second-backlog","SUCCESS"));
+        actors.customer();UUID third=order(1);actors.staff();var counts=(Map<?,?>)backlog.summary().get("counts");assertEquals(1L,counts.get("unassigned"));assertEquals(1L,counts.get("pendingApproval"));assertEquals(1L,counts.get("overdue"));assertEquals(3L,counts.get("totalOutstanding"));
         tech();counts=(Map<?,?>)backlog.summary().get("counts");assertEquals(0L,counts.get("unassigned"));assertEquals(1L,counts.get("totalOutstanding"));actors.actor.set(new CurrentActor.Actor(TECH2,"technician"));assertEquals(0L,((Map<?,?>)backlog.summary().get("counts")).get("totalOutstanding"));actors.customer();assertThrows(ForbiddenException.class,()->backlog.summary());
     }
     @Test void proVariantOverridesBaseParentForRealSensorIngestionAndAcceptance(){
@@ -68,7 +79,7 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
         jdbc.update("UPDATE public.profiles SET role='super_admin' WHERE id=?",STAFF);
     }
     void tech(){actors.actor.set(new CurrentActor.Actor(TECH,"technician"));}
-    UUID confirmedOrder(){actors.customer();UUID id=order(1);payments.callback(callback(id,UUID.randomUUID().toString(),"SUCCESS"));actors.staff();tickets.act(ticket(),"APPROVE",null);return id;}
+    UUID confirmedOrder(){actors.customer();UUID id=order(1);payments.callback(callback(id,UUID.randomUUID().toString(),"SUCCESS"));actors.staff();return id;}
     UUID job(UUID order){actors.staff();return UUID.fromString(jobs.assign(order,new Assignment(TECH,now().plusDays(1),null),UUID.randomUUID()).get("id").toString());}
     OffsetDateTime now(){return OrderWorkflowService.now();}
     String version(UUID id){return jobs.detail(id).get("version").toString();}

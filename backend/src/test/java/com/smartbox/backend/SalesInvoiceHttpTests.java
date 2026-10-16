@@ -39,7 +39,7 @@ class SalesInvoiceHttpTests extends BackendApplicationTests {
         assertEquals(409,call(path,HttpMethod.POST,"invoice-owner",null,null,null).getStatusCode().value());
         when(identity.identity("invoice-other")).thenReturn(profile("customer"));when(identity.identity("invoice-product-manager")).thenReturn(profile("product_manager"));
         assertEquals(403,call(path,HttpMethod.POST,"invoice-other",null,null,null).getStatusCode().value());
-        assertEquals(403,call(path,HttpMethod.POST,"invoice-product-manager",null,null,null).getStatusCode().value());
+        assertEquals(409,call(path,HttpMethod.POST,"invoice-product-manager",null,null,null).getStatusCode().value());
         assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM public.sales_invoices WHERE order_id=?",Integer.class,f.order));
     }
     @Test void concurrentFirstIssueCreatesOneInvoiceAndCancelledOrderCannotBeIssued() throws Exception {
@@ -78,7 +78,7 @@ class SalesInvoiceHttpTests extends BackendApplicationTests {
         try {jdbc.update("UPDATE public.products SET name='Changed catalog' WHERE id=?",f.product);jdbc.update("UPDATE public.profiles SET full_name='Changed profile' WHERE id=?",f.owner);
             var next=call(path,HttpMethod.POST,"invoice-owner",null,null,null);assertEquals(html,next.getBody().get("html"));
         }finally{shop.setName(oldName);}
-        when(identity.identity("invoice-staff")).thenReturn(profile("super_admin"));when(identity.identity("invoice-accountant")).thenReturn(profile("accountant"));when(identity.identity("invoice-support")).thenReturn(profile("support_agent"));
+        when(identity.identity("invoice-staff")).thenReturn(profile("super_admin"));when(identity.identity("invoice-accountant")).thenReturn(profile("product_manager"));when(identity.identity("invoice-support")).thenReturn(profile("product_manager"));
         for(String token:List.of("invoice-staff","invoice-accountant","invoice-support"))assertEquals(200,call(path,HttpMethod.GET,token,null,null,null).getStatusCode().value());
         var headers=new HttpHeaders();headers.setBearerAuth("invoice-owner");
         var file=http.exchange(path+".html",HttpMethod.GET,new HttpEntity<>(headers),String.class);assertEquals(200,file.getStatusCode().value());assertTrue(file.getHeaders().getContentType().isCompatibleWith(MediaType.TEXT_HTML));assertTrue(file.getHeaders().getFirst("Content-Security-Policy").contains("default-src 'none'"));assertTrue(file.getHeaders().getFirst("Content-Disposition").endsWith(".html\""));

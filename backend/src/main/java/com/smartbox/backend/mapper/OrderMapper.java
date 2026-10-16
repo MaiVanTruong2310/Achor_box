@@ -1,7 +1,7 @@
 package com.smartbox.backend.mapper;
 
-import com.smartbox.backend.dto.response.OrderItemResponse;
-import com.smartbox.backend.dto.response.OrderResponse;
+import com.smartbox.backend.dto.response.commerce.OrderItemResponse;
+import com.smartbox.backend.dto.response.commerce.OrderResponse;
 import com.smartbox.backend.entity.Order;
 import com.smartbox.backend.entity.OrderItem;
 import com.smartbox.backend.entity.Payment;

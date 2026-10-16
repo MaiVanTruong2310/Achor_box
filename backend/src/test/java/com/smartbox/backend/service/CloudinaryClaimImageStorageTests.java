@@ -1,4 +1,5 @@
 package com.smartbox.backend.service;
+import com.smartbox.backend.service.warranty.CloudinaryClaimImageStorage;
 import com.smartbox.backend.exception.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;

@@ -1,6 +1,6 @@
 package com.smartbox.backend.mapper;
 
-import com.smartbox.backend.dto.response.ProductResponse;
+import com.smartbox.backend.dto.response.catalog.ProductResponse;
 import com.smartbox.backend.entity.Product;
 
 import java.util.Arrays;
@@ -21,7 +21,7 @@ public class ProductMapper {
                     .toList();
         }
 
-        List<com.smartbox.backend.dto.response.ProductVariantResponse> variantResponses = Collections.emptyList();
+        List<com.smartbox.backend.dto.response.catalog.ProductVariantResponse> variantResponses = Collections.emptyList();
         if (p.getVariants() != null && !p.getVariants().isEmpty()) {
             variantResponses = p.getVariants().stream()
                     .map(v -> ProductVariantMapper.toResponse(v, p.getPrice()))

@@ -3,7 +3,7 @@ CREATE SCHEMA auth;
 CREATE TABLE auth.users(id uuid PRIMARY KEY);
 CREATE TYPE public.user_role AS ENUM ('super_admin','product_manager','technician','support_agent','accountant','customer');
 CREATE TYPE public.device_status AS ENUM ('online','offline','maintenance','error');
-CREATE TYPE public.order_status AS ENUM ('pending','confirmed','processing','shipping','delivered','completed','cancelled','refunded');
+CREATE TYPE public.order_status AS ENUM ('pending','confirmed','processing','shipping','delivered','completed','cancelled','refunded','awaiting_payment','paid','customer_decision_pending');
 CREATE TYPE public.warranty_status AS ENUM ('active','expired','void');
 CREATE TYPE public.claim_status AS ENUM ('new','in_progress','resolved','rejected');
 CREATE DOMAIN public.access_level AS text;
@@ -123,6 +123,7 @@ CREATE TABLE public.products (
   images jsonb,
   stock_quantity integer NOT NULL DEFAULT 0,
   is_active boolean NOT NULL DEFAULT true,
+  manager_id uuid,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT products_pkey PRIMARY KEY (id)
 );

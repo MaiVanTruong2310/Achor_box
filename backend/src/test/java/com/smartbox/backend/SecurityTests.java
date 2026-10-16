@@ -1,12 +1,12 @@
 package com.smartbox.backend;
 
 import com.smartbox.backend.config.JwtAuthenticationFilter;
-import com.smartbox.backend.dto.request.LoginRequest;
+import com.smartbox.backend.dto.request.auth.LoginRequest;
 import com.smartbox.backend.entity.Profile;
 import com.smartbox.backend.exception.*;
 import com.smartbox.backend.repository.ProfileRepository;
 import com.smartbox.backend.security.SupabaseAuthGateway;
-import com.smartbox.backend.service.AuthService;
+import com.smartbox.backend.service.auth.AuthService;
 import org.junit.jupiter.api.*;
 import org.springframework.mock.web.*;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,7 +21,7 @@ class SecurityTests {
     UUID user=UUID.randomUUID();
     @BeforeEach void setup(){
         provider=mock(SupabaseAuthGateway.class);profiles=mock(ProfileRepository.class);
-        filter=new JwtAuthenticationFilter(provider,profiles,(req,res,handler,error)->{res.setStatus(((AppException)error).getCode());return new ModelAndView();},mock(com.smartbox.backend.service.CustomerIdentityService.class));
+        filter=new JwtAuthenticationFilter(provider,profiles,(req,res,handler,error)->{res.setStatus(((AppException)error).getCode());return new ModelAndView();},mock(com.smartbox.backend.service.auth.CustomerIdentityService.class));
     }
     @AfterEach void cleanup(){SecurityContextHolder.clearContext();}
     int request(String method,String path,String token) throws Exception {
@@ -39,6 +39,11 @@ class SecurityTests {
     @Test void knownDemoPasswordCannotBypassProvider(){
         var request=LoginRequest.builder().email("somebody@smartbox.test").password("Admin@123456").build();
         when(provider.password(anyString(),anyString())).thenThrow(new UnauthorizedException("BAD_PASSWORD"));
-        assertThrows(UnauthorizedException.class,()->new AuthService(provider,profiles,mock(com.smartbox.backend.service.CustomerIdentityService.class)).login(request));verifyNoInteractions(profiles);
+        assertThrows(UnauthorizedException.class,()->new AuthService(provider,profiles,mock(com.smartbox.backend.service.auth.CustomerIdentityService.class)).login(request));verifyNoInteractions(profiles);
     }
+    @Test void retiredRolesAreRejectedAtAuthenticationBoundary() throws Exception {
+        for(String role:java.util.List.of("support_agent","accountant")){profile(role,false);assertEquals(403,request("GET","/api/orders","access"));}
+        assertEquals(4,com.smartbox.backend.enums.UserRole.values().length);
+    }
+
 }

@@ -3,7 +3,7 @@ package com.smartbox.backend;
 import com.smartbox.backend.config.DashboardExecutorConfig;
 import com.smartbox.backend.repository.CommerceRepository;
 import com.smartbox.backend.security.CurrentActor;
-import com.smartbox.backend.service.ConcurrentDashboardService;
+import com.smartbox.backend.service.admin.ConcurrentDashboardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -36,7 +36,7 @@ class PostgresDashboardTests {
         add(jdbc,product,base,"paid",1600,start.plusDays(1),80);
         add(jdbc,product,base,"cancelled",3200,start.plusHours(2),90);
         add(jdbc,product,base,"awaiting_payment",6400,start.plusHours(3),90);
-        var actors=new CurrentActor(){@Override public Actor get(){return new Actor(UUID.randomUUID(),"accountant");}};
+        var actors=new CurrentActor(){@Override public Actor get(){return new Actor(UUID.randomUUID(),"product_manager");}};
         var executor=new DashboardExecutorConfig().executor(4,50);
         try {
             var service=new ConcurrentDashboardService(new CommerceRepository(jdbc),actors,executor,1500);

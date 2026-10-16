@@ -1,6 +1,6 @@
 package com.smartbox.backend.mapper;
 
-import com.smartbox.backend.dto.response.ProductVariantResponse;
+import com.smartbox.backend.dto.response.catalog.ProductVariantResponse;
 import com.smartbox.backend.entity.ProductVariant;
 
 import java.math.BigDecimal;
@@ -28,7 +28,7 @@ public class ProductVariantMapper {
                 .maxLoadKg(v.getMaxLoadKg())
                 .hasWeightSensor(v.getHasWeightSensor())
                 .warrantyMonths(v.getWarrantyMonths())
-                .images(com.smartbox.backend.service.VariantSpecifications.images(v.getVariantImages()))
+                .images(com.smartbox.backend.service.catalog.VariantSpecifications.images(v.getVariantImages()))
                 .priceDelta(delta)
                 .calculatedPrice(calculatedPrice)
                 .stockQuantity(v.getStockQuantity() != null ? v.getStockQuantity() : 0)

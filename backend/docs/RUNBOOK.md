@@ -2,11 +2,13 @@
 
 ## Migration trước khi chạy ứng dụng
 
+Quản trị mới / khách hàng riêng / ba role: chạy `011_customer_directory.sql` rồi `012_staff_roles.sql` sau 001–010. Role cũ được chuyển về PO và khóa để Admin xem xét. [Menu, quyền và khách hàng](ADMIN_WORKSPACE.md). Báo cáo hiện dùng Jasper với font đóng gói; không cần font-path ngoài.
+
 Hóa đơn bán hàng HTML: chạy `010_sales_invoices.sql` sau 001–009; điền `INVOICE_SHOP_*` trước lần lập đầu tiên. Xem [mẫu, API và cấu hình](SALES_INVOICE.md).
 
 VNPAY Sandbox: chạy `009_vnpay_sandbox.sql` sau 001–008 trước bản mới; xem [cấu hình và IPN/ReturnURL](VNPAY_SANDBOX.md). Provider có thể là mock hoặc VNPAY Sandbox. Mô tả mock-only trong snapshot cũ bên dưới được thay thế bởi cập nhật này.
 
-Quản trị bán hàng/claim ảnh: chạy `008_customer_warranty_claims.sql` sau 001–007. Xem [hợp đồng API và Cloudinary](ADMIN_COMMERCE_COMPLETION.md). Có thể nạp `backend/.env` bằng `run-local.ps1`; Spring tự nó không đọc file này.
+Quản trị bán hàng/claim ảnh: chạy `008_customer_warranty_claims.sql` sau 001–007. Xem [hợp đồng API và Cloudinary](ADMIN_COMMERCE_COMPLETION.md). Có thể nạp `backend/.env` bằng `run-local.ps1`; backend tự nạp file này khi khởi động từ thư mục backend hoặc source_code.
 
 Timeline/bảo hành/thông số SKU/dashboard: chạy migration `007_tracking_warranty_variant_specs.sql` sau 001–006 trước bản backend mới. Xem [hướng dẫn và hợp đồng](TRACKING_WARRANTY_SPECS_BACKLOG.md), đặc biệt policy bảo hành và duplicate warranty/device trước migration.
 
@@ -14,19 +16,20 @@ Customer Account đã triển khai: xem [hợp đồng và cấu hình Auth/emai
 
 Delivery & Installation đã triển khai: xem [hợp đồng và hướng dẫn](DELIVERY_INSTALLATION.md). Sau 001–003, áp dụng `004_delivery_installation.sql` rồi `005_installation_completion_guard.sql` trên bản sao để kiểm tra trước khi cập nhật database thật; chạy schema trước bản ứng dụng mới.
 
-Các script nằm ở `src/main/resources/db/migration`; **chưa áp dụng vào database của người dùng**. Không có Flyway tự chạy. `spring.jpa.hibernate.ddl-auto=none` giữ nguyên dữ liệu.
+## Migration cơ sở dữ liệu với Liquibase
 
-1. Backup database, thử trên bản sao và đối chiếu schema thực tế với `database.sql` trước.
-2. Chạy `001_order_enum.sql` bằng kết nối quản trị, bật autocommit; commit xong trước script tiếp theo. PostgreSQL không cho dùng giá trị enum mới trước commit.
-3. Chạy `002_commerce.sql` một lần. Script có BEGIN/COMMIT và dừng khi tồn kho âm hoặc duplicate `(order_id, variant_id)`; cần xử lý dữ liệu bằng quyết định nghiệp vụ trước khi chạy lại. Không tự gộp đơn đã thanh toán.
-4. Chạy `003_iot.sql` một lần. Unique MQTT topic có thể dừng nếu dữ liệu hiện tại trùng; không tự đổi topic đã gắn firmware.
-5. Giới hạn quyền DB: các bảng outbox, checkout keys, history, ticket, refunds và report definitions chỉ backend được ghi. Các bảng mới không được frontend Supabase ghi trực tiếp. Kiểm tra grants/RLS thực tế trước khi triển khai; script không tự sửa chính sách remote.
+Dự án hiện đã tích hợp **Liquibase** (`org.liquibase:liquibase-core`) tự động quản lý schema khi Spring Boot khởi động:
+- Master changelog: `src/main/resources/db/changelog/db.changelog-master.xml`
+- Các changeset: `src/main/resources/db/changelog/changesets/000_base_schema.xml` đến `012_staff_roles.xml`
+- Cấu hình: `spring.liquibase.enabled=true` (có thể tắt qua biến môi trường `LIQUIBASE_ENABLED=false` nếu cần).
+- Các changeset được thiết kế idempotent (dùng `IF NOT EXISTS`, trigger/function replace và `MARK_RAN`), an toàn khi chạy trên cả database mới tinh lẫn database đã có sẵn dữ liệu Supabase.
+- Bảng lịch sử di chuyển schema được lưu tự động tại `DATABASECHANGELOG` và `DATABASECHANGELOGLOCK`.
 
 Đơn tồn tại trước migration mang `workflow_version=1`. Không chuyển tự động sang luồng mới: thiếu bằng chứng giữ kho/paid_at. Đơn do backend tạo mang `workflow_version=2`. API mutation đơn legacy trả `LEGACY_ORDER_REVIEW_REQUIRED`; API đọc giữ dữ liệu cũ. Không suy diễn paid_at từ created_at hoặc từ enum trạng thái cũ. Script là thay đổi bổ sung, không có rollback xóa bảng vì có thể mất dữ liệu mới.
 
 ## Cấu hình và kiểm thử
 
-Java **21**. Docker cần chạy để kiểm thử PostgreSQL/Testcontainers và full Spring Boot startup. Xem `backend/.env.example`; file này là danh sách biến môi trường, Spring **không tự đọc** file `.env`.
+Java **21**. Docker cần chạy để kiểm thử PostgreSQL/Testcontainers và full Spring Boot startup. Xem `backend/.env.example`; file này là danh sách biến môi trường, Backend tự nạp `backend/.env` khi chạy từ thư mục backend hoặc source_code, dùng UTF-8 và giữ ưu tiên cấu hình OS/CLI. Có thể dùng `--smartbox.env-file=<đường dẫn>` nếu chạy từ thư mục khác; `--smartbox.env-file.enabled=false` để tắt. Automated tests tắt việc nạp cấu hình local.
 
 ```powershell
 $env:JAVA_HOME='C:\Program Files\Java\jdk-21.0.12'
@@ -106,3 +109,7 @@ Payload command có commandId/action/requested_by/timestamp. Firmware phải th�
 Frontend chưa sửa trong lần này. Login phải dùng tài khoản Supabase thật; API private cần Bearer. Demo password và OTP preview bị loại bỏ; recovery đi qua Supabase email link. Legacy hotline verify-reset trả 503 thay vì trả thành công giả. Các status mutation paid/confirmed/completed qua PATCH cũ trả conflict hướng sang workflow actions. Soft delete product/variant giữ FK; cập nhật product cần gửi ID variant cũ để giữ identity. Product stock không đại diện stock SKU. Tích hợp callback, checkout key, ticket, shipment, dashboard partial và các trạng thái mới theo bảng API trên. Không ghi trực tiếp orders/payments/stock từ frontend nếu muốn giữ invariants.
 
 REQ-05: xem [hướng dẫn dashboard](REQ05_DASHBOARD.md) để cấu hình demo delay/fail, so sánh tuần tự và quy tắc thống kê SKU.
+
+## AUTH_PROVIDER_NOT_CONFIGURED
+
+Lỗi 503 này xuất hiện khi runtime thiếu SUPABASE_URL hoặc SUPABASE_ANON_KEY. File .env của backend khác file .env của Vite. Sau khi sửa cấu hình hoặc nâng bản backend, dừng và khởi động lại tiến trình backend. Bản mới tự nạp .env từ backend/source_code; run-local.ps1 vẫn dùng được. SUPABASE_SERVICE_ROLE_KEY chỉ cần cho các thao tác quản trị Auth, không phải điều kiện kiểm tra phiên đăng nhập cơ bản. Không dùng access_token/refresh_token thay cho API key.
