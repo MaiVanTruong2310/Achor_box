@@ -1,9 +1,0 @@
-import React, { useEffect, useState } from 'react';
-import { customerRequest } from '../../api/customerClient';
-import {CustomerWarrantyClaims} from '../../components/CustomerWarrantyClaims';
-interface Warranty { id: string; serialNumber: string; startDate: string; endDate: string; status: string; durationMonths: number | null }
-export const MyWarrantiesPage: React.FC = () => {
-  const [page, setPage] = useState(0); const [rows, setRows] = useState<Warranty[]>([]); const [pages, setPages] = useState(0); const [error, setError] = useState(''); const [loading, setLoading] = useState(false);
-  useEffect(() => { let active = true; setLoading(true); setError(''); customerRequest<{ content: Warranty[]; totalPages: number }>(`/customer/warranties?page=${page}&size=20`).then(data => { if (active) { setRows(data.content); setPages(data.totalPages); } }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [page]);
-  return <section><h2>Bảo hành thiết bị của tôi</h2><p>Bảo hành bắt đầu từ ngày nghiệm thu đạt, không phụ thuộc ngày kích hoạt ứng dụng.</p>{error && <p role="alert">{error}</p>}{loading && <p>Đang tải…</p>}{!loading && rows.length === 0 && !error && <p>Chưa có thiết bị được cấp bảo hành.</p>}{rows.map(w => <article key={w.id} style={{ padding: 16, border: '1px solid var(--border-color)', marginBottom: 12 }}><b>{w.serialNumber}</b><p>Từ {w.startDate} đến {w.endDate}{w.durationMonths ? ` · ${w.durationMonths} tháng` : ''}</p><p>{w.status === 'active' ? 'Còn bảo hành' : w.status === 'expired' ? 'Hết hạn' : w.status}</p></article>)}<button className="btn btn-secondary" disabled={loading || page === 0} onClick={() => setPage(page - 1)}>Trước</button> <button className="btn btn-secondary" disabled={loading || page + 1 >= pages} onClick={() => setPage(page + 1)}>Sau</button><CustomerWarrantyClaims warranties={rows}/></section>;
-};
