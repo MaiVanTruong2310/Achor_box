@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/database';
-import { Forbidden403 } from '../pages/Forbidden403';
+import { Forbidden403 } from '../pages/auth/Forbidden403';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

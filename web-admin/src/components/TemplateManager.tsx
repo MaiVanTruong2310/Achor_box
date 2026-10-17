@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { MessageTemplate, TemplateChannel, TestSendResponse } from '../types/database';
 import { templatesService } from '../services/api';
+import { toast } from '../contexts/ToastContext';
+import { adminRequest } from '../services/adminRequest';
 
 interface TemplateManagerProps {
   embedded?: boolean;
@@ -207,30 +209,67 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
   // Execute Test Send
   const handleExecuteTestSend = async () => {
     if (!testSendModalTpl) return;
+    const tplCode = testSendModalTpl.code;
+    const isEmail = testSendModalTpl.channel === 'email';
+    const recipient = isEmail ? testEmail.trim() : testPhone.trim();
+
+    if (!recipient) {
+      toast.warning('Vui lòng nhập thông tin người nhận.');
+      return;
+    }
+
     try {
       setIsSendingTest(true);
       setTestSendResult(null);
 
       const res = await templatesService.testSendTemplate({
-        templateCode: testSendModalTpl.code,
-        recipientEmail: testEmail,
-        recipientPhone: testPhone,
+        templateCode: tplCode,
+        recipientEmail: testEmail.trim(),
+        recipientPhone: testPhone.trim(),
         customSubject: editForm.subject || testSendModalTpl.subject,
         customBody: editForm.body || testSendModalTpl.body
       });
 
-      setTestSendResult(res);
-    } catch (err: any) {
-      setTestSendResult({
-        success: false,
-        channel: testSendModalTpl.channel,
-        recipient: testEmail,
-        renderedSubject: '',
-        renderedBody: '',
-        message: err.message || 'Lỗi khi gửi thử nghiệm'
-      });
-    } finally {
+      // Close modal immediately so user doesn't wait
       setIsSendingTest(false);
+      setTestSendModalTpl(null);
+
+      if (isEmail) {
+        toast.info(`Đang gửi thử nghiệm mẫu [${tplCode}] tới ${recipient} trong nền...`, 'Tiến trình gửi email');
+
+        if (res && res.outboxId) {
+          let attempts = 0;
+          const maxAttempts = 14;
+          const interval = window.setInterval(async () => {
+            attempts++;
+            try {
+              const statusRes = await adminRequest<{ id: string; status: string; lastError?: string }>(
+                `/admin/emails/${res.outboxId}/status`,
+                { headers: { 'Cache-Control': 'no-cache' } }
+              );
+
+              if (statusRes && statusRes.status === 'SENT') {
+                window.clearInterval(interval);
+                toast.success(`Đã gửi email thử nghiệm mẫu [${tplCode}] tới ${recipient} thành công!`, 'Gửi email thành công');
+              } else if (statusRes && statusRes.status === 'FAILED') {
+                window.clearInterval(interval);
+                toast.error(`Gửi thử nghiệm mẫu [${tplCode}] tới ${recipient} thất bại: ${statusRes.lastError || 'Lỗi SMTP'}`, 'Gửi email thất bại');
+              } else if (attempts >= maxAttempts) {
+                window.clearInterval(interval);
+              }
+            } catch {
+              if (attempts >= maxAttempts) window.clearInterval(interval);
+            }
+          }, 1500);
+        } else {
+          toast.success(res.message || 'Mẫu thông báo đã được gửi.');
+        }
+      } else {
+        toast.success(res.message || 'Gửi thử nghiệm thành công!');
+      }
+    } catch (err: any) {
+      setIsSendingTest(false);
+      toast.error(err.message || 'Lỗi khi gửi thử nghiệm.', 'Lỗi gửi mẫu');
     }
   };
 
@@ -834,7 +873,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                       >
                         {/* Email Client Header */}
                         <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '10px 14px', fontSize: '0.75rem' }}>
-                          <div><strong>Người gửi:</strong> SmartBox IoT &lt;support@smartbox.vn&gt;</div>
+                          <div><strong>Người gửi:</strong> SmartBox &lt;support@smartbox.vn&gt;</div>
                           <div style={{ marginTop: '2px' }}><strong>Người nhận:</strong> Nguyễn Văn An &lt;khachhang@smartbox.vn&gt;</div>
                           <div style={{ marginTop: '2px', color: '#0284c7', fontWeight: 600 }}><strong>Tiêu đề:</strong> {mockSubject}</div>
                         </div>
@@ -842,7 +881,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                         {/* Email Body Banner */}
                         <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', color: '#ffffff', padding: '16px 20px', textAlign: 'center' }}>
                           <h4 style={{ margin: 0, letterSpacing: '1px', fontSize: '1.05rem', fontWeight: 800 }}>SMARTBOX</h4>
-                          <div style={{ fontSize: '11px', color: '#bae6fd', marginTop: '2px' }}>Hệ Sinh Thái Tủ Giao Nhận Hàng IoT</div>
+                          <div style={{ fontSize: '11px', color: '#bae6fd', marginTop: '2px' }}>Hệ Thống Tủ Giao Nhận Hàng Thông Minh</div>
                         </div>
 
                         {/* Email Rendered Content */}

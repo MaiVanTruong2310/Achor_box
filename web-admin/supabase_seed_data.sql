@@ -53,31 +53,13 @@ BEGIN
   -- 3. DANH MỤC SẢN PHẨM (product_categories)
   INSERT INTO public.product_categories (id, name, slug)
   VALUES 
-    (v_cat_iot_id, 'Hộp Nhận Hàng IoT', 'hop-nhan-hang-iot'),
+    (v_cat_iot_id, 'Tủ Thông Minh SmartBox', 'tu-thong-minh-smartbox'),
     (v_cat_acc_id, 'Phụ Kiện & Linh Kiện', 'phu-kien-linh-kien')
   ON CONFLICT (id) DO NOTHING;
 
-  -- 4. SẢN PHẨM (products)
-  INSERT INTO public.products (id, category_id, sku, name, description, price, images, stock_quantity, is_active)
-  VALUES
-    (v_prod_std_id, v_cat_iot_id, 'SDB-STD-01', 'Hộp nhận hàng thông minh SmartBox Standard (Bản Tiêu Chuẩn)', 'Tích hợp cảm biến siêu âm HC-SR04, chốt điện cơ học, kết nối Wi-Fi MQTT và nạp năng lượng mặt trời.', 1850000, '["https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400"]'::jsonb, 42, true),
-    (v_prod_pro_id, v_cat_iot_id, 'SDB-PRO-02', 'Hộp nhận hàng thông minh SmartBox Pro (Bản Cao Cấp)', 'Bổ sung cảm biến cân nặng Loadcell 24-bit HX711, bàn phím mã PIN Keypad kim loại chống nước IP65, pin sạc dự phòng 10.000mAh.', 2650000, '["https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=400"]'::jsonb, 6, true),
-    (v_prod_keypad_id, v_cat_acc_id, 'ACC-KEYPAD-01', 'Phụ kiện: Bàn phím chống nước Keypad 4x4 kim loại', 'Bàn phím nhập mã PIN dự phòng lắp ngoài trời chống mưa bụi IP65, giao tiếp GPIO ma trận.', 150000, '["https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=400"]'::jsonb, 85, true),
-    (v_prod_solar_id, v_cat_acc_id, 'ACC-SOLAR-02', 'Phụ kiện: Tấm pin năng lượng mặt trời 10W IP67', 'Tấm pin quang năng mini kèm mạch sạc MPPT chống chai pin Li-ion cho ESP32.', 280000, '["https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400"]'::jsonb, 15, true)
-  ON CONFLICT (id) DO NOTHING;
+  -- 4. SẢN PHẨM & BIẾN THỂ (Đã loại bỏ seed mock data, sẵn sàng cho dữ liệu thực)
+  -- Không seed dữ liệu mẫu vào public.products và public.product_variants
 
-  -- 4.1. BIẾN THỂ KÍCH CỠ SẢN PHẨM (product_variants: Size S, M, L)
-  INSERT INTO public.product_variants (id, product_id, variant_name, sku, price_delta, stock_quantity)
-  VALUES
-    -- Biến thể của Bản Tiêu Chuẩn (Base: Chốt điện)
-    (gen_random_uuid(), v_prod_std_id, 'Size S (Nhỏ - 45L)', 'BOX-BASE-S', 0, 15),
-    (gen_random_uuid(), v_prod_std_id, 'Size M (Vừa - 85L)', 'BOX-BASE-M', 400000, 20),
-    (gen_random_uuid(), v_prod_std_id, 'Size L (Lớn - 150L)', 'BOX-BASE-L', 900000, 7),
-    -- Biến thể của Bản Cao Cấp (Pro: Cảm biến cân nặng Loadcell HX711)
-    (gen_random_uuid(), v_prod_pro_id, 'Size S (Nhỏ - 45L)', 'BOX-PRO-S', 0, 2),
-    (gen_random_uuid(), v_prod_pro_id, 'Size M (Vừa - 85L)', 'BOX-PRO-M', 500000, 3),
-    (gen_random_uuid(), v_prod_pro_id, 'Size L (Lớn - 150L)', 'BOX-PRO-L', 1100000, 1)
-  ON CONFLICT (sku) DO NOTHING;
 
   -- 5. THIẾT BỊ IOT (devices)
   INSERT INTO public.devices (id, product_id, owner_id, serial_number, name, location_label, status, battery_level, firmware_version, last_seen_at, door_status, lock_status, weight_kg, package_detected, scale_ready, device_state, mqtt_topic_id)

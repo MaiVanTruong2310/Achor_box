@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; role?: UserRole; error?: string }>;
   logout: () => Promise<void>;
   hasRole: (allowedRoles: UserRole[]) => boolean;
+  updateProfile: (p: Profile | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,15 +25,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Tham chiếu bộ đếm thời gian tự động đăng xuất khi token hết hạn
   const sessionExpiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingProfileFetch = useRef<Promise<Profile | null> | null>(null);
+  const profileRef = useRef<Profile | null>(null);
 
-  const fetchUserProfile = async (userId: string,token?:string): Promise<Profile | null> => {
-    try {
-      const p=await adminRequest<any>('/auth/me',token?{headers:{Authorization:`Bearer ${token}`}}:{});
-      if(p.id!==userId)return null;
-      return {id:p.id,full_name:p.fullName,email:p.email,phone:p.phone,avatar_url:p.avatarUrl,default_address:p.defaultAddress,role:p.role,is_locked:p.isLocked,is_2fa_enabled:p.is2faEnabled,created_at:p.createdAt,updated_at:p.updatedAt};
-    } catch (err) {
-      return null;
+  const updateProfile = (p: Profile | null) => {
+    profileRef.current = p;
+    setProfile(p);
+  };
+
+  const fetchUserProfile = async (userId: string, token?: string): Promise<Profile | null> => {
+    if (profileRef.current && profileRef.current.id === userId) {
+      return profileRef.current;
     }
+    if (pendingProfileFetch.current) {
+      return pendingProfileFetch.current;
+    }
+    pendingProfileFetch.current = (async () => {
+      try {
+        const p = await adminRequest<any>('/auth/me', token ? { headers: { Authorization: `Bearer ${token}` } } : {});
+        if (p.id !== userId) return null;
+        const prof: Profile = {
+          id: p.id,
+          full_name: p.fullName,
+          email: p.email,
+          phone: p.phone,
+          avatar_url: p.avatarUrl,
+          default_address: p.defaultAddress,
+          role: p.role,
+          is_locked: p.isLocked,
+          is_2fa_enabled: p.is2faEnabled,
+          created_at: p.createdAt,
+          updated_at: p.updatedAt
+        };
+        profileRef.current = prof;
+        return prof;
+      } catch {
+        return null;
+      } finally {
+        pendingProfileFetch.current = null;
+      }
+    })();
+    return pendingProfileFetch.current;
   };
 
   /**
@@ -49,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     await clearAllAuthTokens();
+    profileRef.current = null;
     setUser(null);
     setProfile(null);
     setError(reason);
@@ -63,10 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         pathname.startsWith('/warranties') ||
         pathname.startsWith('/products') ||
         pathname.startsWith('/orders') ||
+        pathname.startsWith('/approval-tickets') ||
         pathname.startsWith('/users') ||
-        pathname.startsWith('/content') ||
         pathname.startsWith('/audit-logs') ||
-        pathname.startsWith('/settings');
+        pathname.startsWith('/settings') || pathname.startsWith('/customers') || pathname.startsWith('/permissions') || pathname.startsWith('/emails') || pathname.startsWith('/reports') || pathname.startsWith('/system');
 
       if (isAdminRoute && !pathname.includes('/login')) {
         window.location.href = '/login?expired=true';
@@ -132,8 +166,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (prof?.is_locked) {
           await handleSessionExpired('Tài khoản của bạn đã bị khóa.');
+        } else if (prof?.role === 'customer') {
+          console.warn('⚠️ [Auth] Phát hiện tài khoản khách hàng trên trang quản trị. Đang hủy phiên...');
+          await handleSessionExpired('Tài khoản Khách hàng không có quyền truy cập Cổng quản trị.');
         } else {
-          setProfile(prof);
+          updateProfile(prof);
         }
       } catch (err) {
         console.error('Initialize auth error:', err);
@@ -151,6 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           clearTimeout(sessionExpiryTimerRef.current);
           sessionExpiryTimerRef.current = null;
         }
+        profileRef.current = null;
         setUser(null);
         setProfile(null);
         setLoading(false);
@@ -168,12 +206,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (session.user) {
         setUser(session.user);
-        const prof = await fetchUserProfile(session.user.id,session.access_token);
+        // Tránh gọi lại /auth/me nếu hồ sơ của user hiện tại đã có sẵn trong ref
+        if (profileRef.current?.id === session.user.id) {
+          setLoading(false);
+          return;
+        }
+        const prof = await fetchUserProfile(session.user.id, session.access_token);
 
         if (prof?.is_locked) {
           await handleSessionExpired('Tài khoản của bạn đã bị khóa.');
+        } else if (prof?.role === 'customer') {
+          console.warn('⚠️ [Auth] Phát hiện tài khoản khách hàng trên trang quản trị. Đang hủy phiên...');
+          await handleSessionExpired('Tài khoản Khách hàng không có quyền truy cập Cổng quản trị.');
         } else {
-          setProfile(prof);
+          updateProfile(prof);
           setError(null);
         }
       }
@@ -216,6 +262,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     setLoading(true);
 
+    const cleanEmail = email.trim();
+
+    // 1. Tuyến đăng nhập tốc độ cao (High-performance fast path) qua Backend /api/auth/login:
+    // Backend trực tiếp xác thực với Supabase, lưu session vào Redis và pre-cache token Auth.
+    // Loại bỏ hoàn toàn nhiều lượt round-trip HTTPS xuyên biên giới và các lệnh SELECT /auth/me dư thừa.
+    try {
+      const backendUrl = (import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8080/api').replace(/\/+$/, '');
+      const resp = await fetch(`${backendUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password })
+      });
+
+      if (resp.ok) {
+        const loginData = await resp.json();
+        if (loginData?.accessToken && loginData?.refreshToken) {
+          // BẢO VỆ PHÂN VÙNG: Tuyệt đối không cho tài khoản khách hàng đăng nhập trang quản trị
+          if (loginData.role === 'customer') {
+            const customerErrMsg = 'Tài khoản Khách hàng không có quyền truy cập Cổng quản trị Anchor Box. Vui lòng đăng nhập tại Cổng Web Shop.';
+            setError(customerErrMsg);
+            setLoading(false);
+            return { success: false, error: customerErrMsg };
+          }
+
+          // Lưu phiên vào Supabase Client để các tính năng Supabase hoạt động nhất quán
+          try {
+            await supabase.auth.setSession({
+              access_token: loginData.accessToken,
+              refresh_token: loginData.refreshToken
+            });
+          } catch (e) {
+            console.warn('[Auth] Không thể đồng bộ session sang Supabase client:', e);
+          }
+
+          const prof: Profile = {
+            id: loginData.userId,
+            full_name: loginData.fullName || '',
+            email: loginData.email || cleanEmail,
+            phone: '',
+            avatar_url: loginData.avatarUrl || '',
+            default_address: '',
+            role: loginData.role,
+            is_locked: false,
+            is_2fa_enabled: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          updateProfile(prof);
+          setUser({ id: loginData.userId, email: loginData.email } as any);
+          scheduleSessionExpiry(Math.floor(Date.now() / 1000) + (loginData.expiresIn || 3600));
+          void fetchUserProfile(loginData.userId, loginData.accessToken).then((fullProf) => {
+            if (fullProf) updateProfile(fullProf);
+          }).catch(() => {});
+          setError(null);
+          setLoading(false);
+          return { success: true, role: prof.role };
+        }
+      } else if (resp.status === 401 || resp.status === 400) {
+        const errJson = await resp.json().catch(() => null);
+        const errMsg = errJson?.message || 'Email hoặc mật khẩu không chính xác.';
+        setError(errMsg);
+        setLoading(false);
+        return { success: false, error: errMsg };
+      }
+    } catch (backendErr) {
+      console.warn('[Auth] Backend /auth/login không phản hồi, thử Supabase client fallback:', backendErr);
+    }
+
+    // 2. Tuyến dự phòng (Fallback): Supabase direct sign-in
     if (!isSupabaseConfigured) {
       setLoading(false);
       const errMsg = 'Supabase chưa được cấu hình. Vui lòng cập nhật file .env.';
@@ -224,7 +340,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
 
       if (signInError) {
         setError(signInError.message);
@@ -238,7 +354,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { success: false, error: 'Token đăng nhập không hợp lệ hoặc đã hết hạn.' };
         }
 
-        const prof = await fetchUserProfile(data.user.id,data.session?.access_token);
+        const prof = await fetchUserProfile(data.user.id, data.session?.access_token);
 
         if (!prof) {
           await handleSessionExpired('Không tìm thấy hồ sơ tài khoản. Vui lòng liên hệ hỗ trợ.');
@@ -252,11 +368,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { success: false, error: lockErr };
         }
 
-        // Lên lịch đếm ngược tự động đăng xuất khi token hết hạn
+        if (prof.role === 'customer') {
+          await supabase.auth.signOut();
+          const customerErrMsg = 'Tài khoản Khách hàng không có quyền truy cập Cổng quản trị Anchor Box. Vui lòng đăng nhập tại Cổng Web Shop.';
+          setError(customerErrMsg);
+          setLoading(false);
+          return { success: false, error: customerErrMsg };
+        }
+
         scheduleSessionExpiry(data.session?.expires_at);
 
+        updateProfile(prof);
         setUser(data.user);
-        setProfile(prof);
         setError(null);
         setLoading(false);
         return { success: true, role: prof.role };
@@ -284,7 +407,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, error, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, profile, loading, error, login, logout, hasRole, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
