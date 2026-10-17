@@ -36,6 +36,7 @@ class CommerceIntegrationTests {
         final ThreadLocal<Actor> actor=ThreadLocal.withInitial(()->new Actor(CUSTOMER,"customer"));
         @Override public Actor get(){return actor.get();}
         void staff(){actor.set(new Actor(STAFF,"super_admin"));}
+        void po(){actor.set(new Actor(STAFF,"product_manager"));}
         void customer(){actor.set(new Actor(CUSTOMER,"customer"));}
     }
     @Configuration @EnableTransactionManagement
@@ -118,7 +119,7 @@ class CommerceIntegrationTests {
         var list=jdbc.queryForList("SELECT id FROM public.approval_tickets WHERE order_id=? AND status='PENDING'",UUID.class,orderId);
         if(!list.isEmpty()){
             var prev=actors.actor.get();
-            actors.staff();
+            actors.actor.set(new CurrentActor.Actor(STAFF,"product_manager"));
             tickets.act(list.getFirst(),"APPROVE",null);
             if(prev!=null)actors.actor.set(prev);else actors.customer();
         }
@@ -193,9 +194,9 @@ class CommerceIntegrationTests {
         assertEquals("cancelled",orders.detail(id).get("status"));assertEquals("refund_required",jdbc.queryForObject("SELECT status FROM public.payments",String.class));
     }
     @Test void ticketReturnResubmitRejectAndRefund(){
-        UUID id=order(1);UUID t=ticket();actors.staff();
+        UUID id=order(1);UUID t=ticket();actors.po();
         tickets.act(t,"RETURN","Cần xác minh địa chỉ");actors.customer();tickets.act(t,"RESUBMIT","Địa chỉ đã xác nhận");
-        assertThrows(ConflictException.class,()->orders.setQuantity(id,variant,2));actors.staff();tickets.act(t,"REJECT","Không đáp ứng giao hàng");
+        assertThrows(ConflictException.class,()->orders.setQuantity(id,variant,2));actors.po();tickets.act(t,"REJECT","Không đáp ứng giao hàng");
         assertEquals(10,stock());assertEquals(0,count("refunds"));assertThrows(ConflictException.class,()->tickets.act(t,"APPROVE",null));
         assertEquals("cancelled",orders.detail(id).get("status"));
     }
@@ -250,7 +251,7 @@ class CommerceIntegrationTests {
     @Test void concurrentTicketReviewHasOnlyOneFinalDecision() throws Exception {
         UUID id=order(1);UUID ticket=ticket();
         try(var pool=Executors.newFixedThreadPool(2)){
-            var barrier=new CyclicBarrier(2);java.util.function.Function<String,Callable<Boolean>> task=action->()->{actors.staff();barrier.await();try{tickets.act(ticket,action,"Kiểm thử đồng thời");return true;}catch(ConflictException ex){return false;}finally{actors.actor.remove();}};
+            var barrier=new CyclicBarrier(2);java.util.function.Function<String,Callable<Boolean>> task=action->()->{actors.po();barrier.await();try{tickets.act(ticket,action,"Kiểm thử đồng thời");return true;}catch(ConflictException ex){return false;}finally{actors.actor.remove();}};
             var a=pool.submit(task.apply("APPROVE"));var b=pool.submit(task.apply("REJECT"));assertNotEquals(a.get(10,TimeUnit.SECONDS),b.get(10,TimeUnit.SECONDS));
         }
         assertEquals(2,count("ticket_history"));

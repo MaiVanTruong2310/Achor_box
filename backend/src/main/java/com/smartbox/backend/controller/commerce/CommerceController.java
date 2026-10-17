@@ -250,8 +250,23 @@ public class CommerceController {
 
     @PostMapping("/api/admin/emails/{id}/resend")
     @Operation(summary = "Gửi lại email trong hàng đợi outbox (REQ-03)")
-    public Map<String, Object> resend(@PathVariable UUID id) {
-        outbox.resend(id);
-        return Map.of("queued", true);
+    public ResponseEntity<Map<String, Object>> resend(@PathVariable UUID id) {
+        return ResponseEntity.ok(outbox.resend(id));
+    }
+
+    @GetMapping("/api/admin/emails/{id}/status")
+    @Operation(summary = "Kiểm tra trạng thái tiến trình gửi email trong nền")
+    public ResponseEntity<Map<String, Object>> getEmailStatus(@PathVariable UUID id) {
+        return ResponseEntity.ok(outbox.getStatus(id));
+    }
+
+    @PostMapping("/api/admin/emails/test-send")
+    @Operation(summary = "Gửi email kiểm thử trực tiếp qua SMTP trong nền và lưu nhật ký giao dịch")
+    public ResponseEntity<Map<String, Object>> sendTestEmail(
+            @RequestBody(required = false) Map<String, String> request) {
+        String recipient = request != null ? request.get("recipient") : null;
+        String subject = request != null ? request.get("subject") : null;
+        String body = request != null ? request.get("body") : null;
+        return ResponseEntity.ok(outbox.sendTest(recipient, subject, body));
     }
 }

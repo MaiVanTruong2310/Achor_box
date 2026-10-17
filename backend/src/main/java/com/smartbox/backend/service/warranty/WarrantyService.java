@@ -87,6 +87,15 @@ public class WarrantyService {
         claim.setAssignedTo(technicianId);
         claim.setStatus("in_progress");
         db.audit(actors.get().id(),"WARRANTY_CLAIM_ASSIGNED","warranty_claims",claimId,technicianId.toString());
+
+        UUID notifId = UUID.randomUUID();
+        String code = claimId.toString().substring(0, 8).toUpperCase();
+        db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,?,?,false,NOW())",
+            notifId, technicianId, "TASK_ASSIGNED", "Có yêu cầu bảo hành mới!",
+            "Bạn vừa được phân công xử lý phiếu bảo hành #" + code + " [claim:" + claimId + "]");
+        db.update("INSERT INTO public.push_outbox(id, notification_id, status, attempts, next_attempt_at) VALUES(?, ?, 'PENDING', 0, NOW())",
+            UUID.randomUUID(), notifId);
+
         return mapToResponse(claimRepository.save(claim));
     }
 

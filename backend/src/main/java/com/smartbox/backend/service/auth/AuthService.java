@@ -36,10 +36,16 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        String login = request.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
-        if (!login.contains("@")) {
-            login = profiles.findByUsername(login).map(Profile::getEmail)
+        String rawLogin = request.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
+        final String login;
+        if (!rawLogin.contains("@")) {
+            final String usernameOrPrefix = rawLogin;
+            login = profiles.findByUsername(usernameOrPrefix)
+                    .or(() -> profiles.findFirstByEmailOrderByCreatedAtDesc(usernameOrPrefix + "@smartbox.vn"))
+                    .map(Profile::getEmail)
                     .orElseThrow(() -> new UnauthorizedException("Thông tin đăng nhập không hợp lệ"));
+        } else {
+            login = rawLogin;
         }
 
         // 1. Kiểm tra xem tài khoản có bị khóa tạm thời do Redis rate limit không
@@ -70,9 +76,11 @@ public class AuthService {
         String access = session.get("access_token").toString();
         long expiresIn = ((Number) session.get("expires_in")).longValue();
 
-        // 3. Lưu phiên đăng nhập vào Redis
+        // 3. Lưu phiên đăng nhập vào Redis và Pre-cache auth token cho các request tiếp theo
         if (redisAuth != null) {
             redisAuth.saveSession(profile.getId(), access, expiresIn, profile.getEmail(), profile.getRole());
+            redisAuth.cacheAuthSession(access, profile.getId(), profile.getRole(), profile.getEmail(),
+                    profile.getFullName(), Boolean.TRUE.equals(profile.getIsLocked()), Math.min(expiresIn, 300));
         }
 
         return LoginResponse.builder()
@@ -98,6 +106,8 @@ public class AuthService {
 
         if (redisAuth != null) {
             redisAuth.saveSession(profile.getId(), access, expiresIn, profile.getEmail(), profile.getRole());
+            redisAuth.cacheAuthSession(access, profile.getId(), profile.getRole(), profile.getEmail(),
+                    profile.getFullName(), Boolean.TRUE.equals(profile.getIsLocked()), Math.min(expiresIn, 300));
         }
 
         return RefreshTokenResponse.builder()

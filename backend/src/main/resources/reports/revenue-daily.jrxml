@@ -1,10 +1,323 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="revenue_daily" pageWidth="595" pageHeight="842" columnWidth="515" leftMargin="40" rightMargin="40" topMargin="35" bottomMargin="35" whenNoDataType="AllSectionsNoDetail">
- <property name="net.sf.jasperreports.export.xlsx.freeze.row" value="6"/>
- <style name="Default" isDefault="true" fontName="DejaVu Sans" fontSize="10"/>
- <parameter name="period" class="java.lang.String"/><parameter name="generatedAt" class="java.lang.String"/>
- <parameter name="totalOrders" class="java.lang.Long"/><parameter name="totalRevenue" class="java.math.BigDecimal"/>
- <parameter name="grossPaid" class="java.math.BigDecimal"/><parameter name="refunded" class="java.math.BigDecimal"/><parameter name="netCash" class="java.math.BigDecimal"/>
- <field name="dateLabel" class="java.lang.String"/><field name="orders" class="java.lang.Long"/><field name="revenue" class="java.math.BigDecimal"/>
- <title><band height="115">
-<staticText><reportElement x="0" y="0" width="515" height="22"/><textElement><font isBold="true"/></textElement><text><![CDATA[ANCHOR BOX / SMARTBOX]]></text></staticText><staticText><reportElement x="0" y="28" width="515" height="22"/><textElement><font isBold="true"/></textElement><text><![CDATA[BÁO CÁO DOANH THU THEO NGÀY]]></text></staticText><textField><reportElement x="0" y="55" width="515" height="20"/><textElement><font isBold="false"/></textElement><textFieldExpression><![CDATA[$P{period}]]></textFieldExpression></textField><textField><reportElement x="0" y="77" width="515" height="18"/><textElement><font isBold="false"/></textElement><textFieldExpression><![CDATA[$P{generatedAt}]]></textFieldExpression></textField><staticText><reportElement x="0" y="97" width="515" height="18"/><textElement><font isBold="false"/></textElement><text><![CDATA[Đơn vị: VND. Dữ liệu có thể gồm giao dịch kiểm thử tại môi trường demo.]]></text></staticText></band></title><columnHeader><band height="28"><staticText><reportElement x="0" y="0" width="160" height="25"/><textElement><font isBold="true"/></textElement><text><![CDATA[Ngày thanh toán]]></text></staticText><staticText><reportElement x="160" y="0" width="125" height="25"/><textElement><font isBold="true"/></textElement><text><![CDATA[Số đơn]]></text></staticText><staticText><reportElement x="285" y="0" width="230" height="25"/><textElement><font isBold="true"/></textElement><text><![CDATA[Doanh thu (VND)]]></text></staticText></band></columnHeader><detail><band height="24"><textField><reportElement x="0" y="0" width="160" height="23"/><textElement><font isBold="false"/></textElement><textFieldExpression><![CDATA[$F{dateLabel}]]></textFieldExpression></textField><textField pattern="#,##0"><reportElement x="160" y="0" width="125" height="23"/><textElement textAlignment="Right"><font isBold="false"/></textElement><textFieldExpression><![CDATA[$F{orders}]]></textFieldExpression></textField><textField pattern="#,##0"><reportElement x="285" y="0" width="230" height="23"/><textElement textAlignment="Right"><font isBold="false"/></textElement><textFieldExpression><![CDATA[$F{revenue}]]></textFieldExpression></textField></band></detail><pageFooter><band height="25"><textField><reportElement x="0" y="5" width="515" height="18"/><textElement><font isBold="false"/></textElement><textFieldExpression><![CDATA["Trang " + $V{PAGE_NUMBER}]]></textFieldExpression></textField></band></pageFooter><summary><band height="138"><staticText><reportElement x="0" y="8" width="160" height="23"/><textElement><font isBold="true"/></textElement><text><![CDATA[TỔNG CỘNG]]></text></staticText><textField pattern="#,##0"><reportElement x="160" y="8" width="125" height="23"/><textElement textAlignment="Right"><font isBold="true"/></textElement><textFieldExpression><![CDATA[$P{totalOrders}]]></textFieldExpression></textField><textField pattern="#,##0"><reportElement x="285" y="8" width="230" height="23"/><textElement textAlignment="Right"><font isBold="true"/></textElement><textFieldExpression><![CDATA[$P{totalRevenue}]]></textFieldExpression></textField><staticText><reportElement x="0" y="48" width="285" height="25"/><textElement><font isBold="true"/></textElement><text><![CDATA[Tiền đã thu trong kỳ]]></text></staticText><textField pattern="#,##0"><reportElement x="285" y="48" width="230" height="25"/><textElement textAlignment="Right"><font isBold="true"/></textElement><textFieldExpression><![CDATA[$P{grossPaid}]]></textFieldExpression></textField><staticText><reportElement x="0" y="75" width="285" height="25"/><textElement><font isBold="true"/></textElement><text><![CDATA[Tiền đã ghi nhận hoàn trong kỳ]]></text></staticText><textField pattern="#,##0"><reportElement x="285" y="75" width="230" height="25"/><textElement textAlignment="Right"><font isBold="true"/></textElement><textFieldExpression><![CDATA[$P{refunded}]]></textFieldExpression></textField><staticText><reportElement x="0" y="103" width="285" height="25"/><textElement><font isBold="true"/></textElement><text><![CDATA[Dòng tiền ròng trong kỳ]]></text></staticText><textField pattern="#,##0"><reportElement x="285" y="103" width="230" height="25"/><textElement textAlignment="Right"><font isBold="true"/></textElement><textFieldExpression><![CDATA[$P{netCash}]]></textFieldExpression></textField></band></summary></jasperReport>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" 
+              name="revenue_daily" 
+              pageWidth="595" 
+              pageHeight="842" 
+              columnWidth="515" 
+              leftMargin="40" 
+              rightMargin="40" 
+              topMargin="35" 
+              bottomMargin="35" 
+              whenNoDataType="AllSectionsNoDetail">
+              
+	<property name="net.sf.jasperreports.export.xlsx.freeze.row" value="7"/>
+	<style name="Default" isDefault="true" fontName="DejaVu Sans" fontSize="9" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+	<style name="TitleStyle" fontName="DejaVu Sans" fontSize="16" isBold="true"/>
+	<style name="HeaderStyle" fontName="DejaVu Sans" fontSize="9" isBold="true"/>
+	<style name="DetailStyle" fontName="DejaVu Sans" fontSize="9"/>
+	<style name="SummaryStyle" fontName="DejaVu Sans" fontSize="9" isBold="true"/>
+
+	<parameter name="period" class="java.lang.String"/>
+	<parameter name="generatedAt" class="java.lang.String"/>
+	<parameter name="totalOrders" class="java.lang.Long"/>
+	<parameter name="totalRevenue" class="java.math.BigDecimal"/>
+	<parameter name="grossPaid" class="java.math.BigDecimal"/>
+	<parameter name="refunded" class="java.math.BigDecimal"/>
+	<parameter name="netCash" class="java.math.BigDecimal"/>
+
+	<field name="dateLabel" class="java.lang.String"/>
+	<field name="orders" class="java.lang.Long"/>
+	<field name="revenue" class="java.math.BigDecimal"/>
+
+	<title>
+		<band height="120">
+			<!-- Company Name Header -->
+			<staticText>
+				<reportElement x="0" y="0" width="320" height="15" forecolor="#475569"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[HỆ THỐNG TỦ THÔNG MINH SMARTBOX · ĐỒ ÁN NHÓM 6]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="320" y="0" width="195" height="15" forecolor="#64748B"/>
+				<textElement textAlignment="Right">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Mẫu số: RPT-REV-01]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="18" width="515" height="1" forecolor="#CBD5E1"/>
+			</line>
+
+			<!-- Main Report Title -->
+			<staticText>
+				<reportElement style="TitleStyle" x="0" y="26" width="515" height="24" forecolor="#0F172A"/>
+				<textElement textAlignment="Center">
+					<font size="15" isBold="true"/>
+				</textElement>
+				<text><![CDATA[BÁO CÁO DOANH THU THEO NGÀY]]></text>
+			</staticText>
+
+			<!-- Period subtitle -->
+			<textField>
+				<reportElement x="0" y="52" width="515" height="18" forecolor="#1E293B"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{period}]]></textFieldExpression>
+			</textField>
+
+			<!-- Generation Timestamp -->
+			<textField>
+				<reportElement x="0" y="70" width="515" height="15" forecolor="#64748B"/>
+				<textElement textAlignment="Center">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Thời điểm xuất: " + $P{generatedAt}]]></textFieldExpression>
+			</textField>
+
+			<!-- Unit note -->
+			<staticText>
+				<reportElement x="0" y="96" width="300" height="16" forecolor="#64748B"/>
+				<textElement>
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[* Đơn vị tính: Việt Nam Đồng (VNĐ). Bao gồm giao dịch thanh toán trực tuyến.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="96" width="215" height="16" forecolor="#64748B"/>
+				<textElement textAlignment="Right">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Trạng thái tính: PAID, CONFIRMED, COMPLETED]]></text>
+			</staticText>
+		</band>
+	</title>
+
+	<columnHeader>
+		<band height="26">
+			<!-- Header Box Background -->
+			<rectangle>
+				<reportElement x="0" y="0" width="515" height="26" backcolor="#F1F5F9">
+					<property name="net.sf.jasperreports.style.pen" value="none"/>
+				</reportElement>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#CBD5E1"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement style="HeaderStyle" x="8" y="5" width="40" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[STT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="55" y="5" width="150" height="16" forecolor="#1E293B"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ngày thanh toán]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="210" y="5" width="110" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Số đơn hàng]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="330" y="5" width="175" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Doanh thu ghi nhận]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+
+	<detail>
+		<band height="22">
+			<rectangle>
+				<reportElement x="0" y="0" width="515" height="22" forecolor="#E2E8F0" backcolor="#FFFFFF"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#E2E8F0"/>
+				</graphicElement>
+			</rectangle>
+			<!-- Row Index -->
+			<textField>
+				<reportElement style="DetailStyle" x="8" y="3" width="40" height="16" forecolor="#64748B"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+			</textField>
+			<!-- Date Label -->
+			<textField>
+				<reportElement style="DetailStyle" x="55" y="3" width="150" height="16" forecolor="#0F172A"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dateLabel}]]></textFieldExpression>
+			</textField>
+			<!-- Orders Count -->
+			<textField pattern="#,##0">
+				<reportElement style="DetailStyle" x="210" y="3" width="110" height="16" forecolor="#0F172A"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{orders}]]></textFieldExpression>
+			</textField>
+			<!-- Revenue -->
+			<textField pattern="#,##0">
+				<reportElement style="DetailStyle" x="330" y="3" width="175" height="16" forecolor="#0F172A"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{revenue}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+
+	<pageFooter>
+		<band height="30">
+			<line>
+				<reportElement x="0" y="6" width="515" height="1" forecolor="#E2E8F0"/>
+			</line>
+			<staticText>
+				<reportElement x="0" y="10" width="300" height="15" forecolor="#94A3B8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[SmartBox Management System · Tài liệu lưu hành nội bộ]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="350" y="10" width="165" height="15" forecolor="#94A3B8"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Trang " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+
+	<summary>
+		<band height="180">
+			<!-- Total Table Row -->
+			<rectangle>
+				<reportElement x="0" y="0" width="515" height="26" backcolor="#F8FAFC">
+					<property name="net.sf.jasperreports.style.pen" value="none"/>
+				</reportElement>
+				<graphicElement>
+					<pen lineWidth="1.0" lineColor="#CBD5E1"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement style="SummaryStyle" x="8" y="5" width="190" height="16" forecolor="#0F172A"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TỔNG CỘNG DOANH THU KỲ]]></text>
+			</staticText>
+			<textField pattern="#,##0">
+				<reportElement style="SummaryStyle" x="210" y="5" width="110" height="16" forecolor="#0F172A"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{totalOrders}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0">
+				<reportElement style="SummaryStyle" x="330" y="5" width="175" height="16" forecolor="#0284C7"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{totalRevenue}]]></textFieldExpression>
+			</textField>
+
+			<!-- Summary Financial Metrics Box -->
+			<rectangle>
+				<reportElement x="0" y="38" width="515" height="74" backcolor="#F8FAFC"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#CBD5E1"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="16" y="44" width="280" height="18" forecolor="#334155"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[1. Tiền khách hàng đã thanh toán (Gross Paid):]]></text>
+			</staticText>
+			<textField pattern="#,##0">
+				<reportElement x="310" y="44" width="190" height="18" forecolor="#10B981"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{grossPaid}]]></textFieldExpression>
+			</textField>
+
+			<staticText>
+				<reportElement x="16" y="66" width="280" height="18" forecolor="#334155"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[2. Tiền đã hoàn lại cho khách (Refunded):]]></text>
+			</staticText>
+			<textField pattern="#,##0">
+				<reportElement x="310" y="66" width="190" height="18" forecolor="#EF4444"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{refunded}]]></textFieldExpression>
+			</textField>
+
+			<line>
+				<reportElement x="16" y="88" width="484" height="1" forecolor="#E2E8F0"/>
+			</line>
+			<staticText>
+				<reportElement x="16" y="91" width="280" height="18" forecolor="#0F172A"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[3. Dòng tiền ròng thực thu (Net Cash Flow):]]></text>
+			</staticText>
+			<textField pattern="#,##0">
+				<reportElement x="310" y="91" width="190" height="18" forecolor="#0284C7"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{netCash}]]></textFieldExpression>
+			</textField>
+
+			<!-- Signatures -->
+			<staticText>
+				<reportElement x="40" y="125" width="160" height="15" forecolor="#334155"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Người lập biểu]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="40" y="140" width="160" height="13" forecolor="#64748B"/>
+				<textElement textAlignment="Center">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(Ký, họ tên)]]></text>
+			</staticText>
+
+			<staticText>
+				<reportElement x="320" y="125" width="160" height="15" forecolor="#334155"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kế toán trưởng / Quản trị viên]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="320" y="140" width="160" height="13" forecolor="#64748B"/>
+				<textElement textAlignment="Center">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(Ký, đóng dấu xác nhận)]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

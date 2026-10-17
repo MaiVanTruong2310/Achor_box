@@ -3,12 +3,17 @@ package com.smartbox.backend.controller.commerce;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Acceptance;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Assignment;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Command;
+import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.CompletionSubmission;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Failure;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Installation;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Note;
+import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.PoApprovalRequest;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Reassignment;
+import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.RejectionRequest;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Serial;
+import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.service.commerce.DeliveryInstallationService;
+import com.smartbox.backend.service.warranty.ClaimImageStorage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,8 +26,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,6 +41,61 @@ import java.util.UUID;
 public class DeliveryInstallationController {
 
     private final DeliveryInstallationService jobs;
+    private final ClaimImageStorage imageStorage;
+    private final CurrentActor actors;
+
+    @GetMapping("/api/delivery-installations/availability")
+    @Operation(summary = "Kiểm tra lịch rảnh của các kỹ thuật viên")
+    public List<Map<String, Object>> availability(
+            @RequestParam OffsetDateTime start,
+            @RequestParam(required = false) OffsetDateTime end) {
+        return jobs.checkAvailability(start, end);
+    }
+
+    @PostMapping(value = "/api/delivery-installations/upload-proof", consumes = "multipart/form-data")
+    @Operation(summary = "Tải ảnh minh chứng nghiệm thu")
+    public Map<String, String> uploadProof(@RequestPart("file") MultipartFile file) {
+        actors.get().requireRoles("technician", "product_manager", "super_admin");
+        return Map.of("url", imageStorage.upload(file).secureUrl());
+    }
+
+    @PostMapping("/api/delivery-installations/{id}/submit-completion")
+    @Operation(summary = "Kỹ thuật viên nộp báo cáo hoàn thành kèm ảnh minh chứng")
+    public Map<String, Object> submitCompletion(
+            @PathVariable UUID id,
+            @Valid @RequestBody CompletionSubmission request,
+            @RequestHeader(value = "If-Match", required = false) String version,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
+        return jobs.submitCompletion(id, request, version, key);
+    }
+
+    @PostMapping("/api/delivery-installations/{id}/approve-completion")
+    @Operation(summary = "PO duyệt nghiệm thu và hoàn tất đơn hàng")
+    public Map<String, Object> approveCompletion(
+            @PathVariable UUID id,
+            @Valid @RequestBody(required = false) PoApprovalRequest request,
+            @RequestHeader(value = "If-Match", required = false) String version,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
+        return jobs.approveCompletion(id, request, version, key);
+    }
+
+    @PostMapping("/api/delivery-installations/{id}/reject-completion")
+    @Operation(summary = "PO yêu cầu kỹ thuật viên xử lý lại")
+    public Map<String, Object> rejectCompletion(
+            @PathVariable UUID id,
+            @Valid @RequestBody RejectionRequest request,
+            @RequestHeader(value = "If-Match", required = false) String version,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
+        return jobs.rejectCompletion(id, request, version, key);
+    }
+
+    @GetMapping("/api/technician/daily-tasks")
+    @Operation(summary = "Lấy danh sách công việc trong ngày của kỹ thuật viên (hỗ trợ thời khóa biểu)")
+    public Map<String, Object> dailyTasks(
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) UUID technicianId) {
+        return jobs.dailyTasks(date, technicianId);
+    }
 
     @PostMapping("/api/orders/{id}/delivery-installation")
     @Operation(summary = "Phân công kỹ thuật viên giao và lắp đặt cho đơn hàng")

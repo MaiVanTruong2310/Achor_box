@@ -59,27 +59,55 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 throw new UnauthorizedException("Phiên đăng nhập đã bị thu hồi hoặc đăng xuất");
             }
             UUID id=null;
-            if(jwtProvider!=null&&jwtProvider.getJwtSecret()!=null&&!jwtProvider.getJwtSecret().isBlank()){
-                try{
-                    if(jwtProvider.validateToken(token)){
-                        id=jwtProvider.extractUserId(token);
-                    }
-                }catch(Exception ignored){}
+            String role=null;
+            String email=null;
+            com.smartbox.backend.entity.Profile profile=null;
+
+            var cached = redisAuth != null ? redisAuth.getCachedAuthSession(token) : null;
+            if (cached != null) {
+                if (cached.isLocked()) throw new UnauthorizedException("ACCOUNT_LOCKED");
+                id = cached.userId();
+                role = cached.role();
+                email = cached.email();
+                profile = com.smartbox.backend.entity.Profile.builder()
+                        .id(id)
+                        .email(email)
+                        .fullName(cached.fullName())
+                        .role(role)
+                        .isLocked(false)
+                        .build();
+            } else {
+                if(jwtProvider!=null&&jwtProvider.getJwtSecret()!=null&&!jwtProvider.getJwtSecret().isBlank()){
+                    try{
+                        if(jwtProvider.validateToken(token)){
+                            id=jwtProvider.extractUserId(token);
+                        }
+                    }catch(Exception ignored){}
+                }
+                if(id==null){
+                    id=provider.identity(token);
+                }
+                UUID finalId=id;
+                profile=profiles.findById(id).orElseGet(()->{
+                    var user=provider.user(token);
+                    if(user==null||!finalId.toString().equals(Objects.toString(user.get("id"))))throw new UnauthorizedException("INVALID_ACCESS_TOKEN");
+                    return identities.ensure(user);
+                });
+                if(Boolean.TRUE.equals(profile.getIsLocked())) throw new UnauthorizedException("ACCOUNT_LOCKED");
+                role=profile.getRole();
+                email=profile.getEmail();
+
+                if (redisAuth != null) {
+                    redisAuth.cacheAuthSession(token, id, role, email, profile.getFullName(), Boolean.TRUE.equals(profile.getIsLocked()), 300);
+                }
             }
-            if(id==null){
-                id=provider.identity(token);
-            }
-            UUID finalId=id;
-            var profile=profiles.findById(id).orElseGet(()->{
-                var user=provider.user(token);
-                if(user==null||!finalId.toString().equals(Objects.toString(user.get("id"))))throw new UnauthorizedException("INVALID_ACCESS_TOKEN");
-                return identities.ensure(user);
-            });
-            if(Boolean.TRUE.equals(profile.getIsLocked())) throw new UnauthorizedException("ACCOUNT_LOCKED");
-            String role=profile.getRole();
+
             if(!Set.of("super_admin","product_manager","technician","customer").contains(role)) throw new ForbiddenException("INVALID_ROLE");
             authorize(request,role);
-            request.setAttribute("CURRENT_USER_ID",id);request.setAttribute("CURRENT_USER_ROLE",role);request.setAttribute("CURRENT_USER_EMAIL",profile.getEmail());
+            request.setAttribute("CURRENT_USER_ID",id);
+            request.setAttribute("CURRENT_USER_ROLE",role);
+            request.setAttribute("CURRENT_USER_EMAIL",email);
+            request.setAttribute("CURRENT_USER_PROFILE",profile);
             SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(id,null,List.of(new SimpleGrantedAuthority("ROLE_"+role))));
         } catch(AppException ex) {
             if (publicPath(request)) {
@@ -105,7 +133,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if(path.startsWith("/api/users")&&(path.endsWith("/role")||path.equals("/api/users/staff"))) allowed=Set.of("super_admin");
         else if(path.startsWith("/api/users")) allowed=Set.of("super_admin");
         else if(path.startsWith("/api/audit-logs")) allowed=read?Set.of("super_admin","product_manager"):Set.of("super_admin");
-        else if(path.startsWith("/api/settings")) allowed=Set.of("super_admin");
+        else if(path.startsWith("/api/settings")) allowed=read || path.startsWith("/api/settings/categories") || path.endsWith("/test-send") ? Set.of("super_admin","product_manager") : Set.of("super_admin");
         else if(path.startsWith("/api/products")) allowed=read?Set.of("super_admin","product_manager"):Set.of("super_admin","product_manager");
         else if(path.startsWith("/api/promotions")) allowed=read?Set.of("super_admin","product_manager"):Set.of("super_admin","product_manager");
         else if(path.startsWith("/api/content")) allowed=Set.of("super_admin","product_manager");

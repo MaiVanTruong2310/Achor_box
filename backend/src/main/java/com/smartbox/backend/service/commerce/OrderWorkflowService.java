@@ -89,8 +89,16 @@ public class OrderWorkflowService {
 
     @Transactional
     public Map<String, Object> create(CommerceRequests.CreateOrder request) {
-        UUID user = actors.get().id();
+        UUID actorId = actors.get().id();
+        String actorRole = actors.get().role();
+        UUID user = actorId;
+        if (request.customerId() != null && "super_admin".equals(actorRole)) {
+            user = request.customerId();
+        }
         Map<String, Object> profile = db.one("SELECT * FROM public.profiles WHERE id=?", user);
+        if (profile == null) {
+            throw new BadRequestException("CUSTOMER_NOT_FOUND: Không tìm thấy hồ sơ khách hàng");
+        }
         if (profile.get("email") == null || profile.get("email").toString().isBlank()) {
             throw new BadRequestException("EMAIL_REQUIRED: Tài khoản cần có email nhận thông báo");
         }
@@ -241,10 +249,11 @@ public class OrderWorkflowService {
     }
 
     public void recalculate(UUID id) {
-        db.update("UPDATE public.orders SET total=(SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?), updated_at=? WHERE id=?", id, now(), id);
         try {
-            db.update("UPDATE public.orders SET subtotal=(SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?), total=GREATEST(0, (SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?) - COALESCE(discount_amount,0)) WHERE id=?", id, id, id);
-        } catch (Exception ignored) {}
+            db.update("UPDATE public.orders SET subtotal=(SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?), total=GREATEST(0, (SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?) - COALESCE(discount_amount,0)), updated_at=? WHERE id=?", id, id, now(), id);
+        } catch (Exception ex) {
+            db.update("UPDATE public.orders SET total=(SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?), updated_at=? WHERE id=?", id, now(), id);
+        }
     }
 
     @Transactional

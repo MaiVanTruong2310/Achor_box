@@ -61,6 +61,13 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    public ProductResponse getProductById(UUID id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại với ID: " + id));
+        return mapToResponse(product);
+    }
+
+    @Transactional(readOnly = true)
     public List<ProductResponse> getAllProducts(UUID categoryId, String categorySlug) {
         UUID effectiveCategoryId = categoryId;
         if (effectiveCategoryId == null && categorySlug != null && !categorySlug.isBlank()) {
@@ -81,11 +88,16 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getProductsPaged(int page, int size) {
-        return getProductsPaged(page, size, null, null);
+        return getProductsPaged(page, size, null, null, null);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> getProductsPaged(int page, int size, UUID categoryId, String categorySlug) {
+        return getProductsPaged(page, size, categoryId, categorySlug, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getProductsPaged(int page, int size, UUID categoryId, String categorySlug, String search) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         UUID effectiveCategoryId = categoryId;
         if (effectiveCategoryId == null && categorySlug != null && !categorySlug.isBlank()) {
@@ -97,9 +109,16 @@ public class ProductService {
             }
         }
 
-        Page<Product> productPage = effectiveCategoryId != null
-                ? productRepository.findByCategoryId(effectiveCategoryId, pageable)
-                : productRepository.findAll(pageable);
+        String trimmedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
+
+        Page<Product> productPage;
+        if (trimmedSearch != null) {
+            productPage = productRepository.searchProducts(effectiveCategoryId, trimmedSearch, pageable);
+        } else if (effectiveCategoryId != null) {
+            productPage = productRepository.findByCategoryId(effectiveCategoryId, pageable);
+        } else {
+            productPage = productRepository.findAll(pageable);
+        }
 
         List<ProductResponse> responses = mapProductsToResponses(productPage.getContent());
         Page<ProductResponse> pageResult = new org.springframework.data.domain.PageImpl<>(responses, pageable, productPage.getTotalElements());

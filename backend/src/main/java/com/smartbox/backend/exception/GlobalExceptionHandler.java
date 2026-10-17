@@ -147,9 +147,10 @@ public class GlobalExceptionHandler {
             MissingRequestHeaderException.class
     })
     public ResponseEntity<ApiResponse<Object>> handleInvalidInput(Exception ex) {
+        log.warn("Invalid input exception: {}", ex.getMessage(), ex);
         return ResponseEntity
                 .badRequest()
-                .body(ApiResponse.error(400, "VALIDATION_ERROR: Dữ liệu đầu vào không hợp lệ"));
+                .body(ApiResponse.error(400, "VALIDATION_ERROR: " + ex.getMessage()));
     }
 
     // ==========================================

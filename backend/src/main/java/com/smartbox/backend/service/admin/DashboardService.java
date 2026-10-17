@@ -76,7 +76,7 @@ public class DashboardService {
             Map<String, BigDecimal> revMap = new HashMap<>();
             for (var row : db.list(
                     "SELECT TO_CHAR(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS bucket, COALESCE(sum(total),0) AS rev " +
-                    "FROM public.orders WHERE status IN('paid','confirmed','completed') AND paid_at IS NOT NULL AND paid_at >= ? AND paid_at < ? " +
+                    "FROM public.orders WHERE CAST(status AS text) IN('paid','confirmed','completed') AND paid_at IS NOT NULL AND paid_at >= ? AND paid_at < ? " +
                     "GROUP BY bucket", startTz, endTz)) {
                 revMap.put(row.get("bucket").toString(), OrderWorkflowService.money(row.get("rev")));
             }
@@ -112,7 +112,7 @@ public class DashboardService {
             Map<String, BigDecimal> revMap = new HashMap<>();
             for (var row : db.list(
                     "SELECT TO_CHAR(paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS bucket, COALESCE(sum(total),0) AS rev " +
-                    "FROM public.orders WHERE status IN('paid','confirmed','completed') AND paid_at IS NOT NULL AND paid_at >= ? AND paid_at < ? " +
+                    "FROM public.orders WHERE CAST(status AS text) IN('paid','confirmed','completed') AND paid_at IS NOT NULL AND paid_at >= ? AND paid_at < ? " +
                     "GROUP BY bucket", startTz, endTz)) {
                 revMap.put(row.get("bucket").toString(), OrderWorkflowService.money(row.get("rev")));
             }
@@ -144,7 +144,7 @@ public class DashboardService {
                 "SELECT i.product_id, max(i.product_name_snapshot) AS name, sum(i.unit_price * i.quantity) AS revenue " +
                 "FROM public.order_items i " +
                 "JOIN public.orders o ON o.id = i.order_id " +
-                "WHERE o.status IN('paid','confirmed','completed') AND o.paid_at IS NOT NULL " +
+                "WHERE CAST(o.status AS text) IN('paid','confirmed','completed') AND o.paid_at IS NOT NULL " +
                 "GROUP BY i.product_id " +
                 "ORDER BY revenue DESC LIMIT 10");
 
@@ -183,7 +183,7 @@ public class DashboardService {
     }
 
     private BigDecimal revenue(LocalDate from, LocalDate until) {
-        String sql = "SELECT COALESCE(sum(total),0) AS total FROM public.orders WHERE status IN('paid','confirmed','completed') AND paid_at IS NOT NULL";
+        String sql = "SELECT COALESCE(sum(total),0) AS total FROM public.orders WHERE CAST(status AS text) IN('paid','confirmed','completed') AND paid_at IS NOT NULL";
         return OrderWorkflowService.money(from == null
                 ? db.one(sql).get("total")
                 : db.one(sql + " AND paid_at >= ? AND paid_at < ?", from.atStartOfDay(ZONE).toOffsetDateTime(), until.atStartOfDay(ZONE).toOffsetDateTime()).get("total"));

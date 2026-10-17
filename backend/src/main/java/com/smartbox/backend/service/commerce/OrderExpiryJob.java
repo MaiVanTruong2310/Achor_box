@@ -23,7 +23,7 @@ public class OrderExpiryJob {
 
     @Scheduled(fixedDelayString = "${smartbox.payment.expiry-delay-ms:60000}")
     public void expire() {
-        var expiredRows = db.list("SELECT id FROM public.orders WHERE workflow_version=2 AND status IN('pending','awaiting_payment') AND expires_at<=? ORDER BY expires_at LIMIT 50", now());
+        var expiredRows = db.list("SELECT id FROM public.orders WHERE workflow_version=2 AND CAST(status AS text) IN('pending','awaiting_payment') AND expires_at<=? ORDER BY expires_at LIMIT 50", now());
         if (!expiredRows.isEmpty()) {
             log.info("OrderExpiryJob found {} expired pending orders to cancel", expiredRows.size());
         }

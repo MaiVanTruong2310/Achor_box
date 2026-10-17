@@ -39,6 +39,12 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrdersPaged(page, size,search,status,payment));
     }
 
+    @GetMapping("/counts")
+    @Operation(summary = "Lấy thống kê số lượng đơn hàng theo từng trạng thái")
+    public ResponseEntity<Map<String, Long>> getOrderCounts() {
+        return ResponseEntity.ok(orderService.getOrderCounts());
+    }
+
     @PatchMapping("/{id}/status")
     @Operation(summary = "Cập nhật trạng thái đơn hàng")
     public ResponseEntity<OrderResponse> updateOrderStatus(

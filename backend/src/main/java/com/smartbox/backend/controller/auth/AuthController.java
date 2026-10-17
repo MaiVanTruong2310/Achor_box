@@ -23,7 +23,51 @@ public class AuthController {
     private final AuthService authService;
     private final com.smartbox.backend.repository.ProfileRepository profiles;
     private final com.smartbox.backend.security.CurrentActor actors;
-    @GetMapping("/me") public com.smartbox.backend.entity.Profile me(){return profiles.findById(actors.get().id()).orElseThrow();}
+    private final com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage;
+
+    @GetMapping("/me")
+    public com.smartbox.backend.entity.Profile me(jakarta.servlet.http.HttpServletRequest request) {
+        Object cached = request.getAttribute("CURRENT_USER_PROFILE");
+        if (cached instanceof com.smartbox.backend.entity.Profile p && p.getFullName() != null) {
+            return p;
+        }
+        return profiles.findById(actors.get().id()).orElseThrow();
+    }
+
+    @RequestMapping(value = "/me", method = {RequestMethod.PUT, RequestMethod.POST, RequestMethod.PATCH})
+    @Operation(summary = "Cập nhật hồ sơ cá nhân của người dùng hiện tại")
+    public com.smartbox.backend.entity.Profile updateMe(
+            @RequestBody java.util.Map<String, Object> body,
+            jakarta.servlet.http.HttpServletRequest request) {
+        java.util.UUID userId = actors.get().id();
+        var profile = profiles.findById(userId).orElseThrow();
+        if (body.containsKey("fullName") && body.get("fullName") != null) {
+            String name = body.get("fullName").toString().trim();
+            if (!name.isEmpty()) {
+                profile.setFullName(name);
+            }
+        }
+        if (body.containsKey("phone")) {
+            profile.setPhone(body.get("phone") == null ? null : body.get("phone").toString().trim());
+        }
+        if (body.containsKey("avatarUrl")) {
+            profile.setAvatarUrl(body.get("avatarUrl") == null ? null : body.get("avatarUrl").toString().trim());
+        }
+        if (body.containsKey("defaultAddress")) {
+            profile.setDefaultAddress(body.get("defaultAddress") == null ? null : body.get("defaultAddress").toString().trim());
+        }
+        var saved = profiles.save(profile);
+        request.setAttribute("CURRENT_USER_PROFILE", saved);
+        return saved;
+    }
+
+    @PostMapping(value = "/avatar", consumes = "multipart/form-data")
+    @Operation(summary = "Tải lên ảnh đại diện cá nhân lên Cloudinary")
+    public java.util.Map<String, String> uploadAvatar(@RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+        actors.get();
+        var stored = imageStorage.upload(file);
+        return java.util.Map.of("url", stored.secureUrl());
+    }
 
     @PostMapping("/login")
     @Operation(summary = "Đăng nhập hệ thống (Cấp phát cặp Access Token và Refresh Token cho mọi vai trò)")

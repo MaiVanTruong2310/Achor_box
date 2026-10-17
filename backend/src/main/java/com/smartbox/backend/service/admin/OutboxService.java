@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartbox.backend.exception.BadRequestException;
 import com.smartbox.backend.exception.ConflictException;
+import com.smartbox.backend.exception.ResourceNotFoundException;
 import com.smartbox.backend.repository.CommerceRepository;
 import com.smartbox.backend.security.CurrentActor;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.smartbox.backend.service.commerce.OrderWorkflowService.now;
 
@@ -93,10 +95,150 @@ public class OutboxService {
     }
 
     @Transactional
-    public void resend(UUID id) {
+    public Map<String, Object> resend(UUID id) {
         actors.get().requireRoles("super_admin", "product_manager");
-        if (db.update("UPDATE public.email_outbox SET status='PENDING',attempts=0,next_attempt_at=?,last_error=NULL,claimed_until=NULL,claim_token=NULL WHERE id=? AND status='FAILED'", now(), id) != 1) {
+        var list = db.list("SELECT * FROM public.email_outbox WHERE id=? AND status='FAILED'", id);
+        if (list.isEmpty()) {
             throw new ConflictException("EMAIL_NOT_RESENDABLE");
         }
+        var row = list.getFirst();
+        String recipient = Objects.toString(row.get("recipient"), "");
+        String template = Objects.toString(row.get("template"), "");
+
+        db.update("UPDATE public.email_outbox SET status='PENDING',attempts=0,next_attempt_at=?,last_error=NULL,claimed_until=NULL,claim_token=NULL WHERE id=?", now(), id);
+
+        // Run resend in background asynchronously
+        CompletableFuture.runAsync(() -> {
+            boolean sent = false;
+            String error = null;
+            try {
+                if ("TEST_EMAIL_VERIFICATION".equalsIgnoreCase(template) || template.startsWith("TEMPLATE_TEST:")) {
+                    var payload = payload(row);
+                    String sub = Objects.toString(payload.get("subject"), "📧 [SmartBox Test] Gửi lại kiểm thử");
+                    String b = Objects.toString(payload.get("body"), "");
+                    if (b.isBlank()) {
+                        b = emailService != null ? emailService.buildTestEmailTemplate(recipient) : "SmartBox Email SMTP Test Content";
+                    }
+                    if (emailService != null) {
+                        sent = emailService.sendHtmlEmail(recipient, sub, b);
+                        if (!sent) {
+                            error = "SMTP_SEND_FAILED: Kiểm tra tài khoản mail server hoặc mạng kết nối.";
+                        }
+                    } else {
+                        error = "EMAIL_SERVICE_NOT_INITIALIZED";
+                    }
+                    if (sent) {
+                        db.update("UPDATE public.email_outbox SET status='SENT',sent_at=?,attempts=attempts+1,last_error=NULL WHERE id=?", now(), id);
+                    } else {
+                        String errStr = error != null ? error.substring(0, Math.min(error.length(), 1000)) : "UNKNOWN_SMTP_ERROR";
+                        db.update("UPDATE public.email_outbox SET status='FAILED',attempts=attempts+1,last_error=? WHERE id=?", errStr, id);
+                    }
+                } else if (outboxWorker != null) {
+                    outboxWorker.processSingle(id);
+                }
+            } catch (Exception ex) {
+                String errStr = ex.getMessage() != null ? ex.getMessage().substring(0, Math.min(ex.getMessage().length(), 1000)) : "RESEND_ERROR";
+                db.update("UPDATE public.email_outbox SET status='FAILED',attempts=attempts+1,last_error=? WHERE id=?", errStr, id);
+            }
+        });
+
+        return Map.of(
+                "queued", true,
+                "id", id.toString(),
+                "recipient", recipient,
+                "message", "Email đã được đưa vào hàng đợi gửi lại trong nền."
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getStatus(UUID id) {
+        actors.get().requireRoles("super_admin", "product_manager");
+        var rows = db.list("SELECT id, template, recipient, status, attempts, last_error, created_at, sent_at, next_attempt_at FROM public.email_outbox WHERE id=?", id);
+        if (rows.isEmpty()) {
+            throw new ResourceNotFoundException("Email outbox", "id", id);
+        }
+        var row = rows.getFirst();
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("id", row.get("id").toString());
+        res.put("template", Objects.toString(row.get("template"), ""));
+        res.put("recipient", Objects.toString(row.get("recipient"), ""));
+        res.put("status", Objects.toString(row.get("status"), "PENDING"));
+        res.put("attempts", row.get("attempts") != null ? ((Number) row.get("attempts")).intValue() : 0);
+        res.put("lastError", Objects.toString(row.get("last_error"), ""));
+        res.put("sentAt", Objects.toString(row.get("sent_at"), ""));
+        res.put("createdAt", Objects.toString(row.get("created_at"), ""));
+        return res;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private EmailService emailService;
+
+    @org.springframework.context.annotation.Lazy
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private EmailOutboxWorker outboxWorker;
+
+    public UUID sendCustomAsync(String templateCode, String recipient, String subject, String body) {
+        UUID id = UUID.randomUUID();
+        Map<String, Object> payloadMap = new LinkedHashMap<>();
+        payloadMap.put("recipient", recipient);
+        payloadMap.put("subject", subject);
+        payloadMap.put("body", body);
+        payloadMap.put("templateCode", templateCode);
+        payloadMap.put("type", "CUSTOM_ASYNC");
+        payloadMap.put("time", now().toString());
+
+        String payloadJson = "{}";
+        try {
+            payloadJson = json.writeValueAsString(payloadMap);
+        } catch (Exception ignored) {}
+
+        db.update("INSERT INTO public.email_outbox(id,template,reference_id,event_key,recipient,payload,status,attempts,next_attempt_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                id, templateCode, id, "custom-email:" + id, recipient,
+                payloadJson, "PENDING", 0, now(), now());
+
+        CompletableFuture.runAsync(() -> {
+            boolean sent = false;
+            String error = null;
+            try {
+                if (emailService != null) {
+                    sent = emailService.sendHtmlEmail(recipient, subject, body);
+                    if (!sent) {
+                        error = "SMTP_SEND_FAILED: Kiểm tra tài khoản mail server hoặc mạng kết nối.";
+                    }
+                } else {
+                    error = "EMAIL_SERVICE_NOT_INITIALIZED";
+                }
+            } catch (Exception ex) {
+                error = ex.getMessage();
+            }
+
+            if (sent) {
+                db.update("UPDATE public.email_outbox SET status='SENT',sent_at=?,attempts=attempts+1,last_error=NULL WHERE id=?", now(), id);
+            } else {
+                String errStr = error != null ? error.substring(0, Math.min(error.length(), 1000)) : "UNKNOWN_SMTP_ERROR";
+                db.update("UPDATE public.email_outbox SET status='FAILED',attempts=attempts+1,last_error=? WHERE id=?", errStr, id);
+            }
+        });
+
+        return id;
+    }
+
+    public Map<String, Object> sendTest(String toEmail, String subject, String body) {
+        actors.get().requireRoles("super_admin", "product_manager");
+        String recipient = (toEmail != null && !toEmail.isBlank()) ? toEmail.trim() : "hoangquangdat2005@gmail.com";
+        String mailSubject = (subject != null && !subject.isBlank()) ? subject.trim() : "📧 [SmartBox Test] Kiểm thử hệ thống gửi Email giao dịch";
+        String mailBody = (body != null && !body.isBlank()) ? body.trim() : (emailService != null ? emailService.buildTestEmailTemplate(recipient) : "SmartBox Email SMTP Test Content");
+
+        UUID id = sendCustomAsync("TEST_EMAIL_VERIFICATION", recipient, mailSubject, mailBody);
+
+        return Map.of(
+                "success", true,
+                "queued", true,
+                "id", id.toString(),
+                "recipient", recipient,
+                "subject", mailSubject,
+                "message", "Yêu cầu gửi email kiểm thử đã được tiếp nhận và đang xử lý trong nền..."
+        );
     }
 }
+

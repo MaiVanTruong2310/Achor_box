@@ -23,10 +23,10 @@ public class OpenApiConfig {
     public OpenAPI smartBoxOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Smart Delivery Box - Management & IoT REST API")
-                        .description("Tài liệu đặc tả REST API chính thức cho hệ sinh thái Hộp nhận hàng thông minh SmartBox.\n\n" +
-                                "Hỗ trợ Web Quản trị Admin, Mobile App Người dùng & Gateway IoT Vi điều khiển ESP32.\n" +
-                                "Bao gồm đầy đủ các tính năng: Xác thực, Thiết bị IoT, Đơn hàng, Sản phẩm, Bảo hành, Marketing CMS & Thống kê Dashboard.")
+                        .title("Smart Delivery Box - Bán Hàng & Bảo Hành REST API")
+                        .description("Tài liệu đặc tả REST API chính thức cho hệ sinh thái SmartBox.\n\n" +
+                                "Hỗ trợ Web Quản trị Admin và Nghiệp vụ vận hành thương mại điện tử.\n" +
+                                "Bao gồm đầy đủ các phân hệ: Bán hàng, Danh mục sản phẩm, Tồn kho, Đơn hàng & Giao vận, Phê duyệt, Bảo hành điện tử, Khách hàng & Báo cáo doanh thu.")
                         .version("v1.0.0")
                         .contact(new Contact()
                                 .name("SmartBox Engineering Team")
@@ -49,12 +49,13 @@ public class OpenApiConfig {
                                 .description("Nhập Token JWT vào ô bên dưới (Ví dụ: smartbox-jwt-token-...)")))
                 .tags(List.of(
                         new Tag().name("Dashboard API").description("Các API tổng hợp số liệu báo cáo, KPI và biểu đồ doanh thu"),
-                        new Tag().name("Device API").description("Quản lý thiết bị SmartBox IoT, giám sát telemetry và trạng thái trực tuyến"),
-                        new Tag().name("Product API").description("Quản lý danh mục, sản phẩm SmartBox IoT và định mức tồn kho"),
+                        new Tag().name("Product API").description("Quản lý danh mục, biến thể sản phẩm và định mức tồn kho"),
                         new Tag().name("Order API").description("Quản lý đơn đặt hàng, trạng thái giao vận và thanh toán"),
-                        new Tag().name("Warranty API").description("Quản lý bảo hành, xử lý khiếu nại và phân công kỹ thuật viên"),
+                        new Tag().name("Delivery & Installation API").description("Quản lý điều phối giao hàng, lắp đặt và nghiệm thu kích hoạt bảo hành"),
+                        new Tag().name("Warranty API").description("Quản lý bảo hành điện tử, tra cứu Serial/QR, tiếp nhận khiếu nại và kỹ thuật viên"),
                         new Tag().name("Promotion & Coupon API").description("Quản lý mã giảm giá, voucher khuyến mãi và tính toán chiết khấu"),
-                        new Tag().name("User API").description("Quản lý hồ sơ người dùng, phân quyền RBAC và khóa tài khoản"),
+                        new Tag().name("Customer Directory API").description("Quản lý danh bạ khách hàng, hồ sơ và liên hệ"),
+                        new Tag().name("User API").description("Quản lý tài khoản cán bộ, nhân viên nội bộ và phân quyền RBAC"),
                         new Tag().name("Content & Marketing API").description("Quản lý nội dung CMS: Bài viết blog, Banner trang chủ, Đánh giá sản phẩm và FAQ"),
                         new Tag().name("Settings API").description("Cấu hình hệ thống, mẫu tin nhắn email/SMS, phương thức vận chuyển và thanh toán"),
                         new Tag().name("Audit Log API").description("Truy vết nhật ký thao tác và hành động của nhân viên quản trị"),
