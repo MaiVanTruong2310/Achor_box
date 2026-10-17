@@ -81,7 +81,7 @@ class BackendApplicationTests {
     }
 
     @Test void deliveryHttpUsesDatabaseRolesScopesHeadersAndValidation(){
-        java.util.UUID customer=profile("customer"),staff=profile("super_admin"),tech=profile("technician"),other=profile("technician");
+        java.util.UUID customer=profile("customer"),staff=profile("product_manager"),tech=profile("technician"),other=profile("technician");
         org.mockito.Mockito.when(identity.identity("customer-test")).thenReturn(customer);
         org.mockito.Mockito.when(identity.identity("staff-test")).thenReturn(staff);
         org.mockito.Mockito.when(identity.identity("tech-test")).thenReturn(tech);

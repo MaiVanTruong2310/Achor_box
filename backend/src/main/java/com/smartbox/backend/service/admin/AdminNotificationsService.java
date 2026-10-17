@@ -45,10 +45,16 @@ public class AdminNotificationsService {
                 addEvent(events, row);
             }
         } else if ("technician".equals(role)) {
-            String sql = "(SELECT 'DELIVERY' AS type, 'Công việc giao / lắp đặt' AS title, '/orders/delivery' AS link, id::text AS id, status::text AS status, updated_at AS occurred_at FROM public.delivery_installations WHERE assigned_to=? ORDER BY updated_at DESC, id DESC LIMIT 15) " +
+            String sql = "(SELECT 'TASK_ASSIGNED' AS type, 'Có công việc mới được phân công' AS title, '/technician/tasks' AS link, id::text AS id, status::text AS status, updated_at AS occurred_at FROM public.delivery_installations WHERE assigned_to=? AND status='ASSIGNED' ORDER BY updated_at DESC, id DESC LIMIT 15) " +
                     "UNION ALL " +
-                    "(SELECT 'WARRANTY' AS type, 'Yêu cầu bảo hành' AS title, '/warranties' AS link, id::text AS id, status::text AS status, created_at AS occurred_at FROM public.warranty_claims WHERE assigned_to=? ORDER BY created_at DESC, id DESC LIMIT 15)";
-            List<Map<String, Object>> rows = db.list(sql, actor.id(), actor.id());
+                    "(SELECT 'TASK_UPCOMING' AS type, 'Sắp đến giờ hẹn ca thi công' AS title, '/technician/tasks' AS link, id::text AS id, status::text AS status, scheduled_at AS occurred_at FROM public.delivery_installations WHERE assigned_to=? AND status IN ('ASSIGNED', 'IN_PROGRESS') AND scheduled_at >= (NOW() - INTERVAL '15 minutes') AND scheduled_at <= (NOW() + INTERVAL '60 minutes') ORDER BY scheduled_at ASC LIMIT 5) " +
+                    "UNION ALL " +
+                    "(SELECT type AS type, title AS title, '/technician/tasks' AS link, id::text AS id, 'NOTIFICATION' AS status, created_at AS occurred_at FROM public.notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 15) " +
+                    "UNION ALL " +
+                    "(SELECT 'DELIVERY' AS type, 'Tiến độ giao lắp đơn hàng' AS title, '/technician/delivery' AS link, id::text AS id, status::text AS status, updated_at AS occurred_at FROM public.delivery_installations WHERE assigned_to=? AND status<>'ASSIGNED' ORDER BY updated_at DESC, id DESC LIMIT 15) " +
+                    "UNION ALL " +
+                    "(SELECT 'WARRANTY' AS type, 'Yêu cầu bảo hành' AS title, '/technician/warranties' AS link, id::text AS id, status::text AS status, created_at AS occurred_at FROM public.warranty_claims WHERE assigned_to=? ORDER BY created_at DESC, id DESC LIMIT 15)";
+            List<Map<String, Object>> rows = db.list(sql, actor.id(), actor.id(), actor.id(), actor.id(), actor.id());
             for (var row : rows) {
                 addEvent(events, row);
             }

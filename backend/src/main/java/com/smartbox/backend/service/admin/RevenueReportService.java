@@ -148,11 +148,14 @@ public class RevenueReportService {
             throw new IllegalStateException("INVALID_REPORT_TEMPLATE");
         }
         if (values.get("customerId") == null) {
-            query = query.replace("(:customerId IS NULL OR o.user_id=:customerId)", "1=1");
+            query = query.replace("(CAST(:customerId AS uuid) IS NULL OR o.user_id=CAST(:customerId AS uuid))", "1=1")
+                         .replace("(:customerId IS NULL OR o.user_id=:customerId)", "1=1");
         }
         if (values.get("minAmount") == null) {
-            query = query.replace("(:minAmount IS NULL OR p.amount>=:minAmount)", "1=1");
+            query = query.replace("(:minAmount IS NULL OR o.total>=:minAmount)", "1=1")
+                         .replace("(:minAmount IS NULL OR p.amount>=:minAmount)", "1=1");
         }
+        query = query.replaceAll("(?i)\\bo\\.status\\s+IN\\b", "CAST(o.status AS text) IN");
         var rows = jdbc.queryForList(query, params);
         Map<LocalDate, Day> byDay = new HashMap<>();
         for (var row : rows) {

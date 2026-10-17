@@ -19,13 +19,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/devices")
 @RequiredArgsConstructor
-@Tag(name = "Device API", description = "Quản lý thiết bị SmartBox IoT, giám sát telemetry và trạng thái trực tuyến")
+@Tag(name = "Device Inventory API", description = "Quản lý mã Serial và danh mục thiết bị đã xuất kho")
 public class DeviceController {
 
     private final DeviceService deviceService;
 
     @GetMapping
-    @Operation(summary = "Lấy danh sách tất cả thiết bị IoT")
+    @Operation(summary = "Lấy danh sách mã Serial thiết bị trong kho")
     public ResponseEntity<List<DeviceResponse>> getAllDevices() {
         return ResponseEntity.ok(deviceService.getAllDevices());
     }
@@ -38,15 +38,8 @@ public class DeviceController {
         return ResponseEntity.ok(deviceService.getDevicesPaged(page, size));
     }
 
-    @GetMapping("/events")
-    @Operation(summary = "Lấy lịch sử sự kiện cảm biến telemetry")
-    public ResponseEntity<List<DeviceEventResponse>> getDeviceEvents(
-            @Parameter(description = "ID thiết bị (tùy chọn)") @RequestParam(required = false) UUID deviceId) {
-        return ResponseEntity.ok(deviceService.getDeviceEvents(deviceId));
-    }
-
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Cập nhật trạng thái thiết bị (online, offline, maintenance, error)")
+    @Operation(summary = "Cập nhật trạng thái bảo quản thiết bị trong kho (in_stock, maintenance, defective)")
     public ResponseEntity<DeviceResponse> updateDeviceStatus(
             @PathVariable UUID id,
             @RequestBody DeviceStatusUpdateRequest request) {

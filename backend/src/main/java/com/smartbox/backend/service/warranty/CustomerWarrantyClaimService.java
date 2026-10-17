@@ -54,16 +54,16 @@ public class CustomerWarrantyClaimService {
         return value instanceof Date d ? d.toLocalDate() : LocalDate.parse(value.toString());
     }
 
-    @Transactional
     public Map<String, Object> upload(UUID warranty, MultipartFile file) {
         var actor = actors.get();
         actor.requireRoles("customer");
-        // Serialize the per-warranty quota before making a bounded external upload.
-        eligible(warranty(warranty, actor.id(), true));
+        // Verify warranty eligibility and pending quota without holding row lock during external I/O
+        eligible(warranty(warranty, actor.id(), false));
         long pending = ((Number) db.one("SELECT count(*) AS n FROM public.warranty_claim_images WHERE owner_id=? AND warranty_id=? AND claim_id IS NULL", actor.id(), warranty).get("n")).longValue();
         if (pending >= 20) {
             throw new ConflictException("PENDING_IMAGE_LIMIT");
         }
+        // External HTTP upload to Cloudinary (executed outside DB transaction to prevent HikariCP connection starvation)
         var image = storage.upload(file);
         UUID id = UUID.randomUUID();
         db.update("INSERT INTO public.warranty_claim_images(id,owner_id,warranty_id,public_id,secure_url,created_at) VALUES(?,?,?,?,?,?)", id, actor.id(), warranty, image.publicId(), image.secureUrl(), now());

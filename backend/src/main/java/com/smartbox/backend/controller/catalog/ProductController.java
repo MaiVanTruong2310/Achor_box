@@ -27,7 +27,16 @@ public class ProductController {
     private final com.smartbox.backend.service.catalog.VariantInventoryService variantInventory;
     private final com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage;
     private final com.smartbox.backend.security.CurrentActor actors;
-    @GetMapping("/inventory-movements") public java.util.List<Map<String,Object>> movements(){return variantInventory.movements();}
+    @GetMapping("/inventory-movements")
+    public Object movements(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "false") boolean paged) {
+        if (paged) {
+            return variantInventory.movementsPaged(page, size);
+        }
+        return variantInventory.movements();
+    }
     @PostMapping(value="/images",consumes="multipart/form-data")
     public Map<String,String> upload(@RequestPart("file") org.springframework.web.multipart.MultipartFile file){actors.get().requireRoles("super_admin","product_manager");return Map.of("url",imageStorage.upload(file).secureUrl());}
 
@@ -40,6 +49,12 @@ public class ProductController {
     @Operation(summary = "Xem lịch sử biến động tồn kho chi tiết của sản phẩm")
     public ResponseEntity<List<Map<String, Object>>> getInventoryHistory(@PathVariable UUID id) {
         return ResponseEntity.ok(variantInventory.movementsByProduct(id));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Lấy chi tiết sản phẩm theo ID")
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable UUID id) {
+        return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @GetMapping
@@ -56,8 +71,9 @@ public class ProductController {
             @Parameter(description = "Chỉ số trang (0-based)") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
             @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
             @Parameter(description = "ID loại sản phẩm") @RequestParam(required = false) UUID categoryId,
-            @Parameter(description = "Slug loại sản phẩm") @RequestParam(required = false) String categorySlug) {
-        return ResponseEntity.ok(productService.getProductsPaged(page, size, categoryId, categorySlug));
+            @Parameter(description = "Slug loại sản phẩm") @RequestParam(required = false) String categorySlug,
+            @Parameter(description = "Từ khóa tìm kiếm theo tên, SKU, mô tả") @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(productService.getProductsPaged(page, size, categoryId, categorySlug, search));
     }
 
     @GetMapping("/by-category/{slug}")

@@ -22,5 +22,10 @@
     <include file="db/changelog/changesets/014_claim_status_assigned.xml"/>
     <include file="db/changelog/changesets/015_order_approval_workflow_v3.xml"/>
     <include file="db/changelog/changesets/016_remove_catalog_seed_data.xml"/>
+    <include file="db/changelog/changesets/017_order_enum_confirmed_and_report_fix.xml"/>
+    <include file="db/changelog/changesets/018_order_tracking_number.xml"/>
+    <include file="db/changelog/changesets/019_settings_and_cms_tables.xml"/>
+    <include file="db/changelog/changesets/020_warranty_claims_schema_sync.xml"/>
+    <include file="db/changelog/changesets/021_delivery_dispatch_and_acceptance.xml"/>
 
 </databaseChangeLog>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="020-warranty-claims-columns" author="smartbox">
+        <sql splitStatements="false">
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                      AND table_name = 'warranty_claims' 
+                      AND column_name = 'issue_description'
+                ) THEN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                          AND table_name = 'warranty_claims' 
+                          AND column_name = 'description'
+                    ) THEN
+                        ALTER TABLE public.warranty_claims RENAME COLUMN issue_description TO description;
+                    ELSE
+                        ALTER TABLE public.warranty_claims DROP COLUMN issue_description;
+                    END IF;
+                END IF;
+
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                      AND table_name = 'warranty_claims' 
+                      AND column_name = 'resolution_notes'
+                ) THEN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                          AND table_name = 'warranty_claims' 
+                          AND column_name = 'internal_notes'
+                    ) THEN
+                        ALTER TABLE public.warranty_claims RENAME COLUMN resolution_notes TO internal_notes;
+                    ELSE
+                        ALTER TABLE public.warranty_claims DROP COLUMN resolution_notes;
+                    END IF;
+                END IF;
+            END $$;
+
+            ALTER TABLE public.warranty_claims ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '';
+            ALTER TABLE public.warranty_claims ADD COLUMN IF NOT EXISTS images jsonb DEFAULT '[]'::jsonb;
+            ALTER TABLE public.warranty_claims ADD COLUMN IF NOT EXISTS internal_notes text;
+            ALTER TABLE public.warranty_claims ADD COLUMN IF NOT EXISTS resolved_at timestamptz;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

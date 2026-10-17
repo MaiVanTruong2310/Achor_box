@@ -28,14 +28,19 @@ public final class CommerceRequests {
             @NotEmpty @Size(max = 100) List<@Valid Item> items,
             UUID addressId,
             @Valid CustomerRequests.Address shippingDetails,
-            String couponCode
+            String couponCode,
+            UUID customerId
     ) {
         public CreateOrder(String shippingAddress, List<Item> items) {
-            this(shippingAddress, items, null, null, null);
+            this(shippingAddress, items, null, null, null, null);
         }
 
         public CreateOrder(String shippingAddress, List<Item> items, UUID addressId, CustomerRequests.Address shippingDetails) {
-            this(shippingAddress, items, addressId, shippingDetails, null);
+            this(shippingAddress, items, addressId, shippingDetails, null, null);
+        }
+
+        public CreateOrder(String shippingAddress, List<Item> items, UUID addressId, CustomerRequests.Address shippingDetails, String couponCode) {
+            this(shippingAddress, items, addressId, shippingDetails, couponCode, null);
         }
     }
 

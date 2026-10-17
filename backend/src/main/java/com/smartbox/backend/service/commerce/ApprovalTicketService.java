@@ -53,7 +53,7 @@ public class ApprovalTicketService {
             next = "PENDING";
             round++;
         } else {
-            actor.requireRoles("super_admin", "product_manager");
+            actor.requireRoles("product_manager");
             if (!Set.of("PENDING", "PARTIALLY_REJECTED").contains(status)) {
                 throw new ConflictException("TICKET_ALREADY_REVIEWED");
             }
@@ -115,7 +115,7 @@ public class ApprovalTicketService {
     @Transactional
     public Map<String, Object> actItem(UUID ticketId, UUID orderItemId, String action, String reason) {
         var actor = actors.get();
-        actor.requireRoles("super_admin", "product_manager");
+        actor.requireRoles("product_manager");
         var ticket = db.one("SELECT * FROM public.approval_tickets WHERE id=? FOR UPDATE", ticketId);
         UUID orderId = uuid(ticket.get("order_id"));
         var order = db.order(orderId, true);
@@ -128,7 +128,7 @@ public class ApprovalTicketService {
         if (itemApproval == null) {
             throw new BadRequestException("ITEM_APPROVAL_NOT_FOUND");
         }
-        if (itemApproval.get("manager_id") != null && !"super_admin".equals(actor.role())) {
+        if (itemApproval.get("manager_id") != null) {
             if (!actor.id().equals(uuid(itemApproval.get("manager_id")))) {
                 throw new ConflictException("PO_NOT_AUTHORIZED_FOR_ITEM: Bạn không phải PO quản lý sản phẩm này");
             }
@@ -233,8 +233,11 @@ public class ApprovalTicketService {
             actor.requireRoles("super_admin", "product_manager");
         }
         Map<String, Object> result = new LinkedHashMap<>(ticket);
+        result.put("order", order);
+        var customer = db.list("SELECT full_name, email, phone, default_address FROM public.profiles WHERE id=?", order.get("user_id"));
+        result.put("customer", customer.isEmpty() ? Map.of() : customer.getFirst());
         result.put("history", db.list("SELECT * FROM public.ticket_history WHERE ticket_id=? ORDER BY created_at,id", id));
-        result.put("itemApprovals", db.list("SELECT a.id, a.ticket_id AS \"ticketId\", a.order_id AS \"orderId\", a.order_item_id AS \"orderItemId\", a.product_id AS \"productId\", a.manager_id AS \"managerId\", a.status, a.reason, a.reviewed_by AS \"reviewedBy\", a.reviewed_at AS \"reviewedAt\", a.created_at AS \"createdAt\", p.name AS \"productName\", v.sku, v.variant_name AS \"variantName\" FROM public.order_item_approvals a JOIN public.products p ON p.id=a.product_id JOIN public.order_items i ON i.id=a.order_item_id JOIN public.product_variants v ON v.id=i.variant_id WHERE a.ticket_id=? ORDER BY a.created_at, a.id", id));
+        result.put("itemApprovals", db.list("SELECT a.id, a.ticket_id AS \"ticketId\", a.order_id AS \"orderId\", a.order_item_id AS \"orderItemId\", a.product_id AS \"productId\", a.manager_id AS \"managerId\", a.status, a.reason, a.reviewed_by AS \"reviewedBy\", a.reviewed_at AS \"reviewedAt\", a.created_at AS \"createdAt\", p.name AS \"productName\", v.sku, v.variant_name AS \"variantName\", i.quantity, i.unit_price AS price, (i.quantity * i.unit_price) AS subtotal FROM public.order_item_approvals a JOIN public.products p ON p.id=a.product_id JOIN public.order_items i ON i.id=a.order_item_id JOIN public.product_variants v ON v.id=i.variant_id WHERE a.ticket_id=? ORDER BY a.created_at, a.id", id));
         return result;
     }
 
@@ -249,12 +252,36 @@ public class ApprovalTicketService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> list(int page, int size) {
-        actors.get().requireRoles("super_admin", "product_manager");
+        var actor = actors.get();
+        actor.requireRoles("super_admin", "product_manager");
         if (page < 0 || size < 1 || size > 100) {
             throw new BadRequestException("VALIDATION_ERROR");
         }
-        return db.list("SELECT * FROM public.approval_tickets ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                size, (long) page * size);
+        if ("product_manager".equals(actor.role())) {
+            String sql = "SELECT t.id, t.order_id, t.status, t.review_round, t.reason, t.created_at, t.updated_at, " +
+                    "o.total AS order_total, o.shipping_address_snapshot, o.created_at AS order_created_at, " +
+                    "p.full_name AS customer_name, p.email AS customer_email, p.phone AS customer_phone, " +
+                    "(SELECT count(*) FROM public.order_items oi WHERE oi.order_id = t.order_id) AS item_count, " +
+                    "(SELECT string_agg(pr.name, ', ') FROM public.order_items oi2 JOIN public.product_variants pv ON pv.id = oi2.variant_id JOIN public.products pr ON pr.id = pv.product_id WHERE oi2.order_id = t.order_id) AS product_names " +
+                    "FROM public.approval_tickets t " +
+                    "LEFT JOIN public.orders o ON o.id = t.order_id " +
+                    "LEFT JOIN public.profiles p ON p.id = o.user_id " +
+                    "WHERE (EXISTS (SELECT 1 FROM public.order_item_approvals a WHERE a.ticket_id = t.id AND a.manager_id = ?) " +
+                    "   OR EXISTS (SELECT 1 FROM public.order_items oi JOIN public.products prod ON prod.id = oi.product_id WHERE oi.order_id = t.order_id AND prod.manager_id = ?)) " +
+                    "ORDER BY t.created_at DESC LIMIT ? OFFSET ?";
+            return db.list(sql, actor.id(), actor.id(), size, (long) page * size);
+        } else {
+            String sql = "SELECT t.id, t.order_id, t.status, t.review_round, t.reason, t.created_at, t.updated_at, " +
+                    "o.total AS order_total, o.shipping_address_snapshot, o.created_at AS order_created_at, " +
+                    "p.full_name AS customer_name, p.email AS customer_email, p.phone AS customer_phone, " +
+                    "(SELECT count(*) FROM public.order_items oi WHERE oi.order_id = t.order_id) AS item_count, " +
+                    "(SELECT string_agg(pr.name, ', ') FROM public.order_items oi2 JOIN public.product_variants pv ON pv.id = oi2.variant_id JOIN public.products pr ON pr.id = pv.product_id WHERE oi2.order_id = t.order_id) AS product_names " +
+                    "FROM public.approval_tickets t " +
+                    "LEFT JOIN public.orders o ON o.id = t.order_id " +
+                    "LEFT JOIN public.profiles p ON p.id = o.user_id " +
+                    "ORDER BY t.created_at DESC LIMIT ? OFFSET ?";
+            return db.list(sql, size, (long) page * size);
+        }
     }
 
     private void requireReason(String reason) {

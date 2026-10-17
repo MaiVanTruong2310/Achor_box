@@ -65,7 +65,17 @@ public class RedisConfig implements CachingConfigurer {
             serverConfig.setPassword(RedisPassword.of(password));
         }
 
+        io.lettuce.core.SocketOptions socketOptions = io.lettuce.core.SocketOptions.builder()
+                .connectTimeout(Duration.ofMillis(300))
+                .build();
+        io.lettuce.core.ClientOptions clientOptions = io.lettuce.core.ClientOptions.builder()
+                .socketOptions(socketOptions)
+                .disconnectedBehavior(io.lettuce.core.ClientOptions.DisconnectedBehavior.REJECT_COMMANDS)
+                .autoReconnect(true)
+                .build();
+
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+                .clientOptions(clientOptions)
                 .commandTimeout(timeout)
                 .shutdownTimeout(Duration.ofMillis(200))
                 .build();

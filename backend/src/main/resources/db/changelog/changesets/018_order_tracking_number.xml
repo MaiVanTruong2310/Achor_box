@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="018-order-tracking-number" author="smartbox">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="orders" columnName="tracking_number"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="orders">
+            <column name="tracking_number" type="text"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="018-payment-paid-at" author="smartbox">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="payments" columnName="paid_at"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="payments">
+            <column name="paid_at" type="timestamp with time zone"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

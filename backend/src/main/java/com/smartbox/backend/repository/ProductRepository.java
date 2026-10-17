@@ -27,5 +27,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     Page<Product> findByCategoryId(UUID categoryId, Pageable pageable);
 
+    @Query("SELECT p FROM Product p WHERE (:categoryId IS NULL OR p.categoryId = :categoryId) " +
+           "AND (:query IS NULL OR :query = '' " +
+           "OR LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(COALESCE(p.description, '')) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<Product> searchProducts(@Param("categoryId") UUID categoryId, @Param("query") String query, Pageable pageable);
+
     Optional<Product> findBySku(String sku);
 }

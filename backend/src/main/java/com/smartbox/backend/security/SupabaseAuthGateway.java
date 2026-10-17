@@ -57,11 +57,15 @@ public class SupabaseAuthGateway {
         catch(RestClientResponseException ex){throw new UnauthorizedException("RECOVERY_LINK_INVALID_OR_EXPIRED");}
         catch(org.springframework.web.client.ResourceAccessException ex){throw new AppException(503,"AUTH_PROVIDER_UNAVAILABLE");}
     }
-    @SuppressWarnings("unchecked")
     private Map<String,Object> exchange(String grant,Map<String,String> body) {
         configured();
         try {return client.post().uri("/token?grant_type="+grant).header("apikey",key).body(body).retrieve().body(Map.class);}
-        catch(RestClientResponseException ex) {throw new UnauthorizedException("Thông tin đăng nhập hoặc refresh token không hợp lệ");}
+        catch(RestClientResponseException ex) {
+            if ("password".equals(grant)) {
+                throw new UnauthorizedException("Sai email hoặc mật khẩu đăng nhập");
+            }
+            throw new UnauthorizedException("Phiên đăng nhập hoặc refresh token không hợp lệ");
+        }
         catch(org.springframework.web.client.ResourceAccessException ex) {throw new AppException(503,"AUTH_PROVIDER_UNAVAILABLE");}
     }
     @SuppressWarnings("unchecked")

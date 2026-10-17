@@ -1,5 +1,7 @@
 param([switch]$Build)
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 $taskEnvironmentFile = Join-Path $PSScriptRoot '.env'
 if (Test-Path -LiteralPath $taskEnvironmentFile) {
     foreach ($taskEnvironmentLine in Get-Content -LiteralPath $taskEnvironmentFile -Encoding UTF8) {

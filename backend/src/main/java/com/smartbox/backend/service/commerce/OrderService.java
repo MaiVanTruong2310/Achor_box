@@ -60,6 +60,19 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public Map<String, Long> getOrderCounts() {
+        actors.get().requireRoles("super_admin", "product_manager", "technician");
+        Map<String, Long> map = new java.util.LinkedHashMap<>();
+        map.put("all", orderRepository.count());
+        for (Object[] r : orderRepository.countGroupByStatus()) {
+            if (r != null && r.length >= 2 && r[0] != null && r[1] != null) {
+                map.put(r[0].toString(), ((Number) r[1]).longValue());
+            }
+        }
+        return map;
+    }
+
+    @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByUserId(UUID userId) {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(this::mapToResponse)

@@ -30,9 +30,9 @@ public class SettingsService {
     private final ShippingMethodRepository shippingRepository;
     private final PaymentMethodRepository paymentRepository;
     private final EmailService emailService;
+    private final OutboxService outboxService;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "system_settings", key = "'all'")
     public SystemSettingsResponse getSettings() {
         return SystemSettingsResponse.builder()
                 .messageTemplates(templateRepository.findAll())
@@ -42,20 +42,17 @@ public class SettingsService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "system_settings", key = "'templates'")
     public List<MessageTemplate> getAllTemplates() {
         return templateRepository.findAll();
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "system_settings", key = "'template:' + #code")
     public MessageTemplate getTemplateByCode(String code) {
         return templateRepository.findByCode(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Mẫu thông báo", "code", code));
     }
 
     @Transactional
-    @CacheEvict(value = "system_settings", allEntries = true)
     public MessageTemplate saveTemplate(TemplateUpdateRequest req) {
         MessageTemplate template = templateRepository.findByCode(req.getCode())
                 .orElse(MessageTemplate.builder().code(req.getCode()).build());
@@ -88,7 +85,6 @@ public class SettingsService {
     }
 
     @Transactional
-    @CacheEvict(value = "system_settings", allEntries = true)
     public MessageTemplate resetToDefault(String code) {
         MessageTemplate template = templateRepository.findByCode(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Mẫu thông báo", "code", code));
@@ -197,22 +193,26 @@ public class SettingsService {
         }
 
         boolean isRealSent = false;
+        boolean queued = false;
+        String outboxId = null;
         String recipient = (req.getRecipientEmail() != null && !req.getRecipientEmail().trim().isEmpty())
                 ? req.getRecipientEmail().trim()
                 : (req.getRecipientPhone() != null ? req.getRecipientPhone().trim() : "test@smartbox.vn");
 
         String statusMsg;
         if ("email".equalsIgnoreCase(channel) && req.getRecipientEmail() != null && !req.getRecipientEmail().trim().isEmpty()) {
-            isRealSent = emailService.sendHtmlEmail(recipient, renderedSubject, renderedBody);
-            statusMsg = isRealSent
-                    ? "Đã gửi thử nghiệm thành công tới hộp thư: " + recipient
-                    : "Mẫu đã render hoàn hảo! (Email thật chưa gửi ra ngoài do SMTP chưa điền tài khoản)";
+            java.util.UUID id = outboxService.sendCustomAsync("TEMPLATE_TEST:" + code, recipient, renderedSubject, renderedBody);
+            queued = true;
+            outboxId = id.toString();
+            statusMsg = "Mẫu thông báo đã được đưa vào hàng đợi gửi trong nền tới: " + recipient;
         } else {
             statusMsg = "Mẫu " + channel.toUpperCase() + " đã render thành công (Chế độ mô phỏng Test Sandbox)!";
         }
 
         return TestSendResponse.builder()
                 .success(true)
+                .queued(queued)
+                .outboxId(outboxId)
                 .channel(channel)
                 .recipient(recipient)
                 .renderedSubject(renderedSubject)

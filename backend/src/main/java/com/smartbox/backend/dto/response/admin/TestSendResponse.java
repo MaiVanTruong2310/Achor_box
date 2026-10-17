@@ -1,20 +1,5 @@
 package com.smartbox.backend.dto.response.admin;
 
-import com.smartbox.backend.dto.request.admin.*;
-import com.smartbox.backend.dto.request.auth.*;
-import com.smartbox.backend.dto.request.catalog.*;
-import com.smartbox.backend.dto.request.commerce.*;
-import com.smartbox.backend.dto.request.customer.*;
-import com.smartbox.backend.dto.request.device.*;
-import com.smartbox.backend.dto.request.warranty.*;
-import com.smartbox.backend.dto.response.admin.*;
-import com.smartbox.backend.dto.response.auth.*;
-import com.smartbox.backend.dto.response.catalog.*;
-import com.smartbox.backend.dto.response.commerce.*;
-import com.smartbox.backend.dto.response.customer.*;
-import com.smartbox.backend.dto.response.device.*;
-import com.smartbox.backend.dto.response.warranty.*;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -46,4 +31,10 @@ public class TestSendResponse {
 
     @Schema(description = "Đã gửi qua SMTP thật hay chỉ mô phỏng", example = "true")
     private Boolean isRealSent;
+
+    @Schema(description = "Có gửi trong hàng đợi nền không", example = "true")
+    private Boolean queued;
+
+    @Schema(description = "ID bản ghi email trong outbox để tra cứu trạng thái")
+    private String outboxId;
 }

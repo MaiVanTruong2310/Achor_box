@@ -43,9 +43,32 @@ public class RedisAuthService {
     private final Map<String, Instant> memoryLockouts = new ConcurrentHashMap<>();
     private final Map<String, Instant> memoryBlacklist = new ConcurrentHashMap<>();
 
+    // L1 In-Memory Auth Cache để tăng tốc xác thực mọi HTTP request (<0.01ms)
+    private final Map<String, CachedUserSession> memoryAuthCache = new ConcurrentHashMap<>();
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    public record CachedUserSession(
+        UUID userId,
+        String role,
+        String email,
+        String fullName,
+        boolean isLocked,
+        long expiresAtEpochMs
+    ) {
+        public boolean isExpired() {
+            return System.currentTimeMillis() >= expiresAtEpochMs;
+        }
+    }
+
+    public RedisAuthService(StringRedisTemplate redis) {
+        this(redis, new com.fasterxml.jackson.databind.ObjectMapper());
+    }
+
     @Autowired
-    public RedisAuthService(@Autowired(required = false) StringRedisTemplate redis) {
+    public RedisAuthService(@Autowired(required = false) StringRedisTemplate redis,
+                            @Autowired(required = false) com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.redis = redis;
+        this.objectMapper = objectMapper != null ? objectMapper : new com.fasterxml.jackson.databind.ObjectMapper();
     }
 
     /**
@@ -95,7 +118,7 @@ public class RedisAuthService {
                     attempts = count.intValue();
                     // Đặt thời gian hết hạn cho bộ đếm đăng nhập sai
                     redis.expire(key, Duration.ofMinutes(lockoutMinutes));
-                    log.warn("Đăng nhập thất bại lần {} cho '{}'", attempts, cleanId);
+                    log.warn("[XAC THUC] Dang nhap that bai (Sai mat khau) lan {}/{} cho tai khoan '{}'", attempts, maxLoginAttempts, cleanId);
                     return attempts;
                 }
             }
@@ -104,8 +127,10 @@ public class RedisAuthService {
         }
 
         attempts = memoryAttempts.merge(cleanId, 1, Integer::sum);
+        log.warn("[XAC THUC] Dang nhap that bai (Sai mat khau) lan {}/{} cho tai khoan '{}'", attempts, maxLoginAttempts, cleanId);
         if (attempts >= maxLoginAttempts) {
             memoryLockouts.put(cleanId, Instant.now().plus(Duration.ofMinutes(lockoutMinutes)));
+            log.warn("[XAC THUC] Tai khoan '{}' da bi khoa tam thoi trong {} phut do dang nhap sai qua {} lan", cleanId, lockoutMinutes, maxLoginAttempts);
         }
         return attempts;
     }
@@ -177,10 +202,104 @@ public class RedisAuthService {
     }
 
     /**
+     * Cache thông tin phiên xác thực người dùng theo hash của access token (L1 Memory + L2 Redis).
+     * Giúp mọi HTTP request tiếp theo được xác thực trong <0.01ms mà không cần gọi Supabase/DB.
+     */
+    public void cacheAuthSession(String token, UUID userId, String role, String email, String fullName, boolean isLocked, long ttlSeconds) {
+        if (!enabled || token == null || token.isBlank() || userId == null) return;
+        String tokenHash = hashToken(token);
+        long ttl = ttlSeconds > 0 ? ttlSeconds : 300;
+        long expiresAt = System.currentTimeMillis() + (ttl * 1000);
+        CachedUserSession session = new CachedUserSession(userId, role, email, fullName, isLocked, expiresAt);
+
+        // L1: In-Memory
+        memoryAuthCache.put(tokenHash, session);
+
+        // L2: Redis
+        try {
+            if (redis != null) {
+                String tokenKey = "auth:token:" + tokenHash;
+                Map<String, Object> data = Map.of(
+                        "userId", userId.toString(),
+                        "role", role != null ? role : "",
+                        "email", email != null ? email : "",
+                        "fullName", fullName != null ? fullName : "",
+                        "isLocked", isLocked
+                );
+                String val = objectMapper.writeValueAsString(data);
+                redis.opsForValue().set(tokenKey, val, ttl, TimeUnit.SECONDS);
+            }
+        } catch (Exception ex) {
+            log.debug("Không thể ghi token cache vào Redis: {}", ex.getMessage());
+        }
+    }
+
+    /**
+     * Lấy phiên xác thực đã được cache từ L1 Memory hoặc L2 Redis.
+     */
+    public CachedUserSession getCachedAuthSession(String token) {
+        if (!enabled || token == null || token.isBlank()) return null;
+        if (isTokenBlacklisted(token)) return null;
+
+        String tokenHash = hashToken(token);
+
+        // Kiểm tra L1: In-Memory cache
+        CachedUserSession session = memoryAuthCache.get(tokenHash);
+        if (session != null) {
+            if (!session.isExpired()) {
+                return session;
+            } else {
+                memoryAuthCache.remove(tokenHash);
+            }
+        }
+
+        // Kiểm tra L2: Redis cache
+        try {
+            if (redis != null) {
+                String tokenKey = "auth:token:" + tokenHash;
+                String val = redis.opsForValue().get(tokenKey);
+                if (val != null) {
+                    Long ttl = redis.getExpire(tokenKey, TimeUnit.SECONDS);
+                    long expiresAt = System.currentTimeMillis() + ((ttl != null && ttl > 0 ? ttl : 60) * 1000);
+                    Map<?, ?> map = objectMapper.readValue(val, Map.class);
+                    UUID userId = UUID.fromString(map.get("userId").toString());
+                    String role = (String) map.get("role");
+                    String email = (String) map.get("email");
+                    String fullName = (String) map.get("fullName");
+                    boolean isLocked = Boolean.TRUE.equals(map.get("isLocked"));
+
+                    CachedUserSession fromRedis = new CachedUserSession(userId, role, email, fullName, isLocked, expiresAt);
+                    memoryAuthCache.put(tokenHash, fromRedis);
+                    return fromRedis;
+                }
+            }
+        } catch (Exception ex) {
+            log.debug("Không thể đọc token cache từ Redis: {}", ex.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Hủy cache phiên xác thực của một token.
+     */
+    public void invalidateToken(String token) {
+        if (token == null || token.isBlank()) return;
+        String tokenHash = hashToken(token);
+        memoryAuthCache.remove(tokenHash);
+        try {
+            if (redis != null) {
+                redis.delete("auth:token:" + tokenHash);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
      * Đưa Token vào danh sách Blacklist khi đăng xuất để vô hiệu hóa ngay lập tức.
      */
     public void blacklistToken(String token, long remainingSeconds) {
         if (!enabled || token == null || token.isBlank()) return;
+        invalidateToken(token);
         String tokenHash = hashToken(token);
         long ttl = remainingSeconds > 0 ? remainingSeconds : 86400;
 
@@ -232,6 +351,8 @@ public class RedisAuthService {
      */
     public void revokeUserSession(UUID userId) {
         if (!enabled || userId == null) return;
+
+        memoryAuthCache.values().removeIf(s -> userId.equals(s.userId()));
 
         try {
             if (redis != null) {

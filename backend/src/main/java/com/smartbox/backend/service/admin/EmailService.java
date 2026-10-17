@@ -15,11 +15,88 @@ public class EmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:}")
+    @Value("${smartbox.mail.sender-address:${spring.mail.username:}}")
     private String mailSenderAddress;
 
-    @Value("${smartbox.mail.sender-name:SmartBox IoT Ecosystem}")
+    @Value("${smartbox.mail.sender-name:SmartBox}")
     private String senderName;
+
+    /**
+     * Tạo nội dung email HTML kiểm thử kết nối SMTP
+     */
+    public String buildTestEmailTemplate(String recipient) {
+        String timestamp = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+        return """
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Email Kiểm Thử Hệ Thống SmartBox</title>
+              <style>
+                body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; }
+                .wrapper { width: 100%%; background-color: #f8fafc; padding: 36px 16px; box-sizing: border-box; }
+                .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+                .header { background: linear-gradient(135deg, #0284c7 0%%, #0369a1 50%%, #0f172a 100%%); padding: 32px 28px; text-align: center; color: #ffffff; }
+                .logo { font-size: 24px; font-weight: 800; letter-spacing: 1.5px; margin: 0; }
+                .sub-title { font-size: 13px; color: #bae6fd; margin-top: 6px; }
+                .content { padding: 32px 28px; line-height: 1.6; }
+                .status-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px 20px; margin: 20px 0; }
+                .status-title { font-weight: 700; color: #166534; font-size: 15px; margin-bottom: 6px; }
+                .status-desc { font-size: 13.5px; color: #15803d; margin: 0; }
+                .info-grid { background: #f8fafc; border-radius: 10px; padding: 16px; margin: 20px 0; border: 1px solid #e2e8f0; font-size: 13.5px; }
+                .info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; }
+                .info-row:last-child { border-bottom: none; }
+                .info-label { color: #64748b; }
+                .info-val { font-weight: 600; color: #0f172a; }
+                .footer { background: #f8fafc; padding: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #64748b; }
+              </style>
+            </head>
+            <body>
+              <div class="wrapper">
+                <div class="container">
+                  <div class="header">
+                    <h1 class="logo">SMARTBOX</h1>
+                    <div class="sub-title">Hệ Thống Quản Lý Bán Hàng & Bảo Hành Điện Tử</div>
+                  </div>
+                  <div class="content">
+                    <h2 style="font-size: 18px; margin: 0 0 10px; color: #0f172a;">Kiểm thử kết nối Email SMTP thành công! 🎉</h2>
+                    <p style="font-size: 14px; color: #475569; margin: 0 0 16px;">
+                      Đây là email kiểm tra được kích hoạt trực tiếp từ bảng điều khiển Quản trị viên (Admin Portal) của hệ thống SmartBox.
+                    </p>
+                    <div class="status-card">
+                      <div class="status-title">✅ Máy chủ SMTP hoạt động hoàn hảo</div>
+                      <p class="status-desc">Hệ thống đã kết nối và gửi thư thành công qua máy chủ thư điện tử.</p>
+                    </div>
+                    <div class="info-grid">
+                      <div class="info-row">
+                        <span class="info-label">Người nhận:</span>
+                        <span class="info-val">%s</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Thời gian gửi:</span>
+                        <span class="info-val">%s</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Trạng thái:</span>
+                        <span class="info-val" style="color: #16a34a;">ĐÃ GỬI THÀNH CÔNG (DELIVERED)</span>
+                      </div>
+                    </div>
+                    <p style="font-size: 13px; color: #64748b; margin-top: 20px;">
+                      Nếu bạn nhận được email này, tính năng gửi thông báo tự động (xác nhận đơn hàng, OTP, bảo hành) đã sẵn sàng phục vụ khách hàng.
+                    </p>
+                  </div>
+                  <div class="footer">
+                    <div>© 2026 SmartBox Vietnam Co., Ltd. Tất cả quyền được bảo lưu.</div>
+                    <div style="margin-top: 4px;">Hotline: 1900 8888 &bull; Email: support@smartbox.vn</div>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+            """.formatted(recipient, timestamp);
+    }
 
     /**
      * Gửi email mã OTP xác thực đặt lại mật khẩu theo template HTML hiện đại
@@ -50,7 +127,13 @@ public class EmailService {
             log.info("[EMAIL SERVICE] ✅ Đã gửi email OTP THẬT thành công tới '{}' cho khách hàng '{}'", toEmail, customerName);
             return true;
         } catch (Exception e) {
-            log.error("[EMAIL SERVICE] ❌ Lỗi khi gửi email SMTP tới '{}': {}", toEmail, e.getMessage());
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("authentication")) {
+                log.error("[EMAIL SERVICE] ❌ Lỗi xác thực SMTP khi gửi email tới '{}': {}. "
+                        + "(Tài khoản '{}' bị Gmail từ chối xác thực. Vui lòng kiểm tra lại Google App Password 16 ký tự trong backend/.env)",
+                        toEmail, e.getMessage(), mailSenderAddress);
+            } else {
+                log.error("[EMAIL SERVICE] ❌ Lỗi khi gửi email SMTP tới '{}': {}", toEmail, e.getMessage());
+            }
             return false;
         }
     }
@@ -77,7 +160,13 @@ public class EmailService {
             log.info("[EMAIL SERVICE] ✅ Đã gửi email tùy chỉnh thành công tới '{}' với tiêu đề '{}'", toEmail, subject);
             return true;
         } catch (Exception e) {
-            log.error("[EMAIL SERVICE] ❌ Lỗi khi gửi email tới '{}': {}", toEmail, e.getMessage());
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("authentication")) {
+                log.error("[EMAIL SERVICE] ❌ Lỗi xác thực SMTP khi gửi email tới '{}': {}. "
+                        + "(Tài khoản '{}' bị Gmail từ chối xác thực. Vui lòng kiểm tra lại Google App Password 16 ký tự trong backend/.env)",
+                        toEmail, e.getMessage(), mailSenderAddress);
+            } else {
+                log.error("[EMAIL SERVICE] ❌ Lỗi khi gửi email tới '{}': {}", toEmail, e.getMessage());
+            }
             return false;
         }
     }
