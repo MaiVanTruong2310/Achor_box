@@ -1,7 +1,0 @@
-{
-  "originalPayloadSha256": "f0367d846523d6e20c0c73e71af975b9e04bf3fe70d13b66f4a96a9c041ec01b",
-  "retainedPayloadSha256": "d82a907513ac695d665431226b25311b7f667be2d8d61c666321569cf12f430b",
-  "annotationExamplesRemoved": 220,
-  "reason": "No copied demo customer/product/price/address examples; routes and field schemas unchanged",
-  "runtime": "Isolated H2, demo, workers disabled, metadata export only"
-}
