@@ -1,0 +1,351 @@
+/* ==========================================================================
+   Revenue Reports & JasperReports PDF Preview Executive Modern Styling
+   ========================================================================== */
+
+.reports-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--text-primary);
+}
+
+/* 1. Header Ribbon */
+.reports-header-ribbon {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.reports-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reports-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  flex-shrink: 0;
+}
+
+.reports-header-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+}
+
+.reports-header-desc {
+  margin: 2px 0 0 0;
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+}
+
+/* 2. Executive 4-Card KPI Grid */
+.reports-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.reports-kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.reports-kpi-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.reports-kpi-bubble {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.reports-kpi-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.reports-kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reports-kpi-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.reports-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* 3. Export Form Card */
+.reports-form-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.reports-form-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reports-preset-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.reports-preset-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-shell, rgba(0, 0, 0, 0.25));
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.reports-preset-chip:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.reports-preset-chip.active {
+  background: #059669;
+  border-color: #059669;
+  color: #fff;
+}
+
+.reports-format-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reports-format-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-shell, rgba(0, 0, 0, 0.25));
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.reports-format-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.reports-format-btn.active.pdf {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.reports-format-btn.active.xlsx {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+/* 4. Export History Table */
+.reports-history-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.reports-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.825rem;
+}
+
+.reports-table th {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 16px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.reports-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.reports-table tr:last-child td {
+  border-bottom: none;
+}
+
+.reports-table-row {
+  transition: background-color 0.15s ease;
+}
+
+.reports-table-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.reports-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.reports-btn:hover {
+  background: var(--bg-surface-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.reports-btn.primary {
+  background: #059669;
+  border-color: #059669;
+  color: #fff;
+}
+
+.reports-btn.primary:hover {
+  background: #047857;
+}
+
+.reports-btn.danger {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.reports-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* 5. PDF Preview Modal */
+.pdf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.pdf-modal-box {
+  width: 100%;
+  max-width: 960px;
+  height: 90vh;
+  max-height: 850px;
+  background: #0f172a;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+}
+
+.pdf-modal-header {
+  padding: 12px 18px;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pdf-modal-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-modal-body {
+  flex: 1 1 auto;
+  position: relative;
+  background: #334155;
+}
+
+.pdf-modal-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}

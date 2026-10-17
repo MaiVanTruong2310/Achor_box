@@ -1,0 +1,635 @@
+/* ticket-detail.css - Professional Compact PO Ticket Workspace */
+
+:root {
+  --tkd-bg-canvas: #f8fafc;
+  --tkd-card-bg: #ffffff;
+  --tkd-card-border: #e2e8f0;
+  --tkd-sub-bg: #f8fafc;
+  --tkd-sub-border: #e2e8f0;
+  --tkd-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --tkd-shadow-btn: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --tkd-text-main: #0f172a;
+  --tkd-text-muted: #64748b;
+  --tkd-text-secondary: #334155;
+}
+
+[data-theme="dark"] {
+  --tkd-bg-canvas: #090d16;
+  --tkd-card-bg: #111827;
+  --tkd-card-border: rgba(255, 255, 255, 0.08);
+  --tkd-sub-bg: #1e293b;
+  --tkd-sub-border: rgba(255, 255, 255, 0.08);
+  --tkd-shadow-card: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --tkd-shadow-btn: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --tkd-text-main: #f8fafc;
+  --tkd-text-muted: #94a3b8;
+  --tkd-text-secondary: #cbd5e1;
+}
+
+/* Page Container - Compact, Ergonomic, Centered (Not Sprawling) */
+.tkd-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 20px 48px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* 1. Top Navigation Bar & Sáng sủa Nút Back */
+.tkd-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.tkd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: var(--tkd-card-bg);
+  border: 1px solid #cbd5e1;
+  color: var(--tkd-text-main);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: var(--tkd-shadow-btn);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tkd-back-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  transition: transform 0.2s ease;
+}
+
+.tkd-back-btn:hover {
+  background: #ffffff;
+  border-color: #2563eb;
+  color: #2563eb;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.16);
+  transform: translateX(-3px);
+}
+
+.tkd-back-btn:hover .tkd-back-icon {
+  transform: translateX(-2px);
+}
+
+.tkd-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--tkd-card-bg);
+  border: 1px solid #cbd5e1;
+  color: var(--tkd-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--tkd-shadow-btn);
+  transition: all 0.2s ease;
+}
+
+.tkd-refresh-btn:hover:not(:disabled) {
+  border-color: #94a3b8;
+  color: var(--tkd-text-main);
+  background: #f8fafc;
+}
+
+/* 2. Header Card - Compact & Bright */
+.tkd-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  box-shadow: var(--tkd-shadow-card);
+  margin-bottom: 14px;
+}
+
+.tkd-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tkd-header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.04) 100%);
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  flex-shrink: 0;
+}
+
+.tkd-header-title {
+  margin: 0 0 4px 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--tkd-text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tkd-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.tkd-header-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--tkd-text-muted);
+}
+
+.tkd-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tkd-seq-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.tkd-seq-tag.po {
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.tkd-seq-tag.order {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.tkd-copy-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+
+.tkd-copy-icon-btn:hover {
+  opacity: 1;
+}
+
+/* 3. Main Workspace Grid - Balanced & Compact */
+.tkd-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .tkd-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Common Card */
+.tkd-card {
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: var(--tkd-shadow-card);
+  margin-bottom: 14px;
+}
+
+.tkd-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--tkd-card-border);
+}
+
+.tkd-card-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--tkd-text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tkd-card-subtitle {
+  font-size: 0.78rem;
+  color: var(--tkd-text-muted);
+}
+
+/* Customer & Order 2-Column Info Grid */
+.tkd-info-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .tkd-info-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tkd-info-block {
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.tkd-info-block-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tkd-text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tkd-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.83rem;
+}
+
+.tkd-info-row:last-child {
+  margin-bottom: 0;
+}
+
+.tkd-info-label {
+  color: var(--tkd-text-muted);
+  width: 88px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+.tkd-info-val {
+  color: var(--tkd-text-main);
+  font-weight: 600;
+  flex: 1;
+  word-break: break-word;
+  font-size: 0.83rem;
+}
+
+/* Item Approval Cards */
+.tkd-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tkd-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  transition: all 0.2s ease;
+}
+
+.tkd-item-card:hover {
+  border-color: rgba(37, 99, 235, 0.4);
+  background: var(--tkd-card-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tkd-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tkd-item-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.tkd-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tkd-item-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--tkd-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tkd-item-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.76rem;
+  color: var(--tkd-text-muted);
+}
+
+.tkd-sku-tag {
+  color: #0ea5e9;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.76rem;
+}
+
+.tkd-po-managed-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.tkd-item-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.tkd-item-price-box {
+  text-align: right;
+  min-width: 110px;
+}
+
+.tkd-item-unit {
+  font-size: 0.76rem;
+  color: var(--tkd-text-muted);
+}
+
+.tkd-item-subtotal {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #10b981;
+}
+
+.tkd-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Action Decision Box */
+.tkd-decision-card {
+  background: var(--tkd-card-bg);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+}
+
+.tkd-decision-desc {
+  margin: 4px 0 0 0;
+  font-size: 0.82rem;
+  color: var(--tkd-text-muted);
+  line-height: 1.45;
+}
+
+.tkd-decision-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.tkd-decision-status-banner {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.tkd-decision-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+}
+
+.tkd-decision-status-reason {
+  margin: 4px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--tkd-text-secondary);
+}
+
+.tkd-reason-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  animation: slideUp 0.2s ease-out;
+}
+
+.tkd-reason-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.tkd-chip {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  color: var(--tkd-text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tkd-chip:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+/* Right Sidebar: Audit Trail */
+.tkd-audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--tkd-card-border);
+}
+
+.tkd-audit-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+
+.tkd-audit-timeline::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 11px;
+  width: 2px;
+  background: var(--tkd-card-border);
+}
+
+.tkd-audit-item {
+  position: relative;
+  padding-left: 28px;
+  margin-bottom: 14px;
+}
+
+.tkd-audit-item:last-child {
+  margin-bottom: 0;
+}
+
+.tkd-audit-dot {
+  position: absolute;
+  left: 7px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2px solid var(--tkd-card-bg);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.tkd-audit-dot.newest {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.tkd-audit-action {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--tkd-text-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.tkd-audit-time {
+  font-size: 0.73rem;
+  color: var(--tkd-text-muted);
+  font-weight: 500;
+}
+
+.tkd-audit-note {
+  font-size: 0.78rem;
+  color: var(--tkd-text-secondary);
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Guidelines Box */
+.tkd-guidelines-card {
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+}
+
+.tkd-guidelines-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 0.78rem;
+  color: var(--tkd-text-secondary);
+  line-height: 1.55;
+}
+
+/* In-Page Item Reject Modal */
+.tkd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.tkd-modal-box {
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 440px;
+  padding: 18px 20px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+  animation: scaleIn 0.2s ease-out;
+}

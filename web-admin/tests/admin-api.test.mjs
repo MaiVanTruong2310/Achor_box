@@ -17,7 +17,8 @@ async function app(fetch) {
  const api=await load('src/services/api.ts');await api.evaluate();const catalog=await load('src/services/adminCatalogApi.ts');await catalog.evaluate();
  const dashboard=await load('src/services/concurrentDashboardApi.ts');await dashboard.evaluate();
  const invoice=await load('src/services/salesInvoiceApi.ts');await invoice.evaluate();
- return {invoice:invoice.namespace.issueSalesInvoice,dashboard:dashboard.namespace.getConcurrentDashboard,api:api.namespace,catalog:catalog.namespace.adminCatalogApi,request:modules.get(path.resolve('src/services/adminRequest.ts')).namespace.adminRequest,events};
+ const customers=await load('src/services/customerDirectoryApi.ts');await customers.evaluate();const reports=await load('src/services/reportApi.ts');await reports.evaluate();const navigation=await load('src/navigation.ts');await navigation.evaluate();
+ return {customers:customers.namespace.customerDirectoryApi,reports:reports.namespace,navigation:navigation.namespace,invoice:invoice.namespace.issueSalesInvoice,dashboard:dashboard.namespace.getConcurrentDashboard,api:api.namespace,catalog:catalog.namespace.adminCatalogApi,request:modules.get(path.resolve('src/services/adminRequest.ts')).namespace.adminRequest,events};
 }
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status});
 test('empty backend lists stay empty; no demonstration claims or templates',async()=>{
@@ -66,4 +67,19 @@ test('sales invoice uses authenticated backend POST and surfaces issuance errors
  let calls=[];const a=await app(async(url,opts)=>{calls.push({url,opts});return json({invoiceNumber:'SB-TEST',html:'<html>Invoice</html>'});});
  const invoice=await a.invoice('order-id');assert.equal(invoice.invoiceNumber,'SB-TEST');assert.ok(calls[0].url.endsWith('/orders/order-id/sales-invoice'));assert.equal(calls[0].opts.method,'POST');assert.equal(calls[0].opts.headers.get('Authorization'),'Bearer test-token');
  const failed=await app(async()=>json({message:'INVOICE_REQUIRES_PAID_ORDER'},409));await assert.rejects(failed.invoice('order-id'),/INVOICE_REQUIRES_PAID_ORDER/);
+});
+
+test('customer directory is separate and contact-only creation contains no login fields',async()=>{
+ const calls=[];const a=await app(async(url,opts)=>{calls.push({url,opts});return json({id:'contact',profileId:null});});
+ await a.customers.create({fullName:'Khách',email:null,createLogin:false},'creation-key');const body=JSON.parse(calls[0].opts.body);assert.equal(body.createLogin,false);assert.equal('password' in body,false);assert.equal('username' in body,false);assert.equal(calls[0].opts.headers.get('Idempotency-Key'),'creation-key');assert.ok(calls[0].url.endsWith('/admin/customers'));
+});
+test('navigation has three staff roles and merges users with permissions',async()=>{
+ const a=await app(async()=>json({}));const keys=Object.keys(a.navigation.roleLabels).sort();assert.deepEqual(keys,['customer','product_manager','super_admin','technician']);
+ assert.equal(a.navigation.navigation.some(n=>n.path==='/permissions'),false);assert.ok(a.navigation.navigation.some(n=>n.path==='/customers'));const users=a.navigation.navigation.find(n=>n.path==='/users');assert.deepEqual(Array.from(users.roles),['super_admin']);
+});
+test('Jasper export sends validated parameters and only accepts a report binary',async()=>{
+ let payload;const a=await app(async(url,opts)=>{payload=JSON.parse(opts.body);assert.equal(opts.headers.Authorization,'Bearer test-token');return new Response('%PDF-test',{status:200,headers:{'Content-Type':'application/pdf'}});});
+ const blob=await a.reports.exportRevenue('PDF',{fromDate:'2026-10-01',toDate:'2026-10-14'});assert.ok(blob.size>0);assert.equal(payload.format,'PDF');assert.equal(payload.params.fromDate,'2026-10-01');
+ const invalid=await app(async()=>new Response('<html>Error</html>',{headers:{'Content-Type':'text/html'}}));await assert.rejects(invalid.reports.exportRevenue('PDF',{}),/đúng định dạng/);
+ const denied=await app(async()=>json({message:'FORBIDDEN'},403));await assert.rejects(denied.reports.exportRevenue('PDF',{}),/FORBIDDEN/);
 });

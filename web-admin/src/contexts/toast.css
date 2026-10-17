@@ -1,0 +1,166 @@
+/* ==========================================================================
+   Executive Toast Notification Styling for SmartBox Admin
+   ========================================================================== */
+
+.toast-portal-root {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 420px;
+  width: calc(100vw - 48px);
+}
+
+.toast-item {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
+  color: #f8fafc;
+  font-family: var(--font-main, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  overflow: hidden;
+  animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.toast-item.exiting {
+  animation: toastSlideOut 0.2s ease forwards;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30px) scale(0.95);
+  }
+}
+
+.toast-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.toast-item.success {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.toast-item.success .toast-icon-wrap {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.toast-item.error {
+  border-color: rgba(244, 63, 94, 0.35);
+}
+.toast-item.error .toast-icon-wrap {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+}
+
+.toast-item.warning {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.toast-item.warning .toast-icon-wrap {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.toast-item.info {
+  border-color: rgba(37, 99, 235, 0.35);
+}
+.toast-item.info .toast-icon-wrap {
+  background: rgba(37, 99, 235, 0.15);
+  color: #3b82f6;
+}
+
+.toast-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toast-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+  line-height: 1.3;
+}
+
+.toast-message {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.toast-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.toast-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: currentColor;
+  opacity: 0.6;
+  border-radius: 0 0 12px 12px;
+  animation: toastProgress linear forwards;
+}
+
+.toast-item.success .toast-progress-bar { background: #10b981; }
+.toast-item.error .toast-progress-bar { background: #f43f5e; }
+.toast-item.warning .toast-progress-bar { background: #f59e0b; }
+.toast-item.info .toast-progress-bar { background: #3b82f6; }
+
+@keyframes toastProgress {
+  from { width: 100%; }
+  to { width: 0%; }
+}

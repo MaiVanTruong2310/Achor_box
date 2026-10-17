@@ -1,0 +1,337 @@
+/* ============================================================== */
+/* PO Delivery Dispatch & Acceptance Review Styling                */
+/* ============================================================== */
+
+.po-dispatch-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-top: 16px;
+}
+
+.po-dispatch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.po-dispatch-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+}
+
+.po-dispatch-time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.po-dispatch-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.po-dispatch-field label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.po-dispatch-field input,
+.po-dispatch-field select,
+.po-dispatch-field textarea {
+  background: var(--bg-input, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.po-dispatch-field input:focus,
+.po-dispatch-field select:focus,
+.po-dispatch-field textarea:focus {
+  border-color: #4f46e5;
+}
+
+/* Technicians Availability List */
+.po-tech-list-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.po-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.po-tech-card {
+  border: 2px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.po-tech-card:hover {
+  transform: translateY(-2px);
+  border-color: #6366f1;
+}
+
+.po-tech-card.selected {
+  border-color: #4f46e5;
+  background: rgba(79, 70, 229, 0.04);
+}
+
+.po-tech-card.disabled {
+  opacity: 0.75;
+  background: rgba(239, 68, 68, 0.03);
+  border-color: rgba(239, 68, 68, 0.35);
+  cursor: not-allowed;
+}
+
+.po-tech-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.po-tech-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.po-tech-badge-avail {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.po-tech-badge-avail.available {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.po-tech-badge-avail.busy {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.po-tech-conflict-reason {
+  font-size: 0.8rem;
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.08);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.po-tech-meta {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* PO Acceptance Review Box */
+.po-acceptance-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-top: 16px;
+}
+
+.po-acceptance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.po-acceptance-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+}
+
+.po-proof-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.po-proof-item {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.po-proof-item:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.po-proof-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.po-proof-caption {
+  position: absolute;
+  bottom: 0;
+  inset-inline: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.po-acceptance-notes {
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.po-acceptance-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.po-btn-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  transition: all 0.15s ease;
+}
+
+.po-btn-approve:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
+}
+
+.po-btn-rework {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.po-btn-rework:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+/* Lightbox Modal */
+.po-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.po-lightbox-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  position: relative;
+}
+
+.po-lightbox-content img {
+  max-width: 100%;
+  max-height: 85vh;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.po-lightbox-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}

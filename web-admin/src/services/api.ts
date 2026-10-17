@@ -61,7 +61,57 @@ export const dashboardService = {
 // ==============================================================================
 export interface ExtendedProduct extends Product {
     category_name?: string;
+    manager_id?: string | null;
+    has_weight_sensor?: boolean;
 }
+
+export interface PagedResult<T> {
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    pageNumber: number;
+    pageSize: number;
+}
+
+export function mapBackendProduct(p: any): ExtendedProduct {
+    return {
+        id: p.id,
+        category_id: p.categoryId,
+        category_name: p.categoryName || '',
+        manager_id: p.managerId || null,
+        has_weight_sensor: p.hasWeightSensor ?? false,
+        sku: p.sku,
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []),
+        stock_quantity: p.variants?.length ? p.variants.reduce((sum: number, v: any) => sum + Number(v.stockQuantity || 0), 0) : p.stockQuantity ?? 0,
+        is_active: p.isActive ?? true,
+        created_at: p.createdAt,
+        variants: Array.isArray(p.variants) ? p.variants.map((v: any) => ({
+            id: v.id,
+            product_id: v.productId,
+            variant_name: v.variantName,
+            sku: v.sku,
+            name: v.variantName,
+            price_delta: Number(v.priceDelta || 0),
+            price_adjustment: Number(v.priceDelta || 0),
+            calculated_price: Number(v.calculatedPrice || 0),
+            stock_quantity: Number(v.stockQuantity || 0),
+            width_cm: v.widthCm != null ? Number(v.widthCm) : undefined,
+            height_cm: v.heightCm != null ? Number(v.heightCm) : undefined,
+            depth_cm: v.depthCm != null ? Number(v.depthCm) : undefined,
+            weight_kg: v.weightKg != null ? Number(v.weightKg) : undefined,
+            max_load_kg: v.maxLoadKg != null ? Number(v.maxLoadKg) : undefined,
+            capacity_liter: v.capacityLiter != null ? Number(v.capacityLiter) : undefined,
+            model_tier: v.modelTier || undefined,
+            warranty_months: v.warrantyMonths != null ? Number(v.warrantyMonths) : undefined,
+            has_weight_sensor: v.hasWeightSensor ?? false,
+            images: Array.isArray(v.images) ? v.images : []
+        })) : []
+    };
+}
+
 export const productsService = {
     async getCategories(): Promise<ProductCategory[]> {
         const backendCategories = await fetchBackend<ProductCategory[]>('/products/categories');
@@ -72,31 +122,45 @@ export const productsService = {
     },
     async getProducts(): Promise<ExtendedProduct[]> {
         const backendProducts = await fetchBackend<any[]>('/products');
-        if (backendProducts) {
-            return backendProducts.map(p => ({
-                id: p.id,
-                category_id: p.categoryId,
-                category_name: p.categoryName || '',
-                sku: p.sku,
-                name: p.name,
-                description: p.description,
-                price: p.price,
-                images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []),
-                stock_quantity: p.variants?.length ? p.variants.reduce((sum: number, v: any) => sum + Number(v.stockQuantity || 0), 0) : p.stockQuantity ?? 0,
-                is_active: p.isActive ?? true,
-                created_at: p.createdAt,
-                variants: Array.isArray(p.variants) ? p.variants.map((v: any) => ({
-                    id: v.id,
-                    product_id: v.productId,
-                    variant_name: v.variantName,
-                    sku: v.sku,
-                    name: v.variantName,
-                    price_delta: Number(v.priceDelta || 0),
-                    price_adjustment: Number(v.priceDelta || 0),
-                    calculated_price: Number(v.calculatedPrice || 0),
-                    stock_quantity: Number(v.stockQuantity || 0)
-                })) : []
-            }));
+        if (backendProducts && Array.isArray(backendProducts)) {
+            return backendProducts.map(mapBackendProduct);
+        }
+        throw new Error("Phản hồi backend không hợp lệ.");
+    },
+    async getProductById(id: string): Promise<ExtendedProduct> {
+        const backendProduct = await fetchBackend<any>(`/products/${id}`);
+        if (backendProduct) {
+            return mapBackendProduct(backendProduct);
+        }
+        throw new Error("Không thể tải thông tin sản phẩm.");
+    },
+    async getProductsPaged(params?: {
+        page?: number;
+        size?: number;
+        categoryId?: string;
+        search?: string;
+    }): Promise<PagedResult<ExtendedProduct>> {
+        const page = params?.page ?? 0;
+        const size = params?.size ?? 10;
+        const queryParams = new URLSearchParams();
+        queryParams.set('page', String(page));
+        queryParams.set('size', String(size));
+        if (params?.categoryId && params.categoryId !== 'all') {
+            queryParams.set('categoryId', params.categoryId);
+        }
+        if (params?.search && params.search.trim()) {
+            queryParams.set('search', params.search.trim());
+        }
+        const res = await fetchBackend<any>(`/products/paged?${queryParams.toString()}`);
+        if (res) {
+            const rawContent = Array.isArray(res.content) ? res.content : [];
+            return {
+                content: rawContent.map(mapBackendProduct),
+                totalElements: Number(res.totalElements ?? rawContent.length),
+                totalPages: Number(res.totalPages ?? 1),
+                pageNumber: Number(res.currentPage ?? page),
+                pageSize: Number(res.pageSize ?? size)
+            };
         }
         throw new Error("Phản hồi backend không hợp lệ.");
     },
@@ -106,6 +170,8 @@ export const productsService = {
     }> {
         const payload = {
             categoryId: product.category_id,
+            managerId: (product as any).manager_id || null,
+            hasWeightSensor: (product as any).has_weight_sensor ?? false,
             sku: product.sku,
             name: product.name,
             description: product.description || '',
@@ -149,6 +215,8 @@ export const productsService = {
     }> {
         const payload = {
             categoryId: updates.category_id,
+            managerId: (updates as any).manager_id || null,
+            hasWeightSensor: (updates as any).has_weight_sensor,
             sku: updates.sku,
             name: updates.name,
             description: updates.description,
@@ -180,12 +248,159 @@ export const productsService = {
             return { success: true, error: null };
         throw new Error("Phản hồi backend không hợp lệ.");
     },
-    async updateStock(id: string, delta: number, reason: string = 'Điều chỉnh trực tiếp', author: string = 'Admin'): Promise<{
+    async updateStock(id: string, delta: number, reason: string = 'Điều chỉnh trực tiếp'): Promise<{
         success: boolean;
         error: string | null;
     }> {
-        await fetchBackend('/products/' + id + '/stock', { method: 'PATCH', body: JSON.stringify({ delta }) });
+        await fetchBackend('/products/' + id + '/stock', { method: 'PATCH', body: JSON.stringify({ delta, reason }) });
         return { success: true, error: null };
+    },
+    async adjustVariantStock(productId: string, variantId: string, delta: number, reason: string = 'Điều chỉnh trực tiếp'): Promise<any> {
+        return fetchBackend(`/products/${productId}/variants/${variantId}/stock`, {
+            method: 'PATCH',
+            body: JSON.stringify({ delta, reason })
+        });
+    },
+    async getProductInventoryHistory(productId: string): Promise<any[]> {
+        const rows = await fetchBackend<any[]>(`/products/${productId}/inventory-history`);
+        return rows || [];
+    },
+    async uploadImage(file: File): Promise<string> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetchBackend<{ url: string }>('/products/images', {
+            method: 'POST',
+            body: formData
+        });
+        return res?.url || '';
+    },
+    async getProductManagers(): Promise<{ id: string; fullName: string; email: string }[]> {
+        try {
+            const res = await fetchBackend<any>('/users/paged?role=product_manager&size=100');
+            return (res?.content || []).map((u: any) => ({
+                id: u.id,
+                fullName: u.fullName || u.email,
+                email: u.email
+            }));
+        } catch {
+            return [];
+        }
+    },
+    async createCategory(category: { name: string; slug?: string; description?: string }): Promise<ProductCategory> {
+        const res = await fetchBackend<ProductCategory>('/products/categories', {
+            method: 'POST',
+            body: JSON.stringify(category)
+        });
+        if (res) return res;
+        throw new Error("Không thể tạo danh mục mới.");
+    },
+    async updateCategory(id: string, category: { name: string; slug?: string; description?: string }): Promise<ProductCategory> {
+        const res = await fetchBackend<ProductCategory>(`/products/categories/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(category)
+        });
+        if (res) return res;
+        throw new Error("Không thể cập nhật danh mục.");
+    },
+    async deleteCategory(id: string): Promise<void> {
+        await fetchBackend(`/products/categories/${id}`, {
+            method: 'DELETE'
+        });
+    },
+    async updateVariantSpecifications(productId: string, variantId: string, specs: {
+        widthCm?: number;
+        heightCm?: number;
+        depthCm?: number;
+        weightKg?: number;
+        maxLoadKg?: number;
+        capacityLiter?: number;
+        modelTier?: string;
+        warrantyMonths?: number;
+        images?: string[];
+    }): Promise<any> {
+        return fetchBackend(`/products/${productId}/variants/${variantId}/specifications`, {
+            method: 'PATCH',
+            body: JSON.stringify(specs)
+        });
+    },
+    async seedStandardProducts(): Promise<void> {
+        const cats = await this.getCategories();
+        const mainCat = cats.find(c => c.slug === 'tu-nhan-hang-thong-minh') || cats[0];
+        const catId = mainCat ? mainCat.id : undefined;
+
+        await this.createProduct({
+            name: 'Tủ Nhận Hàng Thông Minh SmartBox Home Standard',
+            sku: 'SBX-STD-01',
+            category_id: catId,
+            price: 3490000,
+            description: 'Tủ giao nhận bưu kiện thông minh chuyên biệt cho nhà phố và hộ gia đình. Tích hợp mã OTP, mở khóa từ xa và thông báo tức thì khi có hàng.',
+            is_active: true,
+            images: ['https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80'],
+            variants: [
+                { variant_name: 'Size S (Tiêu Chuẩn - 45L)', sku: 'SBX-STD-S', price_delta: 0, stock_quantity: 15 } as any,
+                { variant_name: 'Size M (Gia Đình - 70L)', sku: 'SBX-STD-M', price_delta: 500000, stock_quantity: 25 } as any,
+                { variant_name: 'Size L (Dung Tích Lớn - 110L)', sku: 'SBX-STD-L', price_delta: 1200000, stock_quantity: 10 } as any,
+            ]
+        } as any);
+
+        await this.createProduct({
+            name: 'Tủ Nhận Hàng Thông Minh SmartBox Pro Flagship',
+            sku: 'SBX-PRO-02',
+            category_id: catId,
+            price: 5890000,
+            description: 'Dòng tủ thông minh cao cấp tích hợp module cảm biến cân trọng lượng điện tử, xác thực chính xác khối lượng bưu kiện và chống trộm quang học.',
+            is_active: true,
+            has_weight_sensor: true,
+            images: ['https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=800&q=80'],
+            variants: [
+                { variant_name: 'Size M Pro (Cảm Biến Cân - 70L)', sku: 'SBX-PRO-M', price_delta: 0, stock_quantity: 20 } as any,
+                { variant_name: 'Size L Pro (Cảm Biến Cân - 120L)', sku: 'SBX-PRO-L', price_delta: 900000, stock_quantity: 12 } as any,
+            ]
+        } as any);
+
+        await this.createProduct({
+            name: 'Tủ Nhận Hàng Thông Minh SmartBox Mini Eco',
+            sku: 'SBX-MINI-03',
+            category_id: catId,
+            price: 2490000,
+            description: 'Tủ nhận bưu phẩm nhỏ gọn tiết kiệm không gian, phù hợp chung cư hoặc cửa hàng nhỏ, lắp đặt treo tường hoặc chân đế linh hoạt.',
+            is_active: true,
+            images: ['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80'],
+            variants: [
+                { variant_name: 'Size Mini (30L)', sku: 'SBX-MINI-S', price_delta: 0, stock_quantity: 30 } as any,
+            ]
+        } as any);
+
+        const refreshed = await this.getProducts();
+        for (const prod of refreshed) {
+            for (const v of prod.variants || []) {
+                if (v.sku === 'SBX-STD-S') {
+                    await this.updateVariantSpecifications(prod.id, v.id, {
+                        widthCm: 42, heightCm: 70, depthCm: 38, weightKg: 16, maxLoadKg: 35, capacityLiter: 45, modelTier: 'BASE', warrantyMonths: 24
+                    });
+                } else if (v.sku === 'SBX-STD-M') {
+                    await this.updateVariantSpecifications(prod.id, v.id, {
+                        widthCm: 48, heightCm: 95, depthCm: 42, weightKg: 22, maxLoadKg: 50, capacityLiter: 70, modelTier: 'BASE', warrantyMonths: 24
+                    });
+                } else if (v.sku === 'SBX-STD-L') {
+                    await this.updateVariantSpecifications(prod.id, v.id, {
+                        widthCm: 55, heightCm: 120, depthCm: 48, weightKg: 30, maxLoadKg: 80, capacityLiter: 110, modelTier: 'BASE', warrantyMonths: 24
+                    });
+                } else if (v.sku === 'SBX-PRO-M') {
+                    await this.updateVariantSpecifications(prod.id, v.id, {
+                        widthCm: 48, heightCm: 95, depthCm: 42, weightKg: 25, maxLoadKg: 60, capacityLiter: 70, modelTier: 'PRO', warrantyMonths: 36
+                    });
+                } else if (v.sku === 'SBX-PRO-L') {
+                    await this.updateVariantSpecifications(prod.id, v.id, {
+                        widthCm: 58, heightCm: 125, depthCm: 50, weightKg: 35, maxLoadKg: 100, capacityLiter: 120, modelTier: 'PRO', warrantyMonths: 36
+                    });
+                } else if (v.sku === 'SBX-MINI-S') {
+                    await this.updateVariantSpecifications(prod.id, v.id, {
+                        widthCm: 38, heightCm: 55, depthCm: 32, weightKg: 12, maxLoadKg: 25, capacityLiter: 30, modelTier: 'BASE', warrantyMonths: 18
+                    });
+                }
+            }
+        }
     },
     // ---------------------------------------------------------
     // Coupons / Mã Khuyến Mãi
@@ -314,6 +529,32 @@ export const productsService = {
         const rows = await fetchBackend<any[]>('/products/inventory-movements');
         return (rows || []).map(r => ({ id: r.id, product_id: r.productId, product_name: r.productName, sku: r.sku, transaction_type: r.delta > 0 ? 'in' as const : 'out' as const, delta: r.delta, previous_stock: r.previousStock, new_stock: r.newStock, reason: r.reason, created_at: r.createdAt, created_by: r.actorName || 'Hệ thống' }));
     },
+    async getStockTransactionsPaged(page: number = 0, size: number = 20): Promise<PagedResult<StockTransaction>> {
+        const res = await fetchBackend<any>(`/products/inventory-movements?paged=true&page=${page}&size=${size}`);
+        if (res) {
+            const rows = Array.isArray(res.content) ? res.content : [];
+            return {
+                content: rows.map((r: any) => ({
+                    id: r.id,
+                    product_id: r.productId,
+                    product_name: r.productName,
+                    sku: r.sku,
+                    transaction_type: r.delta > 0 ? ('in' as const) : ('out' as const),
+                    delta: r.delta,
+                    previous_stock: r.previousStock,
+                    new_stock: r.newStock,
+                    reason: r.reason,
+                    created_at: r.createdAt,
+                    created_by: r.actorName || 'Hệ thống'
+                })),
+                totalElements: Number(res.totalElements ?? rows.length),
+                totalPages: Number(res.totalPages ?? 1),
+                pageNumber: Number(res.pageNumber ?? page),
+                pageSize: Number(res.pageSize ?? size)
+            };
+        }
+        throw new Error("Phản hồi backend không hợp lệ.");
+    },
     async addStockTransaction(tx: StockTransaction): Promise<void> {
         throw new Error('Dùng thao tác điều chỉnh kho từng SKU; backend tự ghi lịch sử.');
     }
@@ -386,6 +627,13 @@ export const ordersService = {
         if (res)
             return { success: true, error: null };
         throw new Error("Phản hồi backend không hợp lệ.");
+    },
+    async getOrderById(id: string): Promise<any> {
+        const backendOrder = await fetchBackend<any>(`/orders/${id}`);
+        if (backendOrder) {
+            return backendOrder;
+        }
+        throw new Error("Không thể tải thông tin đơn hàng.");
     }
 };
 // ==============================================================================

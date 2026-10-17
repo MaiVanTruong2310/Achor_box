@@ -2,17 +2,13 @@ export type UserRole =
   | 'customer'
   | 'super_admin'
   | 'product_manager'
-  | 'support_agent'
-  | 'technician'
-  | 'accountant';
+  | 'technician';
 
 export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
-  super_admin: '/dashboard',
-  technician: '/delivery-installations',
-  product_manager: '/products',
-  support_agent: '/warranties',
-  accountant: '/orders',
-  customer: '/guide',
+  super_admin: '/admin/dashboard',
+  product_manager: '/po/dashboard',
+  technician: '/technician/dashboard',
+  customer: '/403',
 };
 
 export const getRoleDefaultPath = (role: UserRole): string => {
@@ -22,7 +18,7 @@ export const getRoleDefaultPath = (role: UserRole): string => {
 export type DeviceStatus = 'online' | 'offline' | 'maintenance' | 'error';
 export type AccessLevel = 'view_only' | 'full_control';
 export type PinType = 'permanent' | 'temporary' | 'one_time';
-export type OrderStatus = 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled' | 'refunded';
+export type OrderStatus = 'awaiting_payment' | 'paid' | 'confirmed' | 'delivered' | 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled' | 'refunded';
 export type WarrantyStatus = 'active' | 'expired' | 'void';
 export type ClaimStatus = 'new' | 'in_progress' | 'resolved' | 'rejected';
 export type ReviewStatus = 'pending' | 'approved' | 'hidden';
@@ -32,6 +28,7 @@ export interface Profile {
   full_name: string | null;
   phone: string | null;
   email?: string | null;
+  username?: string | null;
   avatar_url: string | null;
   default_address: string | null;
   role: UserRole;
@@ -84,6 +81,7 @@ export interface ProductCategory {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
 }
 
 export interface ProductVariant {
@@ -101,6 +99,16 @@ export interface ProductVariant {
   calculated_price?: number;
   stock_quantity: number;
   image_url?: string;
+  width_cm?: number;
+  height_cm?: number;
+  depth_cm?: number;
+  weight_kg?: number;
+  max_load_kg?: number;
+  capacity_liter?: number;
+  model_tier?: string;
+  warranty_months?: number;
+  has_weight_sensor?: boolean;
+  images?: string[];
 }
 
 export interface ProductSEO {
@@ -259,4 +267,6 @@ export interface TestSendResponse {
   renderedBody: string;
   message: string;
   isRealSent?: boolean;
+  queued?: boolean;
+  outboxId?: string;
 }
