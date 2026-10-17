@@ -1,20 +1,5 @@
 package com.smartbox.backend.dto.response.auth;
 
-import com.smartbox.backend.dto.request.admin.*;
-import com.smartbox.backend.dto.request.auth.*;
-import com.smartbox.backend.dto.request.catalog.*;
-import com.smartbox.backend.dto.request.commerce.*;
-import com.smartbox.backend.dto.request.customer.*;
-import com.smartbox.backend.dto.request.device.*;
-import com.smartbox.backend.dto.request.warranty.*;
-import com.smartbox.backend.dto.response.admin.*;
-import com.smartbox.backend.dto.response.auth.*;
-import com.smartbox.backend.dto.response.catalog.*;
-import com.smartbox.backend.dto.response.commerce.*;
-import com.smartbox.backend.dto.response.customer.*;
-import com.smartbox.backend.dto.response.device.*;
-import com.smartbox.backend.dto.response.warranty.*;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -45,6 +30,15 @@ public class LoginResponse {
 
     @Schema(description = "Vai trò hệ thống (super_admin, technician, product_manager,...)", example = "super_admin")
     private String role;
+
+    @Schema(description = "Đường dẫn ảnh đại diện")
+    private String avatarUrl;
+
+    @Schema(description = "Số điện thoại")
+    private String phone;
+
+    @Schema(description = "Địa chỉ mặc định")
+    private String defaultAddress;
 
     @Schema(description = "Mã JWT Access Token", example = "eyJhbGciOiJIUzI1NiJ9...")
     private String accessToken;

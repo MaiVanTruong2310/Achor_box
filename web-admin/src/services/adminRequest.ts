@@ -17,6 +17,11 @@ supabase.auth.onAuthStateChange((_event, session) => {
   cachedTokenExpiresAt = (session?.expires_at || 0) * 1000;
 });
 
+export function setCachedAdminToken(token: string | null, expiresInSeconds: number = 3600): void {
+  cachedToken = token;
+  cachedTokenExpiresAt = token ? Date.now() + expiresInSeconds * 1000 : 0;
+}
+
 async function getValidAccessToken(): Promise<string | null> {
   if (cachedToken && Date.now() < cachedTokenExpiresAt - 5000) {
     return cachedToken;

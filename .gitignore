@@ -49,6 +49,8 @@ web-shop/.env.*
 .env
 .env.*
 !.env.example
+docs/
+seed_staff_and_customers.sql
 
 # Documents & Reports (Ignore all docx, doc, pdf, etc.)
 *.docx

@@ -21,10 +21,32 @@ public class SupabaseAuthGateway {
     private final String serviceKey;
     public SupabaseAuthGateway(@Value("${smartbox.supabase.url:}") String url,@Value("${smartbox.supabase.anon-key:}") String key,@Value("${smartbox.supabase.service-role-key:}") String serviceKey) {
         this.url=url;this.key=key;this.serviceKey=serviceKey;
-        var factory=new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build());
+        var httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(3))
+                .build();
+        var factory=new JdkClientHttpRequestFactory(httpClient);
         factory.setReadTimeout(Duration.ofSeconds(5));
         this.client=RestClient.builder().baseUrl(url.isBlank()?"http://localhost":url+"/auth/v1").requestFactory(factory).build();
     }
+
+    @jakarta.annotation.PostConstruct
+    public void initWarmUp() {
+        if (!url.isBlank() && !key.isBlank()) {
+            java.util.concurrent.CompletableFuture.runAsync(this::keepAlivePing);
+        }
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 45000)
+    public void keepAlivePing() {
+        if (url.isBlank() || key.isBlank()) return;
+        try {
+            client.get().uri("/health").header("apikey", key).retrieve().toBodilessEntity();
+        } catch (Exception ignored) {
+            // Keep-alive heartbeat only
+        }
+    }
+
     private void configured() {if(url.isBlank()||key.isBlank()) throw new AppException(503,"AUTH_PROVIDER_NOT_CONFIGURED");}
     public Map<String,Object> password(String email,String password) {return exchange("password",Map.of("email",email,"password",password));}
     public Map<String,Object> refresh(String refreshToken) {return exchange("refresh_token",Map.of("refresh_token",refreshToken));}

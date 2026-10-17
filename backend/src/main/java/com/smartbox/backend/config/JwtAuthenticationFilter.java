@@ -98,7 +98,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 email=profile.getEmail();
 
                 if (redisAuth != null) {
-                    redisAuth.cacheAuthSession(token, id, role, email, profile.getFullName(), Boolean.TRUE.equals(profile.getIsLocked()), 300);
+                    redisAuth.cacheAuthSession(token, id, role, email, profile.getFullName(), Boolean.TRUE.equals(profile.getIsLocked()), 1800);
                 }
             }
 

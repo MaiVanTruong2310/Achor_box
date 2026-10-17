@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: smartbox-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartbox
+      POSTGRES_USER: smartbox
+      POSTGRES_PASSWORD: smartbox_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartbox -d smartbox"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: smartbox-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: smartbox-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP port
+      - "8025:8025"   # Web UI dashboard: http://localhost:8025
+    environment:
+      MP_MAX_MESSAGES: 500
+    volumes:
+      - mailpit_data:/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: smartbox-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"     # pgAdmin Web UI: http://localhost:5050
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin-servers.json:/pgadmin4/servers.json
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  redis_data:
+  mailpit_data:
+  pgadmin_data:

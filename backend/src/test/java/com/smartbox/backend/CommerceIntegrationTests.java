@@ -109,7 +109,7 @@ class CommerceIntegrationTests {
         jdbc.update("INSERT INTO public.profiles(id,email,full_name) VALUES(?,?,?)",CUSTOMER,"customer@smartbox.test","Khách kiểm thử SmartBox");
         jdbc.update("INSERT INTO public.profiles(id,email,full_name) VALUES(?,?,?)",STAFF,"staff@smartbox.test","Nhân viên kiểm thử");
         product=UUID.randomUUID();variant=UUID.randomUUID();
-        jdbc.update("INSERT INTO public.products(id,name,price,is_active) VALUES(?,'SmartBox kiểm thử',1000000,true)",product);
+        jdbc.update("INSERT INTO public.products(id,name,price,is_active,manager_id) VALUES(?,'SmartBox kiểm thử',1000000,true,?)",product,STAFF);
         jdbc.update("INSERT INTO public.product_variants(id,product_id,variant_name,sku,price_delta,stock_quantity) VALUES(?,?,'M 85L','TEST-M',200000,10)",variant,product);
     }
     UUID order(int quantity){return UUID.fromString(orders.create(new CommerceRequests.CreateOrder("Địa chỉ kiểm thử",List.of(new CommerceRequests.Item(variant,quantity)))).get("id").toString());}

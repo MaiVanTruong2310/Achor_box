@@ -29,8 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Xử lý tập trung toàn bộ ngoại lệ trong hệ thống REST API SmartBox.
- * Chuẩn hóa mã phản hồi HTTP và cấu trúc trả về đồng nhất theo ApiResponse<T>.
+ * Xử lý tập trung toàn bộ ngoại lệ trong hệ thống REST API SmartBox. Chuẩn hóa
+ * mã phản hồi HTTP và cấu trúc trả về đồng nhất theo ApiResponse<T>.
  */
 @RestControllerAdvice
 @Slf4j
@@ -39,7 +39,6 @@ public class GlobalExceptionHandler {
     // ==========================================
     // 1. Business / Domain Exceptions
     // ==========================================
-
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadRequestException(BadRequestException ex) {
         return ResponseEntity
@@ -95,7 +94,6 @@ public class GlobalExceptionHandler {
     // ==========================================
     // 2. Security Exceptions (Spring Security)
     // ==========================================
-
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(AccessDeniedException ex) {
         log.warn("Access denied: {}", ex.getMessage());
@@ -114,7 +112,6 @@ public class GlobalExceptionHandler {
     // ==========================================
     // 3. Validation & Bad Request Exceptions
     // ==========================================
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -140,11 +137,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            IllegalArgumentException.class,
-            HttpMessageNotReadableException.class,
-            MethodArgumentTypeMismatchException.class,
-            MissingServletRequestParameterException.class,
-            MissingRequestHeaderException.class
+        IllegalArgumentException.class,
+        HttpMessageNotReadableException.class,
+        MethodArgumentTypeMismatchException.class,
+        MissingServletRequestParameterException.class,
+        MissingRequestHeaderException.class
     })
     public ResponseEntity<ApiResponse<Object>> handleInvalidInput(Exception ex) {
         log.warn("Invalid input exception: {}", ex.getMessage(), ex);
@@ -156,7 +153,6 @@ public class GlobalExceptionHandler {
     // ==========================================
     // 4. HTTP Routing & Payload Exceptions
     // ==========================================
-
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleNoResourceFoundException(NoResourceFoundException ex) {
         return ResponseEntity
@@ -188,11 +184,10 @@ public class GlobalExceptionHandler {
     // ==========================================
     // 5. Database Concurrency & Constraints
     // ==========================================
-
     @ExceptionHandler({
-            DataIntegrityViolationException.class,
-            CannotAcquireLockException.class,
-            ObjectOptimisticLockingFailureException.class
+        DataIntegrityViolationException.class,
+        CannotAcquireLockException.class,
+        ObjectOptimisticLockingFailureException.class
     })
     public ResponseEntity<ApiResponse<Object>> handlePersistenceConflict(Exception ex) {
         log.warn("Persistence conflict [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
@@ -204,7 +199,6 @@ public class GlobalExceptionHandler {
     // ==========================================
     // 6. Fallback / Unhandled Exception (Bottom)
     // ==========================================
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneralException(Exception ex) {
         log.error("Unhandled request failure", ex);

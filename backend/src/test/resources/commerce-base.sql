@@ -1,5 +1,5 @@
 CREATE DOMAIN public.order_status AS varchar;
-CREATE TABLE public.profiles(id uuid PRIMARY KEY,email text,full_name text,phone text,role text DEFAULT 'customer',is_locked boolean DEFAULT false,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
+CREATE TABLE public.profiles(id uuid PRIMARY KEY,email text,full_name text,phone text,avatar_url text,default_address text,username text,role text DEFAULT 'customer',is_locked boolean DEFAULT false,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
 CREATE TABLE public.products(id uuid PRIMARY KEY,name text NOT NULL,price numeric NOT NULL,category_id uuid,is_active boolean NOT NULL,manager_id uuid);
 CREATE TABLE public.product_variants(id uuid PRIMARY KEY,product_id uuid REFERENCES public.products(id),variant_name text NOT NULL,sku text UNIQUE NOT NULL,price_delta numeric NOT NULL,stock_quantity integer NOT NULL);
 CREATE TABLE public.orders(id uuid PRIMARY KEY,user_id uuid REFERENCES public.profiles(id),status public.order_status NOT NULL,shipping_address text,total numeric NOT NULL,tracking_number text,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
