@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured, clearAllAuthTokens, isSessionExpired, pruneLegacyLocalStorageAuth } from '../services/supabase';
 import { Profile, UserRole } from '../types/database';
-import { adminRequest } from '../services/adminRequest';
+import { adminRequest, setCachedAdminToken } from '../services/adminRequest';
 
 interface AuthContextType {
   user: User | null;
@@ -286,23 +286,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return { success: false, error: customerErrMsg };
           }
 
-          // Lưu phiên vào Supabase Client để các tính năng Supabase hoạt động nhất quán
-          try {
-            await supabase.auth.setSession({
-              access_token: loginData.accessToken,
-              refresh_token: loginData.refreshToken
-            });
-          } catch (e) {
-            console.warn('[Auth] Không thể đồng bộ session sang Supabase client:', e);
-          }
-
           const prof: Profile = {
             id: loginData.userId,
             full_name: loginData.fullName || '',
             email: loginData.email || cleanEmail,
-            phone: '',
+            phone: loginData.phone || '',
             avatar_url: loginData.avatarUrl || '',
-            default_address: '',
+            default_address: loginData.defaultAddress || '',
             role: loginData.role,
             is_locked: false,
             is_2fa_enabled: false,
@@ -310,12 +300,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             updated_at: new Date().toISOString()
           };
 
+          // 1. Cập nhật state Profile, User và Token cache NGAY LẬP TỨC để chuyển trang tức thì (<50ms)
           updateProfile(prof);
-          setUser({ id: loginData.userId, email: loginData.email } as any);
+          setUser({ id: loginData.userId, email: loginData.email, user_metadata: { full_name: loginData.fullName } } as any);
+          setCachedAdminToken(loginData.accessToken, loginData.expiresIn || 3600);
           scheduleSessionExpiry(Math.floor(Date.now() / 1000) + (loginData.expiresIn || 3600));
-          void fetchUserProfile(loginData.userId, loginData.accessToken).then((fullProf) => {
-            if (fullProf) updateProfile(fullProf);
-          }).catch(() => {});
+
+          // 2. Đồng bộ ngầm Supabase session trong background (KHÔNG await để không làm đơ giao diện)
+          supabase.auth.setSession({
+            access_token: loginData.accessToken,
+            refresh_token: loginData.refreshToken
+          }).catch((e) => {
+            console.warn('[Auth] Không thể đồng bộ session sang Supabase client:', e);
+          });
+
+          // 3. Nếu thiếu thông tin phụ (avatar, phone), tải ngầm mà không chặn UI
+          if (!loginData.avatarUrl && !loginData.phone) {
+            void fetchUserProfile(loginData.userId, loginData.accessToken).then((fullProf) => {
+              if (fullProf) updateProfile(fullProf);
+            }).catch(() => {});
+          }
+
           setError(null);
           setLoading(false);
           return { success: true, role: prof.role };

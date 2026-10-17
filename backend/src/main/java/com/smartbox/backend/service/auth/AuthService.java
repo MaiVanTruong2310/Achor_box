@@ -79,8 +79,9 @@ public class AuthService {
         // 3. Lưu phiên đăng nhập vào Redis và Pre-cache auth token cho các request tiếp theo
         if (redisAuth != null) {
             redisAuth.saveSession(profile.getId(), access, expiresIn, profile.getEmail(), profile.getRole());
+            long cacheTtl = expiresIn > 0 ? Math.min(expiresIn, 1800) : 1800;
             redisAuth.cacheAuthSession(access, profile.getId(), profile.getRole(), profile.getEmail(),
-                    profile.getFullName(), Boolean.TRUE.equals(profile.getIsLocked()), Math.min(expiresIn, 300));
+                    profile.getFullName(), Boolean.TRUE.equals(profile.getIsLocked()), cacheTtl);
         }
 
         return LoginResponse.builder()
@@ -90,6 +91,9 @@ public class AuthService {
                 .email(profile.getEmail())
                 .fullName(profile.getFullName())
                 .role(profile.getRole())
+                .avatarUrl(profile.getAvatarUrl())
+                .phone(profile.getPhone())
+                .defaultAddress(profile.getDefaultAddress())
                 .accessToken(access)
                 .token(access)
                 .refreshToken(session.get("refresh_token").toString())
