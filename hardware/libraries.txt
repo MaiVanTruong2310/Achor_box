@@ -1,0 +1,5 @@
+PubSubClient
+ESP32Servo
+HX711
+Keypad
+ArduinoJson@7.0.0
