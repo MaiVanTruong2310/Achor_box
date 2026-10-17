@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 IoT Smart Delivery Box (graduation thesis). Three live parts: ESP32-S3 firmware, a Flutter mobile app, and a Supabase backend (Postgres + Auth + Storage + Realtime). The user communicates in Vietnamese; user-facing strings in the app are bilingual (vi/en).
 
-The root `README.md` describes an older design (Express backend + local Postgres in Docker, `lib/screens/dashboard_screen.dart`). **Supabase is now the real backend**; `backend/`, `docker/` and `database/init.sql` are legacy/optional and not on the main data path.
+**Supabase is the real backend**; `backend/`, `docker/` and `database/` are a legacy design (Express + local Postgres + Mosquitto) and not on the main data path. The schema is fully reproducible from `mobile_app/supabase/migrations/` — `20260901000000_baseline_core_schema.sql` rebuilds the dashboard-created base (tables, profile trigger, base RLS) that predates migration history.
 
 ## Commands
 

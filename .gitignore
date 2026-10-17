@@ -21,3 +21,4 @@ firmware/recovery_backup_*/
 mobile_app/lib/core/constants/supabase_config.dart
 mobile_app/supabase/.temp/
 **/local.properties
+*.bak_old_project
