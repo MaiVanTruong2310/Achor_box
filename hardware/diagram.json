@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "author": "Smart Delivery Box - ESP32-S3 + Solenoid Lock",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": 40,
+      "left": 0,
+      "attrs": { "flashSize": "16" }
+    },
+    { "type": "wokwi-hc-sr04", "id": "ultrasonic", "top": -160, "left": -260, "attrs": {} },
+    { "type": "wokwi-hx711", "id": "hx711", "top": 160, "left": -260, "attrs": {} },
+    { "type": "wokwi-relay-module", "id": "relay_lock", "top": -160, "left": 200, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "solenoid_placeholder",
+      "top": -60,
+      "left": 260,
+      "attrs": { "color": "orange" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_solenoid",
+      "top": -60,
+      "left": 300,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "mc38_switch",
+      "top": 196.4,
+      "left": 175.9,
+      "attrs": {}
+    },
+    { "type": "wokwi-membrane-keypad", "id": "keypad", "top": -11.6, "left": 340, "attrs": {} },
+    { "type": "wokwi-buzzer", "id": "buzzer", "top": -220, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "led_green",
+      "top": 320,
+      "left": -40,
+      "attrs": { "color": "green" }
+    },
+    { "type": "wokwi-led", "id": "led_red", "top": 320, "left": 20, "attrs": { "color": "red" } },
+    {
+      "type": "wokwi-led",
+      "id": "led_blue",
+      "top": 320,
+      "left": 80,
+      "attrs": { "color": "blue" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_green",
+      "top": 340,
+      "left": -60,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_red",
+      "top": 340,
+      "left": 0,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_blue",
+      "top": 340,
+      "left": 60,
+      "attrs": { "value": "220" }
+    }
+  ],
+  "connections": [
+    [ "esp:GND.1", "ultrasonic:GND", "black", [ "v0" ] ],
+    [ "esp:5V", "ultrasonic:VCC", "red", [ "v0" ] ],
+    [ "esp:5", "ultrasonic:TRIG", "blue", [ "v0" ] ],
+    [ "esp:18", "ultrasonic:ECHO", "green", [ "v0" ] ],
+    [ "esp:GND.1", "hx711:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "hx711:VCC", "red", [ "v0" ] ],
+    [ "esp:4", "hx711:DT", "orange", [ "v0" ] ],
+    [ "esp:6", "hx711:SCK", "yellow", [ "v0" ] ],
+    [ "esp:GND.1", "relay_lock:GND", "black", [ "v0" ] ],
+    [ "esp:5V", "relay_lock:VCC", "red", [ "v0" ] ],
+    [ "esp:7", "relay_lock:IN", "purple", [ "v0" ] ],
+    [ "relay_lock:COM", "r_solenoid:1", "orange", [ "v0" ] ],
+    [ "r_solenoid:2", "solenoid_placeholder:A", "orange", [ "v0" ] ],
+    [ "esp:GND.1", "solenoid_placeholder:C", "black", [ "v0" ] ],
+    [ "relay_lock:NO", "esp:5V", "red", [ "v0" ] ],
+    [ "esp:GND.1", "mc38_switch:1", "black", [ "v0" ] ],
+    [ "esp:8", "mc38_switch:2", "cyan", [ "v0" ] ],
+    [ "esp:9", "keypad:R1", "green", [ "v0" ] ],
+    [ "esp:10", "keypad:R2", "green", [ "v0" ] ],
+    [ "esp:11", "keypad:R3", "green", [ "v0" ] ],
+    [ "esp:12", "keypad:R4", "green", [ "v0" ] ],
+    [ "esp:13", "keypad:C1", "blue", [ "v0" ] ],
+    [ "esp:14", "keypad:C2", "blue", [ "v0" ] ],
+    [ "esp:15", "keypad:C3", "blue", [ "v0" ] ],
+    [ "esp:16", "keypad:C4", "blue", [ "v0" ] ],
+    [ "esp:GND.1", "buzzer:1", "black", [ "v0" ] ],
+    [ "esp:17", "buzzer:2", "magenta", [ "v0" ] ],
+    [ "esp:21", "r_green:1", "green", [ "v0" ] ],
+    [ "r_green:2", "led_green:A", "green", [ "v0" ] ],
+    [ "esp:GND.1", "led_green:C", "black", [ "v0" ] ],
+    [ "esp:38", "r_red:1", "red", [ "v0" ] ],
+    [ "r_red:2", "led_red:A", "red", [ "v0" ] ],
+    [ "esp:GND.1", "led_red:C", "black", [ "v0" ] ],
+    [ "esp:39", "r_blue:1", "blue", [ "v0" ] ],
+    [ "r_blue:2", "led_blue:A", "blue", [ "v0" ] ],
+    [ "esp:GND.1", "led_blue:C", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
