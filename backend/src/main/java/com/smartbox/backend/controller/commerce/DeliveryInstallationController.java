@@ -108,8 +108,12 @@ public class DeliveryInstallationController {
 
     @GetMapping("/api/orders/{id}/delivery-installation")
     @Operation(summary = "Lấy thông tin công việc giao lắp của đơn hàng", description = "Truy vấn tiến độ và thông tin chi tiết nhiệm vụ giao lắp được gán cho một đơn hàng cụ thể")
-    public Map<String, Object> forOrder(@PathVariable UUID id) {
-        return jobs.forOrder(id);
+    public ResponseEntity<?> forOrder(@PathVariable UUID id) {
+        var job = jobs.forOrder(id);
+        if (job == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(job);
     }
 
     @GetMapping("/api/delivery-installations/eligible-orders")

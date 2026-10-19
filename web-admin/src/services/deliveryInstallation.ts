@@ -188,9 +188,10 @@ export const deliveryApi = {
     request<Page<{ id: string; shippingAddress: string | null; createdAt: string }>>(`/delivery-installations/eligible-orders?page=${page}&size=20`),
   forOrder: async (orderId: string): Promise<Job | null> => {
     try {
-      return await request<Job>(`/orders/${orderId}/delivery-installation`);
+      const res = await request<Job>(`/orders/${orderId}/delivery-installation`);
+      return res && (res as any).id ? res : null;
     } catch (err: any) {
-      if (err?.status === 404) return null;
+      if (err?.status === 404 || err?.status === 204) return null;
       throw err;
     }
   },

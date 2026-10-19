@@ -167,8 +167,10 @@ public class VnpayGateway {
         params.put("vnp_OrderInfo", "Thanh toan SmartBox " + payment);
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
+        OffsetDateTime safeExpires = (expires != null && expires.isAfter(created.plusMinutes(20)))
+                ? expires : created.plusMinutes(30);
         params.put("vnp_CreateDate", DATE.format(created.atZoneSameInstant(VIETNAM)));
-        params.put("vnp_ExpireDate", DATE.format(expires.atZoneSameInstant(VIETNAM)));
+        params.put("vnp_ExpireDate", DATE.format(safeExpires.atZoneSameInstant(VIETNAM)));
         params.put("vnp_ReturnUrl", returnUrl);
         params.put("vnp_IpAddr", (ip == null || !ip.matches("[0-9a-fA-F:.]{3,45}")) ? "127.0.0.1" : ip);
 

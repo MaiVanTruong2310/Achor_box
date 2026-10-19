@@ -63,7 +63,13 @@ public class UserService {
     }
     @Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public Map<String,Object> getUsersPaged(int page,int size,String search,String role,Boolean locked) {
-        actors.get().requireRoles("super_admin");
+        if ("product_manager".equals(actors.get().role())) {
+            if (!"product_manager".equals(role)) {
+                actors.get().requireRoles("super_admin");
+            }
+        } else {
+            actors.get().requireRoles("super_admin");
+        }
         com.smartbox.backend.common.AdminSearch.page(page,size);
         String term=com.smartbox.backend.common.AdminSearch.term(search);
         String filter=role==null?"":role.trim();
