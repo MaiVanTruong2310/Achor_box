@@ -422,7 +422,13 @@ public class DeliveryInstallationService {
     @Transactional(readOnly=true)
     public Map<String,Object> forOrder(UUID id){
         if("customer".equals(actors.get().role()))actors.get().requireOwner(uuid(db.order(id,false).get("user_id")));
-        var job=db.one("SELECT * FROM public.delivery_installations WHERE order_id=?",id);read(job);return view(job);
+        var list = db.list("SELECT * FROM public.delivery_installations WHERE order_id=?", id);
+        if (list.isEmpty()) {
+            return null;
+        }
+        var job = list.getFirst();
+        read(job);
+        return view(job);
     }
     private Map<String,Object> view(Map<String,Object> job){
         boolean customer="customer".equals(actors.get().role());var result=summary(job);

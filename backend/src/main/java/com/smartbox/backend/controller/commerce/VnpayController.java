@@ -56,6 +56,17 @@ public class VnpayController {
     @Operation(summary = "Xác thực kết quả thanh toán khi khách hàng được redirect về từ VNPAY", description = "Kiểm tra chữ ký số checksum và đối soát mã phản hồi sau khi khách hàng hoàn tất giao dịch và quay về từ website VNPAY")
     public Map<String, Object> returned(@RequestParam MultiValueMap<String, String> query) {
         var notification = gateway.verify(query);
+        boolean confirmed = false;
+        if (notification.success()) {
+            try {
+                var ipnResult = payments.vnpayIpn(query);
+                confirmed = "00".equals(ipnResult.get("RspCode")) || "02".equals(ipnResult.get("RspCode"));
+                log.info("Xử lý xác nhận thanh toán trực tiếp tại Return URL cho paymentId={}: code={}",
+                        notification.reference(), ipnResult.get("RspCode"));
+            } catch (Exception ex) {
+                log.warn("Không thể xác nhận đơn từ Return URL: {}", ex.getMessage());
+            }
+        }
         return Map.of(
                 "paymentId", VnpayGateway.paymentId(notification.reference()).toString(),
                 "signatureValid", true,
@@ -64,7 +75,7 @@ public class VnpayController {
                 "transactionStatus", notification.transactionStatus(),
                 "transactionNo", notification.transactionNo() != null ? notification.transactionNo() : "",
                 "environment", "sandbox",
-                "awaitingIpnConfirmation", true
+                "awaitingIpnConfirmation", !confirmed
         );
     }
 
