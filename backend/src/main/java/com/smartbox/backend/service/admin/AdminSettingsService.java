@@ -64,6 +64,7 @@ public class AdminSettingsService {
             db.one("SELECT id FROM public.product_categories WHERE id = ? FOR UPDATE", id);
             db.update("UPDATE public.product_categories SET name = ?, slug = ?, description = ?, manager_id = ? WHERE id = ?",
                     request.name().trim(), request.slug(), request.description(), request.managerId(), id);
+            db.update("UPDATE public.products SET manager_id = ? WHERE category_id = ?", request.managerId(), id);
         }
 
         db.audit(actor.id(), create ? "SETTING_CREATED" : "SETTING_UPDATED", "product_categories", id, request.slug());

@@ -26,20 +26,15 @@ public class AuthController {
     private final com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage;
 
     @GetMapping("/me")
-    @Operation(summary = "Lấy thông tin hồ sơ của người dùng hiện tại", description = "Truy xuất thông tin profile của tài khoản đang đăng nhập từ cache hoặc cơ sở dữ liệu dựa trên JWT token")
-    public com.smartbox.backend.entity.Profile me(jakarta.servlet.http.HttpServletRequest request) {
-        Object cached = request.getAttribute("CURRENT_USER_PROFILE");
-        if (cached instanceof com.smartbox.backend.entity.Profile p && p.getFullName() != null) {
-            return p;
-        }
+    @Operation(summary = "Lấy thông tin hồ sơ của người dùng hiện tại", description = "Truy xuất thông tin profile của tài khoản đang đăng nhập từ cơ sở dữ liệu dựa trên JWT token")
+    public com.smartbox.backend.entity.Profile me() {
         return profiles.findById(actors.get().id()).orElseThrow();
     }
 
     @RequestMapping(value = "/me", method = {RequestMethod.PUT, RequestMethod.POST, RequestMethod.PATCH})
     @Operation(summary = "Cập nhật hồ sơ cá nhân của người dùng hiện tại", description = "Cập nhật các thông tin cơ bản của người dùng hiện tại như họ tên, số điện thoại, ảnh đại diện và địa chỉ mặc định")
     public com.smartbox.backend.entity.Profile updateMe(
-            @RequestBody java.util.Map<String, Object> body,
-            jakarta.servlet.http.HttpServletRequest request) {
+            @RequestBody java.util.Map<String, Object> body) {
         java.util.UUID userId = actors.get().id();
         var profile = profiles.findById(userId).orElseThrow();
         if (body.containsKey("fullName") && body.get("fullName") != null) {
@@ -57,17 +52,23 @@ public class AuthController {
         if (body.containsKey("defaultAddress")) {
             profile.setDefaultAddress(body.get("defaultAddress") == null ? null : body.get("defaultAddress").toString().trim());
         }
-        var saved = profiles.save(profile);
-        request.setAttribute("CURRENT_USER_PROFILE", saved);
-        return saved;
+        return profiles.save(profile);
     }
 
     @PostMapping(value = "/avatar", consumes = "multipart/form-data")
-    @Operation(summary = "Tải lên ảnh đại diện cá nhân lên Cloudinary", description = "Upload file ảnh đại diện của người dùng lên Cloudinary và trả về đường dẫn URL bảo mật (HTTPS)")
-    public java.util.Map<String, String> uploadAvatar(@RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
-        actors.get();
+    @Operation(summary = "Tải lên ảnh đại diện cá nhân lên Cloudinary", description = "Upload file ảnh đại diện của người dùng lên Cloudinary và cập nhật đường dẫn vào hồ sơ người dùng")
+    public java.util.Map<String, String> uploadAvatar(
+            @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+        var actor = actors.get();
         var stored = imageStorage.upload(file);
-        return java.util.Map.of("url", stored.secureUrl());
+        String url = stored.secureUrl();
+        var profileOpt = profiles.findById(actor.id());
+        if (profileOpt.isPresent()) {
+            var profile = profileOpt.get();
+            profile.setAvatarUrl(url);
+            profiles.save(profile);
+        }
+        return java.util.Map.of("url", url);
     }
 
     @PostMapping("/login")
