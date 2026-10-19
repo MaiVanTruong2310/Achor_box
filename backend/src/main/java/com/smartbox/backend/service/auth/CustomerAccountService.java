@@ -19,12 +19,25 @@ import java.util.UUID;
 import static com.smartbox.backend.service.commerce.OrderWorkflowService.now;
 
 @Service
-@RequiredArgsConstructor
 public class CustomerAccountService {
 
     private final CommerceRepository db;
     private final CurrentActor actors;
     private final ObjectMapper json;
+    private final com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage;
+
+    public CustomerAccountService(CommerceRepository db, CurrentActor actors, ObjectMapper json) {
+        this(db, actors, json, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public CustomerAccountService(CommerceRepository db, CurrentActor actors, ObjectMapper json,
+                                  @org.springframework.beans.factory.annotation.Autowired(required = false) com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage) {
+        this.db = db;
+        this.actors = actors;
+        this.json = json;
+        this.imageStorage = imageStorage;
+    }
 
     private UUID customer() {
         actors.get().requireRoles("customer");
@@ -42,6 +55,8 @@ public class CustomerAccountService {
         result.put("email", row.get("email"));
         result.put("fullName", row.get("full_name"));
         result.put("phone", row.get("phone"));
+        result.put("avatarUrl", row.get("avatar_url"));
+        result.put("defaultAddress", row.get("default_address"));
         result.put("createdAt", row.get("created_at"));
         return result;
     }
@@ -49,8 +64,22 @@ public class CustomerAccountService {
     @Transactional
     public Map<String, Object> updateProfile(CustomerRequests.ProfileUpdate request) {
         UUID owner = customer();
-        db.update("UPDATE public.profiles SET full_name=?,phone=?,updated_at=? WHERE id=?", request.fullName().trim(), request.phone(), now(), owner);
+        if (request.avatarUrl() != null) {
+            db.update("UPDATE public.profiles SET full_name=?,phone=?,avatar_url=?,updated_at=? WHERE id=?",
+                    request.fullName().trim(), request.phone(), request.avatarUrl().trim().isEmpty() ? null : request.avatarUrl().trim(), now(), owner);
+        } else {
+            db.update("UPDATE public.profiles SET full_name=?,phone=?,updated_at=? WHERE id=?",
+                    request.fullName().trim(), request.phone(), now(), owner);
+        }
         return profile(); // Never accept role, email, lock state or user ID from the client.
+    }
+
+    @Transactional
+    public Map<String, String> uploadAvatar(org.springframework.web.multipart.MultipartFile file) {
+        UUID owner = customer();
+        var stored = imageStorage.upload(file);
+        db.update("UPDATE public.profiles SET avatar_url=?,updated_at=? WHERE id=?", stored.secureUrl(), now(), owner);
+        return Map.of("url", stored.secureUrl());
     }
 
     private void ownerLock(UUID owner) {

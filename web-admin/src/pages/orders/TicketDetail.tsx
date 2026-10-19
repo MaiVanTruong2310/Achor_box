@@ -203,6 +203,11 @@ export const TicketDetail: React.FC = () => {
     };
   }, [location.state, id, ticket?.order_id]);
 
+  const hasForeignItems = useMemo(() => {
+    if (!ticket?.itemApprovals || ticket.itemApprovals.length === 0) return false;
+    return ticket.itemApprovals.some((item) => item.managerId !== profile?.id);
+  }, [ticket?.itemApprovals, profile?.id]);
+
   const loadTicket = async () => {
     if (!id) return;
     setLoading(true);
@@ -234,25 +239,88 @@ export const TicketDetail: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const [showGuidelines, setShowGuidelines] = useState(false);
+
   // Parse Address Snapshot JSON cleanly
   const parsedAddress = useMemo(() => {
     const raw = ticket?.shipping_address_snapshot || ticket?.order?.shipping_address_snapshot;
-    if (!raw) return null;
-    try {
-      const obj = JSON.parse(raw);
+    if (!raw) {
       return {
-        recipientName: obj.recipientName || obj.name || obj.fullName || ticket?.customer_name,
-        phone: obj.phone || obj.phoneNumber || ticket?.customer_phone,
-        fullAddress: obj.fullAddress || obj.address || obj.street || raw
-      };
-    } catch {
-      return {
-        recipientName: ticket?.customer_name,
-        phone: ticket?.customer_phone,
-        fullAddress: raw
+        recipientName: ticket?.customer_name || 'Khách vãng lai',
+        phone: ticket?.customer_phone || '',
+        email: ticket?.customer_email || ticket?.customer?.email || '',
+        fullAddress: ticket?.customer?.default_address || 'Địa chỉ tiêu chuẩn',
+        installationNote: null
       };
     }
+    let obj: any = null;
+    if (typeof raw === 'object') {
+      obj = raw;
+    } else {
+      try {
+        obj = JSON.parse(raw);
+      } catch {
+        return {
+          recipientName: ticket?.customer_name || 'Khách vãng lai',
+          phone: ticket?.customer_phone || '',
+          email: ticket?.customer_email || ticket?.customer?.email || '',
+          fullAddress: String(raw),
+          installationNote: null
+        };
+      }
+    }
+
+    const recipientName = obj.recipientName || obj.name || obj.fullName || ticket?.customer_name || 'Khách vãng lai';
+    const phone = obj.phone || obj.phoneNumber || ticket?.customer_phone || '';
+    const email = obj.email || ticket?.customer_email || ticket?.customer?.email || '';
+    const parts = [obj.addressLine, obj.ward, obj.district, obj.city].filter(Boolean);
+    const fullAddress = parts.length > 0
+      ? parts.join(', ')
+      : obj.fullAddress || obj.address || obj.street || ticket?.customer?.default_address || 'Chưa cung cấp địa chỉ';
+    const installationNote = obj.installationNote || null;
+
+    return {
+      recipientName,
+      phone,
+      email,
+      fullAddress,
+      installationNote
+    };
   }, [ticket]);
+
+  // Translate audit actions into human-friendly Vietnamese badges
+  const getAuditActionInfo = (action: string) => {
+    const act = (action || '').toUpperCase();
+    if (act === 'ITEM_APPROVE') return { label: 'Duyệt từng món', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' };
+    if (act === 'ITEM_REJECT') return { label: 'Từ chối món', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    if (act === 'APPROVE' || act === 'TICKET_APPROVE') return { label: 'Duyệt toàn bộ phiếu', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' };
+    if (act === 'REJECT' || act === 'TICKET_REJECT') return { label: 'Từ chối phiếu', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' };
+    if (act === 'RETURN') return { label: 'Yêu cầu giải trình', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' };
+    if (act === 'CREATED') return { label: 'Khởi tạo phiếu', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
+    if (act === 'PARTIALLY_REJECTED' || act === 'PARTIAL_APPROVAL_PROMPT') return { label: 'Duyệt một phần', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    if (act.includes('CUSTOMER_DECISION') || act.includes('CUSTOMER_ACCEPTED')) return { label: 'Khách xác nhận đơn', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
+    return { label: action, color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
+  };
+
+  // Format audit note cleanly (avoid raw item UUIDs)
+  const formatAuditNote = (reason?: string | null) => {
+    if (!reason || reason === 'null') return null;
+    if (reason.startsWith('item:')) {
+      const match = reason.match(/^item:([0-9a-fA-F-]+):\s*(.*)$/);
+      if (match) {
+        const itemId = match[1];
+        const note = match[2]?.trim();
+        const matchedItem = ticket?.itemApprovals?.find(i => i.orderItemId === itemId || i.id === itemId);
+        const prodName = matchedItem?.productName || 'Sản phẩm';
+        const sku = matchedItem?.sku ? ` (${matchedItem.sku})` : '';
+        return note && note !== 'null' ? `${prodName}${sku}: "${note}"` : `${prodName}${sku}`;
+      }
+    }
+    if (reason === 'ORDER_CREATED_AWAITING_APPROVAL') {
+      return 'Đơn hàng mới tạo chuyển sang luồng thẩm định PO';
+    }
+    return reason;
+  };
 
   // Sort Audit History: NEWEST FIRST ("sắp xếp từ mới nhất trước")
   const sortedHistory = useMemo(() => {
@@ -470,19 +538,19 @@ export const TicketDetail: React.FC = () => {
                 <div className="tkd-info-row">
                   <span className="tkd-info-label">Người nhận:</span>
                   <span className="tkd-info-val">
-                    {parsedAddress?.recipientName || ticket.customer_name || 'Khách vãng lai'}
+                    {parsedAddress.recipientName}
                   </span>
                 </div>
 
                 <div className="tkd-info-row">
                   <span className="tkd-info-label">Điện thoại:</span>
                   <span className="tkd-info-val">
-                    {parsedAddress?.phone || ticket.customer_phone ? (
+                    {parsedAddress.phone ? (
                       <a
-                        href={`tel:${parsedAddress?.phone || ticket.customer_phone}`}
+                        href={`tel:${parsedAddress.phone}`}
                         style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 700 }}
                       >
-                        {parsedAddress?.phone || ticket.customer_phone}
+                        {parsedAddress.phone}
                       </a>
                     ) : (
                       'Chưa có số điện thoại'
@@ -493,16 +561,32 @@ export const TicketDetail: React.FC = () => {
                 <div className="tkd-info-row">
                   <span className="tkd-info-label">Email:</span>
                   <span className="tkd-info-val">
-                    {ticket.customer_email || ticket.customer?.email || 'Chưa cung cấp'}
+                    {parsedAddress.email || 'Chưa cung cấp'}
                   </span>
                 </div>
 
                 <div className="tkd-info-row">
                   <span className="tkd-info-label">Địa chỉ nhận:</span>
-                  <span className="tkd-info-val" style={{ lineHeight: 1.4 }}>
-                    {parsedAddress?.fullAddress || ticket.customer?.default_address || 'Địa chỉ tiêu chuẩn'}
+                  <span className="tkd-info-val" style={{ lineHeight: 1.45 }}>
+                    <MapPin size={12} style={{ display: 'inline', marginRight: 4, color: 'var(--accent-primary)', verticalAlign: -1 }} />
+                    {parsedAddress.fullAddress}
                   </span>
                 </div>
+
+                {parsedAddress.installationNote && (
+                  <div style={{
+                    marginTop: 8,
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    background: 'rgba(249, 115, 22, 0.08)',
+                    border: '1px solid rgba(249, 115, 22, 0.22)',
+                    fontSize: '0.8rem',
+                    color: '#c2410c'
+                  }}>
+                    <strong>Ghi chú lắp đặt: </strong>
+                    <span>{parsedAddress.installationNote}</span>
+                  </div>
+                )}
               </div>
 
               {/* Order Column */}
@@ -535,8 +619,12 @@ export const TicketDetail: React.FC = () => {
 
                 <div className="tkd-info-row">
                   <span className="tkd-info-label">Trạng thái đơn:</span>
-                  <span className="tkd-info-val" style={{ textTransform: 'uppercase', color: 'var(--accent-primary)' }}>
-                    {ticket.order?.status || 'Chờ phê duyệt xuất kho'}
+                  <span className="tkd-info-val" style={{
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: ticket.order?.status === 'cancelled' ? '#ef4444' : 'var(--accent-primary)'
+                  }}>
+                    {ticket.order?.status === 'cancelled' ? 'ĐÃ HỦY (CANCELLED)' : (ticket.order?.status || 'Chờ phê duyệt xuất kho')}
                   </span>
                 </div>
               </div>
@@ -558,7 +646,7 @@ export const TicketDetail: React.FC = () => {
             <div className="tkd-item-list">
               {ticket.itemApprovals && ticket.itemApprovals.length > 0 ? (
                 ticket.itemApprovals.map((item) => {
-                  const isManagerOfItem = isPO && (!item.managerId || item.managerId === profile?.id);
+                  const isManagerOfItem = isPO && item.managerId === profile?.id;
                   const itemStatus = item.status || 'PENDING';
 
                   return (
@@ -576,7 +664,23 @@ export const TicketDetail: React.FC = () => {
                             <span>SKU: <code style={{ color: 'var(--accent-sky)' }}>{item.sku || 'N/A'}</code></span>
                             {isPO && isManagerOfItem && (
                               <span className="tkd-po-managed-tag">
-                                &check; Bạn trực tiếp quản lý
+                                <Check size={12} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
+                                Thuộc danh mục bạn quản lý
+                              </span>
+                            )}
+                            {isPO && !isManagerOfItem && (
+                              <span
+                                style={{
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  background: 'rgba(148, 163, 184, 0.15)',
+                                  color: '#64748b',
+                                  border: '1px solid rgba(148, 163, 184, 0.3)'
+                                }}
+                              >
+                                Thuộc danh mục của PO khác
                               </span>
                             )}
                           </div>
@@ -595,52 +699,68 @@ export const TicketDetail: React.FC = () => {
 
                         <div className="tkd-item-actions">
                           {isPO && itemStatus === 'PENDING' ? (
-                            <>
-                              <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                disabled={busy || !isManagerOfItem}
-                                onClick={() => void actItem(item.orderItemId, 'approve')}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px',
-                                  background: 'rgba(16, 185, 129, 0.1)',
-                                  color: '#10b981',
-                                  borderColor: 'rgba(16, 185, 129, 0.3)',
-                                  fontWeight: 700
-                                }}
-                              >
-                                <Check size={14} />
-                                <span>Duyệt</span>
-                              </button>
+                            isManagerOfItem ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  disabled={busy}
+                                  onClick={() => void actItem(item.orderItemId, 'approve')}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    background: 'rgba(16, 185, 129, 0.1)',
+                                    color: '#10b981',
+                                    borderColor: 'rgba(16, 185, 129, 0.3)',
+                                    fontWeight: 700
+                                  }}
+                                >
+                                  <Check size={14} />
+                                  <span>Duyệt</span>
+                                </button>
 
-                              <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                disabled={busy || !isManagerOfItem}
-                                onClick={() => {
-                                  setItemRejectReason('');
-                                  setItemRejectDialog({
-                                    open: true,
-                                    orderItemId: item.orderItemId,
-                                    productName: item.productName || 'Sản phẩm này'
-                                  });
-                                }}
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  disabled={busy}
+                                  onClick={() => {
+                                    setItemRejectReason('');
+                                    setItemRejectDialog({
+                                      open: true,
+                                      orderItemId: item.orderItemId,
+                                      productName: item.productName || 'Sản phẩm này'
+                                    });
+                                  }}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    color: '#ef4444',
+                                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                                    fontWeight: 700
+                                  }}
+                                >
+                                  <X size={14} />
+                                  <span>Từ chối</span>
+                                </button>
+                              </>
+                            ) : (
+                              <span
                                 style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px',
-                                  background: 'rgba(239, 68, 68, 0.1)',
-                                  color: '#ef4444',
-                                  borderColor: 'rgba(239, 68, 68, 0.3)',
-                                  fontWeight: 700
+                                  padding: '4px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 600,
+                                  background: 'rgba(148, 163, 184, 0.12)',
+                                  color: '#64748b',
+                                  border: '1px solid rgba(148, 163, 184, 0.25)'
                                 }}
                               >
-                                <X size={14} />
-                                <span>Từ chối</span>
-                              </button>
-                            </>
+                                🔒 Chỉ PO phụ trách duyệt
+                              </span>
+                            )
                           ) : itemStatus === 'PENDING' ? (
                             <span
                               style={{
@@ -682,6 +802,27 @@ export const TicketDetail: React.FC = () => {
             </div>
           </div>
 
+          {/* Cancellation Banner if Order is CANCELLED */}
+          {ticket.order?.status === 'cancelled' && (
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderRadius: '12px',
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '14px',
+              color: '#b91c1c'
+            }}>
+              <AlertTriangle size={22} style={{ flexShrink: 0, color: '#ef4444' }} />
+              <div style={{ fontSize: '0.86rem', lineHeight: 1.5 }}>
+                <strong style={{ fontSize: '0.92rem' }}>Đơn hàng này đã bị hủy (Trạng thái đơn: CANCELLED).</strong>
+                <div>Mọi nghiệp vụ thẩm định xuất kho và điều phối thi công lắp đặt cho đơn hàng này đã dừng lại. Tài nguyên kho đã được hoàn trả.</div>
+              </div>
+            </div>
+          )}
+
           {/* Card 3: Action Decision Box */}
           <div className="tkd-decision-card">
             <h3 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 800, color: 'var(--tkd-text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -715,12 +856,37 @@ export const TicketDetail: React.FC = () => {
               </div>
             ) : ticket.status === 'PENDING' ? (
               <>
+                {isPO && hasForeignItems && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 12,
+                      padding: '12px 16px',
+                      borderRadius: 10,
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      color: '#b45309',
+                      fontSize: '13px',
+                      lineHeight: 1.5,
+                      marginBottom: 16
+                    }}
+                  >
+                    <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: 2, color: '#d97706' }} />
+                    <div>
+                      <strong>Giới hạn thẩm định:</strong> Đơn hàng này có chứa sản phẩm thuộc danh mục bạn không quản lý.
+                      Theo quy định, bạn chỉ được duyệt từng sản phẩm thuộc danh mục mình phụ trách ở bảng phía trên và <strong>không được duyệt toàn bộ phiếu PO</strong>. Phiếu PO sẽ tự động được phê duyệt khi tất cả PO phụ trách duyệt đủ các sản phẩm của mình.
+                    </div>
+                  </div>
+                )}
+
                 <div className="tkd-decision-buttons">
                   <button
                     type="button"
                     className="btn btn-primary"
-                    disabled={busy}
+                    disabled={busy || (isPO && hasForeignItems)}
                     onClick={() => void actTicket('approve')}
+                    title={isPO && hasForeignItems ? 'Đơn hàng có sản phẩm ngoài danh mục bạn quản lý' : undefined}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -728,9 +894,11 @@ export const TicketDetail: React.FC = () => {
                       padding: '10px 24px',
                       borderRadius: '10px',
                       fontWeight: 700,
-                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      borderColor: '#059669'
+                      boxShadow: isPO && hasForeignItems ? 'none' : '0 4px 14px rgba(16, 185, 129, 0.35)',
+                      background: isPO && hasForeignItems ? '#94a3b8' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderColor: isPO && hasForeignItems ? '#94a3b8' : '#059669',
+                      cursor: isPO && hasForeignItems ? 'not-allowed' : 'pointer',
+                      opacity: isPO && hasForeignItems ? 0.65 : 1
                     }}
                   >
                     <CheckCircle2 size={16} />
@@ -884,7 +1052,7 @@ export const TicketDetail: React.FC = () => {
           </div>
 
           {/* Section: PO Dispatch & Technician Acceptance Workflow */}
-          {ticket.status === 'APPROVED' && (
+          {ticket.status === 'APPROVED' && ticket.order?.status !== 'cancelled' && (
             <div style={{ marginTop: '20px' }}>
               {loadingJob ? (
                 <div style={{ padding: '24px', textAlign: 'center', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
@@ -994,11 +1162,27 @@ export const TicketDetail: React.FC = () => {
               {sortedHistory.length > 0 ? (
                 sortedHistory.map((h, idx) => {
                   const isNewest = idx === 0;
+                  const actInfo = getAuditActionInfo(h.action);
+                  const noteFormatted = formatAuditNote(h.reason);
                   return (
                     <li key={h.id || idx} className="tkd-audit-item">
                       <span className={`tkd-audit-dot ${isNewest ? 'newest' : ''}`} />
                       <div className="tkd-audit-action">
-                        <span>{h.action}</span>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                            background: actInfo.bg,
+                            color: actInfo.color
+                          }}
+                        >
+                          {actInfo.label}
+                        </span>
                         {isNewest && (
                           <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: '#10b981', color: '#fff', fontWeight: 700 }}>
                             Mới nhất
@@ -1006,9 +1190,9 @@ export const TicketDetail: React.FC = () => {
                         )}
                       </div>
                       <div className="tkd-audit-time">{formatDateTime(h.created_at)}</div>
-                      {h.reason && (
+                      {noteFormatted && (
                         <div className="tkd-audit-note">
-                          {h.reason}
+                          {noteFormatted}
                         </div>
                       )}
                     </li>
@@ -1022,18 +1206,28 @@ export const TicketDetail: React.FC = () => {
             </ol>
           </div>
 
-          {/* Card 5: PO Guidelines & Policy */}
-          <div className="tkd-card tkd-guidelines-card">
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '0.88rem', fontWeight: 700, color: 'var(--tkd-text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Info size={14} color="var(--accent-primary)" />
-              <span>Quy chuẩn xuất kho PO</span>
-            </h4>
-            <ul className="tkd-guidelines-list">
-              <li>PO chỉ thẩm định các mặt hàng và biến thể thuộc danh mục phân quyền quản lý.</li>
-              <li>Kiểm tra kỹ số lượng tồn kho khả dụng trước khi bấm &ldquo;Phê duyệt&rdquo;.</li>
-              <li>Khi toàn bộ mặt hàng được duyệt, đơn hàng tự động kích hoạt điều phối kỹ thuật viên lắp đặt.</li>
-              <li>Nếu thiếu hàng, có thể từ chối riêng mặt hàng đó hoặc yêu cầu kinh doanh đổi mã.</li>
-            </ul>
+          {/* Card 5: PO Guidelines & Policy (Collapsible) */}
+          <div className="tkd-card tkd-guidelines-card" style={{ padding: '10px 14px' }}>
+            <div
+              onClick={() => setShowGuidelines(!showGuidelines)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}
+            >
+              <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--tkd-text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Info size={14} color="var(--accent-primary)" />
+                <span>Quy chuẩn xuất kho PO</span>
+              </h4>
+              <span style={{ fontSize: '0.72rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
+                {showGuidelines ? 'Thu gọn ▲' : 'Xem chi tiết ▼'}
+              </span>
+            </div>
+            {showGuidelines && (
+              <ul className="tkd-guidelines-list" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed var(--tkd-card-border)' }}>
+                <li>PO chỉ thẩm định các mặt hàng và biến thể thuộc danh mục phân quyền quản lý.</li>
+                <li>Kiểm tra kỹ số lượng tồn kho khả dụng trước khi bấm &ldquo;Phê duyệt&rdquo;.</li>
+                <li>Khi toàn bộ mặt hàng được duyệt, đơn hàng tự động kích hoạt điều phối kỹ thuật viên lắp đặt.</li>
+                <li>Nếu thiếu hàng, có thể từ chối riêng mặt hàng đó hoặc yêu cầu kinh doanh đổi mã.</li>
+              </ul>
+            )}
           </div>
         </div>
       </div>

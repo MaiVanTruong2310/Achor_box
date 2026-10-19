@@ -48,25 +48,42 @@ public class OrderService {
     }
     @Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public Map<String,Object> getOrdersPaged(int page,int size,String search,String status,String payment) {
-        actors.get().requireRoles("super_admin","product_manager","technician");
+        var actor = actors.get();
+        actor.requireRoles("super_admin","product_manager","technician");
         com.smartbox.backend.common.AdminSearch.page(page,size);
         String term=com.smartbox.backend.common.AdminSearch.term(search);
         String filter=status==null||status.isBlank()?"":com.smartbox.backend.enums.OrderStatus.fromString(status).getValue();
         String paymentFilter=payment==null?"":payment.trim().toLowerCase(java.util.Locale.ROOT);
         if(!paymentFilter.isEmpty()&&!java.util.Set.of("pending","paid","failed","expired","mock","vnpay","cod","momo").contains(paymentFilter))throw new com.smartbox.backend.exception.BadRequestException("INVALID_PAYMENT_FILTER");
         if("paid".equals(paymentFilter))paymentFilter="success";
-        Page<OrderResponse> pageResult = orderRepository.search(term,com.smartbox.backend.common.AdminSearch.like(term),filter,paymentFilter,PageRequest.of(page,size)).map(this::mapToResponse);
+        boolean isPo = "product_manager".equals(actor.role());
+        UUID poId = isPo ? actor.id() : null;
+        Page<OrderResponse> pageResult = orderRepository.search(term,com.smartbox.backend.common.AdminSearch.like(term),filter,paymentFilter,isPo,poId,PageRequest.of(page,size)).map(this::mapToResponse);
         return PaginationUtil.toMap(pageResult);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Long> getOrderCounts() {
-        actors.get().requireRoles("super_admin", "product_manager", "technician");
+        var actor = actors.get();
+        actor.requireRoles("super_admin", "product_manager", "technician");
         Map<String, Long> map = new java.util.LinkedHashMap<>();
-        map.put("all", orderRepository.count());
-        for (Object[] r : orderRepository.countGroupByStatus()) {
-            if (r != null && r.length >= 2 && r[0] != null && r[1] != null) {
-                map.put(r[0].toString(), ((Number) r[1]).longValue());
+        boolean isPo = "product_manager".equals(actor.role());
+        if (isPo) {
+            long total = 0;
+            for (Object[] r : orderRepository.countGroupByStatusForPo(actor.id())) {
+                if (r != null && r.length >= 2 && r[0] != null && r[1] != null) {
+                    long cnt = ((Number) r[1]).longValue();
+                    map.put(r[0].toString(), cnt);
+                    total += cnt;
+                }
+            }
+            map.put("all", total);
+        } else {
+            map.put("all", orderRepository.count());
+            for (Object[] r : orderRepository.countGroupByStatus()) {
+                if (r != null && r.length >= 2 && r[0] != null && r[1] != null) {
+                    map.put(r[0].toString(), ((Number) r[1]).longValue());
+                }
             }
         }
         return map;

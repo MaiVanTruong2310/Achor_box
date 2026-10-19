@@ -15,13 +15,13 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Variant Specifications API", description = "Quản lý thông số kỹ thuật chi tiết của biến thể sản phẩm")
+@Tag(name = "Product API", description = "Quản lý danh mục, sản phẩm SmartBox IoT, biến thể kích cỡ và tồn kho")
 public class VariantSpecificationController {
 
     private final VariantSpecificationService specs;
 
     @PatchMapping("/api/products/{product}/variants/{id}/specifications")
-    @Operation(summary = "Cập nhật thông số kỹ thuật (kích thước, tải trọng, cảm biến) của biến thể")
+    @Operation(summary = "Cập nhật thông số kỹ thuật (kích thước, tải trọng, cảm biến) của biến thể", description = "Cập nhật chi tiết các thông số kỹ thuật như kích thước (dài, rộng, cao), tải trọng, công nghệ cảm biến và kết nối IoT")
     public ProductVariantResponse update(
             @PathVariable UUID product,
             @PathVariable UUID id,

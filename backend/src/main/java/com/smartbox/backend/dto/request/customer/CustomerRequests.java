@@ -24,7 +24,12 @@ public final class CustomerRequests {
                            @NotBlank @Size(max=200) String fullName,
                            @Pattern(regexp="^$|\\+?[0-9 ()-]{8,30}") String phone) {}
     public record ProfileUpdate(@NotBlank @Size(max=200) String fullName,
-                                @Pattern(regexp="^$|\\+?[0-9 ()-]{8,30}") String phone) {}
+                                @Pattern(regexp="^$|\\+?[0-9 ()-]{8,30}") String phone,
+                                @Size(max=2000) String avatarUrl) {
+        public ProfileUpdate(String fullName, String phone) {
+            this(fullName, phone, null);
+        }
+    }
     public record Address(@NotBlank @Size(max=100) String label,
                           @NotBlank @Size(max=200) String recipientName,
                           @NotBlank @Pattern(regexp="\\+?[0-9 ()-]{8,30}") String phone,

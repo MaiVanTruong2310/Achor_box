@@ -128,9 +128,19 @@ public class OrderWorkflowService {
         db.update("INSERT INTO public.ticket_history VALUES(?,?,?,NULL,?,?)",
                 UUID.randomUUID(), actualTicketId, "CREATED", "ORDER_CREATED_AWAITING_APPROVAL", now());
 
-        for (var item : db.list("SELECT i.id, i.product_id, p.manager_id FROM public.order_items i JOIN public.products p ON p.id=i.product_id WHERE i.order_id=?", id)) {
+        for (var item : db.list("SELECT i.id, i.product_id, COALESCE(c.manager_id, p.manager_id) AS manager_id FROM public.order_items i JOIN public.products p ON p.id=i.product_id LEFT JOIN public.product_categories c ON c.id=p.category_id WHERE i.order_id=?", id)) {
             db.update("INSERT INTO public.order_item_approvals(id,ticket_id,order_id,order_item_id,product_id,manager_id,status,created_at) VALUES(?,?,?,?,?,?,'PENDING',?)",
                     UUID.randomUUID(), actualTicketId, id, item.get("id"), item.get("product_id"), item.get("manager_id"), now());
+        }
+
+        // Notify POs who manage categories/products in this order
+        var poManagers = db.list("SELECT DISTINCT COALESCE(c.manager_id, p.manager_id) AS manager_id FROM public.order_items i JOIN public.products p ON p.id=i.product_id LEFT JOIN public.product_categories c ON c.id=p.category_id WHERE i.order_id=? AND COALESCE(c.manager_id, p.manager_id) IS NOT NULL", id);
+        for (var po : poManagers) {
+            UUID poId = uuid(po.get("manager_id"));
+            if (poId != null) {
+                db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,'Đơn hàng mới chờ duyệt',?,false,?)",
+                        UUID.randomUUID(), poId, "ORDER_PENDING_PO_APPROVAL", "Đơn hàng #" + id + " có sản phẩm thuộc danh mục bạn phụ trách đang chờ duyệt.", now());
+            }
         }
 
         history(id, null, "pending", user.toString(), "ORDER_CREATED");

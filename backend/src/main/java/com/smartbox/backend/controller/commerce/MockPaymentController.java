@@ -6,6 +6,8 @@ import com.smartbox.backend.service.commerce.OrderWorkflowService;
 import com.smartbox.backend.repository.CommerceRepository;
 import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.exception.BadRequestException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import static com.smartbox.backend.service.commerce.OrderWorkflowService.*;
 @Profile("demo")
 @RequiredArgsConstructor
 @RequestMapping({"/mock-payment/payments","/api/mock-payment/payments"})
+@Tag(name = "Payment API", description = "Kiểm toán, đối soát và tích hợp cổng thanh toán trực tuyến (VNPAY Sandbox & Simulation)")
 public class MockPaymentController {
     private final CommerceRepository db;
     private final OrderWorkflowService orders;
@@ -26,6 +29,7 @@ public class MockPaymentController {
 
     @GetMapping("/{id}")
     @Transactional(readOnly=true)
+    @Operation(summary = "Xem chi tiết giao dịch thanh toán mô phỏng", description = "Truy vấn thông tin giao dịch thanh toán trong môi trường mô phỏng demo")
     public Map<String,Object> detail(@PathVariable UUID id) {
         var payment=db.one("SELECT * FROM public.payments WHERE id=?",id);
         orders.owned(uuid(payment.get("order_id")),actors.get(),false);
@@ -35,6 +39,7 @@ public class MockPaymentController {
 
     @PostMapping("/{id}/complete")
     @Transactional
+    @Operation(summary = "Mô phỏng hoàn tất thanh toán", description = "Giả lập phản hồi kết quả thanh toán SUCCESS/FAILED từ phía người dùng trong môi trường demo")
     public Map<String,Object> complete(@PathVariable UUID id,@RequestParam String result) {
         if(!Set.of("SUCCESS","FAILED").contains(result))throw new BadRequestException("INVALID_PAYMENT_RESULT");
         var payment=detail(id);UUID order=uuid(payment.get("order_id"));var amount=money(payment.get("amount"));

@@ -82,6 +82,10 @@ export interface ProductCategory {
   name: string;
   slug: string;
   description?: string | null;
+  manager_id?: string | null;
+  managerId?: string | null;
+  manager_name?: string | null;
+  manager_email?: string | null;
 }
 
 export interface ProductVariant {

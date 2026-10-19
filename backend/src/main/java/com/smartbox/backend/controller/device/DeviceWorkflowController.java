@@ -10,12 +10,12 @@ import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Device Inventory API", description = "Đăng ký mã Serial và thiết bị vào kho phân phối")
+@Tag(name = "Device Inventory API", description = "Quản lý mã Serial và danh mục thiết bị đã xuất kho")
 public class DeviceWorkflowController {
     private final DeviceWorkflowService devices;
 
     @PostMapping("/api/devices/register")
-    @Operation(summary = "Đăng ký mã Serial thiết bị vào kho hàng")
+    @Operation(summary = "Đăng ký mã Serial thiết bị vào kho hàng", description = "Khai báo nhập kho thiết bị SmartBox IoT mới kèm mã Serial Number, phiên bản phần cứng và ngày sản xuất")
     public Map<String, Object> register(@Valid @RequestBody DeviceWorkflowService.Registration request) {
         return devices.register(request);
     }

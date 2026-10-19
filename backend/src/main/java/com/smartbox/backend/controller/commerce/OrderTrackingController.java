@@ -14,20 +14,20 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Order Tracking API", description = "Theo dõi tiến độ đơn hàng và tổng quan giao lắp")
+@Tag(name = "Order API", description = "Quản lý đơn đặt hàng, giỏ hàng, phê duyệt PO và xử lý giao vận")
 public class OrderTrackingController {
 
     private final OrderTrackingService tracking;
     private final InstallationDashboardService dashboard;
 
     @GetMapping("/api/orders/{id}/timeline")
-    @Operation(summary = "Lấy dòng thời gian tiến độ của đơn hàng (timeline)")
+    @Operation(summary = "Lấy dòng thời gian tiến độ của đơn hàng (timeline)", description = "Hiển thị chuỗi các mốc sự kiện thực tế từ lúc đặt hàng, duyệt PO, thanh toán, xuất kho, giao hàng đến nghiệm thu")
     public Map<String, Object> timeline(@PathVariable UUID id) {
         return tracking.timeline(id);
     }
 
     @GetMapping("/api/delivery-installations/dashboard")
-    @Operation(summary = "Lấy thống kê tóm tắt dashboard giao hàng và lắp đặt")
+    @Operation(summary = "Lấy thống kê tóm tắt dashboard giao hàng và lắp đặt", description = "Tổng quan số lượng công việc giao lắp đang chờ, đang thực hiện, hoàn thành và tỉ lệ nghiệm thu thành công")
     public Map<String, Object> dashboard() {
         return dashboard.summary();
     }

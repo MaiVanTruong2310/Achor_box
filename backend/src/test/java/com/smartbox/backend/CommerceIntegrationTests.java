@@ -40,7 +40,7 @@ class CommerceIntegrationTests {
         void customer(){actor.set(new Actor(CUSTOMER,"customer"));}
     }
     @Configuration @EnableTransactionManagement
-    @Import({OrderWorkflowService.class,OrderStateMachine.class,PaymentService.class,VnpayGateway.class,ApprovalTicketService.class,OutboxService.class,FulfillmentService.class,RevenueReportService.class,MqttDeviceService.class,VariantInventoryService.class,DeviceWorkflowService.class,DeliveryInstallationService.class,CustomerAccountService.class,CustomerOrderService.class,PaymentAuditService.class,AcceptanceWarrantyService.class,OrderTrackingService.class,InstallationDashboardService.class})
+    @Import({OrderWorkflowService.class,OrderStateMachine.class,PaymentService.class,VnpayGateway.class,ApprovalTicketService.class,OutboxService.class,FulfillmentService.class,RevenueReportService.class,MqttDeviceService.class,VariantInventoryService.class,DeviceWorkflowService.class,DeliveryInstallationService.class,CustomerAccountService.class,CustomerOrderService.class,PaymentAuditService.class,AcceptanceWarrantyService.class,OrderTrackingService.class,InstallationDashboardService.class,PaymentTimeoutService.class,OrderDelayedExpiryQueue.class})
     static class Config {
         @Bean DataSource dataSource(@org.springframework.beans.factory.annotation.Value("${test.jdbc.url:jdbc:h2:mem:commerce;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=5000;NON_KEYWORDS=KEY}") String url,
             @org.springframework.beans.factory.annotation.Value("${test.jdbc.user:sa}") String user,@org.springframework.beans.factory.annotation.Value("${test.jdbc.password:}") String password){return new DriverManagerDataSource(url,user,password);}
@@ -106,6 +106,7 @@ class CommerceIntegrationTests {
         String vnpay=new String(getClass().getResourceAsStream("/db/migration/009_vnpay_sandbox.sql").readAllBytes(),StandardCharsets.UTF_8);
         if(!postgres)vnpay=vnpay.replace("timestamptz","timestamp with time zone").replaceAll("ALTER TABLE public.[a-z_]+ ENABLE ROW LEVEL SECURITY;","").replaceAll("CREATE UNIQUE INDEX uk_(gateway_reference|vnpay_transaction)[^;]+;","");
         jdbc.execute(vnpay);
+        jdbc.execute("ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount numeric DEFAULT 0");
         jdbc.update("INSERT INTO public.profiles(id,email,full_name) VALUES(?,?,?)",CUSTOMER,"customer@smartbox.test","Khách kiểm thử SmartBox");
         jdbc.update("INSERT INTO public.profiles(id,email,full_name) VALUES(?,?,?)",STAFF,"staff@smartbox.test","Nhân viên kiểm thử");
         product=UUID.randomUUID();variant=UUID.randomUUID();

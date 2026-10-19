@@ -22,14 +22,14 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Customer Warranty API", description = "Quản lý bảo hành và gửi yêu cầu khiếu nại bảo hành của khách hàng")
+@Tag(name = "Warranty API", description = "Quản lý bảo hành điện tử, tra cứu Serial/QR, tiếp nhận khiếu nại và kỹ thuật viên")
 public class CustomerWarrantyController {
 
     private final AcceptanceWarrantyService warranties;
     private final CustomerWarrantyClaimService claims;
 
     @GetMapping("/api/customer/warranties")
-    @Operation(summary = "Lấy danh sách các gói bảo hành của thiết bị mà khách hàng sở hữu")
+    @Operation(summary = "Lấy danh sách các gói bảo hành của thiết bị mà khách hàng sở hữu", description = "Truy xuất thông tin các gói bảo hành còn hiệu lực hoặc đã hết hạn của các thiết bị SmartBox đã mua")
     public Map<String, Object> mine(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -37,7 +37,7 @@ public class CustomerWarrantyController {
     }
 
     @PostMapping(value = "/api/customer/warranties/{id}/images", consumes = "multipart/form-data")
-    @Operation(summary = "Tải ảnh đính kèm minh chứng cho yêu cầu bảo hành")
+    @Operation(summary = "Tải ảnh đính kèm minh chứng cho yêu cầu bảo hành", description = "Tải lên hình ảnh hoặc video ngắn minh chứng sự cố hư hỏng của tủ SmartBox lên Cloudinary")
     public Map<String, Object> upload(
             @PathVariable UUID id,
             @RequestPart("file") MultipartFile file) {
@@ -45,7 +45,7 @@ public class CustomerWarrantyController {
     }
 
     @PostMapping("/api/customer/warranty-claims")
-    @Operation(summary = "Gửi yêu cầu bảo hành thiết bị mới")
+    @Operation(summary = "Gửi yêu cầu bảo hành thiết bị mới", description = "Tạo phiếu yêu cầu bảo hành mới kèm theo mô tả chi tiết lỗi gặp phải và danh sách ảnh minh chứng")
     public Map<String, Object> create(
             @Valid @RequestBody CustomerClaimRequest request,
             @RequestHeader("Idempotency-Key") UUID key) {
@@ -53,7 +53,7 @@ public class CustomerWarrantyController {
     }
 
     @GetMapping("/api/customer/warranty-claims")
-    @Operation(summary = "Lấy danh sách yêu cầu bảo hành đã gửi của khách hàng")
+    @Operation(summary = "Lấy danh sách yêu cầu bảo hành đã gửi của khách hàng", description = "Khách hàng theo dõi tiến độ xử lý của tất cả các yêu cầu bảo hành mà mình đã gửi")
     public Map<String, Object> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -61,7 +61,7 @@ public class CustomerWarrantyController {
     }
 
     @GetMapping("/api/customer/warranty-claims/{id}")
-    @Operation(summary = "Lấy chi tiết yêu cầu bảo hành của khách hàng")
+    @Operation(summary = "Lấy chi tiết yêu cầu bảo hành của khách hàng", description = "Xem chi tiết phản hồi của kỹ thuật viên, trạng thái xử lý và phương án khắc phục sự cố")
     public Map<String, Object> detail(@PathVariable UUID id) {
         return claims.detail(id);
     }

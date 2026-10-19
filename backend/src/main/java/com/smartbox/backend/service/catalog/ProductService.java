@@ -166,6 +166,7 @@ public class ProductService {
                 .name(name)
                 .slug(slug)
                 .description(request.getDescription())
+                .managerId(request.getManagerId())
                 .build();
 
         return categoryRepository.save(category);
@@ -196,6 +197,7 @@ public class ProductService {
         if (request.getDescription() != null) {
             category.setDescription(request.getDescription());
         }
+        category.setManagerId(request.getManagerId());
 
         return categoryRepository.save(category);
     }
@@ -245,9 +247,16 @@ public class ProductService {
         if(request.getPrice()==null || request.getPrice().signum()<0 || request.getStockQuantity()!=null && request.getStockQuantity()<0)
             throw new com.smartbox.backend.exception.BadRequestException("INVALID_PRODUCT_PRICE_OR_STOCK");
         if(request.getVariants()!=null) request.getVariants().forEach(this::validateVariant);
+        UUID resolvedManagerId = request.getManagerId();
+        if (request.getCategoryId() != null) {
+            var catOpt = categoryRepository.findById(request.getCategoryId());
+            if (catOpt.isPresent() && catOpt.get().getManagerId() != null) {
+                resolvedManagerId = catOpt.get().getManagerId();
+            }
+        }
         Product product = Product.builder()
                 .categoryId(request.getCategoryId())
-                .managerId(request.getManagerId())
+                .managerId(resolvedManagerId)
                 .sku(request.getSku())
                 .name(request.getName())
                 .description(request.getDescription())
@@ -285,7 +294,15 @@ public class ProductService {
         Product product = productRepository.findLockedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", "id", id));
 
-        if (request.getCategoryId() != null) product.setCategoryId(request.getCategoryId());
+        if (request.getCategoryId() != null) {
+            product.setCategoryId(request.getCategoryId());
+            var catOpt = categoryRepository.findById(request.getCategoryId());
+            if (catOpt.isPresent() && catOpt.get().getManagerId() != null) {
+                product.setManagerId(catOpt.get().getManagerId());
+            }
+        } else if (request.getManagerId() != null) {
+            product.setManagerId(request.getManagerId());
+        }
         if (request.getSku() != null) product.setSku(request.getSku());
         if (request.getName() != null) product.setName(request.getName());
         if (request.getDescription() != null) product.setDescription(request.getDescription());
@@ -296,7 +313,6 @@ public class ProductService {
             throw new com.smartbox.backend.exception.ConflictException("USE_STOCK_ADJUSTMENT: Tồn kho phải thay đổi qua thao tác điều chỉnh kho");
         if (request.getIsActive() != null) product.setIsActive(request.getIsActive());
         if (request.getHasWeightSensor() != null) product.setHasWeightSensor(request.getHasWeightSensor());
-        if (request.getManagerId() != null) product.setManagerId(request.getManagerId());
 
         if (request.getImages() != null) {
             try {
@@ -481,10 +497,15 @@ public class ProductService {
                 .map(v -> variantResponse(v, p))
                 .toList();
 
+        UUID effectiveManagerId = p.getManagerId();
+        if (cat != null && cat.getManagerId() != null) {
+            effectiveManagerId = cat.getManagerId();
+        }
+
         return ProductResponse.builder()
                 .id(p.getId())
                 .categoryId(p.getCategoryId())
-                .managerId(p.getManagerId())
+                .managerId(effectiveManagerId)
                 .categoryName(catName)
                 .categorySlug(catSlug)
                 .sku(p.getSku())

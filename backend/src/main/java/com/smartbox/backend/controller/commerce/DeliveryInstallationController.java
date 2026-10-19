@@ -45,7 +45,7 @@ public class DeliveryInstallationController {
     private final CurrentActor actors;
 
     @GetMapping("/api/delivery-installations/availability")
-    @Operation(summary = "Kiểm tra lịch rảnh của các kỹ thuật viên")
+    @Operation(summary = "Kiểm tra lịch rảnh của các kỹ thuật viên", description = "Kiểm tra khung giờ khả dụng của đội ngũ kỹ thuật viên trong khoảng thời gian chỉ định để lên lịch giao lắp")
     public List<Map<String, Object>> availability(
             @RequestParam OffsetDateTime start,
             @RequestParam(required = false) OffsetDateTime end) {
@@ -53,14 +53,14 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping(value = "/api/delivery-installations/upload-proof", consumes = "multipart/form-data")
-    @Operation(summary = "Tải ảnh minh chứng nghiệm thu")
+    @Operation(summary = "Tải ảnh minh chứng nghiệm thu", description = "Tải lên tệp hình ảnh biên bản nghiệm thu hoặc ảnh hiện trường lắp đặt lên dịch vụ lưu trữ đám mây")
     public Map<String, String> uploadProof(@RequestPart("file") MultipartFile file) {
         actors.get().requireRoles("technician", "product_manager", "super_admin");
         return Map.of("url", imageStorage.upload(file).secureUrl());
     }
 
     @PostMapping("/api/delivery-installations/{id}/submit-completion")
-    @Operation(summary = "Kỹ thuật viên nộp báo cáo hoàn thành kèm ảnh minh chứng")
+    @Operation(summary = "Kỹ thuật viên nộp báo cáo hoàn thành kèm ảnh minh chứng", description = "Kỹ thuật viên gửi hồ sơ hoàn tất công việc giao lắp bao gồm ghi chú và ảnh minh chứng để chờ PO thẩm định")
     public Map<String, Object> submitCompletion(
             @PathVariable UUID id,
             @Valid @RequestBody CompletionSubmission request,
@@ -70,7 +70,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/approve-completion")
-    @Operation(summary = "PO duyệt nghiệm thu và hoàn tất đơn hàng")
+    @Operation(summary = "PO duyệt nghiệm thu và hoàn tất đơn hàng", description = "Quản lý đơn hàng (PO) phê duyệt biên bản hoàn thành công việc giao lắp và cập nhật trạng thái đơn sang hoàn tất")
     public Map<String, Object> approveCompletion(
             @PathVariable UUID id,
             @Valid @RequestBody(required = false) PoApprovalRequest request,
@@ -80,7 +80,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/reject-completion")
-    @Operation(summary = "PO yêu cầu kỹ thuật viên xử lý lại")
+    @Operation(summary = "PO yêu cầu kỹ thuật viên xử lý lại", description = "Quản lý đơn hàng từ chối kết quả nghiệm thu và yêu cầu kỹ thuật viên kiểm tra hoặc hoàn thiện lại")
     public Map<String, Object> rejectCompletion(
             @PathVariable UUID id,
             @Valid @RequestBody RejectionRequest request,
@@ -90,7 +90,7 @@ public class DeliveryInstallationController {
     }
 
     @GetMapping("/api/technician/daily-tasks")
-    @Operation(summary = "Lấy danh sách công việc trong ngày của kỹ thuật viên (hỗ trợ thời khóa biểu)")
+    @Operation(summary = "Lấy danh sách công việc trong ngày của kỹ thuật viên (hỗ trợ thời khóa biểu)", description = "Truy vấn danh sách lịch trình công việc giao lắp trong ngày của kỹ thuật viên phục vụ phân bổ thời khóa biểu")
     public Map<String, Object> dailyTasks(
             @RequestParam(required = false) String date,
             @RequestParam(required = false) UUID technicianId) {
@@ -98,7 +98,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/orders/{id}/delivery-installation")
-    @Operation(summary = "Phân công kỹ thuật viên giao và lắp đặt cho đơn hàng")
+    @Operation(summary = "Phân công kỹ thuật viên giao và lắp đặt cho đơn hàng", description = "Điều phối và chỉ định kỹ thuật viên chịu trách nhiệm thực hiện giao hàng và lắp đặt cho đơn hàng")
     public ResponseEntity<Map<String, Object>> assign(
             @PathVariable UUID id,
             @Valid @RequestBody Assignment request,
@@ -107,13 +107,13 @@ public class DeliveryInstallationController {
     }
 
     @GetMapping("/api/orders/{id}/delivery-installation")
-    @Operation(summary = "Lấy thông tin công việc giao lắp của đơn hàng")
+    @Operation(summary = "Lấy thông tin công việc giao lắp của đơn hàng", description = "Truy vấn tiến độ và thông tin chi tiết nhiệm vụ giao lắp được gán cho một đơn hàng cụ thể")
     public Map<String, Object> forOrder(@PathVariable UUID id) {
         return jobs.forOrder(id);
     }
 
     @GetMapping("/api/delivery-installations/eligible-orders")
-    @Operation(summary = "Lấy danh sách đơn hàng đủ điều kiện phân công giao lắp")
+    @Operation(summary = "Lấy danh sách đơn hàng đủ điều kiện phân công giao lắp", description = "Truy vấn danh sách các đơn hàng đã duyệt và đủ điều kiện để phân công kỹ thuật viên giao lắp")
     public Map<String, Object> eligible(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -121,13 +121,13 @@ public class DeliveryInstallationController {
     }
 
     @GetMapping("/api/delivery-installations/technicians")
-    @Operation(summary = "Lấy danh sách kỹ thuật viên khả dụng")
+    @Operation(summary = "Lấy danh sách kỹ thuật viên khả dụng", description = "Truy vấn danh sách nhân viên kỹ thuật đang hoạt động trong hệ thống để thực hiện điều phối nhiệm vụ")
     public List<Map<String, Object>> technicians() {
         return jobs.technicians();
     }
 
     @GetMapping("/api/delivery-installations/my-jobs")
-    @Operation(summary = "Lấy danh sách công việc giao lắp của kỹ thuật viên hiện tại")
+    @Operation(summary = "Lấy danh sách công việc giao lắp của kỹ thuật viên hiện tại", description = "Truy vấn danh sách nhiệm vụ giao lắp được phân công cho tài khoản kỹ thuật viên đang đăng nhập")
     public Map<String, Object> mine(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -136,7 +136,7 @@ public class DeliveryInstallationController {
     }
 
     @GetMapping("/api/delivery-installations")
-    @Operation(summary = "Lấy toàn bộ công việc giao lắp trong hệ thống")
+    @Operation(summary = "Lấy toàn bộ công việc giao lắp trong hệ thống", description = "Truy vấn danh sách tất cả các công việc giao lắp thiết bị theo trạng thái và phân trang cho người quản lý")
     public Map<String, Object> all(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -145,19 +145,19 @@ public class DeliveryInstallationController {
     }
 
     @GetMapping("/api/delivery-installations/{id}")
-    @Operation(summary = "Lấy chi tiết công việc giao lắp")
+    @Operation(summary = "Lấy chi tiết công việc giao lắp", description = "Xem chi tiết công việc giao lắp bao gồm thông tin đơn hàng, kỹ thuật viên, địa chỉ và lịch sử cập nhật")
     public Map<String, Object> detail(@PathVariable UUID id) {
         return jobs.detail(id);
     }
 
     @GetMapping("/api/delivery-installations/{id}/checks")
-    @Operation(summary = "Lấy danh sách kiểm tra lắp đặt")
+    @Operation(summary = "Lấy danh sách kiểm tra lắp đặt", description = "Truy vấn checklist tiêu chuẩn các hạng mục kiểm tra chất lượng lắp đặt kỹ thuật cho đơn hàng")
     public Map<String, Object> checks(@PathVariable UUID id) {
         return jobs.checks(id);
     }
 
     @PostMapping("/api/delivery-installations/{id}/start")
-    @Operation(summary = "Bắt đầu thực hiện công việc giao lắp")
+    @Operation(summary = "Bắt đầu thực hiện công việc giao lắp", description = "Kỹ thuật viên cập nhật trạng thái bắt đầu di chuyển hoặc tiến hành nhiệm vụ giao lắp")
     public Map<String, Object> start(
             @PathVariable UUID id,
             @RequestHeader(value = "If-Match", required = false) String version,
@@ -166,7 +166,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/confirm-delivery")
-    @Operation(summary = "Xác nhận đã giao hàng tới địa chỉ khách hàng")
+    @Operation(summary = "Xác nhận đã giao hàng tới địa chỉ khách hàng", description = "Cập nhật mốc giao thiết bị thành công tới địa chỉ nhận của khách hàng trước khi tiến hành lắp đặt")
     public Map<String, Object> delivery(
             @PathVariable UUID id,
             @Valid @RequestBody Note request,
@@ -176,7 +176,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/devices")
-    @Operation(summary = "Quét số serial thiết bị lắp đặt thực tế")
+    @Operation(summary = "Quét số serial thiết bị lắp đặt thực tế", description = "Ghi nhận và đối soát số serial/IMEI của thiết bị được lắp đặt thực tế tại địa điểm của khách hàng")
     public Map<String, Object> serial(
             @PathVariable UUID id,
             @Valid @RequestBody Serial request,
@@ -186,7 +186,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/checks/commands")
-    @Operation(summary = "Kiểm thử lệnh thiết bị khi lắp đặt")
+    @Operation(summary = "Kiểm thử lệnh thiết bị khi lắp đặt", description = "Gửi lệnh kiểm tra vận hành thử nghiệm thiết bị SmartBox trực tiếp tại hiện trường lắp đặt")
     public ResponseEntity<Map<String, Object>> command(
             @PathVariable UUID id,
             @Valid @RequestBody Command request,
@@ -196,7 +196,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/confirm-installation")
-    @Operation(summary = "Xác nhận hoàn tất lắp đặt vật lý")
+    @Operation(summary = "Xác nhận hoàn tất lắp đặt vật lý", description = "Ghi nhận hoàn thành công đoạn lắp đặt phần cứng và kết nối vật lý của thiết bị")
     public Map<String, Object> installation(
             @PathVariable UUID id,
             @Valid @RequestBody Installation request,
@@ -206,7 +206,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/acceptance")
-    @Operation(summary = "Ký biên bản nghiệm thu và kích hoạt gói bảo hành cho khách")
+    @Operation(summary = "Ký biên bản nghiệm thu và kích hoạt gói bảo hành cho khách", description = "Xác nhận nghiệm thu cuối cùng từ khách hàng, kích hoạt bảo hành điện tử chính thức")
     public Map<String, Object> acceptance(
             @PathVariable UUID id,
             @Valid @RequestBody Acceptance request,
@@ -216,7 +216,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/fail")
-    @Operation(summary = "Báo cáo sự cố hoặc không thể hoàn thành giao lắp")
+    @Operation(summary = "Báo cáo sự cố hoặc không thể hoàn thành giao lắp", description = "Ghi nhận lý do thất bại hoặc sự cố phát sinh tại hiện trường khiến không thể hoàn thành giao lắp")
     public Map<String, Object> fail(
             @PathVariable UUID id,
             @Valid @RequestBody Failure request,
@@ -226,7 +226,7 @@ public class DeliveryInstallationController {
     }
 
     @PostMapping("/api/delivery-installations/{id}/reassign")
-    @Operation(summary = "Chuyển giao việc cho kỹ thuật viên khác")
+    @Operation(summary = "Chuyển giao việc cho kỹ thuật viên khác", description = "Chuyển giao nhiệm vụ giao lắp sang cho kỹ thuật viên khác xử lý thay kèm lý do điều chuyển")
     public Map<String, Object> reassign(
             @PathVariable UUID id,
             @Valid @RequestBody Reassignment request,

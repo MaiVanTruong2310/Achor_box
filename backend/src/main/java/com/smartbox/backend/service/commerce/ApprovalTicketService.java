@@ -26,6 +26,7 @@ public class ApprovalTicketService {
     private final OrderWorkflowService orders;
     private final OutboxService outbox;
     private final CurrentActor actors;
+    private final PaymentTimeoutService paymentTimeoutService;
 
     @Transactional
     public Map<String, Object> act(UUID ticketId, String action, String reason) {
@@ -57,6 +58,12 @@ public class ApprovalTicketService {
             if (!Set.of("PENDING", "PARTIALLY_REJECTED").contains(status)) {
                 throw new ConflictException("TICKET_ALREADY_REVIEWED");
             }
+            if (!"super_admin".equals(actor.role())) {
+                var foreignItems = db.list("SELECT 1 FROM public.order_item_approvals WHERE ticket_id=? AND (manager_id IS NULL OR manager_id != ?)", ticketId, actor.id());
+                if (!foreignItems.isEmpty()) {
+                    throw new ConflictException("CANNOT_REVIEW_ENTIRE_TICKET: Đơn hàng chứa sản phẩm thuộc danh mục bạn không quản lý. Bạn chỉ được duyệt từng sản phẩm mình phụ trách.");
+                }
+            }
             next = switch (action) {
                 case "APPROVE" -> "APPROVED";
                 case "RETURN" -> {
@@ -82,7 +89,7 @@ public class ApprovalTicketService {
                     actor.id(), now(), ticketId);
             if (Set.of("pending", "customer_decision_pending").contains(orderStatus)) {
                 orders.transition(order, "awaiting_payment", actor.id().toString(), "TICKET_APPROVED");
-                db.update("UPDATE public.orders SET expires_at=? WHERE id=?", now().plusMinutes(30), orderId);
+                paymentTimeoutService.scheduleOrderPaymentExpiry(orderId, order);
             } else if ("paid".equals(orderStatus)) {
                 orders.transition(order, "confirmed", actor.id().toString(), "TICKET_APPROVED");
                 db.update("INSERT INTO public.shipments(id,order_id,status,created_at) VALUES(?,?,'PREPARING',?)",
@@ -96,6 +103,7 @@ public class ApprovalTicketService {
             }
             orders.transition(order, "cancelled", actor.id().toString(), "TICKET_REJECTED");
             orders.release(order, actor.id(), "TICKET_REJECTED");
+            paymentTimeoutService.cancelScheduledExpiry(orderId);
         }
         if ("APPROVE".equals(action)) {
             if ("paid".equals(orderStatus)) {
@@ -128,8 +136,8 @@ public class ApprovalTicketService {
         if (itemApproval == null) {
             throw new BadRequestException("ITEM_APPROVAL_NOT_FOUND");
         }
-        if (itemApproval.get("manager_id") != null) {
-            if (!actor.id().equals(uuid(itemApproval.get("manager_id")))) {
+        if (!"super_admin".equals(actor.role())) {
+            if (itemApproval.get("manager_id") == null || !actor.id().equals(uuid(itemApproval.get("manager_id")))) {
                 throw new ConflictException("PO_NOT_AUTHORIZED_FOR_ITEM: Bạn không phải PO quản lý sản phẩm này");
             }
         }
@@ -163,13 +171,14 @@ public class ApprovalTicketService {
                 // All items approved
                 db.update("UPDATE public.approval_tickets SET status='APPROVED', updated_at=? WHERE id=?", now(), ticketId);
                 orders.transition(order, "awaiting_payment", actor.id().toString(), "ALL_ITEMS_APPROVED");
-                db.update("UPDATE public.orders SET expires_at=? WHERE id=?", now().plusMinutes(30), orderId);
+                paymentTimeoutService.scheduleOrderPaymentExpiry(orderId, order);
                 outbox.enqueue("ORDER_APPROVED_AWAITING_PAYMENT", orderId, "ticket:" + ticketId + ":approved", "Đơn hàng đã được duyệt toàn bộ, vui lòng thanh toán");
             } else if (approvedCount == 0) {
                 // All items rejected
                 db.update("UPDATE public.approval_tickets SET status='REJECTED', reason=?, updated_at=? WHERE id=?", "Tất cả sản phẩm bị từ chối", now(), ticketId);
                 orders.transition(order, "cancelled", actor.id().toString(), "ALL_ITEMS_REJECTED");
                 orders.release(order, actor.id(), "ALL_ITEMS_REJECTED");
+                paymentTimeoutService.cancelScheduledExpiry(orderId);
                 outbox.enqueue("ORDER_REJECTED", orderId, "ticket:" + ticketId + ":rejected", "Đơn hàng bị từ chối do không sản phẩm nào được duyệt");
             } else {
                 // Partial rejection -> ask customer
@@ -208,7 +217,7 @@ public class ApprovalTicketService {
             db.update("INSERT INTO public.ticket_history VALUES(?,?,?,?,?,?)",
                     UUID.randomUUID(), ticketId, "CUSTOMER_ACCEPTED", actor.id(), "Khách hàng đồng ý tiếp tục đơn hàng với các sản phẩm được duyệt", now());
             orders.transition(order, "awaiting_payment", actor.id().toString(), "CUSTOMER_ACCEPTED_PARTIAL_ORDER");
-            db.update("UPDATE public.orders SET expires_at=? WHERE id=?", now().plusMinutes(30), orderId);
+            paymentTimeoutService.scheduleOrderPaymentExpiry(orderId, order);
             outbox.enqueue("ORDER_AWAITING_PAYMENT", orderId, "decision:" + orderId, "Đơn hàng đã cập nhật thành công, vui lòng thanh toán");
         } else {
             // Customer declines: cancel order and release all remaining inventory
@@ -217,6 +226,7 @@ public class ApprovalTicketService {
                     UUID.randomUUID(), ticketId, "CUSTOMER_DECLINED", actor.id(), "Khách hàng hủy toàn bộ đơn do không đồng ý mua lẻ các sản phẩm được duyệt", now());
             orders.transition(order, "cancelled", actor.id().toString(), "CUSTOMER_DECLINED_PARTIAL_ORDER");
             orders.release(order, actor.id(), "CUSTOMER_DECLINED_PARTIAL_ORDER");
+            paymentTimeoutService.cancelScheduledExpiry(orderId);
             outbox.enqueue("ORDER_CANCELLED", orderId, "decision:" + orderId, "Đơn hàng đã hủy theo yêu cầu của khách hàng");
         }
         return orders.view(orderId);
@@ -267,9 +277,9 @@ public class ApprovalTicketService {
                     "LEFT JOIN public.orders o ON o.id = t.order_id " +
                     "LEFT JOIN public.profiles p ON p.id = o.user_id " +
                     "WHERE (EXISTS (SELECT 1 FROM public.order_item_approvals a WHERE a.ticket_id = t.id AND a.manager_id = ?) " +
-                    "   OR EXISTS (SELECT 1 FROM public.order_items oi JOIN public.products prod ON prod.id = oi.product_id WHERE oi.order_id = t.order_id AND prod.manager_id = ?)) " +
+                    "   OR EXISTS (SELECT 1 FROM public.order_items oi JOIN public.products prod ON prod.id = oi.product_id LEFT JOIN public.product_categories c ON c.id = prod.category_id WHERE oi.order_id = t.order_id AND (c.manager_id = ? OR prod.manager_id = ?))) " +
                     "ORDER BY t.created_at DESC LIMIT ? OFFSET ?";
-            return db.list(sql, actor.id(), actor.id(), size, (long) page * size);
+            return db.list(sql, actor.id(), actor.id(), actor.id(), size, (long) page * size);
         } else {
             String sql = "SELECT t.id, t.order_id, t.status, t.review_round, t.reason, t.created_at, t.updated_at, " +
                     "o.total AS order_total, o.shipping_address_snapshot, o.created_at AS order_created_at, " +

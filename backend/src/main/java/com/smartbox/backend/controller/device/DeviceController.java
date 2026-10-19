@@ -25,13 +25,13 @@ public class DeviceController {
     private final DeviceService deviceService;
 
     @GetMapping
-    @Operation(summary = "Lấy danh sách mã Serial thiết bị trong kho")
+    @Operation(summary = "Lấy danh sách mã Serial thiết bị trong kho", description = "Truy xuất toàn bộ danh sách thiết bị SmartBox đã đăng ký mã Serial trong kho")
     public ResponseEntity<List<DeviceResponse>> getAllDevices() {
         return ResponseEntity.ok(deviceService.getAllDevices());
     }
 
     @GetMapping("/paged")
-    @Operation(summary = "Lấy danh sách thiết bị có phân trang dạng Map<String, Object>")
+    @Operation(summary = "Lấy danh sách thiết bị có phân trang dạng Map<String, Object>", description = "Phân trang danh sách thiết bị theo trạng thái kho (in_stock, deployed, maintenance, defective)")
     public ResponseEntity<Map<String, Object>> getDevicesPaged(
             @Parameter(description = "Chỉ số trang (0-based)") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
             @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
@@ -39,7 +39,7 @@ public class DeviceController {
     }
 
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Cập nhật trạng thái bảo quản thiết bị trong kho (in_stock, maintenance, defective)")
+    @Operation(summary = "Cập nhật trạng thái bảo quản thiết bị trong kho (in_stock, maintenance, defective)", description = "Cập nhật tình trạng thiết bị (trong kho, bảo trì, hỏng hóc) phục vụ kiểm kê tài sản")
     public ResponseEntity<DeviceResponse> updateDeviceStatus(
             @PathVariable UUID id,
             @RequestBody DeviceStatusUpdateRequest request) {

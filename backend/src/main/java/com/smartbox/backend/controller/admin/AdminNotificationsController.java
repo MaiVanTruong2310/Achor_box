@@ -13,13 +13,13 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Admin Notifications API", description = "Thông báo hệ thống dành cho quản trị viên")
+@Tag(name = "Notification API", description = "Quản lý thông báo hệ thống và push notification dành cho người dùng và quản trị viên")
 public class AdminNotificationsController {
 
     private final AdminNotificationsService notifications;
 
     @GetMapping("/api/admin/notifications")
-    @Operation(summary = "Lấy danh sách thông báo quản trị (feed)")
+    @Operation(summary = "Lấy danh sách thông báo quản trị (feed)", description = "Lấy luồng dữ liệu thông báo mới nhất dành cho ban quản trị về đơn hàng mới, ticket PO và khiếu nại bảo hành")
     public ResponseEntity<Map<String, Object>> feed() {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())

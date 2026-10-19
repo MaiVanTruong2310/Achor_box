@@ -42,6 +42,7 @@ public class VnpayService {
     private final CurrentActor actors;
     private final OutboxService outbox;
     private final VnpayGateway gateway;
+    private final PaymentTimeoutService paymentTimeoutService;
 
     @Value("${smartbox.vnpay.tmn-code:}")
     private String terminalCode;
@@ -92,7 +93,7 @@ public class VnpayService {
 
         UUID paymentId = UUID.randomUUID();
         OffsetDateTime created = now();
-        OffsetDateTime expires = created.plusMinutes(Math.max(5, timeoutMinutes));
+        OffsetDateTime expires = paymentTimeoutService.scheduleOrderPaymentExpiry(orderId, order);
 
         String ip = (clientIp == null || clientIp.isBlank() || "0:0:0:0:0:0:0:1".equals(clientIp) || "::1".equals(clientIp))
                 ? "127.0.0.1" : clientIp;
@@ -109,7 +110,6 @@ public class VnpayService {
         if ("pending".equals(order.get("status"))) {
             orders.transition(order, "awaiting_payment", actor.id().toString(), "VNPAY_CHECKOUT");
         }
-        db.update("UPDATE public.orders SET expires_at=? WHERE id=?", expires, orderId);
 
         log.info("Đã tạo liên kết thanh toán VNPAY cho đơn hàng {}: paymentId={}", orderId, paymentId);
 
@@ -254,17 +254,13 @@ public class VnpayService {
 
         if ("SUCCESS".equals(result)) {
             if ("cancelled".equals(order.get("status"))) {
-                db.update("UPDATE public.payments SET status='refund_required', paid_at=? WHERE id=?", paidAt, paymentId);
-                orders.requestRefund(order, "LATE_PAYMENT_SUCCESS");
-                log.warn("Thanh toán muộn cho đơn hàng đã hủy {}, yêu cầu hoàn tiền", paymentId);
+                paymentTimeoutService.handleLatePaymentRefund(order, payment, paidAt);
             } else if ("awaiting_payment".equals(order.get("status"))) {
                 if (!time(payment.get("expires_at")).isAfter(now())) {
-                    db.update("UPDATE public.payments SET status='expired' WHERE id=?", paymentId);
-                    orders.transition(order, "cancelled", "SYSTEM", "PAYMENT_TIMEOUT");
-                    orders.release(order, null, "PAYMENT_TIMEOUT");
-                    db.update("UPDATE public.payments SET status='refund_required', paid_at=? WHERE id=?", paidAt, paymentId);
-                    orders.requestRefund(order, "LATE_PAYMENT_SUCCESS");
+                    paymentTimeoutService.processExpiredOrder(orderId);
+                    paymentTimeoutService.handleLatePaymentRefund(order, payment, paidAt);
                 } else {
+                    paymentTimeoutService.cancelScheduledExpiry(orderId);
                     db.update("UPDATE public.payments SET status='success', paid_at=? WHERE id=?", paidAt, paymentId);
                     db.update("UPDATE public.orders SET paid_at=? WHERE id=?", paidAt, orderId);
                     orders.transition(order, "paid", "SYSTEM", "PAYMENT_SUCCESS");
@@ -277,6 +273,7 @@ public class VnpayService {
                 throw new ConflictException("PAYMENT_ORDER_STATE_MISMATCH");
             }
         } else if ("pending".equals(status) && "awaiting_payment".equals(order.get("status"))) {
+            paymentTimeoutService.cancelScheduledExpiry(orderId);
             db.update("UPDATE public.payments SET status='failed' WHERE id=?", paymentId);
             orders.transition(order, "cancelled", "SYSTEM", "PAYMENT_FAILED");
             orders.release(order, null, "PAYMENT_FAILED");

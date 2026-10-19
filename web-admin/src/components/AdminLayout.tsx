@@ -32,6 +32,7 @@ import { AdminNotificationsProvider, useAdminNotifications, noticeStatusLabel } 
 import { navigation, roleNavigation, roleLabels, tabs } from '../navigation';
 import { getRoleDefaultPath } from '../types/database';
 import { UserProfileModal } from './UserProfileModal';
+import { NotificationPopover } from './NotificationPopover';
 import './admin-workspace.css';
 
 const icons = {
@@ -238,28 +239,7 @@ const Shell: React.FC = () => {
               </button>
 
               {notices && (
-                <section className="workspace-notices">
-                  <div className="notice-heading">
-                    <strong>Thông báo hoạt động</strong>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button onClick={feed.markRead}>Đánh dấu đã đọc</button>
-                      <button aria-label="Đóng thông báo" onClick={() => setNotices(false)}>
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  {feed.error && <p role="alert" style={{ padding: 10, color: 'var(--fpt-rose)' }}>{feed.error}</p>}
-                  {!feed.events.length && !feed.error && (
-                    <p style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có thông báo.</p>
-                  )}
-                  {feed.events.map((event) => (
-                    <NavLink key={event.id} to={event.link}>
-                      <strong>{event.title}</strong>
-                      <span>{event.referenceId.slice(0, 8)} · {noticeStatusLabel(event)}</span>
-                      <small>{new Date(event.occurredAt).toLocaleString('vi-VN')}</small>
-                    </NavLink>
-                  ))}
-                </section>
+                <NotificationPopover onClose={() => setNotices(false)} />
               )}
             </div>
 

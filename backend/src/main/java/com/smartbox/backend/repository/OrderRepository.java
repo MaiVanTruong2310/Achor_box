@@ -26,7 +26,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             OR lower(COALESCE(p.email,'')) LIKE :pattern ESCAPE '\\' OR COALESCE(p.phone,'') LIKE :pattern ESCAPE '\\'
             OR lower(COALESCE(s.tracking_number, o.tracking_number, '')) LIKE :pattern ESCAPE '\\') AND
             (:payment='' OR EXISTS(SELECT 1 FROM public.payments pm WHERE pm.order_id=o.id AND
-            (CAST(pm.status AS text)=:payment OR pm.provider=:payment)))
+            (CAST(pm.status AS text)=:payment OR pm.provider=:payment))) AND
+            (:isPo = false OR EXISTS (
+                SELECT 1 FROM public.order_items oi 
+                JOIN public.products pr ON pr.id = oi.product_id 
+                LEFT JOIN public.product_categories c ON c.id = pr.category_id 
+                WHERE oi.order_id = o.id AND (c.manager_id = :poId OR pr.manager_id = :poId)
+            ))
             ORDER BY o.created_at DESC, o.id DESC
             """,
         countQuery = """
@@ -40,7 +46,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             OR lower(COALESCE(p.email,'')) LIKE :pattern ESCAPE '\\' OR COALESCE(p.phone,'') LIKE :pattern ESCAPE '\\'
             OR lower(COALESCE(s.tracking_number, o.tracking_number, '')) LIKE :pattern ESCAPE '\\') AND
             (:payment='' OR EXISTS(SELECT 1 FROM public.payments pm WHERE pm.order_id=o.id AND
-            (CAST(pm.status AS text)=:payment OR pm.provider=:payment)))
+            (CAST(pm.status AS text)=:payment OR pm.provider=:payment))) AND
+            (:isPo = false OR EXISTS (
+                SELECT 1 FROM public.order_items oi 
+                JOIN public.products pr ON pr.id = oi.product_id 
+                LEFT JOIN public.product_categories c ON c.id = pr.category_id 
+                WHERE oi.order_id = o.id AND (c.manager_id = :poId OR pr.manager_id = :poId)
+            ))
             """,
         nativeQuery = true
     )
@@ -49,8 +61,14 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
         @Param("pattern") String pattern,
         @Param("status") String status,
         @Param("payment") String payment,
+        @Param("isPo") boolean isPo,
+        @Param("poId") UUID poId,
         Pageable pageable
     );
+
+    default Page<Order> search(String search, String pattern, String status, String payment, Pageable pageable) {
+        return search(search, pattern, status, payment, false, null, pageable);
+    }
 
     List<Order> findAllByOrderByCreatedAtDesc();
 
@@ -60,5 +78,18 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     @Query(value = "SELECT CAST(status AS text), count(*) FROM public.orders GROUP BY status", nativeQuery = true)
     List<Object[]> countGroupByStatus();
+
+    @Query(value = """
+        SELECT CAST(o.status AS text), count(*) 
+        FROM public.orders o 
+        WHERE EXISTS (
+            SELECT 1 FROM public.order_items oi 
+            JOIN public.products pr ON pr.id = oi.product_id 
+            LEFT JOIN public.product_categories c ON c.id = pr.category_id 
+            WHERE oi.order_id = o.id AND (c.manager_id = :poId OR pr.manager_id = :poId)
+        ) 
+        GROUP BY o.status
+        """, nativeQuery = true)
+    List<Object[]> countGroupByStatusForPo(@Param("poId") UUID poId);
 }
 

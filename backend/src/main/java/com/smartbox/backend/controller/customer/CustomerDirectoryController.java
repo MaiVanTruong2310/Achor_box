@@ -31,7 +31,7 @@ public class CustomerDirectoryController {
     private final CustomerDirectoryService customers;
 
     @GetMapping
-    @Operation(summary = "Lấy danh sách khách hàng có tìm kiếm và phân trang")
+    @Operation(summary = "Lấy danh sách khách hàng có tìm kiếm và phân trang", description = "Truy xuất danh bạ khách hàng dành cho Admin/PO với các bộ lọc theo từ khóa tìm kiếm, trạng thái tài khoản và trạng thái hoạt động")
     public Map<String, Object> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -42,13 +42,13 @@ public class CustomerDirectoryController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Lấy chi tiết hồ sơ khách hàng")
+    @Operation(summary = "Lấy chi tiết hồ sơ khách hàng", description = "Xem chi tiết thông tin định danh, lịch sử liên hệ và tài khoản người dùng của khách hàng theo ID")
     public Map<String, Object> detail(@PathVariable UUID id) {
         return customers.detail(id);
     }
 
     @PostMapping
-    @Operation(summary = "Tạo mới khách hàng (có tùy chọn tạo tài khoản đăng nhập)")
+    @Operation(summary = "Tạo mới khách hàng (có tùy chọn tạo tài khoản đăng nhập)", description = "Tạo bản ghi khách hàng mới trong CRM nội bộ, hỗ trợ tự động khởi tạo tài khoản đăng nhập portal nếu được yêu cầu")
     public ResponseEntity<Map<String, Object>> create(
             @RequestBody @Valid CustomerDirectoryRequests.Create request,
             @RequestHeader(value = "Idempotency-Key", required = false) String key) {
@@ -58,7 +58,7 @@ public class CustomerDirectoryController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Cập nhật thông tin khách hàng")
+    @Operation(summary = "Cập nhật thông tin khách hàng", description = "Cập nhật thông tin liên hệ, tên công ty/cá nhân, ghi chú và địa chỉ của khách hàng trong danh bạ quản trị")
     public Map<String, Object> update(
             @PathVariable UUID id,
             @RequestBody @Valid CustomerDirectoryRequests.Update request) {

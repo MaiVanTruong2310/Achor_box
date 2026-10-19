@@ -13,7 +13,8 @@ import {
   Box,
   Wrench,
   ShieldAlert,
-  X
+  X,
+  User
 } from 'lucide-react';
 import { ProductCategory } from '../../types/database';
 import { productsService } from '../../services/api';
@@ -21,6 +22,7 @@ import './products.css';
 
 export const Categories: React.FC = () => {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [productManagers, setProductManagers] = useState<{ id: string; fullName: string; email: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -41,6 +43,7 @@ export const Categories: React.FC = () => {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [managerId, setManagerId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string>('');
 
@@ -80,6 +83,7 @@ export const Categories: React.FC = () => {
 
   useEffect(() => {
     loadCategories();
+    productsService.getProductManagers().then(setProductManagers).catch(() => []);
   }, []);
 
   const handleNameChange = (val: string) => {
@@ -95,6 +99,7 @@ export const Categories: React.FC = () => {
     setName('');
     setSlug('');
     setDescription('');
+    setManagerId('');
     setModalError('');
     setModalOpen(true);
   };
@@ -105,6 +110,7 @@ export const Categories: React.FC = () => {
     setName(cat.name);
     setSlug(cat.slug);
     setDescription(cat.description || '');
+    setManagerId(cat.manager_id || cat.managerId || '');
     setModalError('');
     setModalOpen(true);
   };
@@ -121,14 +127,16 @@ export const Categories: React.FC = () => {
         await productsService.createCategory({
           name: name.trim(),
           slug: finalSlug,
-          description: description.trim() || undefined
+          description: description.trim() || undefined,
+          managerId: managerId || null
         });
         showToast('Tạo mới danh mục thành công!');
       } else if (editingId) {
         await productsService.updateCategory(editingId, {
           name: name.trim(),
           slug: finalSlug,
-          description: description.trim() || undefined
+          description: description.trim() || undefined,
+          managerId: managerId || null
         });
         showToast('Cập nhật thông tin danh mục thành công!');
       }
@@ -381,16 +389,17 @@ export const Categories: React.FC = () => {
         <table className="products-clean-table">
           <thead>
             <tr>
-              <th style={{ width: '32%' }}>Danh mục</th>
-              <th style={{ width: '26%' }}>Đường dẫn (Slug)</th>
+              <th style={{ width: '28%' }}>Danh mục</th>
+              <th style={{ width: '18%' }}>Đường dẫn (Slug)</th>
+              <th style={{ width: '24%' }}>Quản lý phụ trách (PO)</th>
               <th>Mô tả chi tiết</th>
-              <th style={{ width: '120px', textAlign: 'center' }}>Thao tác</th>
+              <th style={{ width: '110px', textAlign: 'center' }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {loading && categories.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: '40px 0' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '40px 0' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
                     <RefreshCw size={18} className="spin" />
                     <span>Đang tải danh mục từ hệ thống…</span>
@@ -399,7 +408,7 @@ export const Categories: React.FC = () => {
               </tr>
             ) : filteredCategories.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: '40px 0' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '40px 0' }}>
                   <div className="products-clean-empty">
                     <div className="products-clean-empty-icon">
                       <Layers size={22} />
@@ -460,6 +469,40 @@ export const Categories: React.FC = () => {
                         <Copy size={13} />
                       </button>
                     </div>
+                  </td>
+
+                  <td>
+                    {(() => {
+                      const mId = cat.manager_id || cat.managerId;
+                      const assignedPo = productManagers.find((pm) => pm.id === mId);
+                      const poName = assignedPo ? assignedPo.fullName : cat.manager_name;
+                      if (!poName) {
+                        return (
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            Chưa phân công
+                          </span>
+                        );
+                      }
+                      return (
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            background: 'rgba(59, 130, 246, 0.08)',
+                            border: '1px solid rgba(59, 130, 246, 0.22)',
+                            color: '#2563eb',
+                            fontSize: '12px',
+                            fontWeight: 600
+                          }}
+                        >
+                          <User size={13} />
+                          <span>{poName}</span>
+                        </div>
+                      );
+                    })()}
                   </td>
 
                   <td>
@@ -566,6 +609,28 @@ export const Categories: React.FC = () => {
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={submitting}
                   />
+                </div>
+
+                <div className="clean-form-row">
+                  <label>
+                    Quản lý phụ trách (PO)
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>
+                      (Phụ trách thẩm định các đơn hàng chứa sản phẩm thuộc danh mục này)
+                    </span>
+                  </label>
+                  <select
+                    className="clean-form-select"
+                    value={managerId}
+                    onChange={(e) => setManagerId(e.target.value)}
+                    disabled={submitting}
+                  >
+                    <option value="">-- Chưa phân công (Chung hệ thống) --</option>
+                    {productManagers.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.fullName} ({pm.email})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

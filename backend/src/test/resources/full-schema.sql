@@ -111,6 +111,8 @@ CREATE TABLE public.product_categories (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   name text NOT NULL,
   slug text NOT NULL UNIQUE,
+  description text,
+  manager_id uuid,
   CONSTRAINT product_categories_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.products (

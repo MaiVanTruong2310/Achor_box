@@ -17,13 +17,13 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Sales Invoice API", description = "Quản lý hóa đơn bán hàng điện tử")
+@Tag(name = "Order API", description = "Quản lý đơn đặt hàng, giỏ hàng, phê duyệt PO và xử lý giao vận")
 public class SalesInvoiceController {
 
     private final SalesInvoiceService invoices;
 
     @PostMapping("/api/orders/{id}/sales-invoice")
-    @Operation(summary = "Phát hành hóa đơn bán hàng cho đơn hàng đã thanh toán")
+    @Operation(summary = "Phát hành hóa đơn bán hàng cho đơn hàng đã thanh toán", description = "Khởi tạo và lưu trữ hóa đơn bán hàng điện tử chính thức sau khi đơn hàng được thanh toán thành công")
     public ResponseEntity<Map<String, Object>> issue(@PathVariable UUID id) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
@@ -31,7 +31,7 @@ public class SalesInvoiceController {
     }
 
     @GetMapping("/api/orders/{id}/sales-invoice")
-    @Operation(summary = "Lấy dữ liệu hóa đơn bán hàng hiện có")
+    @Operation(summary = "Lấy dữ liệu hóa đơn bán hàng hiện có", description = "Truy xuất thông tin số hóa đơn, ngày phát hành, thông tin thuế VAT và chi tiết thanh toán của đơn hàng")
     public ResponseEntity<Map<String, Object>> existing(@PathVariable UUID id) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
@@ -39,7 +39,7 @@ public class SalesInvoiceController {
     }
 
     @GetMapping(value = "/api/orders/{id}/sales-invoice.html", produces = "text/html;charset=UTF-8")
-    @Operation(summary = "Tải bản in hóa đơn dạng HTML chuẩn bảo mật")
+    @Operation(summary = "Tải bản in hóa đơn dạng HTML chuẩn bảo mật", description = "Xuất hóa đơn bán hàng dưới dạng trang HTML tối ưu in ấn kèm các thẻ bảo mật CSP và Content-Type an toàn")
     public ResponseEntity<String> html(@PathVariable UUID id) {
         var invoice = invoices.existing(id);
         return ResponseEntity.ok()

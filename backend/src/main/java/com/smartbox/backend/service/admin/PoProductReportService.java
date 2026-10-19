@@ -131,7 +131,7 @@ public class PoProductReportService {
                 "FROM public.products p " +
                 "LEFT JOIN public.product_categories c ON c.id=p.category_id " +
                 "LEFT JOIN public.product_variants v ON v.product_id=p.id " +
-                "WHERE p.manager_id = ? " +
+                "WHERE (c.manager_id = ? OR (c.manager_id IS NULL AND p.manager_id = ?)) " +
                 "ORDER BY p.name, v.variant_name";
 
         List<Map<String, Object>> rows = db.list(sql,
@@ -139,6 +139,7 @@ public class PoProductReportService {
                 Timestamp.from(end.toInstant()),
                 Timestamp.from(start.toInstant()),
                 Timestamp.from(end.toInstant()),
+                managerId,
                 managerId
         );
 
