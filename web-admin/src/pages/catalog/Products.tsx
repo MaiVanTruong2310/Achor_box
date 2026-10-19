@@ -237,10 +237,14 @@ export const Products: React.FC = () => {
         categoryId: cat !== 'all' ? cat : undefined,
         search: query.trim() || undefined
       });
-      // Nếu là PO (product_manager): Chỉ hiển thị các sản phẩm được giao quản lý
+      // Nếu là PO (product_manager): Chỉ hiển thị các sản phẩm thuộc danh mục hoặc sản phẩm được giao quản lý
       let loaded = res.content;
       if (isProductManager && profile?.id) {
-        loaded = loaded.filter(p => p.manager_id === profile.id);
+        loaded = loaded.filter(p => {
+          const cat = categories.find(c => c.id === p.category_id);
+          const effectiveManagerId = cat?.manager_id || cat?.managerId || p.manager_id;
+          return effectiveManagerId === profile.id;
+        });
       }
       setProducts(loaded);
       setTotalProducts(isProductManager ? loaded.length : res.totalElements);
@@ -303,7 +307,11 @@ export const Products: React.FC = () => {
   const paginatedProducts = useMemo(() => {
     let list = products;
     if (isProductManager && profile?.id) {
-      list = list.filter((p) => p.manager_id === profile.id);
+      list = list.filter((p) => {
+        const cat = categories.find((c) => c.id === p.category_id);
+        const effectiveManagerId = cat?.manager_id || cat?.managerId || p.manager_id;
+        return effectiveManagerId === profile.id;
+      });
     }
     if (stockFilter === 'all') return list;
     return list.filter((p) => {
@@ -315,7 +323,7 @@ export const Products: React.FC = () => {
       if (stockFilter === 'out_of_stock') return totalStock <= 0;
       return true;
     });
-  }, [products, stockFilter, isProductManager, profile?.id]);
+  }, [products, stockFilter, isProductManager, profile?.id, categories]);
 
   // Overall KPI metrics
   const totalSKUs = useMemo(() => {
@@ -2155,7 +2163,12 @@ export const Products: React.FC = () => {
                         className="clean-form-select"
                         disabled={isTechnician}
                         value={formData.category_id}
-                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                        onChange={(e) => {
+                          const catId = e.target.value;
+                          const foundCat = categories.find((c) => c.id === catId);
+                          const inheritedManagerId = foundCat?.manager_id || foundCat?.managerId || '';
+                          setFormData({ ...formData, category_id: catId, manager_id: inheritedManagerId });
+                        }}
                       >
                         {categories.map((c) => (
                           <option key={c.id} value={c.id}>
@@ -2182,24 +2195,41 @@ export const Products: React.FC = () => {
 
                     <div className="clean-form-row">
                       <label>
-                        Quản lý phụ trách (PO){' '}
-                        {!canAssignManager && !isTechnician && (
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>(Chỉ Super Admin phân công)</span>
-                        )}
+                        Quản lý phụ trách (PO)
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>
+                          (Tự động theo Danh mục)
+                        </span>
                       </label>
-                      <select
-                        className="clean-form-select"
-                        disabled={!canAssignManager || isTechnician}
-                        value={formData.manager_id}
-                        onChange={(e) => setFormData({ ...formData, manager_id: e.target.value })}
-                      >
-                        <option value="">-- Mặc định (Tự quản lý) --</option>
-                        {productManagers.map((pm) => (
-                          <option key={pm.id} value={pm.id}>
-                            {pm.fullName} ({pm.email})
-                          </option>
-                        ))}
-                      </select>
+                      {(() => {
+                        const selectedCat = categories.find((c) => c.id === formData.category_id);
+                        const mId = selectedCat?.manager_id || selectedCat?.managerId || formData.manager_id;
+                        const pm = productManagers.find((p) => p.id === mId);
+                        const managerDisplay = pm
+                          ? `${pm.fullName} (${pm.email})`
+                          : selectedCat?.manager_name
+                          ? selectedCat.manager_name
+                          : 'Chưa phân công cho PO (theo Danh mục)';
+                        return (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 12px',
+                              background: 'var(--bg-surface-secondary, #f8fafc)',
+                              border: '1px solid var(--border-color, #e2e8f0)',
+                              borderRadius: 6,
+                              fontSize: 13,
+                              color: 'var(--text-primary)',
+                              minHeight: 38
+                            }}
+                          >
+                            <span style={{ fontWeight: 600, color: pm || selectedCat?.manager_name ? '#2563eb' : 'var(--text-muted)' }}>
+                              {managerDisplay}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 

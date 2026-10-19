@@ -28,5 +28,6 @@
     <include file="db/changelog/changesets/020_warranty_claims_schema_sync.xml"/>
     <include file="db/changelog/changesets/021_delivery_dispatch_and_acceptance.xml"/>
     <include file="db/changelog/changesets/022_profiles_email_index.xml"/>
+    <include file="db/changelog/changesets/023_category_manager.xml"/>
 
 </databaseChangeLog>

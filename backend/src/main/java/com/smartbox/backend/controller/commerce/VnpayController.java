@@ -22,7 +22,7 @@ import java.util.Map;
 @RequestMapping("/api/payments/vnpay")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "VNPAY Payment Gateway API", description = "Tích hợp cổng thanh toán trực tuyến VNPAY Sandbox (NCB Test Card)")
+@Tag(name = "Payment API", description = "Tích hợp cổng thanh toán trực tuyến VNPAY Sandbox (NCB Test Card)")
 public class VnpayController {
 
     private final VnpayService vnpayService;
@@ -30,7 +30,7 @@ public class VnpayController {
     private final VnpayGateway gateway;
 
     @PostMapping("/create-url")
-    @Operation(summary = "Tạo đường link thanh toán VNPAY cho đơn hàng")
+    @Operation(summary = "Tạo đường link thanh toán VNPAY cho đơn hàng", description = "Tạo URL chuyển hướng sang cổng thanh toán VNPAY Sandbox cho đơn hàng chỉ định")
     public ResponseEntity<VnpayPaymentResponse> createPaymentUrl(
             @Valid @RequestBody VnpayCreatePaymentRequest request,
             HttpServletRequest servletRequest) {
@@ -39,7 +39,7 @@ public class VnpayController {
     }
 
     @GetMapping("/ipn")
-    @Operation(summary = "Webhook IPN nhận thông báo giao dịch từ server VNPAY")
+    @Operation(summary = "Webhook IPN nhận thông báo giao dịch từ server VNPAY", description = "Điểm tiếp nhận thông báo kết quả giao dịch thanh toán tự động (IPN) server-to-server từ VNPAY")
     public Map<String, String> ipn(@RequestParam MultiValueMap<String, String> query) {
         try {
             return payments.vnpayIpn(query);
@@ -53,7 +53,7 @@ public class VnpayController {
     }
 
     @GetMapping("/return")
-    @Operation(summary = "Xác thực kết quả thanh toán khi khách hàng được redirect về từ VNPAY")
+    @Operation(summary = "Xác thực kết quả thanh toán khi khách hàng được redirect về từ VNPAY", description = "Kiểm tra chữ ký số checksum và đối soát mã phản hồi sau khi khách hàng hoàn tất giao dịch và quay về từ website VNPAY")
     public Map<String, Object> returned(@RequestParam MultiValueMap<String, String> query) {
         var notification = gateway.verify(query);
         return Map.of(

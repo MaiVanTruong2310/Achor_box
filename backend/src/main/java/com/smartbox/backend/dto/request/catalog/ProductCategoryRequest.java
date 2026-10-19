@@ -41,4 +41,7 @@ public class ProductCategoryRequest {
 
     @Schema(description = "Mô tả chi tiết loại sản phẩm", example = "Các phụ tùng, linh kiện thay thế chính hãng cho tủ SmartBox")
     private String description;
+
+    @Schema(description = "ID của Product Manager (PO) phụ trách danh mục")
+    private java.util.UUID managerId;
 }

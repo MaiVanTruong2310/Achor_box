@@ -286,18 +286,26 @@ export const productsService = {
             return [];
         }
     },
-    async createCategory(category: { name: string; slug?: string; description?: string }): Promise<ProductCategory> {
+    async createCategory(category: { name: string; slug?: string; description?: string; managerId?: string | null; manager_id?: string | null }): Promise<ProductCategory> {
+        const payload = {
+            ...category,
+            managerId: category.managerId || category.manager_id || null
+        };
         const res = await fetchBackend<ProductCategory>('/products/categories', {
             method: 'POST',
-            body: JSON.stringify(category)
+            body: JSON.stringify(payload)
         });
         if (res) return res;
         throw new Error("Không thể tạo danh mục mới.");
     },
-    async updateCategory(id: string, category: { name: string; slug?: string; description?: string }): Promise<ProductCategory> {
+    async updateCategory(id: string, category: { name: string; slug?: string; description?: string; managerId?: string | null; manager_id?: string | null }): Promise<ProductCategory> {
+        const payload = {
+            ...category,
+            managerId: category.managerId || category.manager_id || null
+        };
         const res = await fetchBackend<ProductCategory>(`/products/categories/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(category)
+            body: JSON.stringify(payload)
         });
         if (res) return res;
         throw new Error("Không thể cập nhật danh mục.");

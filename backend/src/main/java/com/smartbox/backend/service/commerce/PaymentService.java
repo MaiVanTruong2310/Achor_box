@@ -53,6 +53,7 @@ public class PaymentService {
     private final ObjectMapper json;
     private final Environment environment;
     private final VnpayGateway vnpay;
+    private final PaymentTimeoutService paymentTimeoutService;
 
     @Value("${smartbox.payment.provider:mock}")
     private String provider = "mock";
@@ -131,7 +132,7 @@ public class PaymentService {
         }
         UUID payment = UUID.randomUUID();
         var created = now();
-        var expires = created.plusMinutes(timeoutMinutes);
+        var expires = paymentTimeoutService.scheduleOrderPaymentExpiry(id, order);
         String paymentUrl;
         if ("vnpay".equals(provider)) {
             String ip = "127.0.0.1";
@@ -153,7 +154,6 @@ public class PaymentService {
         if (!"awaiting_payment".equals(order.get("status"))) {
             orders.transition(order, "awaiting_payment", actor.id().toString(), "CHECKOUT");
         }
-        db.update("UPDATE public.orders SET expires_at=? WHERE id=?", expires, id);
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("orderId", id.toString());
         response.put("status", "awaiting_payment");
@@ -251,15 +251,13 @@ public class PaymentService {
         }
         if ("SUCCESS".equals(result)) {
             if ("cancelled".equals(order.get("status"))) {
-                db.update("UPDATE public.payments SET status='refund_required',paid_at=? WHERE id=?", paidAt, paymentId);
-                orders.requestRefund(order, "LATE_PAYMENT_SUCCESS");
-                log.warn("Late successful payment {} requires refund", paymentId);
+                paymentTimeoutService.handleLatePaymentRefund(order, payment, paidAt);
             } else if ("awaiting_payment".equals(order.get("status"))) {
                 if (!time(payment.get("expires_at")).isAfter(now())) {
                     expireLocked(order, payment);
-                    db.update("UPDATE public.payments SET status='refund_required',paid_at=? WHERE id=?", paidAt, paymentId);
-                    orders.requestRefund(order, "LATE_PAYMENT_SUCCESS");
+                    paymentTimeoutService.handleLatePaymentRefund(order, payment, paidAt);
                 } else {
+                    paymentTimeoutService.cancelScheduledExpiry(orderId);
                     db.update("UPDATE public.payments SET status='success',paid_at=? WHERE id=?", paidAt, paymentId);
                     db.update("UPDATE public.orders SET paid_at=? WHERE id=?", paidAt, orderId);
                     orders.transition(order, "paid", "SYSTEM", "PAYMENT_SUCCESS");
@@ -275,6 +273,7 @@ public class PaymentService {
                 throw new ConflictException("PAYMENT_ORDER_STATE_MISMATCH");
             }
         } else if ("pending".equals(status) && "awaiting_payment".equals(order.get("status"))) {
+            paymentTimeoutService.cancelScheduledExpiry(orderId);
             db.update("UPDATE public.payments SET status='failed' WHERE id=?", paymentId);
             orders.transition(order, "cancelled", "SYSTEM", "PAYMENT_FAILED");
             orders.release(order, null, "PAYMENT_FAILED");
@@ -340,8 +339,9 @@ public class PaymentService {
             orders.transition(order, "cancelled", "SYSTEM", "DRAFT_EXPIRED");
             orders.release(order, null, "DRAFT_EXPIRED");
             outbox.enqueue("ORDER_CANCELLED", orderId, "cancelled:" + orderId, "Đơn nháp hết hạn");
+            paymentTimeoutService.cancelScheduledExpiry(orderId);
         } else {
-            expireLocked(order, db.one("SELECT * FROM public.payments WHERE order_id=? AND expires_at IS NOT NULL FOR UPDATE", orderId));
+            paymentTimeoutService.processExpiredOrder(orderId);
         }
     }
 
@@ -351,5 +351,6 @@ public class PaymentService {
         orders.release(order, null, "PAYMENT_TIMEOUT");
         UUID id = uuid(order.get("id"));
         outbox.enqueue("ORDER_CANCELLED", id, "cancelled:" + id, "Quá thời hạn thanh toán");
+        paymentTimeoutService.cancelScheduledExpiry(id);
     }
 }

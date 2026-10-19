@@ -7,8 +7,8 @@ import lombok.Getter;
 @Getter
 public enum UserRole {
     SUPER_ADMIN("super_admin", "Admin"),
-    PRODUCT_MANAGER("product_manager", "PO"),
-    TECHNICIAN("technician", "Technician"),
+    PRODUCT_MANAGER("product_manager", "Product_manager"),
+    TECHNICIAN("technician", "Kỹ thuật viên"),
     CUSTOMER("customer", "Khách Hàng");
 
     private final String value;

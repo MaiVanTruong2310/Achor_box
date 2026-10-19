@@ -74,7 +74,12 @@ interface AdminNotificationsContextValue {
   unread: number;
   pendingOrdersCount: number;
   error: string;
+  loading: boolean;
   markRead: () => void;
+  markOneRead: (id: string) => void;
+  markOneUnread: (id: string) => void;
+  clearReadHistory: () => void;
+  isRead: (id: string) => boolean;
   fresh: AdminNotice[];
   refresh: () => void;
 }
@@ -101,10 +106,11 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
   }, [key]);
 
   const loadRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
-    let loading = false;
+    let loadingFetch = false;
     let timerId: ReturnType<typeof setTimeout> | null = null;
     // Polling phản hồi nhanh: 3 giây, tối đa 6 giây
     const BASE_INTERVAL = 3000;
@@ -125,11 +131,12 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
     };
 
     const load = async (isManualOrVisible = false) => {
-      if (loading || !profile || (!isManualOrVisible && document.hidden)) {
+      if (loadingFetch || !profile || (!isManualOrVisible && document.hidden)) {
         scheduleNext(currentInterval);
         return;
       }
-      loading = true;
+      loadingFetch = true;
+      if (isManualOrVisible) setLoading(true);
       try {
         const feed = await adminRequest<Feed>('/admin/notifications');
         if (active) {
@@ -193,8 +200,14 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
           }
           known.current = new Set(feed.events.map((e) => e.id));
           const adjustedEvents = feed.events.map(ev => {
-            if (profile?.role === 'product_manager' && ev.link === '/orders/approvals') {
-              return { ...ev, link: '/po/approvals' };
+            if (profile?.role === 'product_manager') {
+              if (ev.link === '/orders/approvals' || ev.link === '/orders') return { ...ev, link: '/po/approvals' };
+              if (ev.link === '/orders/delivery') return { ...ev, link: '/po/delivery' };
+            } else if (profile?.role === 'super_admin') {
+              if (ev.link === '/orders' || ev.link === '/orders/approvals') return { ...ev, link: '/admin/orders' };
+              if (ev.link === '/orders/delivery') return { ...ev, link: '/admin/orders' };
+              if (ev.link === '/warranties') return { ...ev, link: '/admin/warranties' };
+              if (ev.link === '/emails') return { ...ev, link: '/admin/emails' };
             }
             return ev;
           });
@@ -204,7 +217,8 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
       } catch (e) {
         if (active) setError((e as Error).message);
       } finally {
-        loading = false;
+        loadingFetch = false;
+        if (active) setLoading(false);
         scheduleNext(currentInterval);
       }
     };
@@ -234,10 +248,34 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
   }, [fresh]);
 
   const markRead = () => {
-    const next = Array.from(new Set([...seen, ...events.map(e => e.id)])).slice(-200);
+    const next = Array.from(new Set([...seen, ...events.map(e => e.id)])).slice(-300);
     setSeen(next);
     localStorage.setItem(key, JSON.stringify(next));
   };
+
+  const markOneRead = (id: string) => {
+    setSeen(prev => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id].slice(-300);
+      localStorage.setItem(key, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const markOneUnread = (id: string) => {
+    setSeen(prev => {
+      const next = prev.filter(item => item !== id);
+      localStorage.setItem(key, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const clearReadHistory = () => {
+    setSeen([]);
+    localStorage.removeItem(key);
+  };
+
+  const isRead = (id: string) => seen.includes(id);
 
   const isPO = profile?.role === 'product_manager';
   const pendingOrdersCount = isPO
@@ -253,7 +291,12 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
         unread: events.filter(e => !seen.includes(e.id)).length,
         pendingOrdersCount,
         error,
+        loading,
         markRead,
+        markOneRead,
+        markOneUnread,
+        clearReadHistory,
+        isRead,
         fresh,
         refresh: () => void loadRef.current?.()
       }}
@@ -262,6 +305,59 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
     </Context.Provider>
   );
 };
-export const useAdminNotifications=()=>{const context=useContext(Context);if(!context)throw new Error('Notification provider missing');return context;};
+export const useAdminNotifications = () => {
+  const context = useContext(Context);
+  if (!context) throw new Error('Notification provider missing');
+  return context;
+};
 
-export const noticeStatusLabel=(notice:AdminNotice)=>({ORDER:{pending:'Chờ xử lý',awaiting_payment:'Chờ thanh toán',paid:'Đã thanh toán',confirmed:'Đã duyệt',completed:'Hoàn tất',cancelled:'Đã hủy'},PO:{PENDING:'Chờ duyệt',RETURNED:'Chờ giải trình',APPROVED:'Đã duyệt',REJECTED:'Đã từ chối'},DELIVERY:{ASSIGNED:'Đã phân công',IN_PROGRESS:'Đang thực hiện',DELIVERED:'Đã giao',INSTALLED:'Đã lắp đặt',COMPLETED:'Đã nghiệm thu',FAILED:'Cần xử lý'},WARRANTY:{new:'Yêu cầu mới',assigned:'Đã phân công',in_progress:'Đang xử lý',resolved:'Đã giải quyết',rejected:'Đã từ chối'},EMAIL:{FAILED:'Gửi thất bại'}} as Record<string,Record<string,string>>)[notice.type]?.[notice.status]||notice.status;
+export const noticeStatusLabel = (notice: AdminNotice) => {
+  const map: Record<string, Record<string, string>> = {
+    ORDER: {
+      pending: 'Chờ xử lý',
+      awaiting_payment: 'Chờ thanh toán',
+      paid: 'Đã thanh toán',
+      confirmed: 'Đã duyệt',
+      completed: 'Hoàn tất',
+      cancelled: 'Đã hủy',
+      delivering: 'Đang giao hàng'
+    },
+    PO: {
+      PENDING: 'Chờ duyệt',
+      RETURNED: 'Chờ giải trình',
+      APPROVED: 'Đã duyệt',
+      REJECTED: 'Từ chối'
+    },
+    DELIVERY: {
+      ASSIGNED: 'Đã phân công',
+      IN_PROGRESS: 'Đang thực hiện',
+      DELIVERED: 'Đã giao',
+      INSTALLED: 'Đã lắp đặt',
+      WAITING_PO_CONFIRMATION: 'Chờ PO xác nhận',
+      SUBMITTED: 'Đã nộp nghiệm thu',
+      COMPLETED: 'Đã nghiệm thu',
+      FAILED: 'Cần xử lý'
+    },
+    TASK_ASSIGNED: {
+      ASSIGNED: 'Đã phân công',
+      IN_PROGRESS: 'Đang thực hiện'
+    },
+    TASK_UPCOMING: {
+      ASSIGNED: 'Sắp tới giờ hẹn',
+      IN_PROGRESS: 'Sắp tới giờ hẹn'
+    },
+    WARRANTY: {
+      new: 'Yêu cầu mới',
+      assigned: 'Đã phân công',
+      in_progress: 'Đang xử lý',
+      resolved: 'Đã giải quyết',
+      rejected: 'Từ chối'
+    },
+    EMAIL: {
+      FAILED: 'Gửi thất bại',
+      PENDING: 'Đang chờ gửi',
+      SENT: 'Đã gửi'
+    }
+  };
+  return map[notice.type]?.[notice.status] || notice.status;
+};

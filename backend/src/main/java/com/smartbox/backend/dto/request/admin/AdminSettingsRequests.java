@@ -30,7 +30,8 @@ public final class AdminSettingsRequests {
     public record Category(
             @NotBlank @Size(max = 120) String name,
             @NotBlank @Pattern(regexp = "[a-z0-9]+(?:-[a-z0-9]+)*") @Size(max = 120) String slug,
-            @Size(max = 1000) String description
+            @Size(max = 1000) String description,
+            java.util.UUID managerId
     ) {}
 
     public record Payment(

@@ -40,6 +40,9 @@ public class AdminSettingsService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> list(String kind) {
         actors.get().requireRoles("super_admin", "product_manager");
+        if ("categories".equals(kind)) {
+            return db.list("SELECT c.*, p.full_name AS manager_name, p.email AS manager_email FROM public.product_categories c LEFT JOIN public.profiles p ON p.id = c.manager_id ORDER BY c.name, c.id");
+        }
         return db.list("SELECT * FROM public." + table(kind) + " ORDER BY name, id");
     }
 
@@ -55,16 +58,16 @@ public class AdminSettingsService {
 
         if (create) {
             id = UUID.randomUUID();
-            db.update("INSERT INTO public.product_categories(id, name, slug, description) VALUES(?, ?, ?, ?)",
-                    id, request.name().trim(), request.slug(), request.description());
+            db.update("INSERT INTO public.product_categories(id, name, slug, description, manager_id) VALUES(?, ?, ?, ?, ?)",
+                    id, request.name().trim(), request.slug(), request.description(), request.managerId());
         } else {
             db.one("SELECT id FROM public.product_categories WHERE id = ? FOR UPDATE", id);
-            db.update("UPDATE public.product_categories SET name = ?, slug = ?, description = ? WHERE id = ?",
-                    request.name().trim(), request.slug(), request.description(), id);
+            db.update("UPDATE public.product_categories SET name = ?, slug = ?, description = ?, manager_id = ? WHERE id = ?",
+                    request.name().trim(), request.slug(), request.description(), request.managerId(), id);
         }
 
         db.audit(actor.id(), create ? "SETTING_CREATED" : "SETTING_UPDATED", "product_categories", id, request.slug());
-        return db.one("SELECT * FROM public.product_categories WHERE id = ?", id);
+        return db.one("SELECT c.*, p.full_name AS manager_name, p.email AS manager_email FROM public.product_categories c LEFT JOIN public.profiles p ON p.id = c.manager_id WHERE c.id = ?", id);
     }
 
     @Transactional

@@ -26,6 +26,7 @@ public class AuthController {
     private final com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage;
 
     @GetMapping("/me")
+    @Operation(summary = "Lấy thông tin hồ sơ của người dùng hiện tại", description = "Truy xuất thông tin profile của tài khoản đang đăng nhập từ cache hoặc cơ sở dữ liệu dựa trên JWT token")
     public com.smartbox.backend.entity.Profile me(jakarta.servlet.http.HttpServletRequest request) {
         Object cached = request.getAttribute("CURRENT_USER_PROFILE");
         if (cached instanceof com.smartbox.backend.entity.Profile p && p.getFullName() != null) {
@@ -35,7 +36,7 @@ public class AuthController {
     }
 
     @RequestMapping(value = "/me", method = {RequestMethod.PUT, RequestMethod.POST, RequestMethod.PATCH})
-    @Operation(summary = "Cập nhật hồ sơ cá nhân của người dùng hiện tại")
+    @Operation(summary = "Cập nhật hồ sơ cá nhân của người dùng hiện tại", description = "Cập nhật các thông tin cơ bản của người dùng hiện tại như họ tên, số điện thoại, ảnh đại diện và địa chỉ mặc định")
     public com.smartbox.backend.entity.Profile updateMe(
             @RequestBody java.util.Map<String, Object> body,
             jakarta.servlet.http.HttpServletRequest request) {
@@ -62,7 +63,7 @@ public class AuthController {
     }
 
     @PostMapping(value = "/avatar", consumes = "multipart/form-data")
-    @Operation(summary = "Tải lên ảnh đại diện cá nhân lên Cloudinary")
+    @Operation(summary = "Tải lên ảnh đại diện cá nhân lên Cloudinary", description = "Upload file ảnh đại diện của người dùng lên Cloudinary và trả về đường dẫn URL bảo mật (HTTPS)")
     public java.util.Map<String, String> uploadAvatar(@RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
         actors.get();
         var stored = imageStorage.upload(file);
@@ -70,7 +71,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Đăng nhập hệ thống (Cấp phát cặp Access Token và Refresh Token cho mọi vai trò)")
+    @Operation(summary = "Đăng nhập hệ thống", description = "Xác thực thông tin tài khoản bằng email và mật khẩu, cấp phát cặp Access Token và Refresh Token cho mọi vai trò người dùng")
     public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
         LoginResponse res = authService.login(request);
         if (Boolean.TRUE.equals(res.getSuccess())) {

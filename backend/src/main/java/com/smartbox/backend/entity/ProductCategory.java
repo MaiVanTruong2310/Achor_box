@@ -32,4 +32,7 @@ public class ProductCategory implements Serializable {
 
     @Column(name = "description", columnDefinition = "text")
     private String description;
+
+    @Column(name = "manager_id")
+    private UUID managerId;
 }
