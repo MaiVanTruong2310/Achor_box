@@ -209,6 +209,8 @@ CREATE TABLE public.warranty_claims (
   status public.claim_status NOT NULL DEFAULT 'new'::claim_status,
   assigned_to uuid,
   internal_notes text,
+  scheduled_at timestamp with time zone,
+  estimated_end_time timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   resolved_at timestamp with time zone,
   CONSTRAINT warranty_claims_pkey PRIMARY KEY (id)

@@ -19,5 +19,11 @@ public class DeviceWorkflowController {
     public Map<String, Object> register(@Valid @RequestBody DeviceWorkflowService.Registration request) {
         return devices.register(request);
     }
+
+    @PostMapping("/api/devices/register-batch")
+    @Operation(summary = "Đăng ký danh sách mã Serial thiết bị vào kho (Hàng loạt)", description = "Khai báo nhập kho hàng loạt thiết bị SmartBox IoT mới kèm mã Serial Number, phiên bản phần cứng và MQTT Topic")
+    public Map<String, Object> registerBatch(@Valid @RequestBody List<DeviceWorkflowService.Registration> requests) {
+        return devices.registerBatch(requests);
+    }
 }
 

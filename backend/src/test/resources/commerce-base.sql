@@ -18,3 +18,4 @@ CREATE TABLE public.notification_preferences(user_id uuid,event_type text,enable
 CREATE TABLE public.warranty_policies(id uuid PRIMARY KEY,category_id uuid,duration_months integer NOT NULL DEFAULT 12);
 CREATE DOMAIN public.warranty_status AS varchar;
 CREATE TABLE public.warranties(id uuid PRIMARY KEY,order_item_id uuid REFERENCES public.order_items(id),device_id uuid REFERENCES public.devices(id),start_date date NOT NULL,end_date date NOT NULL,status public.warranty_status DEFAULT 'active');
+CREATE TABLE public.warranty_claims(id uuid PRIMARY KEY,warranty_id uuid REFERENCES public.warranties(id),customer_id uuid,assigned_to uuid,status varchar(50) DEFAULT 'new',scheduled_at timestamptz,estimated_end_time timestamptz);

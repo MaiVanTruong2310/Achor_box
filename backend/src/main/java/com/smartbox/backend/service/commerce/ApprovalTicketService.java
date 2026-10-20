@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.smartbox.backend.service.commerce.OrderWorkflowService.now;
+import static com.smartbox.backend.service.commerce.OrderWorkflowService.time;
 import static com.smartbox.backend.service.commerce.OrderWorkflowService.uuid;
 
 @Service
@@ -156,8 +159,20 @@ public class ApprovalTicketService {
 
         db.update("UPDATE public.order_item_approvals SET status=?, reviewed_by=?, reason=?, reviewed_at=? WHERE id=?",
                 nextItemStatus, actor.id(), reason, now(), itemApproval.get("id"));
+
+        var itemRow = db.list("SELECT product_name_snapshot, sku_snapshot FROM public.order_items WHERE id=?", orderItemId);
+        String prodName = !itemRow.isEmpty() && itemRow.get(0).get("product_name_snapshot") != null
+                ? itemRow.get(0).get("product_name_snapshot").toString()
+                : "Sản phẩm";
+        String sku = !itemRow.isEmpty() && itemRow.get(0).get("sku_snapshot") != null
+                ? " (" + itemRow.get(0).get("sku_snapshot") + ")"
+                : "";
+        String logReason = "APPROVE".equals(action)
+                ? "Duyệt sản phẩm: " + prodName + sku + (reason != null && !reason.isBlank() && !"null".equalsIgnoreCase(reason) ? " - Ghi chú: " + reason : "")
+                : "Từ chối sản phẩm: " + prodName + sku + (reason != null && !reason.isBlank() && !"null".equalsIgnoreCase(reason) ? " - Lý do: " + reason : "");
+
         db.update("INSERT INTO public.ticket_history VALUES(?,?,?,?,?,?)",
-                UUID.randomUUID(), ticketId, "ITEM_" + action, actor.id(), "Item " + orderItemId + ": " + reason, now());
+                UUID.randomUUID(), ticketId, "ITEM_" + action, actor.id(), logReason, now());
         db.audit(actor.id(), "ITEM_" + action, "order_item_approvals", uuid(itemApproval.get("id")), reason);
 
         // Check aggregate status of all items in ticket
@@ -246,8 +261,28 @@ public class ApprovalTicketService {
         result.put("order", order);
         var customer = db.list("SELECT full_name, email, phone, default_address FROM public.profiles WHERE id=?", order.get("user_id"));
         result.put("customer", customer.isEmpty() ? Map.of() : customer.getFirst());
-        result.put("history", db.list("SELECT * FROM public.ticket_history WHERE ticket_id=? ORDER BY created_at,id", id));
+        List<Map<String, Object>> history = new ArrayList<>(db.list("SELECT * FROM public.ticket_history WHERE ticket_id=? ORDER BY created_at,id", id));
+        var techLogs = db.list(
+                "SELECT h.id, 'TECH_' || h.action AS action, h.actor_id, h.reason, h.created_at, p.full_name AS actor_name " +
+                "FROM public.delivery_installation_history h " +
+                "JOIN public.delivery_installations j ON j.id = h.job_id " +
+                "LEFT JOIN public.profiles p ON p.id = h.actor_id " +
+                "WHERE j.order_id = ? ORDER BY h.created_at, h.id",
+                ticket.get("order_id")
+        );
+        for (var row : techLogs) {
+            Map<String, Object> h = new LinkedHashMap<>(row);
+            h.put("ticket_id", id);
+            history.add(h);
+        }
+        history.sort(Comparator.comparing((Map<String, Object> m) -> {
+            var t = time(m.get("created_at"));
+            return t != null ? t : now();
+        }));
+        result.put("history", history);
         result.put("itemApprovals", db.list("SELECT a.id, a.ticket_id AS \"ticketId\", a.order_id AS \"orderId\", a.order_item_id AS \"orderItemId\", a.product_id AS \"productId\", a.manager_id AS \"managerId\", a.status, a.reason, a.reviewed_by AS \"reviewedBy\", a.reviewed_at AS \"reviewedAt\", a.created_at AS \"createdAt\", p.name AS \"productName\", v.sku, v.variant_name AS \"variantName\", i.quantity, i.unit_price AS price, (i.quantity * i.unit_price) AS subtotal FROM public.order_item_approvals a JOIN public.products p ON p.id=a.product_id JOIN public.order_items i ON i.id=a.order_item_id JOIN public.product_variants v ON v.id=i.variant_id WHERE a.ticket_id=? ORDER BY a.created_at, a.id", id));
+        var payments = db.list("SELECT id, provider, status, amount, transaction_ref, paid_at FROM public.payments WHERE order_id=? ORDER BY created_at DESC", ticket.get("order_id"));
+        result.put("payments", payments);
         return result;
     }
 

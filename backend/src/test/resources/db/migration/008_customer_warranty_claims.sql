@@ -2,6 +2,8 @@ BEGIN;
 ALTER TABLE public.warranty_claims ADD COLUMN customer_id uuid REFERENCES public.profiles(id);
 ALTER TABLE public.warranty_claims ADD COLUMN request_key uuid;
 ALTER TABLE public.warranty_claims ADD COLUMN request_hash text;
+ALTER TABLE public.warranty_claims ADD COLUMN scheduled_at timestamptz;
+ALTER TABLE public.warranty_claims ADD COLUMN estimated_end_time timestamptz;
 CREATE UNIQUE INDEX uk_customer_claim_request ON public.warranty_claims(customer_id,request_key);
 CREATE TABLE public.warranty_claim_images (
  id uuid PRIMARY KEY,
