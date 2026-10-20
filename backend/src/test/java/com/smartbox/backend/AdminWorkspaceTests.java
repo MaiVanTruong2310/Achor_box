@@ -30,7 +30,7 @@ class AdminWorkspaceTests {
         var actors=new CurrentActor(){String role="technician";@Override public Actor get(){return new Actor(own,role);}};
         var service=new AdminNotificationsService(new CommerceRepository(jdbc),actors);
         var events=(List<Map<String,Object>>)service.feed().get("events");assertEquals(2,events.size());assertEquals(Set.of(job.toString(),claim.toString()),events.stream().map(e->e.get("referenceId").toString()).collect(java.util.stream.Collectors.toSet()));
-        actors.role="product_manager";var accounting=(List<Map<String,Object>>)service.feed().get("events");assertEquals(7,accounting.size());
+        actors.role="product_manager";var accounting=(List<Map<String,Object>>)service.feed().get("events");assertEquals(4,accounting.size());
         actors.role="super_admin";assertEquals(7,((List<?>)service.feed().get("events")).size());
         actors.role="customer";assertThrows(ForbiddenException.class,service::feed);
     }

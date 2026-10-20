@@ -21,6 +21,7 @@ import {
   noticeStatusLabel,
   AdminNotice
 } from '../contexts/AdminNotificationsContext';
+import { useAuth } from '../contexts/AuthContext';
 import './notification-popover.css';
 
 type FilterTab = 'ALL' | 'UNREAD' | 'ORDER' | 'DELIVERY' | 'WARRANTY';
@@ -171,6 +172,9 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ onClos
     isRead,
     refresh
   } = useAdminNotifications();
+
+  const { profile } = useAuth();
+  const isPO = profile?.role === 'product_manager';
 
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
@@ -338,14 +342,16 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ onClos
           <span className="tab-badge">{counts.order}</span>
         </button>
 
-        <button
-          type="button"
-          className={`notification-tab-btn ${activeTab === 'DELIVERY' ? 'active' : ''}`}
-          onClick={() => handleTabChange('DELIVERY')}
-        >
-          <span>Giao lắp</span>
-          <span className="tab-badge">{counts.delivery}</span>
-        </button>
+        {!isPO && (
+          <button
+            type="button"
+            className={`notification-tab-btn ${activeTab === 'DELIVERY' ? 'active' : ''}`}
+            onClick={() => handleTabChange('DELIVERY')}
+          >
+            <span>Giao lắp</span>
+            <span className="tab-badge">{counts.delivery}</span>
+          </button>
+        )}
 
         <button
           type="button"

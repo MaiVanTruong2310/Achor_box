@@ -53,6 +53,36 @@ function getWeekDays(baseDateStr: string): { dateStr: string; dayName: string; d
   return days;
 }
 
+function getVnDateStr(d: Date = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+  } catch {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+}
+
+function formatTaskTimeSlot(task: DailyTask): string {
+  if (task.scheduledAt) {
+    try {
+      const start = new Date(task.scheduledAt);
+      const end = task.estimatedEndTime ? new Date(task.estimatedEndTime) : new Date(start.getTime() + 2 * 3600000);
+      const fmt = (d: Date) => d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+      return `${fmt(start)} - ${fmt(end)}`;
+    } catch {
+      // fallback
+    }
+  }
+  return task.timeSlot || '08:00 - 10:00';
+}
+
 function getTaskShift(task: DailyTask): 'morning' | 'afternoon' | 'evening' {
   if (!task.scheduledAt) return 'morning';
   try {
@@ -122,7 +152,7 @@ const TimetableCard: React.FC<{
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className={`timetable-period-tag ${!isDelivery ? 'warranty' : ''}`}>
               <Clock size={12} />
-              <span>{task.timeSlot}</span>
+              <span>{formatTaskTimeSlot(task)}</span>
             </span>
             {isLive && (
               <span className="timetable-live-tag">
@@ -250,22 +280,7 @@ const TimetableCard: React.FC<{
 
 export const TechnicianDailyTasks: React.FC = () => {
   const { profile } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    try {
-      return new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Ho_Chi_Minh',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(new Date());
-    } catch {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-  });
+  const [selectedDate, setSelectedDate] = useState<string>(() => getVnDateStr());
 
   const [viewMode, setViewMode] = useState<'timetable_day' | 'timetable_week' | 'cards'>('timetable_day');
   const [data, setData] = useState<DailyTasksResponse | null>(null);
@@ -352,66 +367,37 @@ export const TechnicianDailyTasks: React.FC = () => {
   }, [selectedDate, viewMode, loadTasks, loadWeekTasks]);
 
   const handlePrevDay = () => {
-    const d = new Date(selectedDate);
+    const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(getVnDateStr(d));
   };
 
   const handleNextDay = () => {
-    const d = new Date(selectedDate);
+    const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() + 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(getVnDateStr(d));
   };
 
   const handlePrevWeek = () => {
-    const d = new Date(selectedDate);
+    const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() - 7);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(getVnDateStr(d));
   };
 
   const handleNextWeek = () => {
-    const d = new Date(selectedDate);
+    const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() + 7);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(getVnDateStr(d));
   };
 
   const handleToday = () => {
-    try {
-      const todayStr = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Ho_Chi_Minh',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(new Date());
-      setSelectedDate(todayStr);
-    } catch {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      setSelectedDate(`${yyyy}-${mm}-${dd}`);
-    }
+    setSelectedDate(getVnDateStr());
   };
 
   const handleTomorrow = () => {
-    try {
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      const tomStr = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Ho_Chi_Minh',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(d);
-      setSelectedDate(tomStr);
-    } catch {
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      setSelectedDate(`${yyyy}-${mm}-${dd}`);
-    }
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(getVnDateStr(d));
   };
 
   const openTaskModal = (task: DailyTask) => {
@@ -619,7 +605,7 @@ export const TechnicianDailyTasks: React.FC = () => {
             </button>
 
             <button
-              className={`tech-quick-btn ${selectedDate === new Date().toISOString().split('T')[0] ? 'active' : ''}`}
+              className={`tech-quick-btn ${selectedDate === getVnDateStr() ? 'active' : ''}`}
               onClick={handleToday}
             >
               Hôm nay
@@ -660,7 +646,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                   const timeText = diffMin > 0 ? `Bắt đầu sau ${diffMin} phút` : 'Đang trong khung giờ hẹn';
                   return (
                     <span key={t.id} className="tech-urgent-task-pill">
-                      <strong>#{t.orderCode}</strong> ({t.timeSlot}): {timeText} • {t.shippingAddress || t.shortAddress || 'Địa chỉ liên hệ'}
+                      <strong>#{t.orderCode}</strong> ({formatTaskTimeSlot(t)}): {timeText} • {t.shippingAddress || t.shortAddress || 'Địa chỉ liên hệ'}
                     </span>
                   );
                 })}
@@ -924,11 +910,11 @@ export const TechnicianDailyTasks: React.FC = () => {
                                     key={t.id}
                                     className={`weekly-mini-item ${isDelivery ? 'delivery' : 'warranty'}`}
                                     onClick={() => openTaskModal(t)}
-                                    title={`${t.typeLabel} - ${t.customerName} (${t.timeSlot})`}
+                                    title={`${t.typeLabel} - ${t.customerName} (${formatTaskTimeSlot(t)})`}
                                   >
                                     <div className="weekly-mini-time">
                                       <Clock size={10} />
-                                      <span>{t.timeSlot}</span>
+                                      <span>{formatTaskTimeSlot(t)}</span>
                                     </div>
                                     <div className="weekly-mini-title">
                                       {t.items?.[0]?.productName || t.typeLabel}
@@ -1037,7 +1023,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#4f46e5', fontWeight: 600 }}>
                     <Clock size={15} />
-                    <span>{selectedTask.timeSlot}</span>
+                    <span>{formatTaskTimeSlot(selectedTask)}</span>
                   </div>
                 </div>
 

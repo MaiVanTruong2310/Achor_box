@@ -152,10 +152,13 @@ public class DeliveryInstallationService {
             "FROM public.delivery_installations j " +
             "WHERE j.assigned_to = ? " +
             "  AND j.status NOT IN ('COMPLETED', 'FAILED') " +
-            "  AND j.scheduled_at < ? " +
-            "  AND COALESCE(j.estimated_end_time, j.scheduled_at + INTERVAL '2 hours') > ?",
-            request.assignedTo(), estimatedEndTime, scheduledAt
-        );
+            "  AND j.scheduled_at < ?",
+            request.assignedTo(), estimatedEndTime
+        ).stream().filter(row -> {
+            OffsetDateTime cStart = time(row.get("scheduled_at"));
+            OffsetDateTime cEnd = row.get("estimated_end_time") != null ? time(row.get("estimated_end_time")) : cStart.plusHours(2);
+            return cEnd.isAfter(scheduledAt);
+        }).toList();
         if (!conflicts.isEmpty()) {
             var c = conflicts.getFirst();
             OffsetDateTime cStart = time(c.get("scheduled_at"));
@@ -165,15 +168,23 @@ public class DeliveryInstallationService {
                 String.format("%02d:%02d", cEnd.getHour(), cEnd.getMinute()) + ")");
         }
 
-        var claimConflicts = db.list(
-            "SELECT id, scheduled_at, estimated_end_time FROM public.warranty_claims " +
-            "WHERE assigned_to = ? " +
-            "  AND status::text NOT IN ('resolved', 'rejected') " +
-            "  AND scheduled_at IS NOT NULL " +
-            "  AND scheduled_at < ? " +
-            "  AND COALESCE(estimated_end_time, scheduled_at + INTERVAL '2 hours') > ?",
-            request.assignedTo(), estimatedEndTime, scheduledAt
-        );
+        List<Map<String, Object>> claimConflicts;
+        try {
+            claimConflicts = db.list(
+                "SELECT id, scheduled_at, estimated_end_time FROM public.warranty_claims " +
+                "WHERE assigned_to = ? " +
+                "  AND status::text NOT IN ('resolved', 'rejected') " +
+                "  AND scheduled_at IS NOT NULL " +
+                "  AND scheduled_at < ?",
+                request.assignedTo(), estimatedEndTime
+            ).stream().filter(row -> {
+                OffsetDateTime cStart = time(row.get("scheduled_at"));
+                OffsetDateTime cEnd = row.get("estimated_end_time") != null ? time(row.get("estimated_end_time")) : cStart.plusHours(2);
+                return cEnd.isAfter(scheduledAt);
+            }).toList();
+        } catch (Exception e) {
+            claimConflicts = List.of();
+        }
         if (!claimConflicts.isEmpty()) {
             var c = claimConflicts.getFirst();
             OffsetDateTime cStart = time(c.get("scheduled_at"));
@@ -296,9 +307,22 @@ public class DeliveryInstallationService {
     public Map<String,Object> command(UUID id,Command request,String header,UUID key){
         var job=locked(id);assigned(job);long expected=version(header);String hash=fingerprint(id,"COMMAND",request,expected);var replay=cached(key,hash);if(replay!=null)return replay;
         current(job,expected);confirmed(job);stage(job,"DELIVERED","INSTALLED");
+        if(!mqttEnabled)throw new AppException(503,"MQTT_NOT_CONFIGURED");
+        if(!Set.of("LOCK","UNLOCK","TARE").contains(request.action()))throw new BadRequestException("INVALID_DEVICE_COMMAND");
+        var binding=db.one("SELECT * FROM public.delivery_installation_devices WHERE job_id=? AND device_id=?",id,request.deviceId());
+        var device=db.one("SELECT * FROM public.devices WHERE id=? FOR UPDATE",request.deviceId());
+        var owner=uuid(db.order(uuid(job.get("order_id")),false).get("user_id"));
+        var item=db.one("SELECT product_id,variant_id FROM public.order_items WHERE id=? AND order_id=?",binding.get("order_item_id"),job.get("order_id"));
+        if(!uuid(binding.get("order_item_id")).equals(uuid(device.get("sold_order_item_id")))||!owner.equals(uuid(device.get("owner_id")))||!Objects.equals(uuid(item.get("product_id")),uuid(device.get("product_id")))||!Objects.equals(uuid(item.get("variant_id")),uuid(device.get("product_variant_id"))))throw new ConflictException("DEVICE_SALE_LINK_MISMATCH");
+        if(!"online".equals(device.get("status"))||!fresh(time(device.get("last_seen_at")),time(job.get("started_at")))||device.get("mqtt_topic_id")==null)throw new ConflictException("DEVICE_OFFLINE");
+        if("TARE".equals(request.action())&&!Boolean.TRUE.equals(binding.get("has_weight_sensor")))throw new BadRequestException("WEIGHT_SENSOR_NOT_SUPPORTED");
+        if(((Number)db.one("SELECT count(*) AS total FROM public.device_commands WHERE device_id=? AND created_at>?",request.deviceId(),now().minusMinutes(1)).get("total")).longValue()>=20)throw new AppException(429,"DEVICE_COMMAND_RATE_LIMITED");
         UUID command=UUID.randomUUID();
+        db.update("INSERT INTO public.device_commands(id,device_id,command,requested_by,status,request_key,expires_at,next_attempt_at) VALUES(?,?,?,?,'PENDING',?,?,?)",command,request.deviceId(),request.action(),actors.get().id(),key,now().plusSeconds(10),now());
+        db.update("INSERT INTO public.delivery_installation_commands VALUES(?,?,?,?,?,?)",id,request.deviceId(),command,job.get("attempt"),now(),expected+1);
+        events.publishEvent(new DeviceWorkflowService.CommandCreated(command));
         var updated=bump(job,"CHECK_"+request.action(),request.deviceId().toString());
-        return remember(key,hash,id,Map.of("commandId",command.toString(),"status","ACKNOWLEDGED","jobVersion",updated.get("version")));
+        return remember(key,hash,id,Map.of("commandId",command.toString(),"status","PENDING","jobVersion",updated.get("version")));
     }
 
     private void linkOwners(Map<String,Object> job){
@@ -354,31 +378,37 @@ public class DeliveryInstallationService {
         return Map.of("passed",false);
     }
     private Map<String,Object> check(Map<String,Object> job,boolean lock){
-        List<String> failures=new ArrayList<>();
-        boolean count=serialComplete(job);
-        if(!count)failures.add("DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE");
+        List<String> failures=new ArrayList<>();boolean count=serialComplete(job);if(!count)failures.add("DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE");
         if(!Set.of("DELIVERED","INSTALLED","COMPLETED").contains(job.get("status")))failures.add("JOB_NOT_DELIVERED");
-        UUID owner=uuid(db.order(uuid(job.get("order_id")),false).get("user_id"));
-        List<Map<String,Object>> results=new ArrayList<>();
+        UUID owner=uuid(db.order(uuid(job.get("order_id")),false).get("user_id"));List<Map<String,Object>> results=new ArrayList<>();
         for(var device:devices(job,lock)){
-            UUID deviceId=uuid(device.get("id"));
-            boolean sale=Objects.equals(uuid(device.get("sold_order_item_id")),uuid(device.get("order_item_id")))&&Objects.equals(uuid(device.get("product_id")),uuid(device.get("sale_product_id")))&&Objects.equals(uuid(device.get("product_variant_id")),uuid(device.get("sale_variant_id")))&&owner.equals(uuid(device.get("owner_id")));
-            var checks=new LinkedHashMap<String,Object>();
-            checks.put("serialOwner",sale);
-            checks.put("connection",true);
-            checks.put("unlock",true);
-            checks.put("lock",true);
-            checks.put("weight",null);
+            UUID deviceId=uuid(device.get("id"));boolean sale=Objects.equals(uuid(device.get("sold_order_item_id")),uuid(device.get("order_item_id")))&&Objects.equals(uuid(device.get("product_id")),uuid(device.get("sale_product_id")))&&Objects.equals(uuid(device.get("product_variant_id")),uuid(device.get("sale_variant_id")))&&owner.equals(uuid(device.get("owner_id")));
+            boolean connection = !mqttEnabled || ("online".equals(device.get("status"))&&device.get("mqtt_topic_id")!=null&&fresh(time(device.get("last_seen_at")),time(job.get("started_at"))));
+            var unlockProof=lockEvidence(job,deviceId,"UNLOCK");var lockProof=lockEvidence(job,deviceId,"LOCK");
+            boolean unlock = !mqttEnabled || Boolean.TRUE.equals(unlockProof.get("passed"));
+            boolean locked = !mqttEnabled || (Boolean.TRUE.equals(lockProof.get("passed"))&&"locked".equals(device.get("lock_status"))&&"closed".equals(device.get("door_status")));
+            boolean weightRequired=Boolean.TRUE.equals(device.get("has_weight_sensor"));
+            var weightProof=weightRequired?(mqttEnabled?weightEvidence(job,deviceId):Map.of("passed",true)):Map.of("applicable",false);
+            boolean weight=!weightRequired||Boolean.TRUE.equals(weightProof.get("passed"));
+            var checks=new LinkedHashMap<String,Object>();checks.put("serialOwner",sale);checks.put("connection",connection);checks.put("unlock",unlock);checks.put("lock",locked);checks.put("weight",weightRequired?weight:null);
             checks.put("serialAssigned",true);
             checks.put("deliveryConfirmed",Set.of("DELIVERED","INSTALLED","COMPLETED").contains(job.get("status")));
             checks.put("installationCompleted",Set.of("INSTALLED","COMPLETED").contains(job.get("status")));
             if(!sale)failures.add(deviceId+":DEVICE_SALE_LINK_MISMATCH");
+            if(!connection)failures.add(deviceId+":MQTT_NOT_FRESH");
+            if(!unlock)failures.add(deviceId+":UNLOCK_ACK_AND_TELEMETRY_REQUIRED");
+            if(!locked)failures.add(deviceId+":LOCK_ACK_AND_TELEMETRY_REQUIRED");
+            if(!weight)failures.add(deviceId+":WEIGHT_TEST_REQUIRED");
+            var commands=db.list("SELECT c.id,c.command AS action,c.status,c.attempts,c.last_error AS \"lastError\",c.ack_at AS \"ackAt\",c.expires_at AS \"expiresAt\" FROM public.delivery_installation_commands l JOIN public.device_commands c ON c.id=l.command_id WHERE l.job_id=? AND l.attempt=? AND l.device_id=? ORDER BY c.created_at DESC,c.id DESC",job.get("id"),job.get("attempt"),deviceId).stream().map(this::wireRow).toList();
             var itemMap=new LinkedHashMap<String,Object>();
             itemMap.put("deviceId",deviceId.toString());
             itemMap.put("serialNumber",Objects.toString(device.get("serial_number"),"N/A"));
-            itemMap.put("hasWeightSensor",false);
+            itemMap.put("hasWeightSensor",weightRequired);
             itemMap.put("checks",checks);
-            itemMap.put("commands",List.of());
+            itemMap.put("commands",commands);
+            var evidence=new LinkedHashMap<String,Object>();
+            evidence.put("unlock",unlockProof);evidence.put("lock",lockProof);evidence.put("weight",weightProof);
+            itemMap.put("evidence",evidence);
             results.add(itemMap);
         }
         var summaryMap=new LinkedHashMap<String,Object>();
@@ -387,7 +417,7 @@ public class DeliveryInstallationService {
         summaryMap.put("version",job.get("version"));
         summaryMap.put("observedAt",now().toString());
         summaryMap.put("serialComplete",count);
-        summaryMap.put("ready",failures.isEmpty()&&!results.isEmpty()&&count);
+        summaryMap.put("ready",failures.isEmpty()&&!results.isEmpty());
         summaryMap.put("devices",results);
         summaryMap.put("failedChecks",failures);
         return summaryMap;
@@ -619,10 +649,13 @@ public class DeliveryInstallationService {
                 "WHERE j.assigned_to = ? " +
                 "  AND j.status NOT IN ('COMPLETED', 'FAILED') " +
                 "  AND j.scheduled_at < ? " +
-                "  AND COALESCE(j.estimated_end_time, j.scheduled_at + INTERVAL '2 hours') > ? " +
-                "ORDER BY j.scheduled_at LIMIT 1",
-                techId, windowEnd, start
-            );
+                "ORDER BY j.scheduled_at",
+                techId, windowEnd
+            ).stream().filter(row -> {
+                OffsetDateTime jobStart = time(row.get("scheduled_at"));
+                OffsetDateTime jobEnd = row.get("estimated_end_time") != null ? time(row.get("estimated_end_time")) : jobStart.plusHours(2);
+                return jobEnd.isAfter(start);
+            }).toList();
 
             if (!jobConflicts.isEmpty()) {
                 var conflict = jobConflicts.getFirst();
@@ -634,16 +667,24 @@ public class DeliveryInstallationService {
             }
 
             if (isAvailable) {
-                var claimConflicts = db.list(
-                    "SELECT id, status, scheduled_at, estimated_end_time FROM public.warranty_claims " +
-                    "WHERE assigned_to = ? " +
-                    "  AND status::text NOT IN ('resolved', 'rejected') " +
-                    "  AND scheduled_at IS NOT NULL " +
-                    "  AND scheduled_at < ? " +
-                    "  AND COALESCE(estimated_end_time, scheduled_at + INTERVAL '2 hours') > ? " +
-                    "ORDER BY scheduled_at LIMIT 1",
-                    techId, windowEnd, start
-                );
+                List<Map<String, Object>> claimConflicts;
+                try {
+                    claimConflicts = db.list(
+                        "SELECT id, status, scheduled_at, estimated_end_time FROM public.warranty_claims " +
+                        "WHERE assigned_to = ? " +
+                        "  AND status::text NOT IN ('resolved', 'rejected') " +
+                        "  AND scheduled_at IS NOT NULL " +
+                        "  AND scheduled_at < ? " +
+                        "ORDER BY scheduled_at",
+                        techId, windowEnd
+                    ).stream().filter(row -> {
+                        OffsetDateTime claimStart = time(row.get("scheduled_at"));
+                        OffsetDateTime claimEnd = row.get("estimated_end_time") != null ? time(row.get("estimated_end_time")) : claimStart.plusHours(2);
+                        return claimEnd.isAfter(start);
+                    }).toList();
+                } catch (Exception e) {
+                    claimConflicts = List.of();
+                }
                 if (!claimConflicts.isEmpty()) {
                     var conflict = claimConflicts.getFirst();
                     OffsetDateTime claimStart = time(conflict.get("scheduled_at"));
@@ -737,7 +778,10 @@ public class DeliveryInstallationService {
 
             OffsetDateTime start = time(j.get("scheduled_at"));
             OffsetDateTime end = j.get("estimated_end_time") != null ? time(j.get("estimated_end_time")) : start.plusHours(2);
-            String timeSlot = String.format("%02d:%02d - %02d:%02d", start.getHour(), start.getMinute(), end.getHour(), end.getMinute());
+            java.time.ZoneId vnZone = java.time.ZoneId.of("Asia/Ho_Chi_Minh");
+            var startVn = start.atZoneSameInstant(vnZone);
+            var endVn = end.atZoneSameInstant(vnZone);
+            String timeSlot = String.format("%02d:%02d - %02d:%02d", startVn.getHour(), startVn.getMinute(), endVn.getHour(), endVn.getMinute());
 
             var snapshot = customers.readSnapshot(j.get("shipping_address_snapshot"));
             String custName = snapshot != null && snapshot.get("recipientName") != null ? Objects.toString(snapshot.get("recipientName")) : Objects.toString(j.get("customer_full_name"), "Khách vãng lai");
@@ -817,7 +861,10 @@ public class DeliveryInstallationService {
 
             OffsetDateTime start = c.get("scheduled_at") != null ? time(c.get("scheduled_at")) : time(c.get("created_at"));
             OffsetDateTime end = c.get("estimated_end_time") != null ? time(c.get("estimated_end_time")) : start.plusHours(2);
-            String timeSlot = String.format("%02d:%02d - %02d:%02d", start.getHour(), start.getMinute(), end.getHour(), end.getMinute());
+            java.time.ZoneId vnZone = java.time.ZoneId.of("Asia/Ho_Chi_Minh");
+            var startVn = start.atZoneSameInstant(vnZone);
+            var endVn = end.atZoneSameInstant(vnZone);
+            String timeSlot = String.format("%02d:%02d - %02d:%02d", startVn.getHour(), startVn.getMinute(), endVn.getHour(), endVn.getMinute());
 
             String custName = Objects.toString(c.get("customer_full_name"), "Khách bảo hành");
             String custPhone = Objects.toString(c.get("customer_phone"), "");

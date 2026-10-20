@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,12 +50,25 @@ public class DeviceWorkflowService {
 
     @Transactional
     public Map<String, Object> register(Registration request) {
-        actors.get().requireRoles("super_admin", "technician");
+        actors.get().requireRoles("super_admin");
         var variant = db.one("SELECT * FROM public.product_variants WHERE id=? FOR UPDATE", request.variantId());
         UUID id = UUID.randomUUID();
         db.update("INSERT INTO public.devices(id,product_id,product_variant_id,serial_number,name,mqtt_topic_id) VALUES(?,?,?,?,?,?)",
                 id, variant.get("product_id"), request.variantId(), request.serialNumber(), request.name(), request.mqttTopicId());
         return Map.of("deviceId", id, "serialNumber", request.serialNumber());
+    }
+
+    @Transactional
+    public Map<String, Object> registerBatch(List<Registration> requests) {
+        actors.get().requireRoles("super_admin");
+        if (requests == null || requests.isEmpty()) {
+            throw new BadRequestException("Danh sách serial thiết bị không được để trống");
+        }
+        List<Map<String, Object>> registered = new ArrayList<>();
+        for (var req : requests) {
+            registered.add(register(req));
+        }
+        return Map.of("count", registered.size(), "devices", registered);
     }
 
     @Transactional

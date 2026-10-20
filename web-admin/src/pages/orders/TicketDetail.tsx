@@ -84,7 +84,17 @@ interface Ticket {
     status: string;
     shipping_address_snapshot?: string | null;
     created_at: string;
+    payment_method?: string | null;
+    paid_at?: string | null;
   };
+  payments?: {
+    id: string;
+    provider?: string;
+    status: string;
+    amount?: number;
+    transaction_ref?: string | null;
+    paid_at?: string | null;
+  }[];
   customer?: {
     full_name?: string;
     email?: string;
@@ -116,6 +126,13 @@ const statusConfig: Record<string, { label: string; bg: string; color: string; b
     color: '#0ea5e9',
     border: 'rgba(14, 165, 233, 0.28)',
     icon: <RotateCcw size={13} />
+  },
+  PARTIALLY_REJECTED: {
+    label: 'Từ chối 1 phần',
+    bg: 'rgba(249, 115, 22, 0.12)',
+    color: '#f97316',
+    border: 'rgba(249, 115, 22, 0.28)',
+    icon: <AlertTriangle size={13} />
   },
   REJECTED: {
     label: 'Đã từ chối',
@@ -221,6 +238,29 @@ export const TicketDetail: React.FC = () => {
     }
   };
 
+  const refreshTicketSilently = useCallback(async () => {
+    if (!id) return;
+    try {
+      const data = await adminRequest<Ticket>(`/tickets/${id}`);
+      setTicket((prev) => {
+        const prevStatus = prev?.order?.status;
+        const newStatus = data?.order?.status;
+        if (prevStatus && prevStatus !== newStatus && (newStatus === 'paid' || newStatus === 'confirmed')) {
+          toast.success(
+            `Đơn hàng #${(data.order_id || '').slice(0, 8).toUpperCase()} vừa được khách hàng thanh toán thành công!`,
+            'Thanh toán thành công'
+          );
+        }
+        return data;
+      });
+      if (data?.order_id) {
+        void loadDeliveryJob(data.order_id);
+      }
+    } catch {
+      // Ignore background errors
+    }
+  }, [id, loadDeliveryJob]);
+
   useEffect(() => {
     void loadTicket();
   }, [id]);
@@ -230,6 +270,31 @@ export const TicketDetail: React.FC = () => {
       void loadDeliveryJob(ticket.order_id);
     }
   }, [ticket?.order_id, loadDeliveryJob]);
+
+  // Realtime Polling: Cập nhật tự động sau mỗi 3s khi đang mở xem phiếu
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!document.hidden) {
+        void refreshTicketSilently();
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [refreshTicketSilently]);
+
+  // Event Listeners: Phản ứng ngay lập tức khi nhận được sự kiện thanh toán hoặc cập nhật đơn
+  useEffect(() => {
+    const handleOrderEvent = () => {
+      void refreshTicketSilently();
+    };
+    window.addEventListener('smartbox:order_paid', handleOrderEvent);
+    window.addEventListener('smartbox:new_order', handleOrderEvent);
+    window.addEventListener('smartbox:new_ticket', handleOrderEvent);
+    return () => {
+      window.removeEventListener('smartbox:order_paid', handleOrderEvent);
+      window.removeEventListener('smartbox:new_order', handleOrderEvent);
+      window.removeEventListener('smartbox:new_ticket', handleOrderEvent);
+    };
+  }, [refreshTicketSilently]);
 
   const handleCopy = (text: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -299,25 +364,43 @@ export const TicketDetail: React.FC = () => {
     if (act === 'CREATED') return { label: 'Khởi tạo phiếu', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
     if (act === 'PARTIALLY_REJECTED' || act === 'PARTIAL_APPROVAL_PROMPT') return { label: 'Duyệt một phần', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
     if (act.includes('CUSTOMER_DECISION') || act.includes('CUSTOMER_ACCEPTED')) return { label: 'Khách xác nhận đơn', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
-    return { label: action, color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
+    // Technician workflow actions
+    if (act.includes('ASSIGN')) return { label: 'Phân công KTV', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
+    if (act.includes('START')) return { label: 'KTV bắt đầu di chuyển', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' };
+    if (act.includes('DELIVER')) return { label: 'Đã đến địa chỉ giao', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
+    if (act.includes('LINK_SERIAL')) return { label: 'Gán Serial thiết bị', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' };
+    if (act.includes('INSTALL')) return { label: 'Đã hoàn thành lắp đặt', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    if (act.includes('SUBMIT_COMPLETION')) return { label: 'Nộp hồ sơ nghiệm thu', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)' };
+    if (act.includes('APPROVE_COMPLETION')) return { label: 'PO duyệt nghiệm thu', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' };
+    if (act.includes('ACCEPT')) return { label: 'Hoàn tất nghiệm thu & Bảo hành', color: '#10b981', bg: 'rgba(16, 185, 129, 0.16)' };
+    if (act.includes('FAIL')) return { label: 'Giao lắp thất bại / Hoãn', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    return { label: action.replace(/^TECH_/, ''), color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
   };
 
-  // Format audit note cleanly (avoid raw item UUIDs)
+  // Format audit note cleanly (avoid raw item UUIDs and "null" text)
   const formatAuditNote = (reason?: string | null) => {
-    if (!reason || reason === 'null') return null;
-    if (reason.startsWith('item:')) {
-      const match = reason.match(/^item:([0-9a-fA-F-]+):\s*(.*)$/);
-      if (match) {
-        const itemId = match[1];
-        const note = match[2]?.trim();
-        const matchedItem = ticket?.itemApprovals?.find(i => i.orderItemId === itemId || i.id === itemId);
-        const prodName = matchedItem?.productName || 'Sản phẩm';
-        const sku = matchedItem?.sku ? ` (${matchedItem.sku})` : '';
-        return note && note !== 'null' ? `${prodName}${sku}: "${note}"` : `${prodName}${sku}`;
-      }
+    if (!reason || reason === 'null' || reason.trim() === '') return null;
+    
+    // Check for "Item <uuid>: <note>" or "item:<uuid>: <note>"
+    const itemMatch = reason.match(/^(?:Item |item:)([0-9a-fA-F-]+)(?::\s*(.*))?$/i);
+    if (itemMatch) {
+      const itemId = itemMatch[1];
+      let note = itemMatch[2]?.trim();
+      if (note === 'null' || !note) note = '';
+      const matchedItem = ticket?.itemApprovals?.find(i => i.orderItemId === itemId || i.id === itemId);
+      const prodName = matchedItem?.productName || 'Sản phẩm';
+      const sku = matchedItem?.sku ? ` (${matchedItem.sku})` : '';
+      return note ? `${prodName}${sku}: "${note}"` : `Đã duyệt ${prodName}${sku}`;
     }
+
     if (reason === 'ORDER_CREATED_AWAITING_APPROVAL') {
       return 'Đơn hàng mới tạo chuyển sang luồng thẩm định PO';
+    }
+    if (reason === 'CUSTOMER_ACCEPTED_PARTIAL_ORDER') {
+      return 'Khách hàng đồng ý tiếp tục đơn hàng với các sản phẩm được duyệt';
+    }
+    if (reason === 'INSTALLATION_ACCEPTED') {
+      return 'Biên bản bàn giao và nghiệm thu thiết bị đã được xác nhận thành công';
     }
     return reason;
   };
@@ -373,14 +456,15 @@ export const TicketDetail: React.FC = () => {
         ...(action === 'approve' ? {} : { body: JSON.stringify({ reason: decisionReason.trim() }) })
       });
       setTicket(updated);
-      toast.success(
-        action === 'approve'
-          ? 'Đã phê duyệt PO Ticket thành công. Đơn hàng chuyển sang chuẩn bị xuất kho.'
-          : action === 'return'
-          ? 'Đã gửi yêu cầu giải trình đến bộ phận kinh doanh.'
-          : 'Đã từ chối phiếu PO Ticket thành công.',
-        'Thao tác thành công'
-      );
+      const isPaid = ticket.order?.paid_at || ['paid', 'confirmed'].includes(ticket.order?.status || '');
+      const successMsg = action === 'approve'
+        ? (isPaid
+            ? 'Đã phê duyệt PO Ticket thành công! Đơn hàng đã thanh toán, sẵn sàng chuyển sang điều phối xuất kho & giao lắp.'
+            : 'Đã phê duyệt PO Ticket thành công! Đơn hàng chuyển sang trạng thái chờ khách hàng thanh toán.')
+        : action === 'return'
+        ? 'Đã gửi yêu cầu giải trình đến bộ phận kinh doanh.'
+        : 'Đã từ chối phiếu PO Ticket thành công.';
+      toast.success(successMsg, 'Thao tác thành công');
       setDecisionReason('');
       setActionType(null);
     } catch (e: any) {
@@ -515,6 +599,107 @@ export const TicketDetail: React.FC = () => {
       <div className="tkd-grid">
         {/* Left Column: Details, Items, Actions */}
         <div>
+          {/* Realtime Payment Notification Banner */}
+          {(ticket.order?.paid_at || ticket.order?.status === 'paid' || ticket.order?.status === 'confirmed') ? (
+            <div style={{
+              marginBottom: 16,
+              padding: '14px 18px',
+              borderRadius: 10,
+              background: 'rgba(16, 185, 129, 0.09)',
+              border: '1px solid rgba(16, 185, 129, 0.28)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: '#10b981',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  flexShrink: 0
+                }}>
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.96rem', color: 'var(--text-primary)' }}>
+                    Khách hàng đã thanh toán đơn hàng thành công (Quyết toán)
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Cổng thanh toán: <strong style={{ color: 'var(--text-primary)' }}>{ticket.order?.payment_method?.toUpperCase() || 'VNPAY'}</strong>
+                    {ticket.order?.paid_at && ` • Thời gian: ${formatDateTime(ticket.order.paid_at)}`}
+                  </div>
+                </div>
+              </div>
+              <span style={{
+                background: 'rgba(16, 185, 129, 0.16)',
+                color: '#059669',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                padding: '4px 12px',
+                borderRadius: 6,
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                letterSpacing: '0.5px'
+              }}>
+                ĐÃ QUYẾT TOÁN
+              </span>
+            </div>
+          ) : ticket.order?.status === 'awaiting_payment' ? (
+            <div style={{
+              marginBottom: 16,
+              padding: '14px 18px',
+              borderRadius: 10,
+              background: 'rgba(245, 158, 11, 0.09)',
+              border: '1px solid rgba(245, 158, 11, 0.28)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: '#f59e0b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  flexShrink: 0
+                }}>
+                  <Clock size={20} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                    Đã duyệt PO • Đang chờ khách hàng thanh toán qua VNPAY
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Hệ thống đang mở cổng thanh toán. Trang chi tiết này sẽ tự động cập nhật ngay khi tiền về.
+                  </div>
+                </div>
+              </div>
+              <span style={{
+                background: 'rgba(245, 158, 11, 0.16)',
+                color: '#b45309',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                padding: '4px 12px',
+                borderRadius: 6,
+                fontSize: '0.78rem',
+                fontWeight: 800
+              }}>
+                CHỜ THANH TOÁN
+              </span>
+            </div>
+          ) : null}
+
           {/* Card 1: Customer & Order Overview */}
           <div className="tkd-card">
             <div className="tkd-card-header">
@@ -622,9 +807,46 @@ export const TicketDetail: React.FC = () => {
                   <span className="tkd-info-val" style={{
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: ticket.order?.status === 'cancelled' ? '#ef4444' : 'var(--accent-primary)'
+                    color: ticket.order?.status === 'cancelled'
+                      ? '#ef4444'
+                      : ['paid', 'confirmed'].includes(ticket.order?.status || '')
+                      ? '#10b981'
+                      : 'var(--accent-primary)'
                   }}>
-                    {ticket.order?.status === 'cancelled' ? 'ĐÃ HỦY (CANCELLED)' : (ticket.order?.status || 'Chờ phê duyệt xuất kho')}
+                    {ticket.order?.status === 'cancelled'
+                      ? 'ĐÃ HỦY (CANCELLED)'
+                      : ticket.order?.status === 'awaiting_payment'
+                      ? 'CHỜ KHÁCH THANH TOÁN'
+                      : ticket.order?.status === 'paid'
+                      ? 'ĐÃ THANH TOÁN'
+                      : ticket.order?.status === 'confirmed'
+                      ? 'ĐÃ XÁC NHẬN & QUYẾT TOÁN'
+                      : ticket.order?.status === 'delivering'
+                      ? 'ĐANG GIAO HÀNG'
+                      : ticket.order?.status === 'completed'
+                      ? 'HOÀN TẤT'
+                      : (ticket.order?.status || 'Chờ thẩm định')}
+                  </span>
+                </div>
+
+                <div className="tkd-info-row">
+                  <span className="tkd-info-label">Thanh toán:</span>
+                  <span className="tkd-info-val">
+                    {(ticket.order?.paid_at || ['paid', 'confirmed'].includes(ticket.order?.status || '')) ? (
+                      <span style={{ color: '#10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <CheckCircle2 size={13} />
+                        Đã quyết toán ({ticket.order?.payment_method?.toUpperCase() || 'VNPAY'})
+                      </span>
+                    ) : ticket.order?.status === 'awaiting_payment' ? (
+                      <span style={{ color: '#f59e0b', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Clock size={13} />
+                        Chờ khách thanh toán ({ticket.order?.payment_method?.toUpperCase() || 'VNPAY'})
+                      </span>
+                    ) : (
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>
+                        Chưa thanh toán ({ticket.order?.payment_method?.toUpperCase() || 'VNPAY'})
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>

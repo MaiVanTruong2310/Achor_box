@@ -29,17 +29,61 @@ public class AdminNotificationsService {
         List<Map<String, Object>> events = new ArrayList<>();
         String role = actor.role();
 
-        if (Set.of("super_admin", "product_manager").contains(role)) {
-            // Consolidated into a single UNION ALL query to eliminate 5 sequential DB network round trips
-            String sql = "(SELECT 'ORDER' AS type, 'Đơn hàng mới' AS title, '/orders' AS link, id::text AS id, status::text AS status, created_at AS occurred_at FROM public.orders WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY created_at DESC, id DESC LIMIT 15) " +
+        if ("super_admin".equals(role)) {
+            String sql = "(SELECT 'ORDER' AS type, " +
+                    "CASE " +
+                    "  WHEN status::text IN ('paid', 'confirmed') THEN 'Đơn hàng đã thanh toán (Sẵn sàng điều phối)' " +
+                    "  WHEN status::text = 'awaiting_payment' THEN 'Đơn hàng chờ thanh toán' " +
+                    "  WHEN status::text = 'cancelled' THEN 'Đơn hàng đã hủy' " +
+                    "  WHEN status::text = 'delivering' THEN 'Đơn hàng đang giao' " +
+                    "  WHEN status::text = 'completed' THEN 'Đơn hàng hoàn tất' " +
+                    "  ELSE 'Đơn hàng mới' " +
+                    "END AS title, " +
+                    "'/orders' AS link, id::text AS id, status::text AS status, COALESCE(updated_at, created_at) AS occurred_at FROM public.orders WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY COALESCE(updated_at, created_at) DESC, id DESC LIMIT 15) " +
                     "UNION ALL " +
-                    "(SELECT 'PO' AS type, 'PO Ticket cập nhật' AS title, '/orders/approvals' AS link, id::text AS id, status::text AS status, updated_at AS occurred_at FROM public.approval_tickets WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY updated_at DESC, id DESC LIMIT 15) " +
+                    "(SELECT 'PO' AS type, " +
+                    "CASE " +
+                    "  WHEN status::text = 'PENDING' THEN 'Phiếu PO mới cần thẩm định' " +
+                    "  WHEN status::text = 'APPROVED' THEN 'Phiếu PO đã được phê duyệt' " +
+                    "  WHEN status::text = 'REJECTED' THEN 'Phiếu PO đã bị từ chối' " +
+                    "  WHEN status::text = 'RETURNED' THEN 'Phiếu PO yêu cầu giải trình' " +
+                    "  ELSE 'Phiếu PO cập nhật' " +
+                    "END AS title, " +
+                    "'/admin/orders/approvals' AS link, id::text AS id, status::text AS status, updated_at AS occurred_at FROM public.approval_tickets WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY updated_at DESC, id DESC LIMIT 15) " +
                     "UNION ALL " +
                     "(SELECT 'DELIVERY' AS type, 'Công việc giao / lắp đặt' AS title, '/orders/delivery' AS link, id::text AS id, status::text AS status, updated_at AS occurred_at FROM public.delivery_installations WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY updated_at DESC, id DESC LIMIT 15) " +
                     "UNION ALL " +
                     "(SELECT 'WARRANTY' AS type, 'Yêu cầu bảo hành' AS title, '/warranties' AS link, id::text AS id, status::text AS status, created_at AS occurred_at FROM public.warranty_claims WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY created_at DESC, id DESC LIMIT 15) " +
                     "UNION ALL " +
                     "(SELECT 'EMAIL' AS type, 'Email gửi thất bại' AS title, '/emails' AS link, id::text AS id, status::text AS status, created_at AS occurred_at FROM public.email_outbox WHERE status='FAILED' ORDER BY created_at DESC, id DESC LIMIT 10)";
+            List<Map<String, Object>> rows = db.list(sql);
+            for (var row : rows) {
+                addEvent(events, row);
+            }
+        } else if ("product_manager".equals(role)) {
+            // PO (Product Manager) chỉ nhận thông báo về đơn hàng và phiếu thẩm định PO, không nhận công việc giao lắp của technician
+            String sql = "(SELECT 'ORDER' AS type, " +
+                    "CASE " +
+                    "  WHEN status::text IN ('paid', 'confirmed') THEN 'Đơn hàng đã thanh toán (Sẵn sàng điều phối)' " +
+                    "  WHEN status::text = 'awaiting_payment' THEN 'Đơn hàng chờ thanh toán' " +
+                    "  WHEN status::text = 'cancelled' THEN 'Đơn hàng đã hủy' " +
+                    "  WHEN status::text = 'delivering' THEN 'Đơn hàng đang giao' " +
+                    "  WHEN status::text = 'completed' THEN 'Đơn hàng hoàn tất' " +
+                    "  ELSE 'Đơn hàng mới' " +
+                    "END AS title, " +
+                    "'/orders' AS link, id::text AS id, status::text AS status, COALESCE(updated_at, created_at) AS occurred_at FROM public.orders WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY COALESCE(updated_at, created_at) DESC, id DESC LIMIT 15) " +
+                    "UNION ALL " +
+                    "(SELECT 'PO' AS type, " +
+                    "CASE " +
+                    "  WHEN status::text = 'PENDING' THEN 'Phiếu PO mới cần thẩm định' " +
+                    "  WHEN status::text = 'APPROVED' THEN 'Phiếu PO đã được phê duyệt' " +
+                    "  WHEN status::text = 'REJECTED' THEN 'Phiếu PO đã bị từ chối' " +
+                    "  WHEN status::text = 'RETURNED' THEN 'Phiếu PO yêu cầu giải trình' " +
+                    "  ELSE 'Phiếu PO cập nhật' " +
+                    "END AS title, " +
+                    "'/po/approvals' AS link, id::text AS id, status::text AS status, updated_at AS occurred_at FROM public.approval_tickets WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY updated_at DESC, id DESC LIMIT 15) " +
+                    "UNION ALL " +
+                    "(SELECT 'WARRANTY' AS type, 'Yêu cầu bảo hành' AS title, '/warranties' AS link, id::text AS id, status::text AS status, created_at AS occurred_at FROM public.warranty_claims WHERE id::text !~ '^(11111111|22222222|33333333|44444444|55555555)' ORDER BY created_at DESC, id DESC LIMIT 15)";
             List<Map<String, Object>> rows = db.list(sql);
             for (var row : rows) {
                 addEvent(events, row);

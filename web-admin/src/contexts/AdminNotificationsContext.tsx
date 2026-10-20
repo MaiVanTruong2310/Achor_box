@@ -146,21 +146,40 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
               setFresh(added.slice(0, 3));
               currentInterval = BASE_INTERVAL;
 
-              // 1. Kiểm tra đơn hàng mới (Admin & PO)
-              const newOrders = added.filter(e => e.type === 'ORDER');
-              if (newOrders.length > 0) {
-                const latestOrder = newOrders[0];
-                toast.info(
-                  `Có đơn hàng mới #${latestOrder.referenceId.slice(0, 8).toUpperCase()} vừa phát sinh!`,
-                  'Đơn hàng mới'
-                );
-                playNotificationSound('order');
-                window.dispatchEvent(new CustomEvent('smartbox:new_order', { detail: newOrders }));
+              const isTech = profile?.role === 'technician';
+              const isPO = profile?.role === 'product_manager';
+
+              // 1. Kiểm tra đơn hàng mới hoặc đơn hàng thanh toán thành công
+              const orderEvents = added.filter(e => e.type === 'ORDER');
+              if (orderEvents.length > 0 && !isTech) {
+                const paidOrders = orderEvents.filter(e => e.status === 'paid' || e.status === 'confirmed');
+                const newOrders = orderEvents.filter(e => e.status === 'pending');
+
+                if (paidOrders.length > 0) {
+                  const p = paidOrders[0];
+                  toast.success(
+                    `🎉 Đơn hàng #${p.referenceId.slice(0, 8).toUpperCase()} vừa được khách hàng thanh toán thành công!`,
+                    'Thanh toán thành công'
+                  );
+                  playNotificationSound('order');
+                  window.dispatchEvent(new CustomEvent('smartbox:order_paid', { detail: paidOrders }));
+                  window.dispatchEvent(new CustomEvent('smartbox:new_order', { detail: orderEvents }));
+                } else if (newOrders.length > 0) {
+                  const latestOrder = newOrders[0];
+                  toast.info(
+                    `Có đơn hàng mới #${latestOrder.referenceId.slice(0, 8).toUpperCase()} vừa phát sinh!`,
+                    'Đơn hàng mới'
+                  );
+                  playNotificationSound('order');
+                  window.dispatchEvent(new CustomEvent('smartbox:new_order', { detail: newOrders }));
+                } else {
+                  window.dispatchEvent(new CustomEvent('smartbox:new_order', { detail: orderEvents }));
+                }
               }
 
-              // 2. Kiểm tra phiếu thẩm định PO mới
+              // 2. Kiểm tra phiếu thẩm định PO mới hoặc cập nhật trạng thái (Dành cho PO & Admin)
               const poTickets = added.filter(e => e.type === 'PO');
-              if (poTickets.length > 0) {
+              if (poTickets.length > 0 && !isTech) {
                 const latestTicket = poTickets[0];
                 toast.info(
                   `Phiếu PO #${latestTicket.referenceId.slice(0, 8).toUpperCase()} cập nhật trạng thái: ${noticeStatusLabel(latestTicket)}`,
@@ -169,37 +188,51 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
                 window.dispatchEvent(new CustomEvent('smartbox:new_ticket', { detail: poTickets }));
               }
 
-              // 3. Kiểm tra công việc mới được phân công cho Kỹ thuật viên
-              const newTasks = added.filter(
-                e => e.type === 'TASK_ASSIGNED' || (e.type === 'DELIVERY' && e.status === 'ASSIGNED')
-              );
-              if (newTasks.length > 0) {
-                const t = newTasks[0];
-                toast.info(
-                  `🔔 Bạn có công việc mới được phân công! Đơn hàng #${t.referenceId.slice(0, 8).toUpperCase()}`,
-                  'Công việc mới'
+              // 3. Kiểm tra công việc mới được phân công (CHỈ HIỂN THỊ CHO KỸ THUẬT VIÊN)
+              if (isTech) {
+                const newTasks = added.filter(
+                  e => e.type === 'TASK_ASSIGNED' || (e.type === 'DELIVERY' && e.status === 'ASSIGNED')
                 );
-                playNotificationSound('new_task');
-                window.dispatchEvent(new CustomEvent('smartbox:new_task', { detail: newTasks }));
-              }
+                if (newTasks.length > 0) {
+                  const t = newTasks[0];
+                  toast.info(
+                    `🔔 Bạn có công việc mới được phân công! Đơn hàng #${t.referenceId.slice(0, 8).toUpperCase()}`,
+                    'Công việc mới'
+                  );
+                  playNotificationSound('new_task');
+                  window.dispatchEvent(new CustomEvent('smartbox:new_task', { detail: newTasks }));
+                }
 
-              // 4. Kiểm tra ca thi công / bảo hành sắp đến giờ hẹn (Gần đến giờ)
-              const upcomingTasks = added.filter(e => e.type === 'TASK_UPCOMING');
-              if (upcomingTasks.length > 0) {
-                const up = upcomingTasks[0];
-                toast.warning(
-                  `⏰ SẮP ĐẾN GIỜ HẸN: Ca thi công đơn hàng #${up.referenceId.slice(0, 8).toUpperCase()} sắp bắt đầu. Vui lòng chuẩn bị di chuyển!`,
-                  'Nhắc nhở ca hẹn'
-                );
-                playNotificationSound('reminder');
-                window.dispatchEvent(new CustomEvent('smartbox:upcoming_task', { detail: upcomingTasks }));
+                // 4. Kiểm tra ca thi công / bảo hành sắp đến giờ hẹn (CHỈ HIỂN THỊ CHO KỸ THUẬT VIÊN)
+                const upcomingTasks = added.filter(e => e.type === 'TASK_UPCOMING');
+                if (upcomingTasks.length > 0) {
+                  const up = upcomingTasks[0];
+                  toast.warning(
+                    `⏰ SẮP ĐẾN GIỜ HẸN: Ca thi công đơn hàng #${up.referenceId.slice(0, 8).toUpperCase()} sắp bắt đầu. Vui lòng chuẩn bị di chuyển!`,
+                    'Nhắc nhở ca hẹn'
+                  );
+                  playNotificationSound('reminder');
+                  window.dispatchEvent(new CustomEvent('smartbox:upcoming_task', { detail: upcomingTasks }));
+                }
               }
             } else {
               currentInterval = Math.min(MAX_INTERVAL, currentInterval + 1000);
             }
           }
           known.current = new Set(feed.events.map((e) => e.id));
-          const adjustedEvents = feed.events.map(ev => {
+
+          // Lọc danh sách thông báo theo đúng vai trò (PO không nhận việc giao lắp của KTV)
+          const filteredEvents = feed.events.filter(ev => {
+            if (profile?.role === 'product_manager') {
+              return ev.type !== 'DELIVERY' && ev.type !== 'TASK_ASSIGNED' && ev.type !== 'TASK_UPCOMING';
+            }
+            if (profile?.role === 'technician') {
+              return ev.type === 'DELIVERY' || ev.type === 'TASK_ASSIGNED' || ev.type === 'TASK_UPCOMING' || ev.type === 'WARRANTY';
+            }
+            return true;
+          });
+
+          const adjustedEvents = filteredEvents.map(ev => {
             if (profile?.role === 'product_manager') {
               if (ev.link === '/orders/approvals' || ev.link === '/orders') return { ...ev, link: '/po/approvals' };
               if (ev.link === '/orders/delivery') return { ...ev, link: '/po/delivery' };
@@ -326,7 +359,9 @@ export const noticeStatusLabel = (notice: AdminNotice) => {
       PENDING: 'Chờ duyệt',
       RETURNED: 'Chờ giải trình',
       APPROVED: 'Đã duyệt',
-      REJECTED: 'Từ chối'
+      REJECTED: 'Từ chối',
+      PARTIALLY_REJECTED: 'Từ chối 1 phần',
+      CANCELLED: 'Đã hủy'
     },
     DELIVERY: {
       ASSIGNED: 'Đã phân công',
