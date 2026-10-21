@@ -53,7 +53,7 @@ public class AdminSettingsService {
     })
     public Map<String, Object> category(UUID id, Category request) {
         var actor = actors.get();
-        actor.requireRoles("super_admin", "product_manager");
+        actor.requireRoles("super_admin");
         boolean create = (id == null);
 
         if (create) {

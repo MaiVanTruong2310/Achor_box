@@ -160,6 +160,16 @@ export const OrderProcessingHistory: React.FC = () => {
         </div>
 
         <div className="products-topbar-actions">
+          <button
+            type="button"
+            className="btn-secondary-compact"
+            onClick={() => navigate('/admin/orders')}
+            title="Quay lại danh sách đơn hàng"
+          >
+            <ArrowLeft size={15} />
+            <span>Danh sách đơn hàng</span>
+          </button>
+
           {selectedOrderId && (
             <button
               type="button"

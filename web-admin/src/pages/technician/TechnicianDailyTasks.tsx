@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../contexts/ToastContext';
 import { deliveryApi, DailyTask, DailyTasksResponse } from '../../services/deliveryInstallation';
+import { warrantiesService } from '../../services/api';
 import './technician-tasks.css';
 
 function getWeekDays(baseDateStr: string): { dateStr: string; dayName: string; dayNumber: string; isToday: boolean }[] {
@@ -417,20 +418,25 @@ export const TechnicianDailyTasks: React.FC = () => {
     if (!target || submitting) return;
     setSubmitting(true);
     try {
-      const idempotencyKey = crypto.randomUUID();
-      await deliveryApi.mutate(
-        target as any,
-        'start',
-        undefined,
-        idempotencyKey
-      );
-      toast.success('Đã bắt đầu ca thi công!');
+      if (target.type === 'WARRANTY_MAINTENANCE') {
+        await warrantiesService.updateClaimStatus(target.id, 'in_progress');
+        toast.success('Đã bắt đầu xử lý phiếu bảo hành!');
+      } else {
+        const idempotencyKey = crypto.randomUUID();
+        await deliveryApi.mutate(
+          target as any,
+          'start',
+          undefined,
+          idempotencyKey
+        );
+        toast.success('Đã bắt đầu ca thi công!');
+      }
       await loadTasks(selectedDate);
       if (viewMode === 'timetable_week') {
         void loadWeekTasks(selectedDate);
       }
     } catch (err: any) {
-      toast.error(err?.message || 'Không thể bắt đầu ca thi công.');
+      toast.error(err?.message || 'Không thể bắt đầu ca làm việc.');
     } finally {
       setSubmitting(false);
     }
@@ -481,7 +487,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         selectedTask.version,
         idempotencyKey
       );
-      toast.success('Đã gửi báo cáo nghiệm thu thành công! Chờ PO kiểm tra và phê duyệt.');
+      if (selectedTask.type === 'WARRANTY_MAINTENANCE') {
+        toast.success('Đã gửi ảnh minh chứng và hoàn tất xử lý phiếu bảo hành thành công!');
+      } else {
+        toast.success('Đã gửi báo cáo nghiệm thu thành công! Chờ PO kiểm tra và phê duyệt.');
+      }
       await loadTasks(selectedDate);
       if (viewMode === 'timetable_week') {
         void loadWeekTasks(selectedDate);
@@ -1080,10 +1090,12 @@ export const TechnicianDailyTasks: React.FC = () => {
               )}
 
               {/* Start Task Action if New */}
-              {selectedTask.status === 'ASSIGNED' && (
+              {(selectedTask.status === 'ASSIGNED' || selectedTask.status === 'NEW') && (
                 <div style={{ background: 'rgba(99, 102, 241, 0.06)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                   <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem' }}>
-                    Công việc đang ở trạng thái <strong>Mới giao</strong>. Hãy bấm bắt đầu khi bắt đầu di chuyển hoặc tới nơi thi công.
+                    {selectedTask.type === 'WARRANTY_MAINTENANCE'
+                      ? 'Phiếu bảo hành đang ở trạng thái mới tiếp nhận. Hãy bấm bắt đầu khi bắt đầu di chuyển hoặc tiến hành sửa chữa.'
+                      : 'Công việc đang ở trạng thái Mới giao. Hãy bấm bắt đầu khi bắt đầu di chuyển hoặc tới nơi thi công.'}
                   </p>
                   <button
                     className="btn btn-primary"
@@ -1091,13 +1103,13 @@ export const TechnicianDailyTasks: React.FC = () => {
                     onClick={() => void handleStartTask()}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >
-                    <Play size={16} /> Bắt đầu ca làm việc
+                    <Play size={16} /> {selectedTask.type === 'WARRANTY_MAINTENANCE' ? 'Bắt đầu xử lý bảo hành' : 'Bắt đầu ca làm việc'}
                   </button>
                 </div>
               )}
 
-              {/* Status Banner for Waiting Confirmation */}
-              {selectedTask.status === 'WAITING_PO_CONFIRMATION' && (
+              {/* Status Banner for Waiting Confirmation (Only Delivery) */}
+              {selectedTask.type !== 'WARRANTY_MAINTENANCE' && selectedTask.status === 'WAITING_PO_CONFIRMATION' && (
                 <div style={{ background: 'rgba(234, 88, 12, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(234, 88, 12, 0.3)', color: '#c2410c' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '0.95rem' }}>
                     <Clock size={18} />
@@ -1109,15 +1121,17 @@ export const TechnicianDailyTasks: React.FC = () => {
                 </div>
               )}
 
-              {/* Status Banner for Completed */}
-              {selectedTask.status === 'COMPLETED' && (
+              {/* Status Banner for Completed / Resolved */}
+              {(selectedTask.status === 'COMPLETED' || selectedTask.status === 'RESOLVED') && (
                 <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#047857' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '0.95rem' }}>
                     <CheckCircle2 size={18} />
-                    <span>Công việc đã hoàn thành & Được PO nghiệm thu</span>
+                    <span>{selectedTask.type === 'WARRANTY_MAINTENANCE' ? 'Phiếu bảo hành đã xử lý thành công' : 'Công việc đã hoàn thành & Được PO nghiệm thu'}</span>
                   </div>
                   <p style={{ margin: '6px 0 0 0', fontSize: '0.88rem' }}>
-                    Quy trình đơn hàng đã kết thúc thành công. Bảo hành điện tử đã được kích hoạt cho khách hàng.
+                    {selectedTask.type === 'WARRANTY_MAINTENANCE'
+                      ? 'Sự cố thiết bị đã được kỹ thuật viên khắc phục và hoàn tất phiếu bảo hành.'
+                      : 'Quy trình đơn hàng đã kết thúc thành công. Bảo hành điện tử đã được kích hoạt cho khách hàng.'}
                   </p>
                 </div>
               )}
@@ -1135,7 +1149,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                 </div>
 
                 {/* Upload Button */}
-                {selectedTask.status !== 'COMPLETED' && (
+                {selectedTask.status !== 'COMPLETED' && selectedTask.status !== 'RESOLVED' && (
                   <div className="tech-upload-btn-wrap">
                     <input
                       type="file"
@@ -1164,7 +1178,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                     {proofPhotos.map((url, idx) => (
                       <div key={idx} className="tech-proof-thumb">
                         <img src={url} alt={`Minh chứng ${idx + 1}`} />
-                        {selectedTask.status !== 'COMPLETED' && selectedTask.status !== 'WAITING_PO_CONFIRMATION' && (
+                        {selectedTask.status !== 'COMPLETED' && selectedTask.status !== 'RESOLVED' && selectedTask.status !== 'WAITING_PO_CONFIRMATION' && (
                           <button
                             type="button"
                             className="tech-proof-remove"
@@ -1189,7 +1203,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                     placeholder="VD: Đã hoàn tất lắp đặt hộp thông minh, kiểm tra cảm biến tải trọng hoạt động tốt, đã hướng dẫn khách quét app mở khóa."
                     value={completionNote}
                     onChange={(e) => setCompletionNote(e.target.value)}
-                    disabled={selectedTask.status === 'COMPLETED' || submitting}
+                    disabled={selectedTask.status === 'COMPLETED' || selectedTask.status === 'RESOLVED' || submitting}
                   />
                 </div>
               </div>
@@ -1201,7 +1215,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                 Đóng
               </button>
 
-              {selectedTask.status !== 'COMPLETED' && (
+              {selectedTask.status !== 'COMPLETED' && selectedTask.status !== 'RESOLVED' && (
                 <button
                   className="tech-btn-submit-proof"
                   disabled={submitting || uploading || proofPhotos.length === 0}
@@ -1214,6 +1228,8 @@ export const TechnicianDailyTasks: React.FC = () => {
                       ? 'Đang gửi...'
                       : selectedTask.status === 'WAITING_PO_CONFIRMATION'
                       ? 'Cập nhật lại báo cáo'
+                      : selectedTask.type === 'WARRANTY_MAINTENANCE'
+                      ? 'Xác nhận hoàn thành sửa chữa'
                       : 'Gửi báo cáo hoàn thành'}
                   </span>
                 </button>

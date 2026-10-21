@@ -57,7 +57,7 @@ public class ApprovalTicketService {
             next = "PENDING";
             round++;
         } else {
-            actor.requireRoles("product_manager");
+            actor.requireRoles("super_admin", "product_manager");
             if (!Set.of("PENDING", "PARTIALLY_REJECTED").contains(status)) {
                 throw new ConflictException("TICKET_ALREADY_REVIEWED");
             }
@@ -126,7 +126,7 @@ public class ApprovalTicketService {
     @Transactional
     public Map<String, Object> actItem(UUID ticketId, UUID orderItemId, String action, String reason) {
         var actor = actors.get();
-        actor.requireRoles("product_manager");
+        actor.requireRoles("super_admin", "product_manager");
         var ticket = db.one("SELECT * FROM public.approval_tickets WHERE id=? FOR UPDATE", ticketId);
         UUID orderId = uuid(ticket.get("order_id"));
         var order = db.order(orderId, true);

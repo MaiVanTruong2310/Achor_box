@@ -51,7 +51,7 @@ web-shop/.env.*
 !.env.example
 docs/
 seed_staff_and_customers.sql
-
+audit-report/
 # Documents & Reports (Ignore all docx, doc, pdf, etc.)
 *.docx
 *.doc

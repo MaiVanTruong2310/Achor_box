@@ -478,11 +478,14 @@ export const OrderDetail: React.FC = () => {
               </div>
 
               {/* Payment Row */}
-              <div className={`compact-payment-strip ${order.paidAt ? 'paid' : 'pending'}`}>
+              <div className={`compact-payment-strip ${order.paidAt ? 'paid' : order.status === 'cancelled' ? 'cancelled' : 'pending'}`}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <CreditCard size={14} style={{ color: order.paidAt ? '#10b981' : '#f59e0b' }} />
+                  <CreditCard size={14} style={{ color: order.paidAt ? '#10b981' : order.status === 'cancelled' ? '#64748b' : '#f59e0b' }} />
                   <span>
-                    Phương thức: <strong>{order.paymentMethod || 'VNPAY'}</strong> • {order.paidAt ? 'Đã thanh toán (Quyết toán)' : 'Chờ thanh toán'}
+                    Phương thức: <strong>{order.paymentMethod || 'VNPAY'}</strong> •{' '}
+                    {order.status === 'cancelled'
+                      ? (order.paidAt ? 'Đã thanh toán (Đã hủy đơn)' : 'Chưa thanh toán (Đã hủy đơn)')
+                      : (order.paidAt ? 'Đã thanh toán (Quyết toán)' : 'Chờ thanh toán')}
                   </span>
                 </div>
                 {order.transactionRef && (

@@ -40,9 +40,15 @@ public class ConcurrentDashboardService {
     private final long timeout;
     private final DashboardDemoConfig demoConfig;
     private final boolean demo;
+    private boolean cacheEnabled = true;
+
+    public void clearCache() {
+        cache.clear();
+    }
 
     public ConcurrentDashboardService(CommerceRepository db, CurrentActor actors, Executor executor, long timeout) {
         this(db, actors, executor, timeout, new DashboardDemoConfig(), false);
+        this.cacheEnabled = false;
     }
 
     @Autowired
@@ -96,7 +102,7 @@ public class ConcurrentDashboardService {
         long start = System.nanoTime();
 
         // Distributed Redis + L1 micro-cache (60 seconds) for parallel production dashboard
-        if ("parallel".equals(mode) && !demo) {
+        if (cacheEnabled && "parallel".equals(mode) && !demo) {
             String cacheKey = date.toString();
             CacheEntry cached = cache.get(cacheKey);
             if (cached != null && cached.expiresAt().isAfter(OffsetDateTime.now())) {
@@ -164,6 +170,7 @@ public class ConcurrentDashboardService {
             return counts;
         });
         parts.put("top5Variants", () -> db.list("SELECT i.variant_id AS \"variantId\",i.product_id AS \"productId\",max(i.product_name_snapshot) AS name,max(i.variant_name_snapshot) AS \"variantName\",max(i.sku_snapshot) AS sku,sum(i.quantity) AS \"quantitySold\" FROM public.order_items i JOIN public.orders o ON o.id=i.order_id WHERE i.variant_id IS NOT NULL AND CAST(o.status AS text) IN('paid','confirmed','completed') AND o.paid_at>=? AND o.paid_at<? GROUP BY i.variant_id,i.product_id ORDER BY sum(i.quantity) DESC,i.variant_id LIMIT 5", from.minusDays(29), until));
+        parts.put("lowStockVariants", () -> db.list("SELECT v.id AS \"variantId\",v.product_id AS \"productId\",p.name,v.sku,v.stock_quantity AS stock FROM public.product_variants v JOIN public.products p ON p.id=v.product_id WHERE v.is_active=true AND p.is_active=true AND v.stock_quantity<=5 ORDER BY v.stock_quantity,v.id"));
         parts.put("revenueTrend", () -> db.list("SELECT CAST(o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS date) AS \"date\", COALESCE(sum(o.total),0) AS \"revenue\", count(o.id) AS \"orders\" FROM public.orders o WHERE CAST(o.status AS text) IN('paid','confirmed','completed') AND o.paid_at>=? AND o.paid_at<? GROUP BY CAST(o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS date) ORDER BY \"date\" ASC", from.minusDays(6), until));
         parts.put("revenueTrendWeek", () -> db.list("SELECT to_char(date_trunc('week', o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), 'YYYY-\"W\"IW') AS \"date\", COALESCE(sum(o.total),0) AS \"revenue\", count(o.id) AS \"orders\" FROM public.orders o WHERE CAST(o.status AS text) IN('paid','confirmed','completed') AND o.paid_at>=? AND o.paid_at<? GROUP BY date_trunc('week', o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), to_char(date_trunc('week', o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), 'YYYY-\"W\"IW') ORDER BY date_trunc('week', o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh') ASC", from.minusWeeks(4), until));
         parts.put("revenueTrendMonth", () -> db.list("SELECT to_char(date_trunc('month', o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), 'MM/YYYY') AS \"date\", COALESCE(sum(o.total),0) AS \"revenue\", count(o.id) AS \"orders\" FROM public.orders o WHERE CAST(o.status AS text) IN('paid','confirmed','completed') AND o.paid_at>=? AND o.paid_at<? GROUP BY date_trunc('month', o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), to_char(date_trunc('month', o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), 'MM/YYYY') ORDER BY date_trunc('month', o.paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh') ASC", from.minusMonths(6), until));
@@ -195,7 +202,7 @@ public class ConcurrentDashboardService {
         response.put("demo", demo);
         response.put("mode", mode);
 
-        if ("parallel".equals(mode) && !demo && failed.isEmpty()) {
+        if (cacheEnabled && "parallel".equals(mode) && !demo && failed.isEmpty()) {
             cache.put(date.toString(), new CacheEntry(OffsetDateTime.now().plusSeconds(DASHBOARD_CACHE_TTL_SECONDS), new LinkedHashMap<>(response)));
             if (redis != null) {
                 try {

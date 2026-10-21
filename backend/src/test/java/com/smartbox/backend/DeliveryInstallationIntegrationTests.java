@@ -216,4 +216,32 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
         UUID order=confirmedOrder(),job=job(order);actors.staff();orders.cancel(order,"Khách yêu cầu hủy trước giao");assertEquals("FAILED",jobs.detail(job).get("status"));assertEquals(10,stock());
         tech();assertThrows(ConflictException.class,()->jobs.progress(job,"START",new Note(null),version(job),UUID.randomUUID()));
     }
+    @Test void superAdminCanApproveAndRejectCompletionWhileTechnicianForbidden() {
+        UUID order = confirmedOrder(), job = job(order);
+        installed(job, order);
+        tech();
+        jobs.submitCompletion(job, new CompletionSubmission(List.of("https://res.cloudinary.com/test.png"), "Nộp ảnh"), version(job), UUID.randomUUID());
+        assertEquals("WAITING_PO_CONFIRMATION", jdbc.queryForObject("SELECT status FROM public.delivery_installations WHERE id=?", String.class, job));
+
+        tech();
+        assertThrows(ForbiddenException.class, () -> jobs.approveCompletion(job, new PoApprovalRequest("Duyệt"), version(job), UUID.randomUUID()));
+        assertThrows(ForbiddenException.class, () -> jobs.rejectCompletion(job, new RejectionRequest("Từ chối"), version(job), UUID.randomUUID()));
+
+        actors.customer();
+        assertThrows(ForbiddenException.class, () -> jobs.approveCompletion(job, new PoApprovalRequest("Duyệt"), version(job), UUID.randomUUID()));
+        assertThrows(ForbiddenException.class, () -> jobs.rejectCompletion(job, new RejectionRequest("Từ chối"), version(job), UUID.randomUUID()));
+
+        actors.actor.set(new CurrentActor.Actor(STAFF, "super_admin"));
+        jobs.rejectCompletion(job, new RejectionRequest("Ảnh mờ, chụp lại"), version(job), UUID.randomUUID());
+        assertEquals("IN_PROGRESS", jdbc.queryForObject("SELECT status FROM public.delivery_installations WHERE id=?", String.class, job));
+
+        tech();
+        jobs.submitCompletion(job, new CompletionSubmission(List.of("https://res.cloudinary.com/test2.png"), "Nộp lại"), version(job), UUID.randomUUID());
+        assertEquals("WAITING_PO_CONFIRMATION", jdbc.queryForObject("SELECT status FROM public.delivery_installations WHERE id=?", String.class, job));
+
+        actors.actor.set(new CurrentActor.Actor(STAFF, "super_admin"));
+        jobs.approveCompletion(job, new PoApprovalRequest("Super Admin duyệt đạt chuẩn"), version(job), UUID.randomUUID());
+        assertEquals("COMPLETED", jdbc.queryForObject("SELECT status FROM public.delivery_installations WHERE id=?", String.class, job));
+        assertEquals("completed", jdbc.queryForObject("SELECT status FROM public.orders WHERE id=?", String.class, order));
+    }
 }

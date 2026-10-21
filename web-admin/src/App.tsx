@@ -68,6 +68,22 @@ const RoleOrderDetailRedirect: React.FC = () => {
   return <Navigate to={`${prefix}/orders/${id}`} replace />;
 };
 
+const RoleWarrantyRedirect: React.FC = () => {
+  const { profile, loading } = useAuth();
+  if (loading) return null;
+  if (!profile) return <Navigate to="/login" replace />;
+  const prefix = profile.role === 'product_manager' ? '/po' : profile.role === 'technician' ? '/technician' : '/admin';
+  return <Navigate to={`${prefix}/warranties`} replace />;
+};
+
+const RoleCategoryRedirect: React.FC = () => {
+  const { profile, loading } = useAuth();
+  if (loading) return null;
+  if (!profile) return <Navigate to="/login" replace />;
+  const prefix = profile.role === 'product_manager' ? '/po' : '/admin';
+  return <Navigate to={`${prefix}/categories`} replace />;
+};
+
 const protect = (roles: UserRole[], node: React.ReactNode) => (
   <ProtectedRoute allowedRoles={roles}>{node}</ProtectedRoute>
 );
@@ -100,9 +116,10 @@ export const App: React.FC = () => (
                   <Route index element={<Products />} />
                   <Route path=":id" element={<ProductDetail />} />
                   <Route path="specifications" element={<VariantSpecificationsPage />} />
-                  <Route path="categories" element={<CategoriesPage />} />
+                  <Route path="categories" element={<Navigate to="/admin/categories" replace />} />
                 </Route>
 
+                <Route path="/admin/categories" element={<CategoriesPage />} />
                 <Route path="/admin/coupons" element={<CouponsPage />} />
 
                 <Route path="/admin/orders" element={<WorkspaceGroup group="admin-orders" />}>
@@ -111,6 +128,7 @@ export const App: React.FC = () => (
                   <Route path="approvals" element={<ApprovalTickets />} />
                   <Route path="approvals/:id" element={<TicketDetail />} />
                   <Route path="delivery" element={<DeliveryInstallations />} />
+                  <Route path="delivery/:jobId" element={<DeliveryInstallations />} />
                   <Route path="history" element={<OrderProcessingHistory />} />
                 </Route>
 
@@ -144,12 +162,22 @@ export const App: React.FC = () => (
                   <Route index element={<Products />} />
                   <Route path=":id" element={<ProductDetail />} />
                   <Route path="specifications" element={<VariantSpecificationsPage />} />
-                  <Route path="categories" element={<CategoriesPage />} />
+                  <Route path="categories" element={<Navigate to="/po/categories" replace />} />
                 </Route>
+
+                <Route path="/po/categories" element={<CategoriesPage />} />
 
                 <Route path="/po/approvals" element={<ApprovalTickets />} />
                 <Route path="/po/approvals/:id" element={<TicketDetail />} />
+                <Route path="/po/orders" element={<ApprovalTickets />} />
+                <Route path="/po/orders/:id" element={<TicketDetail />} />
                 <Route path="/po/delivery" element={<DeliveryInstallations />} />
+                <Route path="/po/delivery/:jobId" element={<DeliveryInstallations />} />
+                <Route path="/po/warranties" element={<WorkspaceGroup group="po-warranties" />}>
+                  <Route index element={<Warranties />} />
+                  <Route path="lookup" element={<WarrantyLookupPage />} />
+                  <Route path="claims" element={<Navigate to="/po/warranties" replace />} />
+                </Route>
                 <Route path="/po/coupons" element={<CouponsPage />} />
                 <Route path="/po/reports" element={<PoReports />} />
               </Route>
@@ -162,6 +190,7 @@ export const App: React.FC = () => (
                 <Route path="/technician/tasks" element={<TechnicianDailyTasks />} />
                 <Route path="/technician/dashboard" element={<Dashboard />} />
                 <Route path="/technician/delivery" element={<DeliveryInstallations />} />
+                <Route path="/technician/delivery/:jobId" element={<DeliveryInstallations />} />
                 <Route path="/technician/warranties" element={<Warranties />} />
                 <Route path="/technician/lookup" element={<WarrantyLookupPage />} />
               </Route>
@@ -173,15 +202,17 @@ export const App: React.FC = () => (
               <Route path="/products" element={<RoleDefaultRedirect />} />
               <Route path="/products/:id" element={<RoleProductDetailRedirect />} />
               <Route path="/products/specifications" element={<RoleDefaultRedirect />} />
-              <Route path="/products/categories" element={<RoleDefaultRedirect />} />
+              <Route path="/categories" element={<RoleCategoryRedirect />} />
+              <Route path="/products/categories" element={<RoleCategoryRedirect />} />
               <Route path="/orders" element={<RoleDefaultRedirect />} />
               <Route path="/orders/:id" element={<RoleOrderDetailRedirect />} />
               <Route path="/orders/approvals" element={<RoleDefaultRedirect />} />
               <Route path="/orders/delivery" element={<RoleDefaultRedirect />} />
               <Route path="/orders/history" element={<RoleDefaultRedirect />} />
               <Route path="/coupons" element={<RoleDefaultRedirect />} />
-              <Route path="/warranties" element={<RoleDefaultRedirect />} />
-              <Route path="/warranties/*" element={<RoleDefaultRedirect />} />
+              <Route path="/warranties" element={<RoleWarrantyRedirect />} />
+              <Route path="/warranties/*" element={<RoleWarrantyRedirect />} />
+              <Route path="/warranty" element={<RoleWarrantyRedirect />} />
               <Route path="/customers" element={<Navigate to="/admin/customers" replace />} />
               <Route path="/users" element={<Navigate to="/admin/users" replace />} />
               <Route path="/permissions" element={<Navigate to="/admin/users" replace />} />

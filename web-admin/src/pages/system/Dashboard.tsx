@@ -964,11 +964,12 @@ export const Dashboard: React.FC = () => {
             const pct = totalOrders > 0 ? (count / totalOrders) * 100 : 0;
             if (pct <= 0) return null;
             return (
-              <div
+              <Link
                 key={key}
+                to={`/orders?status=${cfg.filterKey}`}
                 className="fpt-track-segment"
-                style={{ width: `${pct}%`, background: cfg.color }}
-                title={`${cfg.label}: ${count} đơn (${pct.toFixed(1)}%)`}
+                style={{ width: `${pct}%`, background: cfg.color, cursor: 'pointer' }}
+                title={`${cfg.label}: ${count} đơn (${pct.toFixed(1)}%) - Bấm để xem danh sách`}
               />
             );
           })}

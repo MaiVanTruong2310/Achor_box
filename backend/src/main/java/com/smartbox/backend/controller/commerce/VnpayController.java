@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,9 @@ public class VnpayController {
     private final VnpayService vnpayService;
     private final PaymentService payments;
     private final VnpayGateway gateway;
+
+    @Value("${smartbox.vnpay.return-auto-confirm:false}")
+    private boolean returnAutoConfirm;
 
     @PostMapping("/create-url")
     @Operation(summary = "Tạo đường link thanh toán VNPAY cho đơn hàng", description = "Tạo URL chuyển hướng sang cổng thanh toán VNPAY Sandbox cho đơn hàng chỉ định")
@@ -57,7 +61,7 @@ public class VnpayController {
     public Map<String, Object> returned(@RequestParam MultiValueMap<String, String> query) {
         var notification = gateway.verify(query);
         boolean confirmed = false;
-        if (notification.success()) {
+        if ((returnAutoConfirm || "true".equalsIgnoreCase(query.getFirst("autoConfirm"))) && notification.success()) {
             try {
                 var ipnResult = payments.vnpayIpn(query);
                 confirmed = "00".equals(ipnResult.get("RspCode")) || "02".equals(ipnResult.get("RspCode"));

@@ -199,7 +199,7 @@ export const ProductDetail: React.FC = () => {
       <div className="product-detail-header-card">
         <div className="product-header-left">
           <div className="product-header-icon">
-            <Package size={28} />
+            <Package size={22} />
           </div>
           <div className="product-header-title-wrap">
             <h2>
@@ -209,9 +209,9 @@ export const ProductDetail: React.FC = () => {
                 type="button"
                 onClick={handleCopyId}
                 title="Sao chép ID sản phẩm"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center' }}
               >
-                {copied ? <Check size={16} style={{ color: '#10b981' }} /> : <Copy size={16} />}
+                {copied ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
               </button>
             </h2>
             <div className="product-meta-chips">
@@ -221,9 +221,9 @@ export const ProductDetail: React.FC = () => {
               <span>•</span>
               <span
                 style={{
-                  padding: '3px 10px',
-                  borderRadius: 12,
-                  fontSize: '0.78rem',
+                  padding: '2px 8px',
+                  borderRadius: 10,
+                  fontSize: '0.72rem',
                   fontWeight: 600,
                   color: product.is_active ? '#10b981' : '#ef4444',
                   backgroundColor: product.is_active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
@@ -234,7 +234,7 @@ export const ProductDetail: React.FC = () => {
               </span>
               <span>•</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
-                <Calendar size={13} /> Khởi tạo: {product.created_at ? new Date(product.created_at).toLocaleDateString('vi-VN') : '—'}
+                <Calendar size={12} /> Khởi tạo: {product.created_at ? new Date(product.created_at).toLocaleDateString('vi-VN') : '—'}
               </span>
             </div>
           </div>
@@ -242,8 +242,8 @@ export const ProductDetail: React.FC = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Giá gốc niêm yết</div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#ea580c' }}>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Giá gốc niêm yết</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ea580c' }}>
               {(product.price || 0).toLocaleString('vi-VN')} ₫
             </div>
           </div>
@@ -261,7 +261,7 @@ export const ProductDetail: React.FC = () => {
                 {selectedImage ? (
                   <img src={selectedImage} alt={product.name} />
                 ) : (
-                  <Package size={64} style={{ color: 'var(--text-muted)' }} />
+                  <Package size={40} style={{ color: 'var(--text-muted)' }} />
                 )}
               </div>
               {product.images && product.images.length > 1 && (
@@ -277,9 +277,9 @@ export const ProductDetail: React.FC = () => {
                   ))}
                 </div>
               )}
-              <div style={{ flex: 1, minWidth: 260 }}>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>Mô tả sản phẩm</h4>
-                <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+              <div style={{ flex: 1, minWidth: 240 }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '0.88rem', fontWeight: 600 }}>Mô tả sản phẩm</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
                   {product.description || 'Chưa có mô tả chi tiết cho sản phẩm này.'}
                 </p>
 
@@ -310,13 +310,13 @@ export const ProductDetail: React.FC = () => {
           <div className="product-card-panel">
             <div className="product-panel-header">
               <h3>
-                <Layers size={18} style={{ color: '#ea580c' }} />
+                <Layers size={16} style={{ color: '#ea580c' }} />
                 Danh Sách Biến Thể Kích Cỡ & Định Mức Tồn Kho
               </h3>
             </div>
 
             {variants.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+              <div style={{ textAlign: 'center', padding: '16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                 Sản phẩm chỉ có phiên bản tiêu chuẩn (chưa có biến thể phụ).
               </div>
             ) : (
@@ -340,7 +340,7 @@ export const ProductDetail: React.FC = () => {
                           <strong style={{ color: 'var(--text-primary)' }}>{v.variant_name || v.name}</strong>
                         </td>
                         <td>
-                          <code style={{ fontSize: '0.8rem', color: '#ea580c' }}>{v.sku}</code>
+                          <code style={{ fontSize: '0.74rem', color: '#ea580c' }}>{v.sku}</code>
                         </td>
                         <td>
                           {v.height_cm || v.width_cm || v.depth_cm ? (
@@ -361,9 +361,9 @@ export const ProductDetail: React.FC = () => {
                         <td style={{ textAlign: 'center' }}>
                           <span
                             style={{
-                              padding: '2px 8px',
-                              borderRadius: 10,
-                              fontSize: '0.75rem',
+                              padding: '2px 7px',
+                              borderRadius: 8,
+                              fontSize: '0.72rem',
                               fontWeight: 600,
                               background: (v.stock_quantity || 0) > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                               color: (v.stock_quantity || 0) > 0 ? '#10b981' : '#ef4444'
@@ -387,18 +387,18 @@ export const ProductDetail: React.FC = () => {
           <div className="product-card-panel">
             <div className="product-panel-header">
               <h3>
-                <History size={18} style={{ color: '#3b82f6' }} />
+                <History size={16} style={{ color: '#3b82f6' }} />
                 Lịch Sử Biến Động Xuất / Nhập Kho Sản Phẩm
               </h3>
             </div>
 
             {loadingMovements ? (
-              <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                <RefreshCw size={20} className="spin" style={{ marginBottom: 8 }} />
+              <div style={{ textAlign: 'center', padding: '16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <RefreshCw size={18} className="spin" style={{ marginBottom: 6 }} />
                 <div>Đang tải lịch sử kho…</div>
               </div>
             ) : movements.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+              <div style={{ textAlign: 'center', padding: '16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                 Chưa có ghi nhận giao dịch xuất nhập kho gần đây cho sản phẩm này.
               </div>
             ) : (
@@ -435,7 +435,7 @@ export const ProductDetail: React.FC = () => {
                                 color: isPositive ? '#10b981' : '#ef4444'
                               }}
                             >
-                              {isPositive ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                              {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                               {isPositive ? `+${delta}` : delta}
                             </span>
                           </td>
@@ -458,28 +458,28 @@ export const ProductDetail: React.FC = () => {
             <div className="product-card-panel">
               <div className="product-panel-header">
                 <h3>
-                  <ArrowUpDown size={18} style={{ color: '#ea580c' }} />
+                  <ArrowUpDown size={16} style={{ color: '#ea580c' }} />
                   {userRole === 'product_manager' ? 'Gửi Đề Xuất Điều Chỉnh Kho' : 'Điều Chỉnh Xuất / Nhập Kho Nhanh'}
                 </h3>
               </div>
 
               {userRole === 'product_manager' && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'var(--bg-surface-hover, rgba(234, 88, 12, 0.05))', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-subtle)', marginBottom: 12, lineHeight: 1.5 }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--bg-surface-hover, rgba(234, 88, 12, 0.05))', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', marginBottom: 10, lineHeight: 1.45 }}>
                   ℹ️ <strong>Quy trình PO:</strong> Yêu cầu xuất/nhập kho sẽ được gửi đến Quản trị viên (Admin) thẩm định và phê duyệt trước khi cập nhật số lượng tồn thực tế.
                 </div>
               )}
 
               {adjustMsg && (
-                <div style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontSize: '0.85rem', marginBottom: 12, border: '1px solid rgba(16, 185, 129, 0.25)', lineHeight: 1.4 }}>
-                  <CheckCircle2 size={16} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
+                <div style={{ padding: '8px 10px', borderRadius: 6, background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontSize: '0.78rem', marginBottom: 10, border: '1px solid rgba(16, 185, 129, 0.25)', lineHeight: 1.4 }}>
+                  <CheckCircle2 size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }} />
                   {adjustMsg}
                 </div>
               )}
 
-              <form onSubmit={handleAdjustStock} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <form onSubmit={handleAdjustStock} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {variants.length > 0 && (
                   <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                       Chọn biến thể
                     </label>
                     <select
@@ -487,13 +487,13 @@ export const ProductDetail: React.FC = () => {
                       onChange={(e) => setAdjustVariantId(e.target.value)}
                       style={{
                         width: '100%',
-                        padding: '9px 10px',
-                        borderRadius: 8,
+                        padding: '7px 9px',
+                        borderRadius: 6,
                         border: '1px solid var(--border-subtle)',
                         background: 'var(--bg-surface)',
                         color: 'var(--text-primary)',
                         marginTop: 4,
-                        fontSize: '0.85rem'
+                        fontSize: '0.8rem'
                       }}
                     >
                       {variants.map((v) => (
@@ -506,21 +506,21 @@ export const ProductDetail: React.FC = () => {
                 )}
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                     Thao tác kho
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 4 }}>
                     <button
                       type="button"
                       onClick={() => setAdjustType('in')}
                       style={{
-                        padding: '9px',
-                        borderRadius: 8,
-                        border: adjustType === 'in' ? '2px solid #10b981' : '1px solid var(--border-subtle)',
+                        padding: '7px',
+                        borderRadius: 6,
+                        border: adjustType === 'in' ? '1.5px solid #10b981' : '1px solid var(--border-subtle)',
                         background: adjustType === 'in' ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-surface)',
                         color: adjustType === 'in' ? '#10b981' : 'var(--text-secondary)',
                         fontWeight: 600,
-                        fontSize: '0.84rem',
+                        fontSize: '0.78rem',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
                       }}
@@ -531,13 +531,13 @@ export const ProductDetail: React.FC = () => {
                       type="button"
                       onClick={() => setAdjustType('out')}
                       style={{
-                        padding: '9px',
-                        borderRadius: 8,
-                        border: adjustType === 'out' ? '2px solid #ef4444' : '1px solid var(--border-subtle)',
+                        padding: '7px',
+                        borderRadius: 6,
+                        border: adjustType === 'out' ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
                         background: adjustType === 'out' ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-surface)',
                         color: adjustType === 'out' ? '#ef4444' : 'var(--text-secondary)',
                         fontWeight: 600,
-                        fontSize: '0.84rem',
+                        fontSize: '0.78rem',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
                       }}
@@ -548,7 +548,7 @@ export const ProductDetail: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                     Số lượng
                   </label>
                   <input
@@ -559,19 +559,19 @@ export const ProductDetail: React.FC = () => {
                     onChange={(e) => setAdjustDelta(Math.max(1, parseInt(e.target.value) || 1))}
                     style={{
                       width: '100%',
-                      padding: '9px 10px',
-                      borderRadius: 8,
+                      padding: '7px 9px',
+                      borderRadius: 6,
                       border: '1px solid var(--border-subtle)',
                       background: 'var(--bg-surface)',
                       color: 'var(--text-primary)',
                       marginTop: 4,
-                      fontSize: '0.85rem'
+                      fontSize: '0.8rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                     Lý do điều chỉnh
                   </label>
                   <input
@@ -581,13 +581,13 @@ export const ProductDetail: React.FC = () => {
                     placeholder="VD: Nhập xưởng lô mới, điều chuyển..."
                     style={{
                       width: '100%',
-                      padding: '9px 10px',
-                      borderRadius: 8,
+                      padding: '7px 9px',
+                      borderRadius: 6,
                       border: '1px solid var(--border-subtle)',
                       background: 'var(--bg-surface)',
                       color: 'var(--text-primary)',
                       marginTop: 4,
-                      fontSize: '0.85rem'
+                      fontSize: '0.8rem'
                     }}
                   />
                 </div>
@@ -596,15 +596,15 @@ export const ProductDetail: React.FC = () => {
                   type="submit"
                   disabled={adjustSubmitting}
                   style={{
-                    padding: '11px 16px',
-                    borderRadius: 8,
+                    padding: '8px 14px',
+                    borderRadius: 6,
                     border: 'none',
                     background: adjustType === 'in' ? '#10b981' : '#ef4444',
                     color: '#fff',
                     fontWeight: 600,
-                    fontSize: '0.85rem',
+                    fontSize: '0.8rem',
                     cursor: 'pointer',
-                    marginTop: 6,
+                    marginTop: 4,
                     transition: 'opacity 0.18s ease'
                   }}
                 >
@@ -622,11 +622,11 @@ export const ProductDetail: React.FC = () => {
           <div className="product-card-panel">
             <div className="product-panel-header">
               <h3>
-                <Shield size={18} style={{ color: '#10b981' }} />
+                <Shield size={16} style={{ color: '#10b981' }} />
                 Chính Sách Bảo Hành & Lắp Đặt
               </h3>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
               <div>• <strong>Bảo hành chính hãng:</strong> 12 - 24 tháng theo từng biến thể kích cỡ SmartBox.</div>
               <div>• <strong>Hỗ trợ kỹ thuật:</strong> Đội ngũ kỹ thuật viên SmartBox hỗ trợ lắp đặt tận nơi.</div>
               <div>• <strong>Kiểm định:</strong> Tiêu chuẩn chống nước IP54 / IP65 theo quy chuẩn công nghiệp.</div>

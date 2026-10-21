@@ -164,7 +164,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }else if (path.startsWith("/api/audit-logs")) {
             allowed = read ? Set.of("super_admin", "product_manager") : Set.of("super_admin"); 
         }else if (path.startsWith("/api/settings")) {
-            allowed = read || path.startsWith("/api/settings/categories") || path.endsWith("/test-send") ? Set.of("super_admin", "product_manager") : Set.of("super_admin"); 
+            allowed = read || path.endsWith("/test-send") ? Set.of("super_admin", "product_manager") : Set.of("super_admin"); 
         }else if (path.startsWith("/api/products")) {
             allowed = read ? Set.of("super_admin", "product_manager") : Set.of("super_admin", "product_manager"); 
         }else if (path.startsWith("/api/promotions")) {

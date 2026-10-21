@@ -70,7 +70,7 @@ public class DeliveryInstallationService {
 
     private boolean manager(){return Set.of("super_admin","product_manager").contains(actors.get().role());}
     private void manage(){actors.get().requireRoles("super_admin","product_manager");}
-    private void poOnly(){actors.get().requireRoles("product_manager");}
+    private void poOnly(){actors.get().requireRoles("super_admin","product_manager");}
     private void assigned(Map<String,Object> job){
         actors.get().requireRoles("technician");
         if(!actors.get().id().equals(uuid(job.get("assigned_to"))))throw new ForbiddenException("JOB_NOT_ASSIGNED");
@@ -212,6 +212,18 @@ public class DeliveryInstallationService {
 
     @Transactional
     public Map<String,Object> progress(UUID id,String action,Object request,String header,UUID key){
+        var jobList = db.list("SELECT * FROM public.delivery_installations WHERE id=?", id);
+        if (jobList.isEmpty()) {
+            var claimList = db.list("SELECT * FROM public.warranty_claims WHERE id=?", id);
+            if (!claimList.isEmpty()) {
+                actors.get().requireRoles("technician", "product_manager", "super_admin");
+                if ("START".equalsIgnoreCase(action)) {
+                    db.update("UPDATE public.warranty_claims SET status=CAST('in_progress' AS public.claim_status) WHERE id=?", id);
+                    db.audit(actors.get().id(), "WARRANTY_CLAIM_STARTED", "warranty_claims", id, "Technician started maintenance");
+                    return Map.of("id", id.toString(), "status", "IN_PROGRESS", "statusLabel", "Đang thực hiện");
+                }
+            }
+        }
         var job=locked(id);
         if("REASSIGN".equals(action))manage();else if(!("FAIL".equals(action)&&manager()))assigned(job);
         long expected=version(header);String hash=fingerprint(id,action,request,expected);var replay=cached(key,hash);if(replay!=null)return replay;
@@ -470,7 +482,44 @@ public class DeliveryInstallationService {
             result.put("installationNote",job.get("installation_note"));result.put("failureReason",job.get("failure_reason"));
             var order=db.order(uuid(job.get("order_id")),false);var profile=db.one("SELECT full_name,phone,email FROM public.profiles WHERE id=?",order.get("user_id"));
             var snapshot=customers.readSnapshot(order.get("shipping_address_snapshot"));
-            var contact=new LinkedHashMap<String,Object>();contact.put("fullName",snapshot==null?profile.get("full_name"):snapshot.get("recipientName"));contact.put("phone",snapshot==null?profile.get("phone"):snapshot.get("phone"));contact.put("email",snapshot==null?profile.get("email"):snapshot.get("email"));contact.put("shippingAddress",order.get("shipping_address"));contact.put("installationNote",snapshot==null?null:snapshot.get("installationNote"));result.put("customer",contact);
+            var contact=new LinkedHashMap<String,Object>();
+            String cName = snapshot==null?(profile==null?null:Objects.toString(profile.get("full_name"),null)):Objects.toString(snapshot.get("recipientName"),null);
+            String cPhone = snapshot==null?(profile==null?null:Objects.toString(profile.get("phone"),null)):Objects.toString(snapshot.get("phone"),null);
+            String cEmail = snapshot==null?(profile==null?null:Objects.toString(profile.get("email"),null)):Objects.toString(snapshot.get("email"),null);
+            String finalAddress = (snapshot != null && snapshot.get("addressLine") != null && !snapshot.get("addressLine").toString().isBlank())
+                    ? snapshot.get("addressLine").toString()
+                    : Objects.toString(order.get("shipping_address"), "");
+            contact.put("fullName", cName != null ? cName : "Khách hàng");
+            contact.put("phone", cPhone != null ? cPhone : "");
+            contact.put("email", cEmail != null ? cEmail : "");
+            contact.put("shippingAddress", finalAddress);
+            contact.put("installationNote", snapshot==null?null:snapshot.get("installationNote"));
+            result.put("customer", contact);
+            result.put("customerName", contact.get("fullName"));
+            result.put("customerPhone", contact.get("phone"));
+            result.put("shippingAddress", finalAddress);
+
+            if (job.get("assigned_to") != null) {
+                var tech = db.list("SELECT full_name, phone, email FROM public.profiles WHERE id=?", job.get("assigned_to"));
+                String techName = "Kỹ thuật viên SmartBox";
+                String techPhone = "";
+                String techEmail = "";
+                if (!tech.isEmpty()) {
+                    var t = tech.getFirst();
+                    if (t.get("full_name") != null && !t.get("full_name").toString().isBlank()) {
+                        techName = t.get("full_name").toString();
+                    }
+                    techPhone = Objects.toString(t.get("phone"), "");
+                    techEmail = Objects.toString(t.get("email"), "");
+                }
+                result.put("technician", Map.of(
+                    "fullName", techName,
+                    "phone", techPhone,
+                    "email", techEmail
+                ));
+                result.put("technicianName", techName);
+                if (!techPhone.isBlank()) result.put("technicianPhone", techPhone);
+            }
             result.put("items",db.list("SELECT id,quantity,product_name_snapshot AS \"productName\",variant_name_snapshot AS \"variantName\",sku_snapshot AS sku FROM public.order_items WHERE order_id=? ORDER BY id",job.get("order_id")));
             result.put("history",db.list("SELECT actor_id AS \"actorId\",action,from_status AS \"fromStatus\",to_status AS \"toStatus\",reason,attempt,version,created_at AS \"createdAt\" FROM public.delivery_installation_history WHERE job_id=? ORDER BY created_at,id",job.get("id")).stream().map(this::wireRow).toList());
         }
@@ -492,6 +541,39 @@ public class DeliveryInstallationService {
         for(String key:List.of("scheduled_at","estimated_end_time","created_at","updated_at","completed_at"))result.put(camel(key),iso(job.get(key)));
         result.put("completionNote", job.get("completion_note"));
         result.put("reworkNotes", job.get("rework_notes"));
+        if (job.get("technician_name") != null && !job.get("technician_name").toString().isBlank()) {
+            result.put("technicianName", job.get("technician_name"));
+        } else if (job.get("assigned_to") != null) {
+            result.put("technicianName", "Kỹ thuật viên SmartBox");
+        }
+        if (job.get("technician_phone") != null && !job.get("technician_phone").toString().isBlank()) {
+            result.put("technicianPhone", job.get("technician_phone"));
+        }
+        if (job.get("customer_name") != null && !job.get("customer_name").toString().isBlank()) {
+            result.put("customerName", job.get("customer_name"));
+        }
+        if (job.get("customer_phone") != null && !job.get("customer_phone").toString().isBlank()) {
+            result.put("customerPhone", job.get("customer_phone"));
+        }
+        if (job.get("shipping_address") != null && !job.get("shipping_address").toString().isBlank()) {
+            result.put("shippingAddress", job.get("shipping_address"));
+        }
+        if (job.get("shipping_address_snapshot") != null) {
+            try {
+                var snap = customers.readSnapshot(job.get("shipping_address_snapshot"));
+                if (snap != null) {
+                    if (result.get("customerName") == null && snap.get("recipientName") != null && !snap.get("recipientName").toString().isBlank()) {
+                        result.put("customerName", snap.get("recipientName"));
+                    }
+                    if (result.get("customerPhone") == null && snap.get("phone") != null && !snap.get("phone").toString().isBlank()) {
+                        result.put("customerPhone", snap.get("phone"));
+                    }
+                    if (result.get("shippingAddress") == null && snap.get("addressLine") != null && !snap.get("addressLine").toString().isBlank()) {
+                        result.put("shippingAddress", snap.get("addressLine"));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
         if (job.get("completion_photos") != null) {
             try {
                 result.put("completionPhotos", json.readValue(job.get("completion_photos").toString(), new TypeReference<List<String>>(){}));
@@ -507,9 +589,21 @@ public class DeliveryInstallationService {
     @Transactional(readOnly=true)
     public Map<String,Object> list(boolean mine,int page,int size,String status){
         if(mine)actors.get().requireRoles("technician");else manage();page(page,size);if(status!=null&&!STATUSES.contains(status))throw new BadRequestException("INVALID_JOB_STATUS");
-        String where=" WHERE 1=1";List<Object> args=new ArrayList<>();if(mine){where+=" AND assigned_to=?";args.add(actors.get().id());}if(status!=null){where+=" AND status=?";args.add(status);}
-        long total=((Number)db.one("SELECT count(*) AS total FROM public.delivery_installations"+where,args.toArray()).get("total")).longValue();args.add(size);args.add((long)page*size);
-        var content=db.list("SELECT * FROM public.delivery_installations"+where+" ORDER BY scheduled_at,id LIMIT ? OFFSET ?",args.toArray()).stream().map(this::summary).toList();
+        String where=" WHERE 1=1";List<Object> args=new ArrayList<>();
+        if(mine){where+=" AND j.assigned_to=?";args.add(actors.get().id());}
+        if(status!=null){where+=" AND j.status=?";args.add(status);}
+        long total=((Number)db.one("SELECT count(*) AS total FROM public.delivery_installations j"+where,args.toArray()).get("total")).longValue();
+        args.add(size);args.add((long)page*size);
+        String sql = "SELECT j.*, " +
+                "tech.full_name AS technician_name, tech.phone AS technician_phone, " +
+                "o.shipping_address, o.shipping_address_snapshot, " +
+                "cust.full_name AS customer_name, cust.phone AS customer_phone " +
+                "FROM public.delivery_installations j " +
+                "LEFT JOIN public.profiles tech ON tech.id = j.assigned_to " +
+                "LEFT JOIN public.orders o ON o.id = j.order_id " +
+                "LEFT JOIN public.profiles cust ON cust.id = o.user_id " +
+                where + " ORDER BY j.scheduled_at DESC, j.id DESC LIMIT ? OFFSET ?";
+        var content=db.list(sql,args.toArray()).stream().map(this::summary).toList();
         return Map.of("content",content,"page",page,"size",size,"totalElements",total,"totalPages",(total+size-1)/size);
     }
     @Transactional(readOnly=true)
@@ -524,6 +618,44 @@ public class DeliveryInstallationService {
 
     @Transactional
     public Map<String, Object> submitCompletion(UUID id, CompletionSubmission request, String header, UUID key) {
+        var jobList = db.list("SELECT * FROM public.delivery_installations WHERE id=?", id);
+        if (jobList.isEmpty()) {
+            var claimList = db.list("SELECT * FROM public.warranty_claims WHERE id=?", id);
+            if (!claimList.isEmpty()) {
+                var claim = claimList.getFirst();
+                actors.get().requireRoles("technician", "product_manager", "super_admin");
+                String note = (request != null && request.completionNote() != null) ? request.completionNote().trim() : null;
+                if (note != null && !note.isBlank()) {
+                    db.update("UPDATE public.warranty_claims SET internal_notes=? WHERE id=?", note, id);
+                }
+                List<String> current = new ArrayList<>();
+                if (claim.get("images") != null && !claim.get("images").toString().isBlank()) {
+                    try {
+                        current.addAll(json.readValue(claim.get("images").toString(), new TypeReference<List<String>>(){}));
+                    } catch (Exception ignored) {}
+                }
+                if (request != null && request.proofPhotos() != null) {
+                    for (String photo : request.proofPhotos()) {
+                        if (photo != null && !photo.isBlank() && !current.contains(photo.trim())) {
+                            current.add(photo.trim());
+                        }
+                    }
+                }
+                if (!current.isEmpty()) {
+                    try {
+                        db.update("UPDATE public.warranty_claims SET images=?::jsonb WHERE id=?", json.writeValueAsString(current), id);
+                    } catch (Exception ignored) {}
+                }
+                db.update("UPDATE public.warranty_claims SET status=CAST('resolved' AS public.claim_status), resolved_at=? WHERE id=?", now(), id);
+                db.audit(actors.get().id(), "WARRANTY_CLAIM_RESOLVED", "warranty_claims", id, "Technician resolved claim via daily task");
+                var res = new LinkedHashMap<String, Object>();
+                res.put("id", id.toString());
+                res.put("status", "RESOLVED");
+                res.put("statusLabel", "Đã hoàn thành");
+                res.put("resolvedAt", now().toString());
+                return res;
+            }
+        }
         var job = locked(id);
         assigned(job);
         long expected = version(header);
@@ -895,7 +1027,13 @@ public class DeliveryInstallationService {
             card.put("shortAddress", shortAddr);
             card.put("installationNote", c.get("description"));
             card.put("completionNote", c.get("internal_notes"));
-            card.put("completionPhotos", List.of());
+            List<String> claimPhotos = List.of();
+            if (c.get("images") != null && !c.get("images").toString().isBlank()) {
+                try {
+                    claimPhotos = json.readValue(c.get("images").toString(), new TypeReference<List<String>>(){});
+                } catch(Exception ignored) {}
+            }
+            card.put("completionPhotos", claimPhotos);
             card.put("reworkNotes", null);
             card.put("completedAt", iso(c.get("resolved_at")));
             card.put("items", List.of());

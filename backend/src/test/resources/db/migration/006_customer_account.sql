@@ -16,7 +16,7 @@ CREATE FUNCTION public.guard_order_address_snapshot() RETURNS trigger LANGUAGE p
 BEGIN
  IF OLD.status::text<>'pending' AND (
   NEW.shipping_address IS DISTINCT FROM OLD.shipping_address OR
-  NEW.shipping_address_snapshot IS DISTINCT FROM OLD.shipping_address_snapshot OR
+  (NEW.shipping_address_snapshot IS DISTINCT FROM OLD.shipping_address_snapshot AND OLD.shipping_address_snapshot IS NOT NULL) OR
   NEW.source_address_id IS DISTINCT FROM OLD.source_address_id
  ) THEN
   RAISE EXCEPTION 'ORDER_ADDRESS_FROZEN' USING ERRCODE='23514';

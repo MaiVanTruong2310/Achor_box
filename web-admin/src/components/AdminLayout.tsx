@@ -24,7 +24,8 @@ import {
   Ticket,
   Edit3,
   Globe,
-  Truck
+  Truck,
+  FolderTree
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -38,6 +39,7 @@ import './admin-workspace.css';
 const icons = {
   dashboard: LayoutDashboard,
   products: Package,
+  categories: FolderTree,
   coupons: Ticket,
   orders: ShoppingBag,
   delivery: Truck,
@@ -153,13 +155,31 @@ const Shell: React.FC = () => {
     <div className={`admin-workspace ${compact ? 'compact' : ''}`}>
       {mobile && <button className="workspace-scrim" aria-label="Đóng menu" onClick={() => setMobile(false)} />}
       <aside className={`workspace-sidebar ${mobile ? 'open' : ''}`} aria-label="Menu quản trị">
-        <NavLink to={profile ? getRoleDefaultPath(profile.role) : '/login'} className="workspace-brand">
-          <img src="/Logo.png" alt="Anchor Box" />
-          <div className="workspace-brand-info">
-            <strong>Anchor Box</strong>
-            <span className="workspace-brand-badge">Retail OS</span>
-          </div>
-        </NavLink>
+        <div className="workspace-brand-row">
+          <NavLink to={profile ? getRoleDefaultPath(profile.role) : '/login'} className="workspace-brand">
+            <img src="/Logo.png" alt="Anchor Box" />
+            <div className="workspace-brand-info">
+              <strong>Anchor Box</strong>
+              <span className="workspace-brand-badge">Retail OS</span>
+            </div>
+          </NavLink>
+          {!compact && (
+            <button
+              type="button"
+              className="workspace-collapse-btn-header"
+              onClick={() => {
+                setCompact((value) => {
+                  localStorage.setItem('smartbox_nav_compact', String(!value));
+                  return !value;
+                });
+              }}
+              title="Thu gọn menu"
+              aria-label="Thu gọn menu"
+            >
+              <PanelLeftClose size={15} />
+            </button>
+          )}
+        </div>
 
         <nav>
           {visible.map((item) => {
@@ -167,33 +187,46 @@ const Shell: React.FC = () => {
             const isOrder = item.path.includes('/orders') || item.path.includes('/approvals') || item.path.includes('/delivery');
             const badgeCount = isOrder ? feed.pendingOrdersCount : 0;
             return (
-              <NavLink key={item.path} to={item.path} title={compact ? item.label : undefined}>
-                <Icon size={19} />
-                <span>{item.label}</span>
-                {badgeCount > 0 && (
-                  <span className="workspace-nav-badge" title={`${badgeCount} đơn hàng cần xử lý`}>
-                    {badgeCount > 99 ? '99+' : badgeCount}
-                  </span>
-                )}
-              </NavLink>
+              <React.Fragment key={item.path}>
+                {item.dividerBefore && <div className="workspace-nav-divider" />}
+                <NavLink to={item.path} title={compact ? item.label : undefined}>
+                  <Icon size={17} />
+                  <span>{item.label}</span>
+                  {badgeCount > 0 && (
+                    <span className="workspace-nav-badge" title={`${badgeCount} đơn hàng cần xử lý`}>
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </span>
+                  )}
+                </NavLink>
+              </React.Fragment>
             );
           })}
         </nav>
 
         <div className="workspace-sidebar-footer">
           <button
+            type="button"
+            className="footer-btn collapse-toggle"
             onClick={() => {
               setCompact((value) => {
                 localStorage.setItem('smartbox_nav_compact', String(!value));
                 return !value;
               });
             }}
+            title={compact ? "Mở rộng menu" : "Thu gọn menu"}
+            aria-label={compact ? "Mở rộng menu" : "Thu gọn menu"}
           >
-            {compact ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-            <span>Thu gọn menu</span>
+            {compact ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={14} />}
+            <span>Thu gọn</span>
           </button>
-          <button onClick={() => void logout()}>
-            <LogOut size={18} />
+          <button
+            type="button"
+            className="footer-btn logout-action"
+            onClick={() => void logout()}
+            title="Đăng xuất khỏi hệ thống"
+            aria-label="Đăng xuất"
+          >
+            <LogOut size={14} />
             <span>Đăng xuất</span>
           </button>
         </div>

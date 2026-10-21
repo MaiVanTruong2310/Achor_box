@@ -28,7 +28,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Plus
 } from 'lucide-react';
 import { ExtendedOrder } from '../../services/api';
 import { adminCatalogApi } from '../../services/adminCatalogApi';
@@ -98,6 +99,62 @@ const renderOrderStatusBadge = (status: string) => {
   }
 };
 
+const renderOrderPaymentStatusBadge = (ord: ExtendedOrder) => {
+  const isCancelled = ord.status === 'cancelled';
+  const isPaid = ord.payment_status === 'paid' || Boolean((ord as any).paid_at);
+  const isRefunded = ord.payment_status === 'refunded';
+
+  if (isCancelled) {
+    if (isRefunded) {
+      return (
+        <span style={{ color: '#0284c7', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+          <RotateCcw size={12} /> Đã hoàn tiền
+        </span>
+      );
+    }
+    if (isPaid) {
+      return (
+        <span
+          style={{ color: '#059669', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}
+          title="Đơn đã hủy nhưng đã thanh toán trước đó - Cần đối soát hoàn tiền"
+        >
+          <Check size={12} /> Đã thanh toán (Đã hủy)
+        </span>
+      );
+    }
+    return (
+      <span
+        style={{ color: '#64748b', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}
+        title="Đơn hàng đã hủy khi chưa thanh toán"
+      >
+        <XCircle size={12} style={{ color: '#94a3b8' }} /> Chưa thanh toán
+      </span>
+    );
+  }
+
+  if (isPaid) {
+    return (
+      <span style={{ color: 'var(--fpt-emerald)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+        <Check size={12} /> Đã quyết toán
+      </span>
+    );
+  }
+
+  if (isRefunded) {
+    return (
+      <span style={{ color: '#0284c7', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+        <RotateCcw size={12} /> Đã hoàn tiền
+      </span>
+    );
+  }
+
+  return (
+    <span style={{ color: 'var(--fpt-amber)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+      <Clock size={12} /> Chờ thanh toán
+    </span>
+  );
+};
+
 const ticketStatusLabels: Record<string, { label: string; bg: string; color: string; border: string }> = {
   PENDING: { label: 'Chờ thẩm định', bg: 'var(--fpt-amber-soft)', color: 'var(--fpt-amber)', border: 'rgba(245, 158, 11, 0.25)' },
   APPROVED: { label: 'Đã phê duyệt', bg: 'var(--fpt-emerald-soft)', color: 'var(--fpt-emerald)', border: 'rgba(16, 185, 129, 0.25)' },
@@ -134,15 +191,48 @@ interface TicketData {
 export const Orders: React.FC = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialOrderId = searchParams.get('orderId');
+
+  const validStatusKeys = useMemo(
+    () => ['all', 'pending', 'awaiting_payment', 'paid', 'confirmed', 'completed', 'cancelled'],
+    []
+  );
+
+  const getStatusFromUrl = (params: URLSearchParams) => {
+    const raw = (params.get('status') || '').trim().toLowerCase();
+    return validStatusKeys.includes(raw) ? raw : 'all';
+  };
 
   const [invoiceOrder, setInvoiceOrder] = useState<string | null>(null);
   const [orders, setOrders] = useState<ExtendedOrder[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>(() => getStatusFromUrl(searchParams));
+
+  // Sync statusFilter if URL query param changes (e.g. clicked from Dashboard or browser Back/Forward)
+  useEffect(() => {
+    const fromUrl = getStatusFromUrl(searchParams);
+    if (fromUrl !== statusFilter) {
+      setStatusFilter(fromUrl);
+      setPage(0);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (key: string) => {
+    setStatusFilter(key);
+    setPage(0);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (key === 'all') {
+        next.delete('status');
+      } else {
+        next.set('status', key);
+      }
+      return next;
+    }, { replace: true });
+  };
 
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -457,11 +547,11 @@ export const Orders: React.FC = () => {
 
   // Financial totals for current page
   const paidRevenue = orders
-    .filter((o) => o.payment_status === 'paid')
+    .filter((o) => o.payment_status === 'paid' && o.status !== 'cancelled')
     .reduce((acc, o) => acc + Number(o.total || 0), 0);
 
   const pendingRevenue = orders
-    .filter((o) => o.payment_status === 'pending')
+    .filter((o) => o.payment_status === 'pending' && o.status !== 'cancelled')
     .reduce((acc, o) => acc + Number(o.total || 0), 0);
 
   const completedCount = orders.filter((o) => o.status === 'completed').length;
@@ -517,21 +607,12 @@ export const Orders: React.FC = () => {
           {isAdmin && (
             <button
               type="button"
-              className="btn btn-primary"
+              className="btn-create-order"
               onClick={() => setIsCreateOrderModalOpen(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                borderColor: '#1d4ed8',
-                fontWeight: 700,
-                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
-              }}
               title="Tạo đơn hàng mới cho khách hàng (Chờ PO thẩm định)"
             >
-              <ShoppingBag size={16} />
-              <span>+ Tạo đơn hàng mới</span>
+              <Plus size={16} strokeWidth={2.4} />
+              <span>Tạo đơn hàng mới</span>
             </button>
           )}
 
@@ -624,10 +705,7 @@ export const Orders: React.FC = () => {
                 key={tab.key}
                 type="button"
                 className={`orders-tab-btn ${isActive ? 'active' : ''}`}
-                onClick={() => {
-                  setStatusFilter(tab.key);
-                  setPage(0);
-                }}
+                onClick={() => handleTabChange(tab.key)}
               >
                 <span>{tab.label}</span>
                 <span className="orders-tab-count">{count}</span>
@@ -688,6 +766,11 @@ export const Orders: React.FC = () => {
                   setPaymentFilter('all');
                   setStatusFilter('all');
                   setPage(0);
+                  setSearchParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.delete('status');
+                    return next;
+                  }, { replace: true });
                 }}
                 title="Khôi phục toàn bộ bộ lọc"
               >
@@ -823,8 +906,9 @@ export const Orders: React.FC = () => {
                 </tr>
               ) : (
                 sortedOrders.map((ord) => {
+                  const isTerminalStatus = ['completed', 'delivered', 'cancelled', 'refunded'].includes(ord.status);
                   const isPaid = ord.payment_status === 'paid' || ['paid', 'confirmed', 'processing'].includes(ord.status);
-                  const canDispatch = isPaid && ['super_admin', 'product_manager'].includes(profile?.role || '');
+                  const canDispatch = !isTerminalStatus && isPaid && ['super_admin', 'product_manager'].includes(profile?.role || '');
 
                   return (
                     <tr
@@ -865,15 +949,7 @@ export const Orders: React.FC = () => {
                           {ord.payment_method?.toUpperCase() || 'CHƯA CHỌN'}
                         </div>
                         <div style={{ fontSize: '0.72rem', marginTop: '2px' }}>
-                          {ord.payment_status === 'paid' ? (
-                            <span style={{ color: 'var(--fpt-emerald)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                              <Check size={12} /> Đã quyết toán
-                            </span>
-                          ) : (
-                            <span style={{ color: 'var(--fpt-amber)', fontWeight: 600 }}>
-                              {ord.payment_status === 'refunded' ? 'Đã hoàn tiền' : 'Chờ thanh toán'}
-                            </span>
-                          )}
+                          {renderOrderPaymentStatusBadge(ord)}
                         </div>
                       </td>
 
@@ -1125,9 +1201,19 @@ export const Orders: React.FC = () => {
                       </div>
                       <div>
                         <span style={{ color: 'var(--text-muted)' }}>Trạng thái thanh toán: </span>
-                        <strong style={{ color: selectedOrder.payment_status === 'paid' ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>
-                          {selectedOrder.payment_status === 'paid' ? 'Đã ghi nhận thanh toán' : selectedOrder.payment_status || 'Chưa thanh toán'}
-                        </strong>
+                        {selectedOrder.status === 'cancelled' ? (
+                          selectedOrder.payment_status === 'refunded' ? (
+                            <strong style={{ color: '#0284c7' }}>Đã hoàn tiền (Đơn đã hủy)</strong>
+                          ) : selectedOrder.payment_status === 'paid' || Boolean((selectedOrder as any).paid_at) ? (
+                            <strong style={{ color: '#059669' }}>Đã thanh toán (Cần đối soát hoàn tiền)</strong>
+                          ) : (
+                            <strong style={{ color: '#64748b' }}>Chưa thanh toán (Đơn đã hủy)</strong>
+                          )
+                        ) : (
+                          <strong style={{ color: selectedOrder.payment_status === 'paid' ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>
+                            {selectedOrder.payment_status === 'paid' ? 'Đã ghi nhận thanh toán' : 'Chờ thanh toán'}
+                          </strong>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1372,6 +1458,7 @@ export const Orders: React.FC = () => {
 
               <div style={{ display: 'flex', gap: '10px' }}>
                 {(profile?.role === 'super_admin' || profile?.role === 'product_manager') &&
+                  !['completed', 'delivered', 'cancelled', 'refunded'].includes(selectedOrder.status) &&
                   (selectedOrder.payment_status === 'paid' || ['paid', 'confirmed', 'processing'].includes(selectedOrder.status)) && (
                   <button
                     type="button"
