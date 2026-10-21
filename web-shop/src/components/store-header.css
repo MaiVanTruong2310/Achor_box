@@ -1,0 +1,43 @@
+.commerce-header{position:relative;z-index:50;background:#ffb545;color:#142337;border-bottom:1px solid var(--brand-blue-border);box-shadow:0 3px 14px #10233c08}
+.commerce-header-main{display:flex;align-items:center;gap:30px;min-height:110px;padding-block:24px}
+.commerce-header .brand{flex:none;font-size:29px;gap:9px;letter-spacing:-1.2px}
+.commerce-header .brand-icon{background:#17283d;border:0;color:#fff;box-shadow:none;width:38px;height:38px;border-radius:10px;font-size:22px;transform:rotate(-8deg)}
+.commerce-header .brand-dot{color:#fff}
+.commerce-search{display:flex;align-items:stretch;flex:1;min-width:0;height:50px;border:1px solid var(--brand-blue-border);border-radius:7px;background:white;overflow:hidden}
+.commerce-search label{margin:0;min-width:0;display:flex;align-items:stretch}
+.commerce-search-category{flex:0 0 105px;border-right:1px solid #e4e7eb}
+.commerce-search select{height:100%;width:100%;border:0;border-radius:0;margin:0;background:#fff;padding:0 12px;font-size:13px;min-height:0;color:#253b50}
+.commerce-search-query{flex:1}
+.commerce-search input{height:100%;width:100%;min-width:0;border:0;border-radius:0;margin:0;background:white;padding:0 16px;font-size:13px;min-height:0}
+.commerce-search button{border:0;border-radius:0;background:#17283d;color:#fff;font-size:13px;font-weight:650;padding:0 18px;min-height:0}
+.commerce-search button:hover{background:#293f58}
+.commerce-header-actions{display:flex;align-items:center;gap:22px;flex:none}
+.commerce-icon-action{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:600;min-height:50px;white-space:nowrap}
+.commerce-bag{position:relative;display:flex}
+.commerce-bag small{position:absolute;top:-6px;right:-10px;min-width:19px;height:19px;padding:0 4px;background:#142337;color:white;border:2px solid #ffb545;border-radius:50%;display:grid;place-items:center;font-size:10px}
+.commerce-account{display:flex;align-items:center;gap:9px;min-width:0;max-width:145px}
+.commerce-account>div{display:flex;flex-direction:column;min-width:0;line-height:1.5}
+.commerce-account a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:650;padding-block:2px}
+.commerce-account a:hover{text-decoration:underline}
+.commerce-account button{min-height:0;padding:2px 0;justify-content:flex-start;border:0;background:transparent;font-size:10px;gap:4px}
+.commerce-header .notification-bell{background:#ffffff3b;border-color:var(--brand-blue-border);color:#142337}
+.commerce-header-bottom{border-top:1px solid #1423371c}
+.commerce-header-navrow{display:flex;align-items:center;min-height:56px;gap:26px;position:relative}
+.commerce-departments{position:relative;flex:none;align-self:stretch;display:flex;align-items:center}
+.commerce-departments>button{border:0;border-radius:0;background:transparent;padding:0;min-height:48px;font-size:13px;font-weight:700;gap:10px}
+.commerce-department-list{position:absolute;left:0;top:100%;min-width:240px;max-width:calc(100vw - 32px);background:#fff;box-shadow:0 14px 36px #16283e24;border:1px solid #e4e8ed;border-radius:0 0 12px 12px;padding:10px;max-height:65vh;overflow-y:auto}
+.commerce-department-list a{display:block;padding:10px 12px;border-radius:7px;font-size:13px}
+.commerce-department-list a:hover{background:var(--brand-blue-soft);color:var(--brand-blue-hover)}
+.commerce-department-list p{font-size:12px;color:#526176;padding:0 12px;margin:8px 0}
+.commerce-department-list>div>button{margin:0 12px;font-size:12px;min-height:34px;padding:5px 12px}
+.commerce-main-nav{display:flex;align-items:center;gap:22px;min-width:0}
+.commerce-main-nav a{display:flex;align-items:center;min-height:48px;font-size:12px;font-weight:550;white-space:nowrap;border-bottom:2px solid transparent}
+.commerce-main-nav a:hover,.commerce-main-nav a.active{border-bottom-color:#142337;color:#142337}
+.commerce-header-support{margin-left:auto;display:flex;align-items:center;gap:15px;font-size:11px;white-space:nowrap}
+.commerce-header-support a{display:flex;align-items:center;gap:6px;min-height:40px}
+.commerce-header-support a+a{border-left:1px solid #14233730;padding-left:15px}
+.commerce-menu-toggle{display:none}
+@media(max-width:1199px){.commerce-header-main{gap:20px}.commerce-header-actions{gap:16px}.commerce-header .brand{font-size:26px}.commerce-compare{display:none}.commerce-header-support a:last-child{display:none}.commerce-main-nav{gap:18px}.commerce-header-navrow{gap:22px}.commerce-account{max-width:125px}.commerce-search button span{display:none}.commerce-search button{padding:0 16px}}
+@media(max-width:959px){.commerce-header-main{flex-wrap:wrap;gap:18px;min-height:0;padding-block:18px}.commerce-header .brand{margin-right:auto}.commerce-header-actions{margin-left:auto}.commerce-search{flex-basis:100%;order:3}.commerce-header-navrow{gap:20px;flex-wrap:wrap}.commerce-header-support{display:none}.commerce-main-nav{margin-left:auto;gap:16px}.commerce-main-nav a{font-size:11px}.commerce-departments>button{font-size:12px}}
+@media(max-width:767px){.commerce-header-main{padding-block:14px;gap:14px}.commerce-header .brand{font-size:24px}.commerce-header .brand-icon{width:31px;height:31px;font-size:18px}.commerce-header-actions{gap:15px}.commerce-icon-action{min-height:40px}.commerce-cart>span:last-child{display:none}.commerce-account{max-width:108px;gap:5px}.commerce-account>svg{width:22px}.commerce-account a{font-size:10px}.commerce-search{height:44px}.commerce-search-category{flex-basis:90px}.commerce-search select{font-size:12px;padding-inline:8px}.commerce-search input{font-size:12px;padding-inline:10px}.commerce-header-navrow{min-height:48px;justify-content:space-between;gap:0}.commerce-departments>button{min-height:46px}.commerce-menu-toggle{display:inline-flex;align-items:center;min-height:40px;padding:0 4px;border:0;border-radius:0;background:transparent;font-size:12px}.commerce-main-nav{display:none;position:absolute;top:100%;left:0;right:0;margin:0;flex-direction:column;align-items:stretch;gap:0;padding:10px;background:#fff;border:1px solid #e2e7ee;border-radius:0 0 12px 12px;box-shadow:0 14px 30px #1423371a;max-height:60vh;overflow-y:auto}.commerce-main-nav.open{display:flex}.commerce-main-nav a{font-size:13px;padding-inline:12px;min-height:44px;border:0;border-radius:7px}.commerce-main-nav a.active{background:var(--brand-blue-soft)}.commerce-header .notification-bell{width:32px;height:32px}.commerce-header .notification-center{position:static}}
+@media(max-width:379px){.commerce-header-actions{gap:10px}.commerce-header .brand{font-size:21px;gap:6px}.commerce-account>svg{display:none}.commerce-account{max-width:80px}.commerce-search-category{flex-basis:76px}}

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%" fill="none">
+  <!-- Background -->
+  <rect width="600" height="600" fill="#f8fafc" rx="12"/>
+
+  <!-- Outer Shadow -->
+  <ellipse cx="300" cy="520" rx="180" ry="24" fill="#cbd5e1" opacity="0.6"/>
+
+  <!-- Main Box Body -->
+  <rect x="150" y="180" width="300" height="320" rx="10" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+
+  <!-- Top Lid / Hatch (Closed State) -->
+  <rect x="140" y="140" width="320" height="46" rx="6" fill="#e2e8f0" stroke="#0f172a" stroke-width="4"/>
+  <rect x="250" y="125" width="100" height="16" rx="4" fill="#334155"/>
+
+  <!-- Status Indicator Header Panel -->
+  <rect x="175" y="200" width="250" height="60" rx="6" fill="#0f172a"/>
+
+  <!-- Wi-Fi & Power LED -->
+  <circle cx="205" cy="230" r="6" fill="#10b981"/>
+  <text x="220" y="234" fill="#94a3b8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">WI-FI ONLINE</text>
+
+  <!-- Lock Status Badge -->
+  <rect x="330" y="218" width="80" height="24" rx="4" fill="#2563eb"/>
+  <text x="343" y="234" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">LOCKED</text>
+
+  <!-- Keypad 4x4 Matrix -->
+  <rect x="235" y="280" width="130" height="150" rx="8" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+
+  <!-- Keypad Buttons (4x4 Grid) -->
+  <!-- Row 1 -->
+  <rect x="245" y="290" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="253" y="306" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">1</text>
+  <rect x="273" y="290" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="281" y="306" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">2</text>
+  <rect x="301" y="290" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="309" y="306" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">3</text>
+  <rect x="329" y="290" width="22" height="22" rx="3" fill="#2563eb"/>
+  <text x="336" y="306" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">A</text>
+
+  <!-- Row 2 -->
+  <rect x="245" y="320" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="253" y="336" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">4</text>
+  <rect x="273" y="320" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="281" y="336" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">5</text>
+  <rect x="301" y="320" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="309" y="336" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">6</text>
+  <rect x="329" y="320" width="22" height="22" rx="3" fill="#2563eb"/>
+  <text x="336" y="336" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">B</text>
+
+  <!-- Row 3 -->
+  <rect x="245" y="350" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="253" y="366" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">7</text>
+  <rect x="273" y="350" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="281" y="366" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">8</text>
+  <rect x="301" y="350" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="309" y="366" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">9</text>
+  <rect x="329" y="350" width="22" height="22" rx="3" fill="#2563eb"/>
+  <text x="336" y="366" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">C</text>
+
+  <!-- Row 4 -->
+  <rect x="245" y="380" width="22" height="22" rx="3" fill="#475569"/>
+  <text x="253" y="396" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">*</text>
+  <rect x="273" y="380" width="22" height="22" rx="3" fill="#334155"/>
+  <text x="281" y="396" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">0</text>
+  <rect x="301" y="380" width="22" height="22" rx="3" fill="#475569"/>
+  <text x="309" y="396" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">#</text>
+  <rect x="329" y="380" width="22" height="22" rx="3" fill="#2563eb"/>
+  <text x="336" y="396" fill="#f8fafc" font-family="monospace" font-size="12" font-weight="bold">D</text>
+
+  <text x="252" y="418" fill="#94a3b8" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="600">BACKUP PIN 4x4</text>
+
+  <!-- Branding Label -->
+  <text x="300" y="460" text-anchor="middle" fill="#0f172a" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="700" letter-spacing="1">ANCHOR BOX</text>
+  <text x="300" y="478" text-anchor="middle" fill="#64748b" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">MODEL: SBOX-STD-01</text>
+</svg>
