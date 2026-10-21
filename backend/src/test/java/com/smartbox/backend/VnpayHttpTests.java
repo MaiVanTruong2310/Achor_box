@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ActiveProfiles("demo")
-@TestPropertySource(properties={"smartbox.vnpay.tmn-code=TEST1234","smartbox.vnpay.hash-secret=test-vnpay-secret-at-least-thirty-two-characters","smartbox.vnpay.return-url=http://localhost:5174/payments/vnpay/return","smartbox.payment.timeout-minutes=15"})
+@TestPropertySource(properties={"smartbox.vnpay.tmn-code=TEST1234","smartbox.vnpay.hash-secret=test-vnpay-secret-at-least-thirty-two-characters","smartbox.vnpay.return-url=http://localhost:5174/payments/vnpay/return","smartbox.payment.timeout-minutes=15","smartbox.vnpay.return-auto-confirm=false"})
 class VnpayHttpTests extends BackendApplicationTests {
     @Autowired VnpayGateway gateway;
     @BeforeEach void provider(){ReflectionTestUtils.setField((Object)AopTestUtils.getTargetObject(payments),"provider","mock");}
@@ -32,7 +32,11 @@ class VnpayHttpTests extends BackendApplicationTests {
         UUID product=UUID.randomUUID(),variant=UUID.randomUUID();jdbc.update("INSERT INTO public.products(id,sku,name,price) VALUES(?,?,?,10000)",product,"VNP-P-"+product,"VNPAY test product");
         jdbc.update("INSERT INTO public.product_variants(id,product_id,variant_name,sku,price_delta,stock_quantity) VALUES(?,?,'M',?,0,5)",variant,product,"VNP-V-"+variant);
         var created=call("/api/orders",HttpMethod.POST,"vnpay-owner",Map.of("shippingAddress","Địa chỉ kiểm thử VNPAY","items",List.of(Map.of("variantId",variant,"quantity",1))),null,null);assertEquals(201,created.getStatusCode().value());
-        activate();var response=call("/api/orders/"+created.getBody().get("id")+"/checkout",HttpMethod.POST,"vnpay-owner",null,UUID.randomUUID().toString(),null);assertEquals(200,response.getStatusCode().value());return response.getBody();
+        String id=created.getBody().get("id").toString();
+        UUID ticket=jdbc.queryForObject("SELECT id FROM public.approval_tickets WHERE order_id=?",UUID.class,UUID.fromString(id));
+        UUID admin=profile("super_admin");when(identity.identity("vnpay-admin")).thenReturn(admin);
+        assertEquals(200,call("/api/tickets/"+ticket+"/approve",HttpMethod.POST,"vnpay-admin",null,null,null).getStatusCode().value());
+        activate();var response=call("/api/orders/"+id+"/checkout",HttpMethod.POST,"vnpay-owner",null,UUID.randomUUID().toString(),null);assertEquals(200,response.getStatusCode().value());return response.getBody();
     }
     Map<String,String> notification(Map session){
         var fields=new TreeMap<String,String>();fields.put("vnp_TmnCode","TEST1234");fields.put("vnp_TxnRef",session.get("paymentId").toString().replace("-",""));fields.put("vnp_Amount","1000000");fields.put("vnp_ResponseCode","00");fields.put("vnp_TransactionStatus","00");
@@ -60,7 +64,7 @@ class VnpayHttpTests extends BackendApplicationTests {
         jdbc.execute("ALTER TABLE public.payment_provider_notifications ADD CONSTRAINT test_vnpay_rollback CHECK (response_code<>'00')");
         try{
             assertEquals("99",ipn(fields).getBody().get("RspCode"));assertEquals("awaiting_payment",jdbc.queryForObject("SELECT status FROM public.orders WHERE id=?",String.class,UUID.fromString(order)));
-            assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM public.approval_tickets WHERE order_id=?",Integer.class,UUID.fromString(order)));
+            assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.approval_tickets WHERE order_id=?",Integer.class,UUID.fromString(order)));
             assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM public.payment_provider_notifications WHERE payment_id=?",Integer.class,UUID.fromString(session.get("paymentId").toString())));
         }finally{jdbc.execute("ALTER TABLE public.payment_provider_notifications DROP CONSTRAINT test_vnpay_rollback");}
         assertEquals("00",ipn(fields).getBody().get("RspCode"));

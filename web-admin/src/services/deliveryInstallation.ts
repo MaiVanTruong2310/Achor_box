@@ -7,6 +7,11 @@ export interface JobSummary {
   id: string;
   orderId: string;
   assignedTo: string;
+  technicianName?: string | null;
+  technicianPhone?: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  shippingAddress?: string | null;
   status: JobStatus;
   scheduledAt: string;
   estimatedEndTime?: string | null;
@@ -28,6 +33,11 @@ export interface Job extends JobSummary {
   installationNote?: string | null;
   failureReason?: string | null;
   customerAccepted: boolean;
+  technician?: {
+    fullName: string | null;
+    phone: string | null;
+    email: string | null;
+  } | null;
   customer?: {
     fullName: string | null;
     phone: string | null;

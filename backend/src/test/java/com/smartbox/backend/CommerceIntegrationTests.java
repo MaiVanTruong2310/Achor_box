@@ -89,8 +89,9 @@ class CommerceIntegrationTests {
         } else {
             jdbc.execute("DROP ALL OBJECTS");
             migration=migration.replaceAll("(?s)DO \\$\\$ BEGIN.*?END \\$\\$;","")
-                .replace(" NOT VALID","").replaceAll("CREATE UNIQUE INDEX uk_payment_workflow_order[^;]+;","")
-                .replaceAll("CREATE INDEX idx_order_expiry[^;]+;","");
+                .replace(" NOT VALID","").replaceAll("CREATE UNIQUE INDEX (?:IF NOT EXISTS )?uk_payment_workflow_order[^;]+;","")
+                .replaceAll("CREATE INDEX (?:IF NOT EXISTS )?idx_order_expiry[^;]+;","")
+                .replaceAll("(?i)\\s+ON\\s+CONFLICT\\s*\\([^)]*\\)\\s+DO\\s+NOTHING","");
             String schema=(base+"\n"+migration).replaceAll("(?m)--[^\\r\\n]*","").replace("timestamptz","timestamp with time zone");
             for(String statement:schema.split(";"))if(!statement.isBlank())jdbc.execute(statement);
             String iot=new String(getClass().getResourceAsStream("/db/migration/003_iot.sql").readAllBytes(),StandardCharsets.UTF_8).replace("timestamptz","timestamp with time zone").replaceAll("CREATE UNIQUE INDEX uk_device_mqtt_topic[^;]+;","");

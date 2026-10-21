@@ -28,6 +28,10 @@ class SalesInvoiceHttpTests extends BackendApplicationTests {
         var created=call("/api/orders",HttpMethod.POST,"invoice-owner",Map.of("shippingDetails",Map.of("label","Nhà","recipientName",malicious?"Khách <img src=x onerror=alert(1)>":"Nguyễn Văn A (kiểm thử)","phone","0900000001","addressLine","Địa chỉ giao kiểm thử","isDefault",false),"items",List.of(Map.of("variantId",base,"quantity",2),Map.of("variantId",pro,"quantity",1))),null,null);
         assertEquals(201,created.getStatusCode().value());var id=UUID.fromString(created.getBody().get("id").toString());
         if(!paid)return new Fixture(id,owner,product,null);
+        var ticket = jdbc.queryForObject("SELECT id FROM public.approval_tickets WHERE order_id=?", UUID.class, id);
+        var admin = profile("super_admin");
+        when(identity.identity("invoice-admin-approve")).thenReturn(admin);
+        assertEquals(200, call("/api/tickets/" + ticket + "/approve", HttpMethod.POST, "invoice-admin-approve", null, null, null).getStatusCode().value());
         var session=call("/api/orders/"+id+"/checkout",HttpMethod.POST,"invoice-owner",null,UUID.randomUUID().toString(),null).getBody();
         var payment=UUID.fromString(session.get("paymentId").toString());var amount=new java.math.BigDecimal(session.get("amount").toString());
         assertEquals(200,call("/api/payments/callback",HttpMethod.POST,null,Map.of("paymentId",payment,"orderId",id,"amount",amount,"result","SUCCESS","signature",payments.sign(payment,id,amount,"SUCCESS")),null,null).getStatusCode().value());

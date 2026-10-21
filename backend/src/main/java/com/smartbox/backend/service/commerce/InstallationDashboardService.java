@@ -26,25 +26,27 @@ public class InstallationDashboardService {
         var actor = actors.get();
         actor.requireRoles("super_admin", "product_manager", "technician");
         boolean mine = "technician".equals(actor.role());
-        String where = " FROM public.delivery_installations j JOIN public.orders o ON o.id=j.order_id WHERE o.status::text='confirmed'"
+        String where = " FROM public.delivery_installations j JOIN public.orders o ON o.id=j.order_id WHERE o.status::text NOT IN ('cancelled', 'refunded')"
                 + (mine ? " AND j.assigned_to=?" : "");
         Object[] args = mine ? new Object[]{actor.id()} : new Object[]{};
         var counts = new LinkedHashMap<String, Object>();
 
-        // Optimized: Consolidate 6 separate count queries into 1 conditional aggregation query
+        // Optimized: Consolidate count queries into conditional aggregation query
         String aggSql = "SELECT " +
                 "COUNT(*) FILTER (WHERE j.status='ASSIGNED') AS \"ASSIGNED\", " +
                 "COUNT(*) FILTER (WHERE j.status='IN_PROGRESS') AS \"IN_PROGRESS\", " +
                 "COUNT(*) FILTER (WHERE j.status='DELIVERED') AS \"DELIVERED\", " +
                 "COUNT(*) FILTER (WHERE j.status='INSTALLED') AS \"INSTALLED\", " +
+                "COUNT(*) FILTER (WHERE j.status='WAITING_PO_CONFIRMATION') AS \"WAITING_PO_CONFIRMATION\", " +
+                "COUNT(*) FILTER (WHERE j.status='COMPLETED') AS \"COMPLETED\", " +
                 "COUNT(*) FILTER (WHERE j.status='FAILED') AS \"FAILED\", " +
-                "COUNT(*) FILTER (WHERE j.status IN('ASSIGNED','IN_PROGRESS','DELIVERED','INSTALLED','FAILED') AND j.scheduled_at < now()) AS \"overdue\" " +
+                "COUNT(*) FILTER (WHERE j.status IN('ASSIGNED','IN_PROGRESS','DELIVERED','INSTALLED','WAITING_PO_CONFIRMATION','FAILED') AND j.scheduled_at < now()) AS \"overdue\" " +
                 where;
 
         List<Map<String, Object>> aggRows = db.list(aggSql, args);
         Map<String, Object> agg = aggRows.isEmpty() ? Map.of() : aggRows.getFirst();
 
-        for (String status : List.of("ASSIGNED", "IN_PROGRESS", "DELIVERED", "INSTALLED", "FAILED", "overdue")) {
+        for (String status : List.of("ASSIGNED", "IN_PROGRESS", "DELIVERED", "INSTALLED", "WAITING_PO_CONFIRMATION", "COMPLETED", "FAILED", "overdue")) {
             Object val = agg.get(status);
             if (val == null) {
                 val = agg.get(status.toLowerCase());
@@ -67,7 +69,7 @@ public class InstallationDashboardService {
             counts.put("pendingApproval", pendingVal instanceof Number n ? n.longValue() : 0L);
         }
 
-        long total = List.of("ASSIGNED", "IN_PROGRESS", "DELIVERED", "INSTALLED", "FAILED", "unassigned", "pendingApproval").stream()
+        long total = List.of("ASSIGNED", "IN_PROGRESS", "DELIVERED", "INSTALLED", "WAITING_PO_CONFIRMATION", "COMPLETED", "FAILED", "unassigned", "pendingApproval").stream()
                 .mapToLong(k -> counts.get(k) instanceof Number n ? n.longValue() : 0L)
                 .sum();
         counts.put("totalOutstanding", total);

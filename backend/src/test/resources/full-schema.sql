@@ -136,6 +136,7 @@ CREATE TABLE public.product_variants (
   sku text NOT NULL UNIQUE,
   price_delta numeric NOT NULL DEFAULT 0,
   stock_quantity integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
   CONSTRAINT product_variants_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.promotions (
@@ -162,6 +163,9 @@ CREATE TABLE public.orders (
   shipping_address text,
   tracking_number text,
   promotion_id uuid,
+  subtotal numeric,
+  discount_amount numeric DEFAULT 0,
+  voucher_code text,
   total numeric NOT NULL DEFAULT 0,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),

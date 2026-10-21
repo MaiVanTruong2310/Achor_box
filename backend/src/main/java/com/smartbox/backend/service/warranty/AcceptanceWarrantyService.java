@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.smartbox.backend.service.commerce.OrderWorkflowService;
 import static com.smartbox.backend.service.commerce.OrderWorkflowService.uuid;
 
 @Service
@@ -81,6 +82,10 @@ public class AcceptanceWarrantyService {
         }
     }
 
+    public static LocalDate parseLocalDate(Object value) {
+        return OrderWorkflowService.date(value);
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> mine(int page, int size) {
         actors.get().requireRoles("customer");
@@ -93,9 +98,16 @@ public class AcceptanceWarrantyService {
         var rows = db.list("SELECT w.id,w.device_id AS \"deviceId\",d.serial_number AS \"serialNumber\",i.order_id AS \"orderId\",w.start_date AS \"startDate\",w.end_date AS \"endDate\",w.status,w.duration_months AS \"durationMonths\",w.accepted_at AS \"acceptedAt\"" + from + " ORDER BY w.start_date DESC,w.id LIMIT ? OFFSET ?", owner, size, (long) page * size);
         var today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         for (var row : rows) {
-            LocalDate end = row.get("endDate") instanceof Date d ? d.toLocalDate() : LocalDate.parse(row.get("endDate").toString());
-            if ("active".equals(row.get("status")) && end.isBefore(today)) {
-                row.put("status", "expired");
+            LocalDate start = parseLocalDate(row.get("startDate"));
+            LocalDate end = parseLocalDate(row.get("endDate"));
+            if (start != null) {
+                row.put("startDate", start.toString());
+            }
+            if (end != null) {
+                row.put("endDate", end.toString());
+                if ("active".equals(row.get("status")) && end.isBefore(today)) {
+                    row.put("status", "expired");
+                }
             }
         }
         return Map.of("content", rows, "page", page, "size", size, "totalElements", total, "totalPages", (total + size - 1) / size);

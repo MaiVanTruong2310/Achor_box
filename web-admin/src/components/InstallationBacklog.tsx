@@ -120,42 +120,100 @@ export const InstallationBacklog: React.FC<{
   if (!profile || !['super_admin', 'product_manager', 'technician'].includes(profile.role)) return null;
 
   if (compact) {
+    const unassignedCount = (summary?.counts?.unassigned || 0) + (summary?.counts?.pendingApproval || 0) + (summary?.counts?.ASSIGNED || 0);
+    const inProgressCount = (summary?.counts?.IN_PROGRESS || 0) + (summary?.counts?.DELIVERED || 0) + (summary?.counts?.INSTALLED || 0);
+    const waitingPoCount = summary?.counts?.WAITING_PO_CONFIRMATION || 0;
+    const completedCount = summary?.counts?.COMPLETED || 0;
+    const failedCount = summary?.counts?.FAILED || 0;
+
     return (
-      <div className="ib-compact-bar">
-        <div className="ib-track-label">
-          <Truck size={16} />
-          <span>Tiến độ:</span>
-          <span className="ib-track-count">
-            {summary ? summary.counts.totalOutstanding || 0 : 0} việc
-          </span>
+      <div className="di-metrics-grid">
+        <div
+          className={`di-metric-card amber ${activeStatus === 'ASSIGNED' ? 'active' : ''}`}
+          onClick={() => onFilterSelect?.(activeStatus === 'ASSIGNED' ? '' : 'ASSIGNED')}
+          title="Bấm để lọc các đơn chờ KTV tiếp nhận hoặc chưa phân công"
+        >
+          <div className="di-metric-icon">
+            <Clock size={18} />
+          </div>
+          <div className="di-metric-body">
+            <div className="di-metric-top">
+              <span className="di-metric-label">Chờ nhận việc & điều phối</span>
+              <span className="di-metric-val">{unassignedCount}</span>
+            </div>
+            <span className="di-metric-sub">Đơn cần KTV tiếp nhận</span>
+          </div>
         </div>
 
-        {summary && (
-          <div className="ib-pills-wrap">
-            {Object.entries(tileConfigs)
-              .filter(([key]) => summary.scope !== 'MY_JOBS' || !['pendingApproval', 'unassigned'].includes(key))
-              .map(([key, cfg]) => {
-                const val = summary.counts[key] || 0;
-                const isSelected = activeStatus === key;
-                const isHighlight = val > 0;
+        <div
+          className={`di-metric-card indigo ${activeStatus === 'IN_PROGRESS' ? 'active' : ''}`}
+          onClick={() => onFilterSelect?.(activeStatus === 'IN_PROGRESS' ? '' : 'IN_PROGRESS')}
+          title="Bấm để lọc các đơn KTV đang di chuyển, giao hàng hoặc lắp đặt"
+        >
+          <div className="di-metric-icon">
+            <Truck size={18} />
+          </div>
+          <div className="di-metric-body">
+            <div className="di-metric-top">
+              <span className="di-metric-label">Đang giao & thi công</span>
+              <span className="di-metric-val">{inProgressCount}</span>
+            </div>
+            <span className="di-metric-sub">KTV đang ngoài hiện trường</span>
+          </div>
+        </div>
 
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => onFilterSelect?.(key)}
-                    className={`ib-pill-btn ${isSelected ? 'selected' : ''} ${isHighlight ? 'highlight' : ''}`}
-                    style={{
-                      '--pill-color': cfg.color,
-                      '--pill-bg': cfg.bg,
-                    } as React.CSSProperties}
-                  >
-                    <span className="ib-pill-icon">{cfg.icon}</span>
-                    <span className="ib-pill-title">{cfg.label}:</span>
-                    <strong className="ib-pill-val">{val}</strong>
-                  </button>
-                );
-              })}
+        <div
+          className={`di-metric-card purple ${activeStatus === 'WAITING_PO_CONFIRMATION' ? 'active' : ''} ${waitingPoCount > 0 ? 'pulse-attention' : ''}`}
+          onClick={() => onFilterSelect?.(activeStatus === 'WAITING_PO_CONFIRMATION' ? '' : 'WAITING_PO_CONFIRMATION')}
+          title="Bấm để lọc các đơn KTV đã nộp ảnh minh chứng chờ PO duyệt nghiệm thu"
+        >
+          <div className="di-metric-icon">
+            <Calendar size={18} />
+          </div>
+          <div className="di-metric-body">
+            <div className="di-metric-top">
+              <span className="di-metric-label">Chờ PO duyệt nghiệm thu</span>
+              <span className="di-metric-val">{waitingPoCount}</span>
+            </div>
+            <span className="di-metric-sub">
+              {waitingPoCount > 0 ? '🔥 Cần PO kiểm tra ảnh' : 'Đã nộp ảnh minh chứng'}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className={`di-metric-card emerald ${activeStatus === 'COMPLETED' ? 'active' : ''}`}
+          onClick={() => onFilterSelect?.(activeStatus === 'COMPLETED' ? '' : 'COMPLETED')}
+          title="Bấm để lọc các đơn đã nghiệm thu hoàn tất"
+        >
+          <div className="di-metric-icon">
+            <CheckCircle2 size={18} />
+          </div>
+          <div className="di-metric-body">
+            <div className="di-metric-top">
+              <span className="di-metric-label">Đã nghiệm thu hoàn tất</span>
+              <span className="di-metric-val">{completedCount}</span>
+            </div>
+            <span className="di-metric-sub">Bảo hành đã kích hoạt</span>
+          </div>
+        </div>
+
+        {failedCount > 0 && (
+          <div
+            className={`di-metric-card rose ${activeStatus === 'FAILED' ? 'active' : ''}`}
+            onClick={() => onFilterSelect?.(activeStatus === 'FAILED' ? '' : 'FAILED')}
+            title="Bấm để lọc các đơn gặp sự cố hoặc cần xử lý lại"
+          >
+            <div className="di-metric-icon">
+              <AlertTriangle size={18} />
+            </div>
+            <div className="di-metric-body">
+              <div className="di-metric-top">
+                <span className="di-metric-label">Cần xử lý lại</span>
+                <span className="di-metric-val">{failedCount}</span>
+              </div>
+              <span className="di-metric-sub">Sự cố hiện trường</span>
+            </div>
           </div>
         )}
       </div>

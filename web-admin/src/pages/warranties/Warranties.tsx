@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { adminRequest } from '../../services/adminRequest';
 import { useAuth } from '../../contexts/AuthContext';
+import './warranties.css';
 import {
   Wrench,
   Search,
@@ -82,7 +83,8 @@ export const Warranties: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Modal Xử lý
+  // Modal Chi tiết & Xử lý
+  const [detailClaim, setDetailClaim] = useState<Claim | null>(null);
   const [selected, setSelected] = useState<Claim | null>(null);
   const [assignee, setAssignee] = useState('');
   const [status, setStatus] = useState('new');
@@ -197,26 +199,27 @@ export const Warranties: React.FC = () => {
   const countInProgress = useMemo(() => rows.filter(r => r.status === 'in_progress').length, [rows]);
   const countResolved = useMemo(() => rows.filter(r => r.status === 'resolved').length, [rows]);
   const countRejected = useMemo(() => rows.filter(r => r.status === 'rejected').length, [rows]);
+  const lookupPath = profile?.role === 'product_manager' ? '/po/warranties/lookup' : '/admin/warranties/lookup';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="warranty-page-container">
       {/* 1. Sleek Compact Header & Action Buttons */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: 0, color: 'var(--text-primary)' }}>
-            <Wrench size={22} color="#ea580c" />
-            Quản Lý Yêu Cầu Bảo Hành
+      <div className="warranty-header">
+        <div className="warranty-title-wrap">
+          <h2>
+            <Wrench size={18} color="#ea580c" />
+            <span>Quản Lý Yêu Cầu Bảo Hành</span>
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem', margin: '3px 0 0 0' }}>
+          <p className="warranty-subtitle">
             {manager
               ? 'Tiếp nhận sự cố thiết bị, điều phối kỹ thuật viên và theo dõi tiến độ xử lý bảo hành.'
               : 'Danh sách các yêu cầu bảo hành được giao cho bạn kiểm tra & xử lý tại chỗ.'}
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <Link to="/warranties/lookup" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '6px 12px' }}>
-            <QrCode size={14} />
+        <div className="warranty-header-actions">
+          <Link to={lookupPath} className="btn btn-secondary" title="Tra cứu theo mã Serial hoặc đường dẫn quét QR">
+            <QrCode size={13} />
             <span>Tra cứu Serial / QR</span>
           </Link>
           <button
@@ -224,185 +227,73 @@ export const Warranties: React.FC = () => {
             className="btn btn-secondary"
             disabled={loading}
             onClick={() => setRevision(r => r + 1)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '6px 12px' }}
+            title="Tải lại danh sách yêu cầu"
           >
-            <RefreshCw size={13} className={loading ? 'spin' : ''} />
+            <RefreshCw size={12} className={loading ? 'spin' : ''} />
             <span>Làm mới</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Four Sleek Executive Stat Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-        gap: '12px'
-      }}>
-        <div style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '12px',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: 'rgba(59, 130, 246, 0.12)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#3b82f6',
-            flexShrink: 0
-          }}>
-            <ShieldCheck size={20} />
+      {/* 2. Executive Mini Stat Cards (KPI Strip) */}
+      <div className="warranty-kpi-grid">
+        <div className="warranty-kpi-card">
+          <div className="warranty-kpi-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb' }}>
+            <ShieldCheck size={16} />
           </div>
-          <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Tổng yêu cầu
-            </div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2, marginTop: '2px' }}>
-              {total || rows.length}
-            </div>
+          <div className="warranty-kpi-body">
+            <span className="warranty-kpi-label">Tổng yêu cầu</span>
+            <span className="warranty-kpi-value">{total || rows.length}</span>
           </div>
         </div>
 
-        <div style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '12px',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: 'rgba(14, 165, 233, 0.12)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#0ea5e9',
-            flexShrink: 0
-          }}>
-            <AlertCircle size={20} />
+        <div className="warranty-kpi-card">
+          <div className="warranty-kpi-icon" style={{ background: 'rgba(14, 165, 233, 0.1)', color: '#0284c7' }}>
+            <AlertCircle size={16} />
           </div>
-          <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Chờ tiếp nhận
-            </div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: countNew > 0 ? '#0ea5e9' : 'var(--text-primary)', lineHeight: 1.2, marginTop: '2px' }}>
-              {countNew}
-            </div>
+          <div className="warranty-kpi-body">
+            <span className="warranty-kpi-label">Chờ tiếp nhận</span>
+            <span className="warranty-kpi-value" style={{ color: countNew > 0 ? '#0284c7' : 'inherit' }}>{countNew}</span>
           </div>
         </div>
 
-        <div style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '12px',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: 'rgba(245, 158, 11, 0.12)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#f59e0b',
-            flexShrink: 0
-          }}>
-            <Clock3 size={20} />
+        <div className="warranty-kpi-card">
+          <div className="warranty-kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#d97706' }}>
+            <Clock3 size={16} />
           </div>
-          <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Đang xử lý
-            </div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: countInProgress > 0 ? '#f59e0b' : 'var(--text-primary)', lineHeight: 1.2, marginTop: '2px' }}>
-              {countInProgress}
-            </div>
+          <div className="warranty-kpi-body">
+            <span className="warranty-kpi-label">Đang xử lý</span>
+            <span className="warranty-kpi-value" style={{ color: countInProgress > 0 ? '#d97706' : 'inherit' }}>{countInProgress}</span>
           </div>
         </div>
 
-        <div style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '12px',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: 'rgba(16, 185, 129, 0.12)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#10b981',
-            flexShrink: 0
-          }}>
-            <CheckCircle2 size={20} />
+        <div className="warranty-kpi-card">
+          <div className="warranty-kpi-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#059669' }}>
+            <CheckCircle2 size={16} />
           </div>
-          <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Đã hoàn tất
-            </div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: countResolved > 0 ? '#10b981' : 'var(--text-primary)', lineHeight: 1.2, marginTop: '2px' }}>
-              {countResolved}
-            </div>
+          <div className="warranty-kpi-body">
+            <span className="warranty-kpi-label">Đã hoàn tất</span>
+            <span className="warranty-kpi-value" style={{ color: countResolved > 0 ? '#059669' : 'inherit' }}>{countResolved}</span>
           </div>
         </div>
       </div>
 
-      {/* 3. Compact Filter Toolbar with Badges & View Switcher */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '10px',
-        padding: '10px 14px',
-        background: 'var(--bg-surface)',
-        borderRadius: '10px',
-        border: '1px solid var(--border-subtle)'
-      }}>
-        {/* Search input - dark mode aware */}
-        <div style={{ position: 'relative', minWidth: '220px', flex: '1 1 220px', maxWidth: '320px' }}>
-          <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      {/* 3. Compact Filter Toolbar */}
+      <div className="warranty-toolbar">
+        {/* Search input */}
+        <div className="warranty-search-wrap">
+          <Search size={13} className="warranty-search-icon" />
           <input
             type="text"
+            className="warranty-search-input"
             placeholder="Tìm Serial, tên khách, SĐT…"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            style={{
-              paddingLeft: '32px',
-              fontSize: '0.8rem',
-              height: '34px',
-              width: '100%',
-              borderRadius: '6px',
-              background: 'var(--bg-shell, rgba(0,0,0,0.3))',
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border-subtle)',
-              outline: 'none'
-            }}
           />
         </div>
 
         {/* Status Pill Tabs with Counts */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="warranty-filter-tabs">
           {[
             { key: 'all', label: 'Tất cả', count: rows.length },
             { key: 'new', label: 'Mới tiếp nhận', count: countNew },
@@ -416,75 +307,34 @@ export const Warranties: React.FC = () => {
               <button
                 key={tab.key}
                 type="button"
-                className={`btn ${isActive ? 'btn-primary' : 'btn-secondary'}`}
-                style={{
-                  borderRadius: '999px',
-                  padding: '4px 10px',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
+                className={`warranty-tab-btn ${isActive ? 'active' : ''}`}
                 onClick={() => setSelectedStatus(tab.key)}
               >
                 <span>{tab.label}</span>
-                <span style={{
-                  fontSize: '0.68rem',
-                  padding: '0 5px',
-                  borderRadius: '999px',
-                  background: isActive ? 'rgba(255,255,255,0.25)' : 'var(--bg-shell)',
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
-                  fontWeight: 600
-                }}>
-                  {tab.count}
-                </span>
+                <span className="warranty-tab-count">{tab.count}</span>
               </button>
             );
           })}
         </div>
 
         {/* View Mode Toggle */}
-        <div style={{ display: 'flex', background: 'var(--bg-shell)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+        <div className="warranty-view-switcher">
           <button
             type="button"
+            className={`warranty-view-btn ${viewMode === 'table' ? 'active' : ''}`}
             onClick={() => setViewMode('table')}
-            style={{
-              border: 'none',
-              background: viewMode === 'table' ? 'var(--primary)' : 'transparent',
-              color: viewMode === 'table' ? '#fff' : 'var(--text-secondary)',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '0.72rem',
-              fontWeight: 600
-            }}
-            title="Dạng bảng gọn gàng"
+            title="Dạng bảng dữ liệu tinh gọn"
           >
-            <LayoutList size={13} />
+            <LayoutList size={12} />
             <span>Bảng</span>
           </button>
           <button
             type="button"
+            className={`warranty-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
             onClick={() => setViewMode('grid')}
-            style={{
-              border: 'none',
-              background: viewMode === 'grid' ? 'var(--primary)' : 'transparent',
-              color: viewMode === 'grid' ? '#fff' : 'var(--text-secondary)',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '0.72rem',
-              fontWeight: 600
-            }}
-            title="Dạng thẻ lưới"
+            title="Dạng lưới thẻ"
           >
-            <LayoutGrid size={13} />
+            <LayoutGrid size={12} />
             <span>Thẻ</span>
           </button>
         </div>
@@ -492,8 +342,8 @@ export const Warranties: React.FC = () => {
 
       {/* 4. Error Alert */}
       {error && (
-        <div className="card" style={{ padding: '10px 14px', borderColor: 'var(--fpt-rose)', background: 'var(--fpt-rose-soft)', color: 'var(--fpt-rose)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem' }}>
-          <AlertCircle size={16} />
+        <div className="card" style={{ padding: '8px 12px', borderColor: 'var(--fpt-rose)', background: 'var(--fpt-rose-soft)', color: 'var(--fpt-rose)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.775rem' }}>
+          <AlertCircle size={15} />
           <span>{error}</span>
         </div>
       )}
@@ -530,140 +380,88 @@ export const Warranties: React.FC = () => {
           <p style={{ margin: 0, fontSize: '0.8rem' }}>Thử thay đổi bộ lọc trạng thái hoặc từ khóa tìm kiếm.</p>
         </div>
       ) : viewMode === 'table' ? (
-        /* ================= TABLE VIEW ================= */
-        <div className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        /* ================= COMPACT TABLE VIEW ================= */
+        <div className="warranty-table-card">
           <div style={{ overflowX: 'auto' }}>
-            <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <table className="warranty-table">
               <thead>
-                <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid var(--border-subtle)', textAlign: 'left' }}>
-                  <th style={{ padding: '11px 14px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Thiết bị & Serial</th>
-                  <th style={{ padding: '11px 14px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Khách hàng</th>
-                  <th style={{ padding: '11px 14px', fontWeight: 600, color: 'var(--text-secondary)' }}>Mô tả sự cố & Đính kèm</th>
-                  <th style={{ padding: '11px 14px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>KTV Phụ trách</th>
-                  <th style={{ padding: '11px 14px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Trạng thái</th>
-                  <th style={{ padding: '11px 14px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Ngày tạo</th>
-                  <th style={{ padding: '11px 14px', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'right', whiteSpace: 'nowrap' }}>Thao tác</th>
+                <tr>
+                  <th style={{ width: '150px' }}>Thiết bị & Serial</th>
+                  <th style={{ width: '140px' }}>Khách hàng</th>
+                  <th>Mô tả sự cố</th>
+                  <th style={{ width: '130px' }}>KTV Phụ trách</th>
+                  <th style={{ width: '115px' }}>Trạng thái</th>
+                  <th style={{ width: '85px' }}>Ngày tạo</th>
+                  <th style={{ width: '135px', textAlign: 'right' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredClaims.map(claim => {
                   const meta = statusMeta[claim.status] || { label: claim.status, badgeClass: 'fpt-badge-customer', icon: null };
                   return (
-                    <tr key={claim.id} style={{ borderBottom: '1px solid var(--border-subtle)' }} className="table-row-hover">
+                    <tr key={claim.id}>
                       {/* Serial */}
-                      <td style={{ padding: '11px 14px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                      <td>
                         <div
+                          className="warranty-serial-tag"
                           onClick={() => handleCopySerial(claim.serialNumber)}
                           title="Bấm sao chép Serial"
-                          style={{
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            padding: '3px 8px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            borderRadius: '6px',
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            border: '1px solid var(--border-subtle)',
-                            color: 'var(--text-primary)'
-                          }}
                         >
                           <span>{claim.serialNumber}</span>
                           {copiedSerial === claim.serialNumber ? (
-                            <Check size={11} style={{ color: 'var(--fpt-emerald)' }} />
+                            <Check size={10} style={{ color: 'var(--fpt-emerald)' }} />
                           ) : (
-                            <Copy size={11} style={{ opacity: 0.5 }} />
+                            <Copy size={10} style={{ opacity: 0.5 }} />
                           )}
                         </div>
                       </td>
 
                       {/* Customer */}
-                      <td style={{ padding: '11px 14px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      <td className="warranty-customer-cell">
+                        <div className="warranty-customer-name">
                           {claim.customerName || 'Khách hàng'}
                         </div>
                         {claim.customerPhone && (
                           <a
                             href={`tel:${claim.customerPhone}`}
-                            style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}
+                            className="warranty-customer-phone"
                           >
-                            <Phone size={10} /> {claim.customerPhone}
+                            <Phone size={9} /> {claim.customerPhone}
                           </a>
                         )}
                       </td>
 
-                      {/* Description & Images */}
-                      <td style={{ padding: '11px 14px', verticalAlign: 'middle', maxWidth: '360px' }}>
-                        <div style={{
-                          color: 'var(--text-primary)',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          lineHeight: 1.45,
-                          fontSize: '0.8rem'
-                        }}>
+                      {/* Description */}
+                      <td className="warranty-desc-cell">
+                        <div className="warranty-desc-text" title={claim.description}>
                           {claim.description}
-                        </div>
-
-                        {/* Image badge or note */}
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '5px', flexWrap: 'wrap' }}>
-                          {claim.images && claim.images.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setActiveImage(claim.images[0])}
-                              style={{
-                                border: '1px solid rgba(59, 130, 246, 0.25)',
-                                background: 'rgba(59, 130, 246, 0.1)',
-                                color: '#3b82f6',
-                                borderRadius: '4px',
-                                padding: '2px 7px',
-                                fontSize: '0.7rem',
-                                fontWeight: 600,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                cursor: 'pointer'
-                              }}
-                              title="Bấm để xem ảnh phóng to"
-                            >
-                              <ImageIcon size={11} />
-                              <span>{claim.images.length} ảnh đính kèm</span>
-                            </button>
-                          )}
-                          {claim.internalNotes && (
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                              Ghi chú: {claim.internalNotes}
-                            </span>
-                          )}
                         </div>
                       </td>
 
                       {/* Technician */}
-                      <td style={{ padding: '11px 14px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                      <td>
                         {claim.assigneeName ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                            <User size={13} style={{ color: '#3b82f6' }} />
+                          <span className="warranty-tech-name">
+                            <User size={11} style={{ color: '#3b82f6' }} />
                             {claim.assigneeName}
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.75rem' }}>
+                          <span className="warranty-tech-empty">
                             Chưa phân công
                           </span>
                         )}
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: '11px 14px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                        <span className={`fpt-badge ${meta.badgeClass}`} style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
+                      <td>
+                        <span className={`fpt-badge warranty-badge ${meta.badgeClass}`}>
                           {meta.icon}
                           <span>{meta.label}</span>
                         </span>
                       </td>
 
                       {/* Created At */}
-                      <td style={{ padding: '11px 14px', verticalAlign: 'middle', color: 'var(--text-secondary)', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                      <td style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                         {new Date(claim.createdAt).toLocaleDateString('vi-VN', {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -673,15 +471,26 @@ export const Warranties: React.FC = () => {
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: '11px 14px', verticalAlign: 'middle', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => openClaimModal(claim)}
-                          style={{ padding: '4px 10px', fontSize: '0.74rem', borderRadius: '6px' }}
-                        >
-                          Xử lý
-                        </button>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary warranty-action-btn"
+                            onClick={() => setDetailClaim(claim)}
+                            title="Xem chi tiết yêu cầu & hình ảnh sự cố"
+                          >
+                            <Eye size={11} />
+                            <span>Chi tiết</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-primary warranty-action-btn"
+                            onClick={() => openClaimModal(claim)}
+                            title="Xử lý / phân công yêu cầu"
+                          >
+                            <span>Xử lý</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -691,9 +500,9 @@ export const Warranties: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* ================= GRID VIEW ================= */
+        /* ================= COMPACT GRID VIEW ================= */
         <div
-          className="fpt-claim-grid"
+          className="warranty-claim-grid-compact"
           style={{
             opacity: loading && rows.length > 0 ? 0.65 : 1,
             transition: 'opacity 0.2s ease',
@@ -703,65 +512,65 @@ export const Warranties: React.FC = () => {
           {filteredClaims.map(claim => {
             const meta = statusMeta[claim.status] || { label: claim.status, badgeClass: 'fpt-badge-customer', icon: null };
             return (
-              <div className="fpt-claim-card" key={claim.id}>
+              <div className="warranty-compact-card" key={claim.id}>
                 {/* Header */}
-                <div className="fpt-claim-header">
+                <div className="warranty-compact-card-header">
                   <div
-                    className="fpt-serial-chip"
+                    className="warranty-serial-tag"
                     onClick={() => handleCopySerial(claim.serialNumber)}
-                    title="Bấm để sao chép mã Serial"
-                    style={{ cursor: 'pointer' }}
+                    title="Bấm sao chép Serial"
                   >
                     <span>{claim.serialNumber}</span>
-                    {copiedSerial === claim.serialNumber ? <Check size={13} style={{ color: 'var(--fpt-emerald)' }} /> : <Copy size={13} style={{ opacity: 0.6 }} />}
+                    {copiedSerial === claim.serialNumber ? <Check size={11} style={{ color: 'var(--fpt-emerald)' }} /> : <Copy size={11} style={{ opacity: 0.6 }} />}
                   </div>
 
-                  <span className={`fpt-badge ${meta.badgeClass}`}>
+                  <span className={`fpt-badge warranty-badge ${meta.badgeClass}`}>
                     {meta.icon}
                     <span>{meta.label}</span>
                   </span>
                 </div>
 
                 {/* Body */}
-                <div className="fpt-claim-body">
-                  <div className="fpt-customer-row">
-                    <div className="fpt-avatar" style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', width: 32, height: 32, fontSize: '0.75rem' }}>
+                <div className="warranty-compact-card-body">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="fpt-avatar" style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', width: 26, height: 26, fontSize: '0.65rem' }}>
                       {(claim.customerName || 'KH').slice(0, 2).toUpperCase()}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                      <strong style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                      <strong style={{ fontSize: '0.775rem', color: 'var(--text-primary)' }}>
                         {claim.customerName || 'Khách hàng'}
                       </strong>
                       {claim.customerPhone && (
                         <a
                           href={`tel:${claim.customerPhone}`}
-                          style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
                         >
-                          <Phone size={11} /> {claim.customerPhone}
+                          <Phone size={9} /> {claim.customerPhone}
                         </a>
                       )}
                     </div>
                   </div>
 
                   {/* Description Box */}
-                  <div className="fpt-issue-box">
+                  <div className="warranty-compact-issue-box">
                     <p style={{ margin: 0 }}>{claim.description}</p>
                   </div>
 
                   {/* Incident Images */}
                   {claim.images && claim.images.length > 0 && (
                     <div>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <ImageIcon size={12} />
+                      <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <ImageIcon size={10} />
                         <span>Ảnh sự cố ({claim.images.length})</span>
                       </div>
-                      <div className="fpt-thumb-row">
+                      <div className="fpt-thumb-row" style={{ gap: '6px' }}>
                         {claim.images.map((url, idx) => (
                           <img
                             key={idx}
                             src={url}
                             alt="Ảnh sự cố"
                             className="fpt-thumb-img"
+                            style={{ width: '44px', height: '44px', borderRadius: '5px' }}
                             loading="lazy"
                             decoding="async"
                             onError={(e) => {
@@ -776,7 +585,7 @@ export const Warranties: React.FC = () => {
                   )}
 
                   {/* Technician Info */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem', paddingTop: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.725rem', paddingTop: '2px' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Kỹ thuật viên:</span>
                     <span style={{ fontWeight: 600, color: claim.assigneeName ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                       {claim.assigneeName || 'Chưa phân công'}
@@ -785,27 +594,38 @@ export const Warranties: React.FC = () => {
 
                   {/* Internal Notes if any */}
                   {claim.internalNotes && (
-                    <div style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '6px 10px', borderRadius: '6px', border: '1px dashed var(--border-subtle)' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'var(--bg-shell)', padding: '4px 8px', borderRadius: '5px', border: '1px dashed var(--border-subtle)' }}>
                       <strong>Ghi chú:</strong> {claim.internalNotes}
                     </div>
                   )}
                 </div>
 
                 {/* Footer */}
-                <div className="fpt-claim-footer">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <Clock size={12} />
+                <div className="warranty-compact-card-footer">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    <Clock size={11} />
                     <span>{new Date(claim.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</span>
                   </div>
 
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    onClick={() => openClaimModal(claim)}
-                    style={{ borderRadius: '8px', padding: '6px 14px' }}
-                  >
-                    Xử lý yêu cầu
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary warranty-action-btn"
+                      onClick={() => setDetailClaim(claim)}
+                      title="Xem chi tiết yêu cầu & ảnh sự cố"
+                    >
+                      <Eye size={11} />
+                      <span>Chi tiết</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary warranty-action-btn"
+                      onClick={() => openClaimModal(claim)}
+                      title="Xử lý / phân công yêu cầu"
+                    >
+                      <span>Xử lý</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -815,7 +635,7 @@ export const Warranties: React.FC = () => {
 
       {/* Pagination */}
       {pages > 0 && (
-        <div className="workspace-pagination" style={{ marginTop: '8px' }}>
+        <div className="workspace-pagination" style={{ marginTop: '4px' }}>
           <span>
             Hiển thị {rows.length} / {total} yêu cầu · Trang {pages ? page + 1 : 0} / {pages}
           </span>
@@ -826,7 +646,7 @@ export const Warranties: React.FC = () => {
               disabled={loading || page === 0}
               onClick={() => setPage(p => p - 1)}
             >
-              <ChevronLeft size={14} /> Trước
+              <ChevronLeft size={13} /> Trước
             </button>
             {Array.from({ length: Math.min(pages, 7) }, (_, idx) => {
               let pIndex = idx;
@@ -855,20 +675,212 @@ export const Warranties: React.FC = () => {
               disabled={loading || page + 1 >= pages}
               onClick={() => setPage(p => p + 1)}
             >
-              Sau <ChevronRight size={14} />
+              Sau <ChevronRight size={13} />
             </button>
           </div>
         </div>
       )}
 
+      {/* Modal Chi tiết Yêu Cầu Bảo Hành */}
+      {detailClaim && (() => {
+        const dMeta = statusMeta[detailClaim.status] || { label: detailClaim.status, badgeClass: 'fpt-badge-customer', icon: null };
+        return (
+          <div className="fpt-modal-overlay" onClick={() => setDetailClaim(null)}>
+            <div className="fpt-modal-box warranty-detail-modal-box" onClick={e => e.stopPropagation()}>
+              <div className="fpt-modal-header warranty-modal-header">
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h3 style={{ margin: 0 }}>Chi tiết yêu cầu bảo hành</h3>
+                    <span className={`fpt-badge warranty-badge ${dMeta.badgeClass}`}>
+                      {dMeta.icon}
+                      <span>{dMeta.label}</span>
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)', marginTop: '2px', display: 'inline-block' }}>
+                    Mã yêu cầu: <code style={{ fontSize: '0.725rem' }}>{detailClaim.id}</code>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setDetailClaim(null)}
+                  style={{ padding: '4px', borderRadius: '6px' }}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <div className="fpt-modal-body warranty-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* 2 Cột thông tin: Khách hàng & Thiết bị */}
+                <div className="warranty-detail-grid">
+                  {/* Khách hàng */}
+                  <div className="warranty-detail-card">
+                    <div className="warranty-detail-card-title">
+                      <User size={13} style={{ color: 'var(--fpt-orange)' }} />
+                      <span>Thông tin khách hàng</span>
+                    </div>
+                    <div className="warranty-detail-card-row">
+                      <span style={{ color: 'var(--text-muted)' }}>Họ tên:</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{detailClaim.customerName || 'Khách vãng lai'}</strong>
+                    </div>
+                    <div className="warranty-detail-card-row">
+                      <span style={{ color: 'var(--text-muted)' }}>Số điện thoại:</span>
+                      {detailClaim.customerPhone ? (
+                        <a
+                          href={`tel:${detailClaim.customerPhone}`}
+                          style={{ color: 'var(--fpt-orange)', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                        >
+                          <Phone size={11} /> {detailClaim.customerPhone}
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>Chưa cập nhật</span>
+                      )}
+                    </div>
+                    <div className="warranty-detail-card-row">
+                      <span style={{ color: 'var(--text-muted)' }}>Thời gian gửi:</span>
+                      <span>{new Date(detailClaim.createdAt).toLocaleString('vi-VN')}</span>
+                    </div>
+                  </div>
+
+                  {/* Thiết bị & KTV */}
+                  <div className="warranty-detail-card">
+                    <div className="warranty-detail-card-title">
+                      <ShieldCheck size={13} style={{ color: 'var(--fpt-orange)' }} />
+                      <span>Thiết bị & Kỹ thuật viên</span>
+                    </div>
+                    <div className="warranty-detail-card-row">
+                      <span style={{ color: 'var(--text-muted)' }}>Mã Serial:</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="warranty-serial-tag" onClick={() => handleCopySerial(detailClaim.serialNumber)} style={{ margin: 0 }}>
+                          <span>{detailClaim.serialNumber}</span>
+                          {copiedSerial === detailClaim.serialNumber ? <Check size={10} style={{ color: 'var(--fpt-emerald)' }} /> : <Copy size={10} style={{ opacity: 0.5 }} />}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="warranty-detail-card-row">
+                      <span style={{ color: 'var(--text-muted)' }}>KTV phụ trách:</span>
+                      <strong style={{ color: detailClaim.assigneeName ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                        {detailClaim.assigneeName || 'Chưa phân công'}
+                      </strong>
+                    </div>
+                    <div className="warranty-detail-card-row">
+                      <span style={{ color: 'var(--text-muted)' }}>Hồ sơ máy:</span>
+                      <Link
+                        to={`${lookupPath}?serial=${encodeURIComponent(detailClaim.serialNumber)}`}
+                        style={{ color: 'var(--fpt-orange)', fontSize: '0.725rem', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none', fontWeight: 600 }}
+                      >
+                        <QrCode size={11} />
+                        <span>Xem chi tiết thiết bị</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mô tả sự cố */}
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    Nội dung mô tả sự cố:
+                  </label>
+                  <div className="warranty-detail-issue-box">
+                    {detailClaim.description || 'Không có mô tả chi tiết.'}
+                  </div>
+                </div>
+
+                {/* Danh sách ảnh đính kèm */}
+                {detailClaim.images && detailClaim.images.length > 0 ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <ImageIcon size={13} style={{ color: '#3b82f6' }} />
+                        <span>Hình ảnh đính kèm ({detailClaim.images.length} ảnh):</span>
+                      </label>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Bấm vào ảnh để phóng to</span>
+                    </div>
+                    <div className="warranty-gallery-grid">
+                      {detailClaim.images.map((imgUrl, i) => (
+                        <div
+                          key={i}
+                          className="warranty-gallery-item"
+                          onClick={() => setActiveImage(imgUrl)}
+                          title={`Xem ảnh ${i + 1}`}
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Ảnh sự cố ${i + 1}`}
+                            className="warranty-gallery-img"
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                          <span className="warranty-gallery-badge">#{i + 1}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)', fontStyle: 'italic', background: 'var(--bg-shell)', padding: '6px 10px', borderRadius: '6px' }}>
+                    Không có hình ảnh đính kèm từ khách hàng.
+                  </div>
+                )}
+
+                {/* Ghi chú nội bộ nếu có */}
+                {detailClaim.internalNotes && (
+                  <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                    <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      Ghi chú nội bộ xử lý:
+                    </label>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
+                      {detailClaim.internalNotes}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="fpt-modal-footer warranty-modal-footer" style={{ justifyContent: 'space-between' }}>
+                <Link
+                  to={`${lookupPath}?serial=${encodeURIComponent(detailClaim.serialNumber)}`}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
+                  <QrCode size={13} />
+                  <span>Tra cứu Serial</span>
+                </Link>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setDetailClaim(null)}
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      const c = detailClaim;
+                      setDetailClaim(null);
+                      openClaimModal(c);
+                    }}
+                  >
+                    <span>Xử lý yêu cầu</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 6. Modal Xử Lý Yêu Cầu */}
       {selected && (
         <div className="fpt-modal-overlay" onClick={() => !busy && setSelected(null)}>
-          <div className="fpt-modal-box" onClick={e => e.stopPropagation()}>
-            <div className="fpt-modal-header">
+          <div className="fpt-modal-box warranty-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="fpt-modal-header warranty-modal-header">
               <div>
                 <h3>Xử lý yêu cầu bảo hành</h3>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   Thiết bị Serial: <strong style={{ color: 'var(--text-primary)' }}>{selected.serialNumber}</strong>
                 </span>
               </div>
@@ -877,29 +889,78 @@ export const Warranties: React.FC = () => {
                 className="btn btn-secondary btn-sm"
                 disabled={busy}
                 onClick={() => setSelected(null)}
-                style={{ padding: '6px', borderRadius: '8px' }}
+                style={{ padding: '4px', borderRadius: '6px' }}
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             </div>
 
             <form onSubmit={saveClaim}>
-              <div className="fpt-modal-body">
+              <div className="fpt-modal-body warranty-modal-body">
                 {editError && (
-                  <div className="card" style={{ padding: '10px 14px', background: 'var(--fpt-rose-soft)', color: 'var(--fpt-rose)', borderColor: 'var(--fpt-rose)', fontSize: '0.85rem' }}>
+                  <div className="card" style={{ padding: '8px 12px', background: 'var(--fpt-rose-soft)', color: 'var(--fpt-rose)', borderColor: 'var(--fpt-rose)', fontSize: '0.785rem' }}>
                     {editError}
                   </div>
                 )}
 
                 {/* Khách hàng tóm tắt */}
-                <div style={{ background: 'var(--bg-surface)', padding: '12px 14px', borderRadius: '10px', fontSize: '0.85rem' }}>
+                <div style={{ background: 'var(--bg-surface)', padding: '10px 12px', borderRadius: '8px', fontSize: '0.775rem' }}>
                   <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selected.customerName || 'Khách hàng'} {selected.customerPhone ? `· ${selected.customerPhone}` : ''}</div>
-                  <div style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>{selected.description}</div>
+                  <div style={{ color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>{selected.description}</div>
                 </div>
+
+                {/* Ảnh sự cố & Ảnh minh chứng của KTV */}
+                {selected.images && selected.images.length > 0 && (
+                  <div style={{ marginTop: '4px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <ImageIcon size={13} color="#3b82f6" />
+                      <span>Ảnh sự cố ({selected.images.length} ảnh):</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {selected.images.map((url, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => setActiveImage(url)}
+                          style={{
+                            position: 'relative',
+                            cursor: 'pointer',
+                            borderRadius: '6px',
+                            overflow: 'hidden',
+                            border: '1px solid var(--border-subtle)',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
+                          }}
+                          title="Bấm để xem ảnh phóng to"
+                        >
+                          <img
+                            src={url}
+                            alt={`Ảnh minh chứng ${idx + 1}`}
+                            style={{ width: '64px', height: '64px', objectFit: 'cover', display: 'block' }}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                          <span style={{
+                            position: 'absolute',
+                            bottom: '2px',
+                            right: '2px',
+                            background: 'rgba(0,0,0,0.7)',
+                            color: '#fff',
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            padding: '0 3px',
+                            borderRadius: '2px'
+                          }}>
+                            #{idx + 1}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Phân công kỹ thuật viên (dành cho Quản lý) */}
                 {manager && (
-                  <div className="fpt-form-group">
+                  <div className="warranty-form-group">
                     <label>Phân công kỹ thuật viên phụ trách</label>
                     <select
                       value={assignee}
@@ -913,12 +974,11 @@ export const Warranties: React.FC = () => {
                         </option>
                       ))}
                     </select>
-                    <span className="fpt-form-help">Kỹ thuật viên sẽ nhận được thông báo để kiểm tra thiết bị.</span>
                   </div>
                 )}
 
                 {/* Trạng thái */}
-                <div className="fpt-form-group">
+                <div className="warranty-form-group">
                   <label>Trạng thái xử lý</label>
                   <select
                     value={status}
@@ -932,26 +992,26 @@ export const Warranties: React.FC = () => {
                 </div>
 
                 {/* Ghi chú nội bộ */}
-                <div className="fpt-form-group">
+                <div className="warranty-form-group">
                   <label>Ghi chú kỹ thuật nội bộ</label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     maxLength={10000}
                     placeholder="Nhập chi tiết linh kiện thay thế, nguyên nhân sự cố hoặc ghi chú bảo hành..."
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
                     disabled={busy}
                   />
-                  <span className="fpt-form-help">Ghi chú chỉ hiển thị trong nội bộ ban quản trị và kỹ thuật viên.</span>
                 </div>
               </div>
 
-              <div className="fpt-modal-footer">
+              <div className="fpt-modal-footer warranty-modal-footer">
                 <button
                   type="button"
                   className="btn btn-secondary"
                   disabled={busy}
                   onClick={() => setSelected(null)}
+                  style={{ height: '30px', fontSize: '0.75rem', padding: '0 12px' }}
                 >
                   Hủy bỏ
                 </button>
@@ -959,9 +1019,9 @@ export const Warranties: React.FC = () => {
                   type="submit"
                   className="btn btn-primary"
                   disabled={busy}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  style={{ height: '30px', fontSize: '0.75rem', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
                 >
-                  {busy ? <RefreshCw size={14} className="spin" /> : <Check size={14} />}
+                  {busy ? <RefreshCw size={13} className="spin" /> : <Check size={13} />}
                   <span>{busy ? 'Đang lưu…' : 'Lưu cập nhật'}</span>
                 </button>
               </div>

@@ -23,14 +23,16 @@ import {
   X,
   RefreshCw,
   Info,
-  Truck
+  Truck,
+  ZoomIn,
+  Camera,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../contexts/ToastContext';
-import { adminRequest, AdminApiError } from '../../services/adminRequest';
+import { adminRequest } from '../../services/adminRequest';
 import { deliveryApi, Job } from '../../services/deliveryInstallation';
 import { PoDeliveryDispatch } from '../../components/delivery/PoDeliveryDispatch';
-import { PoAcceptanceReview } from '../../components/delivery/PoAcceptanceReview';
 import './ticket-detail.css';
 
 interface TicketItemApproval {
@@ -58,6 +60,7 @@ interface TicketHistory {
   ticket_id: string;
   action: string;
   actor_id?: string | null;
+  actor_name?: string | null;
   reason?: string | null;
   created_at: string;
 }
@@ -109,7 +112,7 @@ const statusConfig: Record<string, { label: string; bg: string; color: string; b
   PENDING: {
     label: 'Chờ thẩm định',
     bg: 'rgba(245, 158, 11, 0.12)',
-    color: '#f59e0b',
+    color: '#d97706',
     border: 'rgba(245, 158, 11, 0.28)',
     icon: <Clock size={13} />
   },
@@ -162,7 +165,6 @@ const formatDateTime = (iso?: string | null) => {
     return d.toLocaleString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -187,15 +189,26 @@ export const TicketDetail: React.FC = () => {
   const [actionType, setActionType] = useState<'return' | 'reject' | null>(null);
   const [decisionReason, setDecisionReason] = useState('');
 
-  // Item Reject Dialog State (Replaces native browser prompt)
+  // Item Reject Dialog State
   const [itemRejectDialog, setItemRejectDialog] = useState<{
     open: boolean;
     orderItemId: string | null;
     productName: string;
   }>({ open: false, orderItemId: null, productName: '' });
   const [itemRejectReason, setItemRejectReason] = useState('');
+
+  // Delivery & Acceptance State
   const [deliveryJob, setDeliveryJob] = useState<Job | null>(null);
   const [loadingJob, setLoadingJob] = useState<boolean>(false);
+  const [showDispatchSection, setShowDispatchSection] = useState<boolean>(false);
+  const [reworkDialogOpen, setReworkDialogOpen] = useState<boolean>(false);
+  const [reworkReason, setReworkReason] = useState<string>('');
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [showAcceptanceModal, setShowAcceptanceModal] = useState<boolean>(false);
+
+  // Collapsible Accordion & History Toggle
+  const [showGuidelines, setShowGuidelines] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
   const isPO = profile?.role === 'product_manager';
   const backListUrl = isPO ? '/po/approvals' : '/admin/orders/approvals';
@@ -212,25 +225,26 @@ export const TicketDetail: React.FC = () => {
     }
   }, []);
 
-  const seqInfo = useMemo(() => {
-    const s = location.state as { seq?: string; orderSeq?: string } | undefined;
-    return {
-      seq: s?.seq || id?.slice(0, 4).toUpperCase() || '01',
-      orderSeq: s?.orderSeq || ticket?.order_id?.slice(0, 4).toUpperCase() || '01'
-    };
-  }, [location.state, id, ticket?.order_id]);
-
-  const hasForeignItems = useMemo(() => {
-    if (!ticket?.itemApprovals || ticket.itemApprovals.length === 0) return false;
-    return ticket.itemApprovals.some((item) => item.managerId !== profile?.id);
-  }, [ticket?.itemApprovals, profile?.id]);
-
   const loadTicket = async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const data = await adminRequest<Ticket>(`/tickets/${id}`);
-      setTicket(data);
+      let data: Ticket | null = null;
+      try {
+        data = await adminRequest<Ticket>(`/tickets/${id}`);
+      } catch (err1) {
+        // Fallback: If id is an order UUID, query ticket by order
+        try {
+          data = await adminRequest<Ticket>(`/orders/${id}/ticket`);
+        } catch {
+          throw err1;
+        }
+      }
+      if (data && data.id) {
+        setTicket(data);
+      } else {
+        throw new Error('Không tìm thấy thông tin phiếu');
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Không thể tải chi tiết phiếu', 'Lỗi tải phiếu');
     } finally {
@@ -241,20 +255,31 @@ export const TicketDetail: React.FC = () => {
   const refreshTicketSilently = useCallback(async () => {
     if (!id) return;
     try {
-      const data = await adminRequest<Ticket>(`/tickets/${id}`);
-      setTicket((prev) => {
-        const prevStatus = prev?.order?.status;
-        const newStatus = data?.order?.status;
-        if (prevStatus && prevStatus !== newStatus && (newStatus === 'paid' || newStatus === 'confirmed')) {
-          toast.success(
-            `Đơn hàng #${(data.order_id || '').slice(0, 8).toUpperCase()} vừa được khách hàng thanh toán thành công!`,
-            'Thanh toán thành công'
-          );
+      let data: Ticket | null = null;
+      try {
+        data = await adminRequest<Ticket>(`/tickets/${id}`);
+      } catch {
+        try {
+          data = await adminRequest<Ticket>(`/orders/${id}/ticket`);
+        } catch {
+          data = null;
         }
-        return data;
-      });
-      if (data?.order_id) {
-        void loadDeliveryJob(data.order_id);
+      }
+      if (data && data.id) {
+        setTicket((prev) => {
+          const prevStatus = prev?.order?.status;
+          const newStatus = data?.order?.status;
+          if (prevStatus && prevStatus !== newStatus && (newStatus === 'paid' || newStatus === 'confirmed')) {
+            toast.success(
+              `Đơn hàng #${(data.order_id || '').slice(0, 8).toUpperCase()} vừa được khách hàng thanh toán thành công!`,
+              'Thanh toán thành công'
+            );
+          }
+          return data;
+        });
+        if (data.order_id) {
+          void loadDeliveryJob(data.order_id);
+        }
       }
     } catch {
       // Ignore background errors
@@ -271,17 +296,17 @@ export const TicketDetail: React.FC = () => {
     }
   }, [ticket?.order_id, loadDeliveryJob]);
 
-  // Realtime Polling: Cập nhật tự động sau mỗi 3s khi đang mở xem phiếu
+  // Realtime Polling
   useEffect(() => {
     const timer = setInterval(() => {
       if (!document.hidden) {
         void refreshTicketSilently();
       }
-    }, 3000);
+    }, 4000);
     return () => clearInterval(timer);
   }, [refreshTicketSilently]);
 
-  // Event Listeners: Phản ứng ngay lập tức khi nhận được sự kiện thanh toán hoặc cập nhật đơn
+  // Event Listeners
   useEffect(() => {
     const handleOrderEvent = () => {
       void refreshTicketSilently();
@@ -296,6 +321,24 @@ export const TicketDetail: React.FC = () => {
     };
   }, [refreshTicketSilently]);
 
+  const seqInfo = useMemo(() => {
+    const rawOrder = (ticket?.order_id || id || '').replace(/-/g, '').toUpperCase();
+    const shortOrderCode = rawOrder.slice(0, 8) || '349CB78F';
+    const stateSeq = (location.state as any)?.seq;
+    const fallbackSeq = (ticket?.id || id || '').replace(/-/g, '').slice(0, 2).toUpperCase() || '01';
+    const displaySeq = stateSeq || (fallbackSeq.match(/^\d+$/) ? fallbackSeq : '01');
+    return {
+      seq: displaySeq,
+      orderSeq: (location.state as any)?.orderSeq || displaySeq,
+      shortOrderCode
+    };
+  }, [ticket?.order_id, ticket?.id, id, location.state]);
+
+  const hasForeignItems = useMemo(() => {
+    if (!ticket?.itemApprovals || ticket.itemApprovals.length === 0) return false;
+    return ticket.itemApprovals.some((item) => item.managerId !== profile?.id);
+  }, [ticket?.itemApprovals, profile?.id]);
+
   const handleCopy = (text: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(text);
@@ -303,8 +346,6 @@ export const TicketDetail: React.FC = () => {
     toast.success(`Đã sao chép: ${text.slice(0, 8)}...`, 'Sao chép thành công');
     setTimeout(() => setCopiedId(null), 2000);
   };
-
-  const [showGuidelines, setShowGuidelines] = useState(false);
 
   // Parse Address Snapshot JSON cleanly
   const parsedAddress = useMemo(() => {
@@ -353,35 +394,31 @@ export const TicketDetail: React.FC = () => {
     };
   }, [ticket]);
 
-  // Translate audit actions into human-friendly Vietnamese badges
+  // Translate audit actions
   const getAuditActionInfo = (action: string) => {
     const act = (action || '').toUpperCase();
     if (act === 'ITEM_APPROVE') return { label: 'Duyệt từng món', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' };
     if (act === 'ITEM_REJECT') return { label: 'Từ chối món', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
-    if (act === 'APPROVE' || act === 'TICKET_APPROVE') return { label: 'Duyệt toàn bộ phiếu', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' };
+    if (act === 'APPROVE' || act === 'TICKET_APPROVE') return { label: 'Phê duyệt PO', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' };
     if (act === 'REJECT' || act === 'TICKET_REJECT') return { label: 'Từ chối phiếu', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' };
     if (act === 'RETURN') return { label: 'Yêu cầu giải trình', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' };
-    if (act === 'CREATED') return { label: 'Khởi tạo phiếu', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
+    if (act === 'CREATED') return { label: 'Khởi tạo đơn', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
     if (act === 'PARTIALLY_REJECTED' || act === 'PARTIAL_APPROVAL_PROMPT') return { label: 'Duyệt một phần', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
-    if (act.includes('CUSTOMER_DECISION') || act.includes('CUSTOMER_ACCEPTED')) return { label: 'Khách xác nhận đơn', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
-    // Technician workflow actions
+    if (act.includes('CUSTOMER_DECISION') || act.includes('CUSTOMER_ACCEPTED')) return { label: 'Khách xác nhận', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
     if (act.includes('ASSIGN')) return { label: 'Phân công KTV', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
-    if (act.includes('START')) return { label: 'KTV bắt đầu di chuyển', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' };
-    if (act.includes('DELIVER')) return { label: 'Đã đến địa chỉ giao', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
+    if (act.includes('START')) return { label: 'KTV di chuyển', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' };
+    if (act.includes('DELIVER')) return { label: 'Đã đến địa chỉ', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
     if (act.includes('LINK_SERIAL')) return { label: 'Gán Serial thiết bị', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' };
-    if (act.includes('INSTALL')) return { label: 'Đã hoàn thành lắp đặt', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    if (act.includes('INSTALL')) return { label: 'Lắp đặt hoàn tất', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
     if (act.includes('SUBMIT_COMPLETION')) return { label: 'Nộp hồ sơ nghiệm thu', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)' };
     if (act.includes('APPROVE_COMPLETION')) return { label: 'PO duyệt nghiệm thu', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' };
-    if (act.includes('ACCEPT')) return { label: 'Hoàn tất nghiệm thu & Bảo hành', color: '#10b981', bg: 'rgba(16, 185, 129, 0.16)' };
-    if (act.includes('FAIL')) return { label: 'Giao lắp thất bại / Hoãn', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    if (act.includes('ACCEPT')) return { label: 'Nghiệm thu hoàn tất', color: '#10b981', bg: 'rgba(16, 185, 129, 0.16)' };
+    if (act.includes('FAIL')) return { label: 'Yêu cầu xử lý lại', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
     return { label: action.replace(/^TECH_/, ''), color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
   };
 
-  // Format audit note cleanly (avoid raw item UUIDs and "null" text)
   const formatAuditNote = (reason?: string | null) => {
     if (!reason || reason === 'null' || reason.trim() === '') return null;
-    
-    // Check for "Item <uuid>: <note>" or "item:<uuid>: <note>"
     const itemMatch = reason.match(/^(?:Item |item:)([0-9a-fA-F-]+)(?::\s*(.*))?$/i);
     if (itemMatch) {
       const itemId = itemMatch[1];
@@ -392,20 +429,13 @@ export const TicketDetail: React.FC = () => {
       const sku = matchedItem?.sku ? ` (${matchedItem.sku})` : '';
       return note ? `${prodName}${sku}: "${note}"` : `Đã duyệt ${prodName}${sku}`;
     }
-
-    if (reason === 'ORDER_CREATED_AWAITING_APPROVAL') {
-      return 'Đơn hàng mới tạo chuyển sang luồng thẩm định PO';
-    }
-    if (reason === 'CUSTOMER_ACCEPTED_PARTIAL_ORDER') {
-      return 'Khách hàng đồng ý tiếp tục đơn hàng với các sản phẩm được duyệt';
-    }
-    if (reason === 'INSTALLATION_ACCEPTED') {
-      return 'Biên bản bàn giao và nghiệm thu thiết bị đã được xác nhận thành công';
-    }
+    if (reason === 'ORDER_CREATED_AWAITING_APPROVAL') return 'Đơn hàng mới tạo chuyển sang luồng thẩm định PO';
+    if (reason === 'CUSTOMER_ACCEPTED_PARTIAL_ORDER') return 'Khách hàng đồng ý tiếp tục đơn hàng';
+    if (reason === 'INSTALLATION_ACCEPTED') return 'Biên bản nghiệm thu thiết bị đã được xác nhận';
     return reason;
   };
 
-  // Sort Audit History: NEWEST FIRST ("sắp xếp từ mới nhất trước")
+  // Sort Audit History: Newest First
   const sortedHistory = useMemo(() => {
     if (!ticket?.history) return [];
     return [...ticket.history].sort((a, b) => {
@@ -415,7 +445,13 @@ export const TicketDetail: React.FC = () => {
     });
   }, [ticket?.history]);
 
-  // Act on single item (approve / reject)
+  // Display limited items for continuous timeline
+  const displayedHistory = useMemo(() => {
+    if (showAllHistory) return sortedHistory;
+    return sortedHistory.slice(0, 4);
+  }, [sortedHistory, showAllHistory]);
+
+  // Act on single item
   const actItem = async (orderItemId: string, action: 'approve' | 'reject', customReason?: string) => {
     if (!ticket || busy) return;
     setBusy(true);
@@ -459,7 +495,7 @@ export const TicketDetail: React.FC = () => {
       const isPaid = ticket.order?.paid_at || ['paid', 'confirmed'].includes(ticket.order?.status || '');
       const successMsg = action === 'approve'
         ? (isPaid
-            ? 'Đã phê duyệt PO Ticket thành công! Đơn hàng đã thanh toán, sẵn sàng chuyển sang điều phối xuất kho & giao lắp.'
+            ? 'Đã phê duyệt PO Ticket thành công! Đơn hàng đã thanh toán, sẵn sàng điều phối giao lắp.'
             : 'Đã phê duyệt PO Ticket thành công! Đơn hàng chuyển sang trạng thái chờ khách hàng thanh toán.')
         : action === 'return'
         ? 'Đã gửi yêu cầu giải trình đến bộ phận kinh doanh.'
@@ -469,6 +505,51 @@ export const TicketDetail: React.FC = () => {
       setActionType(null);
     } catch (e: any) {
       toast.error(e?.message || 'Thao tác thất bại', 'Lỗi phê duyệt');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // PO Acceptance Review Actions
+  const handleApproveAcceptance = async () => {
+    if (!deliveryJob || busy) return;
+    setBusy(true);
+    try {
+      const idempotencyKey = crypto.randomUUID();
+      const updated = await deliveryApi.approveCompletion(
+        deliveryJob.id,
+        { approvalNote: 'PO phê duyệt nghiệm thu đơn hàng' },
+        deliveryJob.version,
+        idempotencyKey
+      );
+      toast.success('Phê duyệt nghiệm thu thành công! Đơn hàng đã chính thức hoàn tất.');
+      setDeliveryJob(updated);
+      void loadTicket();
+    } catch (err: any) {
+      toast.error(err?.message || 'Không thể phê duyệt nghiệm thu.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRejectAcceptance = async () => {
+    if (!deliveryJob || !reworkReason.trim() || busy) return;
+    setBusy(true);
+    try {
+      const idempotencyKey = crypto.randomUUID();
+      const updated = await deliveryApi.rejectCompletion(
+        deliveryJob.id,
+        { reason: reworkReason.trim() },
+        deliveryJob.version,
+        idempotencyKey
+      );
+      toast.success('Đã gửi yêu cầu xử lý lại tới Kỹ thuật viên.');
+      setReworkDialogOpen(false);
+      setReworkReason('');
+      setDeliveryJob(updated);
+      void loadTicket();
+    } catch (err: any) {
+      toast.error(err?.message || 'Không thể gửi yêu cầu xử lý lại.');
     } finally {
       setBusy(false);
     }
@@ -494,7 +575,7 @@ export const TicketDetail: React.FC = () => {
           <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>
             Phiếu có thể đã bị xóa hoặc bạn không có quyền xem thông tin phiếu này.
           </p>
-          <Link to={backListUrl} className="btn btn-secondary">
+          <Link to={backListUrl} className="btn-tkd-return" style={{ textDecoration: 'none' }}>
             &larr; Quay lại danh sách phiếu
           </Link>
         </div>
@@ -510,41 +591,66 @@ export const TicketDetail: React.FC = () => {
     icon: <Clock size={13} />
   };
 
+  const isPaid = !!(ticket.order?.paid_at || ['paid', 'confirmed'].includes(ticket.order?.status || ''));
+  const paymentMethod = ticket.order?.payment_method?.toUpperCase() || 'VNPAY';
+  const paymentTime = ticket.order?.paid_at ? formatDateTime(ticket.order.paid_at) : (ticket.order_created_at ? formatDateTime(ticket.order_created_at) : '07:30 20/10/2026');
+
+  const photos = deliveryJob?.completionPhotos || [];
+  const assignedTechName = deliveryJob?.customer?.fullName || 'Kỹ thuật viên SmartBox';
+
   return (
     <div className="tkd-page">
-      {/* 1. Top Navigation Bar */}
-      <div className="tkd-top-nav">
-        <Link to={backListUrl} className="tkd-back-btn" id="tkd-back-to-list-btn">
-          <span className="tkd-back-icon">
-            <ArrowLeft size={16} />
-          </span>
-          <span>Quay lại danh sách phiếu PO</span>
-        </Link>
+      {/* 1. Top Sub-bar & Navigation Header */}
+      <div className="tkd-header-wrap">
+        <div className="tkd-subbar">
+          <div className="tkd-subbar-left">
+            <Link to={backListUrl} className="tkd-back-link">
+              <ArrowLeft size={14} />
+              <span>Quay lại</span>
+            </Link>
 
-        <button
-          type="button"
-          onClick={() => void loadTicket()}
-          className="tkd-refresh-btn"
-          disabled={busy}
-          id="tkd-refresh-btn"
-          title="Tải lại dữ liệu phiếu mới nhất"
-        >
-          <RefreshCw size={13} className={busy ? 'spin' : ''} />
-          <span>Làm mới dữ liệu</span>
-        </button>
-      </div>
+            <span className="tkd-subbar-sep">·</span>
 
-      {/* 2. Header Card */}
-      <div className="tkd-header-card">
-        <div className="tkd-header-left">
-          <div className="tkd-header-icon">
-            <FileCheck size={22} />
+            <span className="tkd-meta-tag">PO-{seqInfo.seq}</span>
+            <span>·</span>
+            <span className="tkd-meta-tag">
+              Đơn hàng #{seqInfo.shortOrderCode}
+              <button
+                type="button"
+                className="tkd-copy-btn"
+                onClick={(e) => handleCopy(ticket.order_id, e)}
+                title="Sao chép UUID đơn hàng"
+              >
+                {copiedId === ticket.order_id ? <CheckCheck size={12} color="#10b981" /> : <Copy size={12} />}
+              </button>
+            </span>
+            <span>·</span>
+            <span>{formatDateTime(ticket.created_at)}</span>
           </div>
-          <div>
-            <h1 className="tkd-header-title">
-              <span>Phiếu Thẩm Định PO #{seqInfo.seq}</span>
+
+          <button
+            type="button"
+            onClick={() => void loadTicket()}
+            className="tkd-refresh-btn"
+            disabled={busy}
+            title="Làm mới dữ liệu"
+          >
+            <RefreshCw size={13} className={busy ? 'spin' : ''} />
+            <span>Làm mới</span>
+          </button>
+        </div>
+
+        {/* Title & Status Badges */}
+        <div className="tkd-title-row">
+          <div className="tkd-title-left">
+            <h1 className="tkd-main-title">
+              <span>Phiếu thẩm định PO #{seqInfo.seq}</span>
+            </h1>
+
+            <div className="tkd-title-badges">
+              {/* Badge 1: Phê duyệt PO */}
               <span
-                className="tkd-status-badge"
+                className="tkd-badge-pill"
                 style={{
                   background: currentStatusCfg.bg,
                   color: currentStatusCfg.color,
@@ -554,964 +660,614 @@ export const TicketDetail: React.FC = () => {
                 {currentStatusCfg.icon}
                 <span>{currentStatusCfg.label}</span>
               </span>
-            </h1>
 
-            <div className="tkd-header-meta">
-              <span className="tkd-seq-tag po">
-                PO: #{seqInfo.seq}
-                <button
-                  type="button"
-                  onClick={(e) => handleCopy(ticket.id, e)}
-                  title="Sao chép UUID phiếu"
-                  className="tkd-copy-icon-btn"
-                >
-                  {copiedId === ticket.id ? <CheckCheck size={12} color="#10b981" /> : <Copy size={12} />}
-                </button>
+              {/* Badge 2: Trạng thái thanh toán */}
+              <span
+                className="tkd-badge-pill tkd-badge-payment"
+                style={{
+                  background: isPaid ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                  color: isPaid ? '#10b981' : '#d97706',
+                  borderColor: isPaid ? 'rgba(16, 185, 129, 0.28)' : 'rgba(245, 158, 11, 0.28)'
+                }}
+                title={`Cổng thanh toán ${paymentMethod} · ${paymentTime}`}
+              >
+                {isPaid ? <CheckCircle2 size={13} /> : <Clock size={13} />}
+                <span>{isPaid ? 'Thanh toán thành công' : 'Chờ khách hàng thanh toán'}</span>
               </span>
 
-              <span className="tkd-seq-tag order">
-                Đơn hàng: #ĐH-{seqInfo.orderSeq}
-                <button
-                  type="button"
-                  onClick={(e) => handleCopy(ticket.order_id, e)}
-                  title="Sao chép UUID đơn hàng"
-                  className="tkd-copy-icon-btn"
-                >
-                  {copiedId === ticket.order_id ? <CheckCheck size={12} color="#10b981" /> : <Copy size={12} />}
-                </button>
-              </span>
-
-              <span className="tkd-meta-item">
-                <Clock size={13} />
-                <span>Lần thẩm định #{ticket.review_round}</span>
-              </span>
-
-              <span className="tkd-meta-item">
-                <Calendar size={13} />
-                <span>Tạo lúc: {formatDateTime(ticket.created_at)}</span>
+              {/* Badge 3: Trạng thái quyết toán */}
+              <span
+                className="tkd-badge-pill tkd-badge-settlement"
+                style={{
+                  background: isPaid ? 'rgba(16, 185, 129, 0.18)' : 'rgba(245, 158, 11, 0.18)',
+                  color: isPaid ? '#059669' : '#d97706',
+                  borderColor: isPaid ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)'
+                }}
+                title={`Cổng thanh toán ${paymentMethod} · ${isPaid ? 'Đã quyết toán' : 'Chờ thanh toán'}`}
+              >
+                {isPaid ? 'ĐÃ QUYẾT TOÁN' : 'CHỜ THANH TOÁN'}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Main Workspace Grid */}
+      {/* 2. Main 2-Column Workspace */}
       <div className="tkd-grid">
-        {/* Left Column: Details, Items, Actions */}
+        {/* ======================================================== */}
+        {/* CỘT TRÁI: NỘI DUNG NGHIỆP VỤ (GỒM 4 KHU VỰC CHÍNH) */}
+        {/* ======================================================== */}
         <div>
-          {/* Realtime Payment Notification Banner */}
-          {(ticket.order?.paid_at || ticket.order?.status === 'paid' || ticket.order?.status === 'confirmed') ? (
-            <div style={{
-              marginBottom: 16,
-              padding: '14px 18px',
-              borderRadius: 10,
-              background: 'rgba(16, 185, 129, 0.09)',
-              border: '1px solid rgba(16, 185, 129, 0.28)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 12
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: '50%',
-                  background: '#10b981',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  flexShrink: 0
-                }}>
-                  <CheckCircle2 size={20} />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.96rem', color: 'var(--text-primary)' }}>
-                    Khách hàng đã thanh toán đơn hàng thành công (Quyết toán)
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                    Cổng thanh toán: <strong style={{ color: 'var(--text-primary)' }}>{ticket.order?.payment_method?.toUpperCase() || 'VNPAY'}</strong>
-                    {ticket.order?.paid_at && ` • Thời gian: ${formatDateTime(ticket.order.paid_at)}`}
-                  </div>
-                </div>
-              </div>
-              <span style={{
-                background: 'rgba(16, 185, 129, 0.16)',
-                color: '#059669',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-                padding: '4px 12px',
-                borderRadius: 6,
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                letterSpacing: '0.5px'
-              }}>
-                ĐÃ QUYẾT TOÁN
-              </span>
-            </div>
-          ) : ticket.order?.status === 'awaiting_payment' ? (
-            <div style={{
-              marginBottom: 16,
-              padding: '14px 18px',
-              borderRadius: 10,
-              background: 'rgba(245, 158, 11, 0.09)',
-              border: '1px solid rgba(245, 158, 11, 0.28)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 12
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: '50%',
-                  background: '#f59e0b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  flexShrink: 0
-                }}>
-                  <Clock size={20} />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                    Đã duyệt PO • Đang chờ khách hàng thanh toán qua VNPAY
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                    Hệ thống đang mở cổng thanh toán. Trang chi tiết này sẽ tự động cập nhật ngay khi tiền về.
-                  </div>
-                </div>
-              </div>
-              <span style={{
-                background: 'rgba(245, 158, 11, 0.16)',
-                color: '#b45309',
-                border: '1px solid rgba(245, 158, 11, 0.35)',
-                padding: '4px 12px',
-                borderRadius: 6,
-                fontSize: '0.78rem',
-                fontWeight: 800
-              }}>
-                CHỜ THANH TOÁN
-              </span>
-            </div>
-          ) : null}
-
-          {/* Card 1: Customer & Order Overview */}
-          <div className="tkd-card">
-            <div className="tkd-card-header">
-              <h3 className="tkd-card-title">
-                <User size={18} color="var(--accent-primary)" />
-                <span>Thông tin Đơn hàng & Người nhận</span>
-              </h3>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                Đơn giá trị: <b style={{ color: '#10b981', fontSize: '0.95rem' }}>{formatVnd(ticket.order_total || ticket.order?.total)}</b>
-              </span>
+          {/* KHU VỰC 1 & 2: THÔNG TIN ĐƠN HÀNG & DANH MỤC SẢN PHẨM */}
+          <div className="tkd-section-card">
+            <div className="tkd-section-header">
+              <h2 className="tkd-section-title">
+                <User size={16} style={{ color: 'var(--accent-primary)' }} />
+                <span>Thông tin đơn hàng</span>
+              </h2>
             </div>
 
-            <div className="tkd-info-cols">
-              {/* Customer Column */}
-              <div className="tkd-info-block">
-                <div className="tkd-info-block-title">
-                  <User size={14} />
-                  <span>Khách hàng & Người nhận</span>
+            {/* Row 1: Khách hàng & Tổng giá trị */}
+            <div className="tkd-order-summary-grid">
+              {/* Khách hàng */}
+              <div>
+                <div className="tkd-block-label">
+                  <User size={12} />
+                  <span>Khách hàng</span>
                 </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Người nhận:</span>
-                  <span className="tkd-info-val">
-                    {parsedAddress.recipientName}
-                  </span>
+                <div className="tkd-customer-name">{parsedAddress.recipientName}</div>
+                <div className="tkd-customer-contact">
+                  {parsedAddress.phone && (
+                    <div>
+                      <a href={`tel:${parsedAddress.phone}`}>{parsedAddress.phone}</a>
+                    </div>
+                  )}
+                  {parsedAddress.email && <div>{parsedAddress.email}</div>}
                 </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Điện thoại:</span>
-                  <span className="tkd-info-val">
-                    {parsedAddress.phone ? (
-                      <a
-                        href={`tel:${parsedAddress.phone}`}
-                        style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 700 }}
-                      >
-                        {parsedAddress.phone}
-                      </a>
-                    ) : (
-                      'Chưa có số điện thoại'
-                    )}
-                  </span>
-                </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Email:</span>
-                  <span className="tkd-info-val">
-                    {parsedAddress.email || 'Chưa cung cấp'}
-                  </span>
-                </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Địa chỉ nhận:</span>
-                  <span className="tkd-info-val" style={{ lineHeight: 1.45 }}>
-                    <MapPin size={12} style={{ display: 'inline', marginRight: 4, color: 'var(--accent-primary)', verticalAlign: -1 }} />
-                    {parsedAddress.fullAddress}
-                  </span>
-                </div>
-
-                {parsedAddress.installationNote && (
-                  <div style={{
-                    marginTop: 8,
-                    padding: '6px 10px',
-                    borderRadius: 6,
-                    background: 'rgba(249, 115, 22, 0.08)',
-                    border: '1px solid rgba(249, 115, 22, 0.22)',
-                    fontSize: '0.8rem',
-                    color: '#c2410c'
-                  }}>
-                    <strong>Ghi chú lắp đặt: </strong>
-                    <span>{parsedAddress.installationNote}</span>
-                  </div>
-                )}
               </div>
 
-              {/* Order Column */}
-              <div className="tkd-info-block">
-                <div className="tkd-info-block-title">
-                  <CreditCard size={14} />
-                  <span>Chi tiết đơn hàng</span>
+              {/* Tổng giá trị */}
+              <div>
+                <div className="tkd-block-label">
+                  <CreditCard size={12} />
+                  <span>Tổng giá trị</span>
                 </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Mã đơn gốc:</span>
-                  <span className="tkd-info-val" style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.82rem' }}>
-                    {ticket.order_id}
-                  </span>
+                <div className="tkd-total-amount">
+                  {formatVnd(ticket.order_total || ticket.order?.total)}
                 </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Tổng thanh toán:</span>
-                  <span className="tkd-info-val" style={{ fontSize: '1.15rem', color: '#10b981', fontWeight: 800 }}>
-                    {formatVnd(ticket.order_total || ticket.order?.total)}
-                  </span>
-                </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Số mặt hàng:</span>
-                  <span className="tkd-info-val">
-                    {ticket.itemApprovals?.length ?? ticket.item_count ?? 1} cấu hình sản phẩm
-                  </span>
-                </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Trạng thái đơn:</span>
-                  <span className="tkd-info-val" style={{
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: ticket.order?.status === 'cancelled'
-                      ? '#ef4444'
-                      : ['paid', 'confirmed'].includes(ticket.order?.status || '')
-                      ? '#10b981'
-                      : 'var(--accent-primary)'
-                  }}>
-                    {ticket.order?.status === 'cancelled'
-                      ? 'ĐÃ HỦY (CANCELLED)'
-                      : ticket.order?.status === 'awaiting_payment'
-                      ? 'CHỜ KHÁCH THANH TOÁN'
-                      : ticket.order?.status === 'paid'
-                      ? 'ĐÃ THANH TOÁN'
-                      : ticket.order?.status === 'confirmed'
-                      ? 'ĐÃ XÁC NHẬN & QUYẾT TOÁN'
-                      : ticket.order?.status === 'delivering'
-                      ? 'ĐANG GIAO HÀNG'
-                      : ticket.order?.status === 'completed'
-                      ? 'HOÀN TẤT'
-                      : (ticket.order?.status || 'Chờ thẩm định')}
-                  </span>
-                </div>
-
-                <div className="tkd-info-row">
-                  <span className="tkd-info-label">Thanh toán:</span>
-                  <span className="tkd-info-val">
-                    {(ticket.order?.paid_at || ['paid', 'confirmed'].includes(ticket.order?.status || '')) ? (
-                      <span style={{ color: '#10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <CheckCircle2 size={13} />
-                        Đã quyết toán ({ticket.order?.payment_method?.toUpperCase() || 'VNPAY'})
-                      </span>
-                    ) : ticket.order?.status === 'awaiting_payment' ? (
-                      <span style={{ color: '#f59e0b', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <Clock size={13} />
-                        Chờ khách thanh toán ({ticket.order?.payment_method?.toUpperCase() || 'VNPAY'})
-                      </span>
-                    ) : (
-                      <span style={{ color: '#64748b', fontWeight: 600 }}>
-                        Chưa thanh toán ({ticket.order?.payment_method?.toUpperCase() || 'VNPAY'})
-                      </span>
-                    )}
-                  </span>
+                <div className="tkd-total-meta">
+                  {ticket.itemApprovals?.length ?? ticket.item_count ?? 1} sản phẩm · {isPaid ? 'Thanh toán hoàn tất' : 'Chờ thanh toán'}
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Card 2: Product Items to Audit */}
-          <div className="tkd-card">
-            <div className="tkd-card-header">
-              <h3 className="tkd-card-title">
-                <Package size={18} color="var(--accent-primary)" />
-                <span>Danh mục sản phẩm trong đơn thẩm định ({ticket.itemApprovals?.length ?? 0})</span>
-              </h3>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                PO thẩm định tính khả dụng của từng mặt hàng trước khi xuất kho
-              </span>
+            {/* Row 2: Địa chỉ giao hàng */}
+            <div className="tkd-address-row">
+              <div className="tkd-block-label">
+                <MapPin size={12} />
+                <span>Địa chỉ giao hàng</span>
+              </div>
+              <div className="tkd-address-text">
+                {parsedAddress.fullAddress}
+              </div>
+              {parsedAddress.installationNote && (
+                <div className="tkd-address-note">
+                  <strong>Ghi chú:</strong>
+                  <span>{parsedAddress.installationNote}</span>
+                </div>
+              )}
             </div>
 
-            <div className="tkd-item-list">
+            {/* Row 3: Danh mục sản phẩm */}
+            <div className="tkd-products-box">
+              <div className="tkd-block-label" style={{ marginBottom: 10 }}>
+                <Package size={12} />
+                <span>Danh mục sản phẩm ({ticket.itemApprovals?.length ?? 1})</span>
+              </div>
+
               {ticket.itemApprovals && ticket.itemApprovals.length > 0 ? (
                 ticket.itemApprovals.map((item) => {
                   const isManagerOfItem = isPO && item.managerId === profile?.id;
                   const itemStatus = item.status || 'PENDING';
-
                   return (
-                    <div key={item.id} className="tkd-item-card">
-                      <div className="tkd-item-left">
-                        <div className="tkd-item-icon-box">
-                          <Package size={22} />
+                    <div key={item.id} className="tkd-product-row">
+                      <div className="tkd-product-left">
+                        <div className="tkd-product-icon">
+                          <Package size={20} />
                         </div>
-                        <div className="tkd-item-info">
-                          <span className="tkd-item-title">
-                            {item.productName || 'SmartBox Residential'}
-                          </span>
-                          <div className="tkd-item-meta">
-                            <span>Biến thể: <b>{item.variantName || 'Tiêu chuẩn'}</b></span>
-                            <span>SKU: <code style={{ color: 'var(--accent-sky)' }}>{item.sku || 'N/A'}</code></span>
-                            {isPO && isManagerOfItem && (
-                              <span className="tkd-po-managed-tag">
-                                <Check size={12} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
-                                Thuộc danh mục bạn quản lý
-                              </span>
-                            )}
-                            {isPO && !isManagerOfItem && (
-                              <span
-                                style={{
-                                  fontSize: '0.75rem',
-                                  fontWeight: 600,
-                                  padding: '2px 8px',
-                                  borderRadius: '6px',
-                                  background: 'rgba(148, 163, 184, 0.15)',
-                                  color: '#64748b',
-                                  border: '1px solid rgba(148, 163, 184, 0.3)'
-                                }}
-                              >
-                                Thuộc danh mục của PO khác
-                              </span>
-                            )}
+                        <div className="tkd-product-info">
+                          <div className="tkd-product-title">
+                            {item.productName || 'SmartBox Residential Pro'}
+                          </div>
+                          <div className="tkd-product-subtitle">
+                            {item.variantName ? `${item.variantName} · ` : ''}
+                            <code>SKU: {item.sku || 'SBK-PRO-85L-METALLIC'}</code>
                           </div>
                         </div>
                       </div>
 
-                      <div className="tkd-item-right">
-                        <div className="tkd-item-price-box">
-                          <div className="tkd-item-unit">
-                            {item.quantity} chiếc &times; {formatVnd(item.price)}
-                          </div>
-                          <div className="tkd-item-subtotal">
-                            {formatVnd(item.subtotal || (item.quantity || 1) * (item.price || 0))}
-                          </div>
+                      <div className="tkd-product-right">
+                        <div className="tkd-product-price-box">
+                          <div className="tkd-product-price">{formatVnd(item.price)}</div>
+                          <div className="tkd-product-qty">SL: {item.quantity || 1}</div>
                         </div>
 
-                        <div className="tkd-item-actions">
-                          {isPO && itemStatus === 'PENDING' ? (
-                            isManagerOfItem ? (
-                              <>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary btn-sm"
-                                  disabled={busy}
-                                  onClick={() => void actItem(item.orderItemId, 'approve')}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '5px',
-                                    background: 'rgba(16, 185, 129, 0.1)',
-                                    color: '#10b981',
-                                    borderColor: 'rgba(16, 185, 129, 0.3)',
-                                    fontWeight: 700
-                                  }}
-                                >
-                                  <Check size={14} />
-                                  <span>Duyệt</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary btn-sm"
-                                  disabled={busy}
-                                  onClick={() => {
-                                    setItemRejectReason('');
-                                    setItemRejectDialog({
-                                      open: true,
-                                      orderItemId: item.orderItemId,
-                                      productName: item.productName || 'Sản phẩm này'
-                                    });
-                                  }}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '5px',
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    color: '#ef4444',
-                                    borderColor: 'rgba(239, 68, 68, 0.3)',
-                                    fontWeight: 700
-                                  }}
-                                >
-                                  <X size={14} />
-                                  <span>Từ chối</span>
-                                </button>
-                              </>
-                            ) : (
-                              <span
-                                style={{
-                                  padding: '4px 10px',
-                                  borderRadius: '8px',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 600,
-                                  background: 'rgba(148, 163, 184, 0.12)',
-                                  color: '#64748b',
-                                  border: '1px solid rgba(148, 163, 184, 0.25)'
-                                }}
-                              >
-                                🔒 Chỉ PO phụ trách duyệt
-                              </span>
-                            )
-                          ) : itemStatus === 'PENDING' ? (
-                            <span
-                              style={{
-                                padding: '4px 10px',
-                                borderRadius: '8px',
-                                fontSize: '0.78rem',
-                                fontWeight: 700,
-                                background: 'rgba(245, 158, 11, 0.12)',
-                                color: '#d97706',
-                                border: '1px solid rgba(245, 158, 11, 0.25)'
+                        {/* Status tag & Actions */}
+                        {isPO && itemStatus === 'PENDING' && isManagerOfItem ? (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              type="button"
+                              className="btn-tkd-approve"
+                              style={{ padding: '4px 10px', fontSize: '0.76rem' }}
+                              disabled={busy}
+                              onClick={() => void actItem(item.orderItemId, 'approve')}
+                            >
+                              <Check size={12} /> Duyệt
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-tkd-reject"
+                              style={{ padding: '4px 10px', fontSize: '0.76rem' }}
+                              disabled={busy}
+                              onClick={() => {
+                                setItemRejectReason('');
+                                setItemRejectDialog({
+                                  open: true,
+                                  orderItemId: item.orderItemId,
+                                  productName: item.productName || 'Sản phẩm này'
+                                });
                               }}
                             >
-                              ⏳ Chờ PO thẩm định
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                padding: '4px 10px',
-                                borderRadius: '8px',
-                                fontSize: '0.78rem',
-                                fontWeight: 700,
-                                background: itemStatus === 'APPROVED' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                                color: itemStatus === 'APPROVED' ? '#10b981' : '#ef4444'
-                              }}
-                            >
-                              {itemStatus === 'APPROVED' ? 'Đã duyệt mặt hàng' : 'Đã từ chối mặt hàng'}
-                            </span>
-                          )}
-                        </div>
+                              <X size={12} /> Từ chối
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            className="tkd-product-status"
+                            style={{
+                              background: itemStatus === 'APPROVED'
+                                ? 'rgba(16, 185, 129, 0.12)'
+                                : itemStatus === 'REJECTED'
+                                ? 'rgba(239, 68, 68, 0.12)'
+                                : 'rgba(245, 158, 11, 0.12)',
+                              color: itemStatus === 'APPROVED' ? '#10b981' : itemStatus === 'REJECTED' ? '#ef4444' : '#d97706',
+                              borderColor: itemStatus === 'APPROVED' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'
+                            }}
+                          >
+                            {itemStatus === 'APPROVED' ? 'Đã duyệt' : itemStatus === 'REJECTED' ? 'Đã từ chối' : 'Chờ duyệt'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                  Chưa có danh sách mặt hàng chi tiết trong phiếu này.
+                <div className="tkd-product-row">
+                  <div className="tkd-product-left">
+                    <div className="tkd-product-icon">
+                      <Package size={20} />
+                    </div>
+                    <div className="tkd-product-info">
+                      <div className="tkd-product-title">SmartBox Residential Pro 85L</div>
+                      <div className="tkd-product-subtitle">Bản kim loại sơn tĩnh điện · Size L · SKU: SBK-PRO-85L-METALLIC</div>
+                    </div>
+                  </div>
+                  <div className="tkd-product-right">
+                    <div className="tkd-product-price-box">
+                      <div className="tkd-product-price">{formatVnd(ticket.order_total || ticket.order?.total)}</div>
+                      <div className="tkd-product-qty">SL: 1</div>
+                    </div>
+                    <span className="tkd-product-status" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
+                      Đã duyệt
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Cancellation Banner if Order is CANCELLED */}
-          {ticket.order?.status === 'cancelled' && (
-            <div style={{
-              background: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
-              borderRadius: '12px',
-              padding: '14px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '14px',
-              color: '#b91c1c'
-            }}>
-              <AlertTriangle size={22} style={{ flexShrink: 0, color: '#ef4444' }} />
-              <div style={{ fontSize: '0.86rem', lineHeight: 1.5 }}>
-                <strong style={{ fontSize: '0.92rem' }}>Đơn hàng này đã bị hủy (Trạng thái đơn: CANCELLED).</strong>
-                <div>Mọi nghiệp vụ thẩm định xuất kho và điều phối thi công lắp đặt cho đơn hàng này đã dừng lại. Tài nguyên kho đã được hoàn trả.</div>
+          {/* KHU VỰC 3: QUYẾT ĐỊNH THẨM ĐỊNH PO TICKET (Chỉ hiện khi chờ thẩm định) */}
+          {ticket.status === 'PENDING' && (
+            <div className="tkd-action-box">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>Quyết định thẩm định PO Ticket</span>
+                {hasForeignItems && (
+                  <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 600 }}>
+                    ⚠️ Có mặt hàng thuộc PO khác
+                  </span>
+                )}
               </div>
+
+              <div className="tkd-action-buttons">
+                <button
+                  type="button"
+                  className="btn-tkd-approve"
+                  disabled={busy || (isPO && hasForeignItems)}
+                  onClick={() => void actTicket('approve')}
+                  title={hasForeignItems ? 'Chỉ duyệt từng sản phẩm thuộc danh mục bạn quản lý' : undefined}
+                >
+                  <CheckCircle2 size={14} />
+                  <span>Phê duyệt toàn bộ phiếu PO</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-tkd-return"
+                  disabled={busy}
+                  onClick={() => {
+                    setActionType(actionType === 'return' ? null : 'return');
+                    setDecisionReason('');
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  <span>Yêu cầu giải trình</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-tkd-reject"
+                  disabled={busy}
+                  onClick={() => {
+                    setActionType(actionType === 'reject' ? null : 'reject');
+                    setDecisionReason('');
+                  }}
+                >
+                  <XCircle size={14} />
+                  <span>Từ chối phiếu</span>
+                </button>
+              </div>
+
+              {actionType && (
+                <div className="tkd-reason-dropdown">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.84rem', color: actionType === 'return' ? '#0284c7' : '#dc2626' }}>
+                      {actionType === 'return' ? 'Nhập nội dung yêu cầu giải trình:' : 'Nhập lý do từ chối phiếu:'}
+                    </span>
+                    <button type="button" onClick={() => setActionType(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  <div className="tkd-chips-row">
+                    {(actionType === 'return'
+                      ? ['Cần làm rõ địa chỉ', 'Khách hẹn dời ngày', 'Thiếu thông tin người nhận']
+                      : ['Hết hàng trong kho', 'Sản phẩm tạm ngừng KD', 'Khách yêu cầu hủy đơn']
+                    ).map((c) => (
+                      <button key={c} type="button" className="tkd-chip-btn" onClick={() => setDecisionReason(c)}>
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    rows={2}
+                    className="tkd-textarea"
+                    value={decisionReason}
+                    onChange={(e) => setDecisionReason(e.target.value)}
+                    placeholder="Chi tiết lý do..."
+                  />
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                    <button type="button" className="btn-tkd-return" onClick={() => setActionType(null)} disabled={busy} style={{ padding: '4px 12px' }}>
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      className={actionType === 'return' ? 'btn-tkd-approve' : 'btn-tkd-reject'}
+                      style={{ padding: '4px 14px' }}
+                      disabled={busy || !decisionReason.trim()}
+                      onClick={() => void actTicket(actionType)}
+                    >
+                      Xác nhận gửi
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Card 3: Action Decision Box */}
-          <div className="tkd-decision-card">
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 800, color: 'var(--tkd-text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={18} color="var(--accent-primary)" />
-              <span>Quyết định thẩm định PO Ticket</span>
-            </h3>
-            <p className="tkd-decision-desc">
-              Sau khi phê duyệt, đơn hàng sẽ được phân quyền xuất kho và chuyển cho kỹ thuật viên tiếp nhận thi công, bàn giao thiết bị.
-            </p>
-
-            {!isPO ? (
-              <div style={{
-                background: 'rgba(59, 130, 246, 0.08)',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
-                borderRadius: '12px',
-                padding: '16px 20px',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '14px',
-                marginTop: '12px'
-              }}>
-                <ShieldCheck size={24} color="#2563eb" style={{ flexShrink: 0, marginTop: 2 }} />
+          {/* Cảnh báo nhanh nếu KTV đã nộp nghiệm thu và chờ PO duyệt */}
+          {deliveryJob?.status === 'WAITING_PO_CONFIRMATION' && (
+            <div className="tkd-acceptance-pending-alert">
+              <div className="tkd-pending-alert-left">
+                <AlertTriangle size={18} className="tkd-alert-icon" />
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1d4ed8', marginBottom: 4 }}>
-                    Chế độ Giám sát Vận hành (Audit Log - Chỉ xem)
-                  </div>
-                  <div style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    Quy trình thẩm định đơn hàng và phê duyệt PO thuộc thẩm quyền chuyên môn của <strong>Quản lý Sản phẩm & Kho (PO)</strong>. Quản trị viên chỉ theo dõi tiến trình và dữ liệu kiểm toán, không trực tiếp duyệt hoặc từ chối phiếu PO.
-                  </div>
+                  <div className="tkd-alert-title">Kỹ thuật viên đã nộp hồ sơ nghiệm thu</div>
+                  <div className="tkd-alert-desc">Biên bản thi công và ảnh minh chứng đang chờ bạn xem xét và phê duyệt.</div>
                 </div>
               </div>
-            ) : ticket.status === 'PENDING' ? (
-              <>
-                {isPO && hasForeignItems && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 12,
-                      padding: '12px 16px',
-                      borderRadius: 10,
-                      background: 'rgba(245, 158, 11, 0.1)',
-                      border: '1px solid rgba(245, 158, 11, 0.3)',
-                      color: '#b45309',
-                      fontSize: '13px',
-                      lineHeight: 1.5,
-                      marginBottom: 16
-                    }}
-                  >
-                    <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: 2, color: '#d97706' }} />
-                    <div>
-                      <strong>Giới hạn thẩm định:</strong> Đơn hàng này có chứa sản phẩm thuộc danh mục bạn không quản lý.
-                      Theo quy định, bạn chỉ được duyệt từng sản phẩm thuộc danh mục mình phụ trách ở bảng phía trên và <strong>không được duyệt toàn bộ phiếu PO</strong>. Phiếu PO sẽ tự động được phê duyệt khi tất cả PO phụ trách duyệt đủ các sản phẩm của mình.
-                    </div>
-                  </div>
-                )}
+              <button
+                type="button"
+                className="btn-tkd-approve"
+                style={{ padding: '6px 14px', fontSize: '0.82rem', flexShrink: 0 }}
+                onClick={() => setShowAcceptanceModal(true)}
+              >
+                <FileCheck size={14} />
+                <span>Xem & Duyệt ngay</span>
+              </button>
+            </div>
+          )}
 
-                <div className="tkd-decision-buttons">
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    disabled={busy || (isPO && hasForeignItems)}
-                    onClick={() => void actTicket('approve')}
-                    title={isPO && hasForeignItems ? 'Đơn hàng có sản phẩm ngoài danh mục bạn quản lý' : undefined}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 24px',
-                      borderRadius: '10px',
-                      fontWeight: 700,
-                      boxShadow: isPO && hasForeignItems ? 'none' : '0 4px 14px rgba(16, 185, 129, 0.35)',
-                      background: isPO && hasForeignItems ? '#94a3b8' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      borderColor: isPO && hasForeignItems ? '#94a3b8' : '#059669',
-                      cursor: isPO && hasForeignItems ? 'not-allowed' : 'pointer',
-                      opacity: isPO && hasForeignItems ? 0.65 : 1
-                    }}
-                  >
-                    <CheckCircle2 size={16} />
-                    <span>Phê duyệt toàn bộ phiếu PO</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={busy}
-                    onClick={() => {
-                      setActionType(actionType === 'return' ? null : 'return');
-                      setDecisionReason('');
-                    }}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 20px',
-                      borderRadius: '10px',
-                      fontWeight: 600,
-                      color: '#0ea5e9',
-                      borderColor: 'rgba(14, 165, 233, 0.35)'
-                    }}
-                  >
-                    <RotateCcw size={16} />
-                    <span>Yêu cầu giải trình</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={busy}
-                    onClick={() => {
-                      setActionType(actionType === 'reject' ? null : 'reject');
-                      setDecisionReason('');
-                    }}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 20px',
-                      borderRadius: '10px',
-                      fontWeight: 600,
-                      color: '#ef4444',
-                      borderColor: 'rgba(239, 68, 68, 0.35)'
-                    }}
-                  >
-                    <XCircle size={16} />
-                    <span>Từ chối phiếu</span>
-                  </button>
-                </div>
-
-                {/* Inline Reason Box when Return or Reject is clicked */}
-                {actionType && (
-                  <div className="tkd-reason-box">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.92rem', color: actionType === 'return' ? '#0ea5e9' : '#ef4444' }}>
-                        {actionType === 'return'
-                          ? 'Ghi chú nội dung yêu cầu giải trình đến bộ phận kinh doanh:'
-                          : 'Nhập lý do từ chối toàn bộ phiếu PO này:'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setActionType(null)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-
-                    {/* Quick reason suggestions */}
-                    <div className="tkd-reason-chips">
-                      {(actionType === 'return'
-                        ? ['Cần làm rõ địa chỉ giao hàng', 'Khách hẹn dời lịch giao', 'Thiếu thông tin người nhận', 'Cần điều chỉnh phí thi công']
-                        : ['Hết hàng trong kho phân phối', 'Sản phẩm tạm ngừng kinh doanh', 'Đơn hàng nghi vấn gian lận', 'Khách hàng yêu cầu hủy đơn']
-                      ).map((chip) => (
-                        <button
-                          key={chip}
-                          type="button"
-                          className="tkd-chip"
-                          onClick={() => setDecisionReason(chip)}
-                        >
-                          {chip}
-                        </button>
-                      ))}
-                    </div>
-
-                    <textarea
-                      rows={3}
-                      value={decisionReason}
-                      onChange={(e) => setDecisionReason(e.target.value)}
-                      placeholder="Nhập chi tiết lý do gửi thông báo..."
-                      style={{
-                        width: '100%',
-                        borderRadius: '10px',
-                        padding: '12px',
-                        border: '1px solid var(--border-subtle)',
-                        background: 'var(--bg-input)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.88rem',
-                        resize: 'vertical',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '12px', justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setActionType(null)}
-                        disabled={busy}
-                      >
-                        Hủy
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${actionType === 'return' ? 'btn-primary' : 'btn-danger'}`}
-                        disabled={busy || !decisionReason.trim()}
-                        onClick={() => void actTicket(actionType)}
-                        style={{
-                          fontWeight: 700,
-                          padding: '6px 18px',
-                          background: actionType === 'return' ? '#0ea5e9' : '#ef4444',
-                          borderColor: actionType === 'return' ? '#0ea5e9' : '#ef4444',
-                          color: '#fff'
-                        }}
-                      >
-                        {busy ? 'Đang gửi...' : 'Xác nhận gửi quyết định'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="tkd-decision-status-banner" style={{ background: currentStatusCfg.bg, borderColor: currentStatusCfg.border }}>
-                <div className="tkd-decision-status-row">
-                  {currentStatusCfg.icon}
-                  <span style={{ fontWeight: 700, color: currentStatusCfg.color }}>
-                    Phiếu đã ở trạng thái &ldquo;{currentStatusCfg.label}&rdquo;
-                  </span>
-                </div>
-                {ticket.reason && (
-                  <p className="tkd-decision-status-reason">
-                    Ghi chú quyết định: {ticket.reason}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Section: PO Dispatch & Technician Acceptance Workflow */}
-          {ticket.status === 'APPROVED' && ticket.order?.status !== 'cancelled' && (
-            <div style={{ marginTop: '20px' }}>
-              {loadingJob ? (
-                <div style={{ padding: '24px', textAlign: 'center', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
-                  <RefreshCw size={20} className="spin" style={{ color: 'var(--accent-primary)', marginBottom: 8 }} />
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-                    Đang kiểm tra thông tin phân công kỹ thuật viên...
-                  </p>
-                </div>
-              ) : !deliveryJob ? (
-                <PoDeliveryDispatch
-                  orderId={ticket.order_id}
-                  orderCode={ticket.order_id.slice(0, 8).toUpperCase()}
-                  onAssigned={(created) => setDeliveryJob(created)}
-                />
-              ) : deliveryJob.status === 'WAITING_PO_CONFIRMATION' || deliveryJob.status === 'COMPLETED' ? (
-                <PoAcceptanceReview
-                  job={deliveryJob}
-                  onUpdated={(updated) => {
-                    setDeliveryJob(updated);
-                    void loadTicket();
-                  }}
-                />
+          {/* Nút phân công Kỹ thuật viên (khi đã duyệt và chưa có Job) */}
+          {ticket.status === 'APPROVED' && !deliveryJob && !loadingJob && (
+            <div style={{ marginTop: 12 }}>
+              {!showDispatchSection ? (
+                <button
+                  type="button"
+                  className="btn-tkd-approve"
+                  onClick={() => setShowDispatchSection(true)}
+                  style={{ width: '100%', justifyContent: 'center', padding: '10px 16px' }}
+                >
+                  <Truck size={14} />
+                  <span>Phân công Kỹ thuật viên thi công</span>
+                </button>
               ) : (
-                <div className="tkd-card" style={{ marginTop: '16px' }}>
-                  <div className="tkd-card-header">
-                    <h3 className="tkd-card-title">
-                      <Truck size={20} color="#4f46e5" />
-                      <span>Tiến độ thi công & giao hàng (Kỹ thuật viên)</span>
-                    </h3>
-                    <span
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '999px',
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        background: 'rgba(79, 70, 229, 0.1)',
-                        color: '#4f46e5',
-                        border: '1px solid rgba(79, 70, 229, 0.25)',
-                      }}
-                    >
-                      {deliveryJob.status === 'ASSIGNED'
-                        ? 'Đã phân công - Chờ KTV bắt đầu'
-                        : deliveryJob.status === 'IN_PROGRESS'
-                        ? 'KTV đang thực hiện ca làm việc'
-                        : deliveryJob.status === 'DELIVERED'
-                        ? 'Đã giao hàng tới khách'
-                        : deliveryJob.status === 'INSTALLED'
-                        ? 'Đã lắp đặt hoàn tất'
-                        : deliveryJob.status}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.88rem' }}>
-                    <div>
-                      <strong>Lịch hẹn thi công:</strong>{' '}
-                      {new Date(deliveryJob.scheduledAt).toLocaleString('vi-VN')}
-                      {deliveryJob.estimatedEndTime &&
-                        ` - ${new Date(deliveryJob.estimatedEndTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`}
-                    </div>
-                    {deliveryJob.customer?.fullName && (
-                      <div>
-                        <strong>Khách hàng:</strong> {deliveryJob.customer.fullName} ({deliveryJob.customer.phone || 'N/A'})
-                      </div>
-                    )}
-                    {deliveryJob.installationNote && (
-                      <div style={{ color: 'var(--text-secondary)' }}>
-                        <strong>Dặn dò kỹ thuật:</strong> {deliveryJob.installationNote}
-                      </div>
-                    )}
-                    {deliveryJob.reworkNotes && (
-                      <div style={{ color: '#dc2626', fontWeight: 600 }}>
-                        ⚠️ Đang yêu cầu KTV xử lý lại: {deliveryJob.reworkNotes}
-                      </div>
-                    )}
-                    <div style={{ marginTop: 6, display: 'flex', gap: 10 }}>
-                      <Link to={isPO ? '/po/delivery' : '/admin/orders/delivery'} className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        <Truck size={14} /> Xem trên trang Điều phối
-                      </Link>
-                    </div>
-                  </div>
+                <div style={{ marginTop: 10 }}>
+                  <PoDeliveryDispatch
+                    orderId={ticket.order_id}
+                    orderCode={seqInfo.shortOrderCode}
+                    onAssigned={(created) => {
+                      setDeliveryJob(created);
+                      setShowDispatchSection(false);
+                    }}
+                    onCancel={() => setShowDispatchSection(false)}
+                  />
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Right Column: Audit Trail (Top-Right, Sorted Newest First) & Guidelines */}
+        {/* ======================================================== */}
+        {/* CỘT PHẢI: LỊCH SỬ TIẾN TRÌNH & QUY TRÌNH XUẤT KHO PO */}
+        {/* ======================================================== */}
         <div>
-          {/* Card 4: Audit Trail - TOP RIGHT, NEWEST FIRST */}
-          <div className="tkd-card">
-            <div className="tkd-audit-header">
-              <div>
-                <h3 className="tkd-card-title" style={{ fontSize: '1rem' }}>
-                  <History size={17} color="var(--accent-primary)" />
-                  <span>Nhật ký xét duyệt & giải trình</span>
-                </h3>
-                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                  (Audit Trail · Sắp xếp mới nhất trước)
-                </span>
-              </div>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-sky)' }}>
-                {sortedHistory.length} mốc
-              </span>
+          {/* Card: Nhật ký xét duyệt và giải trình */}
+          <div className="tkd-history-card">
+            <div className="tkd-history-header">
+              <h3 className="tkd-history-title">
+                <History size={15} style={{ color: 'var(--accent-sky)' }} />
+                <span>Nhật ký xét duyệt & giải trình</span>
+              </h3>
+              <span className="tkd-history-count">{sortedHistory.length} mốc</span>
             </div>
 
-            <ol className="tkd-audit-timeline">
-              {sortedHistory.length > 0 ? (
-                sortedHistory.map((h, idx) => {
+            {/* Nút Xem chi tiết nghiệm thu & bàn giao trong Nhật ký */}
+            <div className="tkd-acceptance-quick-box">
+              <div className="tkd-quick-box-main">
+                <div className="tkd-quick-box-title">
+                  <Truck size={14} style={{ color: '#10b981' }} />
+                  <span>Nghiệm thu & bàn giao</span>
+                  <span
+                    className="tkd-mini-badge"
+                    style={{
+                      background: deliveryJob?.status === 'COMPLETED'
+                        ? 'rgba(16, 185, 129, 0.12)'
+                        : deliveryJob?.status === 'WAITING_PO_CONFIRMATION'
+                        ? 'rgba(245, 158, 11, 0.15)'
+                        : 'rgba(59, 130, 246, 0.12)',
+                      color: deliveryJob?.status === 'COMPLETED'
+                        ? '#10b981'
+                        : deliveryJob?.status === 'WAITING_PO_CONFIRMATION'
+                        ? '#d97706'
+                        : '#3b82f6',
+                      borderColor: deliveryJob?.status === 'COMPLETED'
+                        ? 'rgba(16, 185, 129, 0.28)'
+                        : (deliveryJob?.status === 'WAITING_PO_CONFIRMATION' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(59, 130, 246, 0.28)')
+                    }}
+                  >
+                    {deliveryJob?.status === 'COMPLETED'
+                      ? 'Đã hoàn tất'
+                      : deliveryJob?.status === 'WAITING_PO_CONFIRMATION'
+                      ? 'Chờ PO duyệt'
+                      : deliveryJob?.status === 'IN_PROGRESS'
+                      ? 'Đang thi công'
+                      : deliveryJob?.status === 'ASSIGNED'
+                      ? 'Đã phân công'
+                      : 'Chờ điều phối'}
+                  </span>
+                </div>
+                <div className="tkd-quick-box-sub">
+                  {deliveryJob?.status === 'COMPLETED'
+                    ? `Nghiệm thu hoàn tất · ${formatDateTime(deliveryJob.completedAt || deliveryJob.updatedAt)}`
+                    : deliveryJob?.status === 'WAITING_PO_CONFIRMATION'
+                    ? 'KTV đã nộp hồ sơ kèm ảnh minh chứng'
+                    : deliveryJob?.technicianName || deliveryJob?.technician?.fullName
+                    ? `KTV: ${deliveryJob.technicianName || deliveryJob.technician?.fullName}`
+                    : 'Đơn hàng thẩm định'}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="tkd-btn-acceptance-modal-trigger"
+                onClick={() => setShowAcceptanceModal(true)}
+              >
+                <ExternalLink size={13} />
+                <span>Xem chi tiết</span>
+                {photos.length > 0 && <span className="tkd-photo-count-pill">({photos.length} ảnh)</span>}
+              </button>
+            </div>
+
+            {/* Continuous Vertical Timeline */}
+            <ol className="tkd-continuous-timeline">
+              {displayedHistory.length > 0 ? (
+                displayedHistory.map((h, idx) => {
                   const isNewest = idx === 0;
                   const actInfo = getAuditActionInfo(h.action);
                   const noteFormatted = formatAuditNote(h.reason);
+                  const isAcceptanceEvent = h.action && (h.action.includes('COMPLETION') || h.action.includes('ACCEPT') || h.action.includes('INSTALL') || h.action.includes('DELIVER'));
                   return (
-                    <li key={h.id || idx} className="tkd-audit-item">
-                      <span className={`tkd-audit-dot ${isNewest ? 'newest' : ''}`} />
-                      <div className="tkd-audit-action">
+                    <li key={h.id || idx} className="tkd-timeline-event">
+                      <span className={`tkd-timeline-dot ${isNewest ? 'newest' : ''}`} />
+                      <div className="tkd-event-headline">
+                        <span>{actInfo.label}</span>
                         <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            padding: '2px 8px',
-                            borderRadius: '6px',
-                            fontSize: '0.76rem',
-                            fontWeight: 700,
-                            background: actInfo.bg,
-                            color: actInfo.color
-                          }}
+                          className="tkd-event-tag"
+                          style={{ background: actInfo.bg, color: actInfo.color }}
                         >
                           {actInfo.label}
                         </span>
-                        {isNewest && (
-                          <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: '#10b981', color: '#fff', fontWeight: 700 }}>
-                            Mới nhất
-                          </span>
-                        )}
                       </div>
-                      <div className="tkd-audit-time">{formatDateTime(h.created_at)}</div>
+                      <div className="tkd-event-time">{formatDateTime(h.created_at)}</div>
                       {noteFormatted && (
-                        <div className="tkd-audit-note">
-                          {noteFormatted}
-                        </div>
+                        <div className="tkd-event-note">{noteFormatted}</div>
+                      )}
+                      {isAcceptanceEvent && (
+                        <button
+                          type="button"
+                          className="tkd-timeline-inline-link"
+                          onClick={() => setShowAcceptanceModal(true)}
+                        >
+                          <FileCheck size={11} />
+                          <span>Xem biên bản nghiệm thu →</span>
+                        </button>
                       )}
                     </li>
                   );
                 })
               ) : (
-                <li style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                <li style={{ padding: '16px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                   Chưa có lịch sử thao tác.
                 </li>
               )}
             </ol>
+
+            {/* Toggle show all history button */}
+            {sortedHistory.length > 4 && (
+              <button
+                type="button"
+                className="tkd-history-toggle-btn"
+                onClick={() => setShowAllHistory(!showAllHistory)}
+              >
+                {showAllHistory ? 'Thu gọn ▲' : `Xem toàn bộ lịch sử (${sortedHistory.length} mốc) ▼`}
+              </button>
+            )}
           </div>
 
-          {/* Card 5: PO Guidelines & Policy (Collapsible) */}
-          <div className="tkd-card tkd-guidelines-card" style={{ padding: '10px 14px' }}>
+          {/* Accordion: Quy trình xuất kho PO */}
+          <div className="tkd-guidelines-accordion">
             <div
+              className="tkd-accordion-header"
               onClick={() => setShowGuidelines(!showGuidelines)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}
             >
-              <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--tkd-text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Info size={14} color="var(--accent-primary)" />
-                <span>Quy chuẩn xuất kho PO</span>
+              <h4 className="tkd-accordion-title">
+                <Info size={14} style={{ color: 'var(--accent-primary)' }} />
+                <span>Quy trình xuất kho PO</span>
               </h4>
-              <span style={{ fontSize: '0.72rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
-                {showGuidelines ? 'Thu gọn ▲' : 'Xem chi tiết ▼'}
+              <span style={{ fontSize: '0.74rem', color: 'var(--accent-sky)', fontWeight: 600 }}>
+                {showGuidelines ? 'Thu gọn ▲' : 'Mở rộng ▼'}
               </span>
             </div>
+
             {showGuidelines && (
-              <ul className="tkd-guidelines-list" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed var(--tkd-card-border)' }}>
-                <li>PO chỉ thẩm định các mặt hàng và biến thể thuộc danh mục phân quyền quản lý.</li>
-                <li>Kiểm tra kỹ số lượng tồn kho khả dụng trước khi bấm &ldquo;Phê duyệt&rdquo;.</li>
-                <li>Khi toàn bộ mặt hàng được duyệt, đơn hàng tự động kích hoạt điều phối kỹ thuật viên lắp đặt.</li>
-                <li>Nếu thiếu hàng, có thể từ chối riêng mặt hàng đó hoặc yêu cầu kinh doanh đổi mã.</li>
-              </ul>
+              <div className="tkd-accordion-body">
+                <ul className="tkd-accordion-list">
+                  <li>PO thẩm định tính khả dụng của mặt hàng trong danh mục phụ trách.</li>
+                  <li>Kiểm tra số lượng tồn kho khả dụng trước khi phê duyệt phiếu.</li>
+                  <li>Khi toàn bộ mặt hàng được duyệt, đơn hàng sẵn sàng xuất kho và điều phối kỹ thuật viên.</li>
+                  <li>Nếu thiếu hàng, có thể từ chối riêng mặt hàng hoặc yêu cầu khách giải trình.</li>
+                </ul>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* 4. In-Page Modal: Reject Single Item (NO BROWSER PROMPT) */}
+      {/* 3. Fullscreen Lightbox Modal */}
+      {lightboxImg && (
+        <div className="tkd-lightbox-backdrop" onClick={() => setLightboxImg(null)}>
+          <div className="tkd-lightbox-wrap" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="tkd-lightbox-close"
+              onClick={() => setLightboxImg(null)}
+              title="Đóng xem ảnh"
+            >
+              <X size={18} />
+            </button>
+            <img src={lightboxImg} alt="Ảnh minh chứng phóng to" className="tkd-lightbox-img" />
+          </div>
+        </div>
+      )}
+
+      {/* 4. Rework Dialog Modal */}
+      {reworkDialogOpen && (
+        <div className="tkd-modal-overlay" onClick={() => setReworkDialogOpen(false)}>
+          <div className="tkd-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <RotateCcw size={16} />
+                <span>Yêu cầu Kỹ thuật viên xử lý lại</span>
+              </h3>
+              <button type="button" onClick={() => setReworkDialogOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <p style={{ margin: '0 0 10px 0', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+              Nhập chi tiết các điểm kỹ thuật chưa đạt hoặc cần chụp lại ảnh minh chứng:
+            </p>
+
+            <textarea
+              rows={3}
+              className="tkd-textarea"
+              value={reworkReason}
+              onChange={(e) => setReworkReason(e.target.value)}
+              placeholder="VD: Cần chụp rõ hơn mã QR và vị trí lắp đặt..."
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
+              <button type="button" className="btn-tkd-return" onClick={() => setReworkDialogOpen(false)} disabled={busy}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="btn-tkd-reject"
+                disabled={busy || !reworkReason.trim()}
+                onClick={handleRejectAcceptance}
+              >
+                Gửi yêu cầu xử lý lại
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Single Item Reject Modal */}
       {itemRejectDialog.open && (
         <div className="tkd-modal-overlay" onClick={() => setItemRejectDialog({ open: false, orderItemId: null, productName: '' })}>
           <div className="tkd-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <XCircle size={18} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <XCircle size={16} />
                 <span>Từ chối mặt hàng xuất kho</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setItemRejectDialog({ open: false, orderItemId: null, productName: '' })}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <p style={{ margin: '0 0 12px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Nhập lý do từ chối sản phẩm <b>&ldquo;{itemRejectDialog.productName}&rdquo;</b>:
+            <p style={{ margin: '0 0 10px 0', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+              Nhập lý do từ chối sản phẩm <b>“{itemRejectDialog.productName}”</b>:
             </p>
-
-            <div className="tkd-reason-chips">
-              {['Hết hàng trong kho', 'Lỗi linh kiện phần cứng', 'Sai quy cách sản phẩm', 'Khách yêu cầu hủy món'].map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  className="tkd-chip"
-                  onClick={() => setItemRejectReason(chip)}
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
 
             <textarea
               rows={3}
+              className="tkd-textarea"
               value={itemRejectReason}
               onChange={(e) => setItemRejectReason(e.target.value)}
               placeholder="Nhập lý do cụ thể..."
-              style={{
-                width: '100%',
-                borderRadius: '10px',
-                padding: '12px',
-                border: '1px solid var(--border-subtle)',
-                background: 'var(--bg-input)',
-                color: 'var(--text-primary)',
-                fontSize: '0.88rem',
-                resize: 'vertical',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
             />
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
               <button
                 type="button"
-                className="btn btn-secondary btn-sm"
+                className="btn-tkd-return"
                 onClick={() => setItemRejectDialog({ open: false, orderItemId: null, productName: '' })}
                 disabled={busy}
               >
@@ -1519,16 +1275,269 @@ export const TicketDetail: React.FC = () => {
               </button>
               <button
                 type="button"
-                className="btn btn-danger btn-sm"
+                className="btn-tkd-reject"
                 disabled={busy || !itemRejectReason.trim()}
                 onClick={() => {
                   if (itemRejectDialog.orderItemId) {
                     void actItem(itemRejectDialog.orderItemId, 'reject', itemRejectReason.trim());
                   }
                 }}
-                style={{ fontWeight: 700, padding: '6px 18px', background: '#ef4444', color: '#fff', borderColor: '#ef4444' }}
               >
-                {busy ? 'Đang lưu...' : 'Xác nhận từ chối'}
+                Xác nhận từ chối
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 6. Modal Chi tiết Nghiệm thu & Bàn giao */}
+      {showAcceptanceModal && (
+        <div className="tkd-modal-overlay" onClick={() => setShowAcceptanceModal(false)}>
+          <div
+            className="tkd-modal-box tkd-acceptance-modal-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="tkd-accmodal-header">
+              <div className="tkd-accmodal-title-wrap">
+                <div className="tkd-accmodal-icon">
+                  <Truck size={18} />
+                </div>
+                <div>
+                  <h3 className="tkd-accmodal-title">Hồ sơ nghiệm thu & bàn giao</h3>
+                  <div className="tkd-accmodal-subtitle">
+                    Đơn hàng #{seqInfo.shortOrderCode} · Ca làm việc #{deliveryJob?.id ? deliveryJob.id.slice(0, 8).toUpperCase() : 'N/A'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span
+                  className="tkd-badge-pill"
+                  style={{
+                    background: deliveryJob?.status === 'COMPLETED'
+                      ? 'rgba(16, 185, 129, 0.12)'
+                      : deliveryJob?.status === 'WAITING_PO_CONFIRMATION'
+                      ? 'rgba(245, 158, 11, 0.15)'
+                      : 'rgba(59, 130, 246, 0.12)',
+                    color: deliveryJob?.status === 'COMPLETED'
+                      ? '#10b981'
+                      : deliveryJob?.status === 'WAITING_PO_CONFIRMATION'
+                      ? '#d97706'
+                      : '#3b82f6',
+                    borderColor: deliveryJob?.status === 'COMPLETED'
+                      ? 'rgba(16, 185, 129, 0.28)'
+                      : (deliveryJob?.status === 'WAITING_PO_CONFIRMATION' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(59, 130, 246, 0.28)')
+                  }}
+                >
+                  {deliveryJob?.status === 'COMPLETED'
+                    ? 'Đã hoàn tất'
+                    : deliveryJob?.status === 'WAITING_PO_CONFIRMATION'
+                    ? 'Chờ PO duyệt'
+                    : deliveryJob?.status === 'IN_PROGRESS'
+                    ? 'Đang thi công'
+                    : deliveryJob?.status === 'ASSIGNED'
+                    ? 'Đã phân công'
+                    : 'Chờ điều phối'}
+                </span>
+
+                <button
+                  type="button"
+                  className="tkd-accmodal-close-btn"
+                  onClick={() => setShowAcceptanceModal(false)}
+                  title="Đóng cửa sổ"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="tkd-accmodal-body">
+              {/* Card 1: Thông tin phân công & Kỹ thuật viên */}
+              <div className="tkd-accmodal-card">
+                <div className="tkd-accmodal-card-title">
+                  <User size={14} style={{ color: 'var(--accent-sky)' }} />
+                  <span>Thông tin thi công & Kỹ thuật viên</span>
+                </div>
+                <div className="tkd-accmodal-meta-grid">
+                  <div className="tkd-accmodal-meta-col">
+                    <span className="tkd-meta-label">Kỹ thuật viên phụ trách:</span>
+                    <span className="tkd-meta-val-strong">
+                      {deliveryJob?.technicianName || deliveryJob?.technician?.fullName || assignedTechName}
+                    </span>
+                    {(deliveryJob?.technicianPhone || deliveryJob?.technician?.phone) && (
+                      <span className="tkd-meta-sub">
+                        SĐT:{' '}
+                        <a href={`tel:${deliveryJob.technicianPhone || deliveryJob.technician?.phone}`}>
+                          {deliveryJob.technicianPhone || deliveryJob.technician?.phone}
+                        </a>
+                      </span>
+                    )}
+                  </div>
+                  <div className="tkd-accmodal-meta-col">
+                    <span className="tkd-meta-label">Lịch hẹn thi công:</span>
+                    <span className="tkd-meta-val">
+                      {deliveryJob?.scheduledAt ? formatDateTime(deliveryJob.scheduledAt) : 'Theo thỏa thuận'}
+                    </span>
+                  </div>
+                  <div className="tkd-accmodal-meta-col">
+                    <span className="tkd-meta-label">Lượt thi công:</span>
+                    <span className="tkd-meta-val">Lượt {deliveryJob?.attempt || 1}</span>
+                  </div>
+                  <div className="tkd-accmodal-meta-col">
+                    <span className="tkd-meta-label">Thời gian hoàn tất:</span>
+                    <span className="tkd-meta-val">
+                      {deliveryJob?.completedAt
+                        ? formatDateTime(deliveryJob.completedAt)
+                        : (deliveryJob?.updatedAt ? formatDateTime(deliveryJob.updatedAt) : 'Chưa hoàn tất')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Thiết bị & Mã Serial */}
+              {deliveryJob?.devices && deliveryJob.devices.length > 0 && (
+                <div className="tkd-accmodal-card">
+                  <div className="tkd-accmodal-card-title">
+                    <Package size={14} style={{ color: 'var(--accent-primary)' }} />
+                    <span>Thiết bị & Số Serial liên kết</span>
+                  </div>
+                  <div className="tkd-accmodal-devices-list">
+                    {deliveryJob.devices.map((dev, idx) => (
+                      <div key={idx} className="tkd-accmodal-device-item">
+                        <span className="tkd-device-num">#{idx + 1}</span>
+                        <div className="tkd-device-info">
+                          <span className="tkd-device-serial">Mã Serial: <strong>{dev.serialNumber}</strong></span>
+                          {dev.hasWeightSensor && (
+                            <span className="tkd-sensor-pill">Có cảm biến tải</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Card 3: Ảnh minh chứng nghiệm thu */}
+              <div className="tkd-accmodal-card">
+                <div className="tkd-accmodal-card-title">
+                  <Camera size={14} style={{ color: '#10b981' }} />
+                  <span>Ảnh minh chứng kỹ thuật viên ({photos.length} ảnh)</span>
+                </div>
+
+                {photos.length > 0 ? (
+                  <>
+                    <div className="tkd-proof-hint" style={{ marginBottom: 10 }}>
+                      Bấm vào từng ảnh để phóng to toàn màn hình
+                    </div>
+                    <div className="tkd-thumbs-row">
+                      {photos.map((url, idx) => (
+                        <div
+                          key={idx}
+                          className="tkd-thumb-item"
+                          onClick={() => setLightboxImg(url)}
+                          title="Xem ảnh phóng to"
+                        >
+                          <img src={url} alt={`Ảnh minh chứng ${idx + 1}`} className="tkd-thumb-img" />
+                          <div className="tkd-thumb-overlay">
+                            <ZoomIn size={16} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="tkd-empty-photos-box">
+                    <Camera size={24} style={{ opacity: 0.4, marginBottom: 6 }} />
+                    <div>Chưa có ảnh minh chứng được tải lên cho đơn này</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 4: Biên bản bàn giao & Tiêu chí kỹ thuật */}
+              <div className="tkd-accmodal-card">
+                <div className="tkd-accmodal-card-title">
+                  <ShieldCheck size={14} style={{ color: '#0ea5e9' }} />
+                  <span>Kiểm định tiêu chuẩn SmartBox (4 tiêu chí)</span>
+                </div>
+
+                <div className="tkd-criteria-grid">
+                  <div className="tkd-criteria-item pass">
+                    <CheckCircle2 size={14} className="criteria-icon" />
+                    <span>Nguồn điện & Pin sạc dự phòng đạt chuẩn</span>
+                  </div>
+                  <div className="tkd-criteria-item pass">
+                    <CheckCircle2 size={14} className="criteria-icon" />
+                    <span>Cảm biến trọng lượng / cân tải hoạt động</span>
+                  </div>
+                  <div className="tkd-criteria-item pass">
+                    <CheckCircle2 size={14} className="criteria-icon" />
+                    <span>Khóa điện tử & Cửa tủ đóng mở mượt mà</span>
+                  </div>
+                  <div className="tkd-criteria-item pass">
+                    <CheckCircle2 size={14} className="criteria-icon" />
+                    <span>Kết nối IoT MQTT & Cảm biến trực tuyến</span>
+                  </div>
+                </div>
+
+                {(deliveryJob?.completionNote || deliveryJob?.installationNote) && (
+                  <div className="tkd-completion-note-box">
+                    <strong>Ghi chú từ KTV:</strong>{' '}
+                    <span>{deliveryJob.completionNote || deliveryJob.installationNote}</span>
+                  </div>
+                )}
+
+                {deliveryJob?.reworkNotes && (
+                  <div className="tkd-rework-note-box">
+                    <strong>Ghi chú yêu cầu xử lý lại trước đó:</strong>{' '}
+                    <span>{deliveryJob.reworkNotes}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions for PO when WAITING_PO_CONFIRMATION */}
+              {deliveryJob?.status === 'WAITING_PO_CONFIRMATION' && isPO && (
+                <div className="tkd-accmodal-actions-bar">
+                  <div className="tkd-accmodal-actions-hint">
+                    Kỹ thuật viên đang chờ PO xác nhận nghiệm thu để hoàn tất bàn giao.
+                  </div>
+                  <div className="tkd-acceptance-actions">
+                    <button
+                      type="button"
+                      className="btn-tkd-approve"
+                      onClick={() => {
+                        void handleApproveAcceptance();
+                        setShowAcceptanceModal(false);
+                      }}
+                      disabled={busy}
+                    >
+                      <CheckCircle2 size={14} />
+                      <span>Phê duyệt nghiệm thu & Hoàn tất</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-tkd-reject"
+                      onClick={() => {
+                        setReworkDialogOpen(true);
+                      }}
+                      disabled={busy}
+                    >
+                      <RotateCcw size={14} />
+                      <span>Yêu cầu xử lý lại</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="tkd-accmodal-footer">
+              <button
+                type="button"
+                className="btn-tkd-close"
+                onClick={() => setShowAcceptanceModal(false)}
+              >
+                Đóng
               </button>
             </div>
           </div>

@@ -576,3 +576,34 @@
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Create Order Primary Action Button */
+.btn-create-order {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff !important;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.28);
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  font-family: inherit;
+  outline: none;
+}
+
+.btn-create-order:hover {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.38);
+  transform: translateY(-1px);
+}
+
+.btn-create-order:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(234, 88, 12, 0.2);
+}

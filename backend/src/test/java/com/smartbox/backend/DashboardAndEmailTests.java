@@ -30,14 +30,14 @@ class DashboardAndEmailTests {
     CurrentActor actors=new CurrentActor(){@Override public Actor get(){return new Actor(UUID.randomUUID(),"super_admin");}};
     @AfterEach void cleanup(){MDC.clear();}
     @Test void dashboardRunsFourQueriesConcurrentlyAndPropagatesTrace(){
-        var barrier=new CountDownLatch(4);var traces=new ConcurrentLinkedQueue<String>();
+        var barrier=new CountDownLatch(7);var traces=new ConcurrentLinkedQueue<String>();
         var db=new CommerceRepository(new JdbcTemplate()){
             void enter(){traces.add(MDC.get("traceId"));barrier.countDown();try{if(!barrier.await(2,TimeUnit.SECONDS))throw new IllegalStateException("Not parallel");}catch(InterruptedException ex){Thread.currentThread().interrupt();throw new IllegalStateException(ex);}}
             @Override public Map<String,Object> one(String sql,Object...args){enter();return Map.of("total",0);}
             @Override public List<Map<String,Object>> list(String sql,Object...args){enter();return List.of();}
         };
-        var executor=new DashboardExecutorConfig().executor(4,50);MDC.put("traceId","test-trace");
-        try{var result=new ConcurrentDashboardService(db,actors,executor,1500).dashboard(LocalDate.of(2026,10,10));assertEquals(false,result.get("partial"));assertEquals(4,traces.size());assertTrue(traces.stream().allMatch("test-trace"::equals));}finally{executor.shutdown();}
+        var executor=new DashboardExecutorConfig().executor(7,50);MDC.put("traceId","test-trace");
+        try{var result=new ConcurrentDashboardService(db,actors,executor,1500).dashboard(LocalDate.of(2026,10,10));assertEquals(false,result.get("partial"));assertEquals(7,traces.size());assertTrue(traces.stream().allMatch("test-trace"::equals));}finally{executor.shutdown();}
     }
     @Test void dashboardTimeoutKeepsOtherResults(){
         var db=new CommerceRepository(new JdbcTemplate()){
@@ -57,8 +57,8 @@ class DashboardAndEmailTests {
     };}
     @Test void demoSequentialComparisonAndFailureIsolation(){
         var config=new com.smartbox.backend.config.DashboardDemoConfig();
-        for(String name:List.of("revenueToday","orderCountByStatus","top5Variants","lowStockVariants"))config.getDelay().put(name,Duration.ofMillis(500));
-        var executor=new DashboardExecutorConfig().executor(4,50);
+        for(String name:List.of("revenueToday","orderCountByStatus","top5Variants","lowStockVariants","revenueTrend","revenueTrendWeek","revenueTrendMonth"))config.getDelay().put(name,Duration.ofMillis(500));
+        var executor=new DashboardExecutorConfig().executor(7,50);
         try {
             var service=new ConcurrentDashboardService(emptyDb(),actors,executor,1500,config,true);
             var sequential=service.dashboard(LocalDate.now(),"sequential");
@@ -66,9 +66,9 @@ class DashboardAndEmailTests {
             assertTrue(((Number)sequential.get("elapsedMs")).longValue()>=2000);
             assertTrue(((Number)parallel.get("elapsedMs")).longValue()<1000);
             assertEquals(false,parallel.get("partial"));
-            config.getDelay().clear();config.getFail().add("lowStockVariants");
+            config.getDelay().clear();config.getFail().add("top5Variants");
             var failed=service.dashboard(LocalDate.now());
-            assertEquals(List.of("lowStockVariants"),failed.get("failedParts"));assertNull(failed.get("lowStockVariants"));assertNotNull(failed.get("top5Variants"));
+            assertEquals(List.of("top5Variants"),failed.get("failedParts"));assertNull(failed.get("top5Variants"));assertNotNull(failed.get("revenueToday"));
         }finally{executor.shutdown();}
     }
     @Test void slowDemoTaskIsInterruptedAndExecutorRecovers(){
@@ -94,8 +94,8 @@ class DashboardAndEmailTests {
     }
     @Test void sixtyConcurrentRequestsAreBoundedAndRecover() throws Exception {
         var config=new com.smartbox.backend.config.DashboardDemoConfig();
-        for(String name:List.of("revenueToday","orderCountByStatus","top5Variants","lowStockVariants"))config.getDelay().put(name,Duration.ofMillis(500));
-        var executor=new DashboardExecutorConfig().executor(4,50);
+        for(String name:List.of("revenueToday","orderCountByStatus","top5Variants","lowStockVariants","revenueTrend","revenueTrendWeek","revenueTrendMonth"))config.getDelay().put(name,Duration.ofMillis(500));
+        var executor=new DashboardExecutorConfig().executor(7,50);
         var callers=Executors.newFixedThreadPool(60);var gate=new CountDownLatch(1);
         try {
             var service=new ConcurrentDashboardService(emptyDb(),actors,executor,1500,config,true);
@@ -124,16 +124,16 @@ class DashboardAndEmailTests {
             @Override protected void append(ch.qos.logback.classic.spi.ILoggingEvent event){event.prepareForDeferredProcessing();events.add(event);}
         };
         appender.start();logger.addAppender(appender);
-        var config=new com.smartbox.backend.config.DashboardDemoConfig();config.getFail().add("lowStockVariants");
-        var executor=new DashboardExecutorConfig().executor(4,50);MDC.put("traceId","dashboard-error-trace");
+        var config=new com.smartbox.backend.config.DashboardDemoConfig();config.getFail().add("top5Variants");
+        var executor=new DashboardExecutorConfig().executor(7,50);MDC.put("traceId","dashboard-error-trace");
         try {
             new ConcurrentDashboardService(emptyDb(),actors,executor,1500,config,true).dashboard(LocalDate.now());
             long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(1);
-            while(events.stream().filter(e->e.getFormattedMessage().startsWith("Dashboard part=")).count()<4&&System.nanoTime()<deadline)Thread.sleep(5);
-            assertEquals(4,events.stream().filter(e->e.getFormattedMessage().startsWith("Dashboard part=")).count());
-            assertTrue(events.size()>=6);
+            while(events.stream().filter(e->e.getFormattedMessage().startsWith("Dashboard part=")).count()<7&&System.nanoTime()<deadline)Thread.sleep(5);
+            assertEquals(7,events.stream().filter(e->e.getFormattedMessage().startsWith("Dashboard part=")).count());
+            assertTrue(events.size()>=8);
             assertTrue(events.stream().allMatch(e->"dashboard-error-trace".equals(e.getMDCPropertyMap().get("traceId"))));
-            assertTrue(events.stream().anyMatch(e->e.getLevel()==ch.qos.logback.classic.Level.ERROR&&e.getFormattedMessage().contains("lowStockVariants")));
+            assertTrue(events.stream().anyMatch(e->e.getLevel()==ch.qos.logback.classic.Level.ERROR&&e.getFormattedMessage().contains("top5Variants")));
         }finally{executor.shutdown();logger.detachAppender(appender);appender.stop();}
     }
     TemplateEngine templates(){var resolver=new ClassLoaderTemplateResolver();resolver.setPrefix("templates/");resolver.setSuffix(".html");resolver.setCharacterEncoding("UTF-8");var engine=new org.thymeleaf.spring6.SpringTemplateEngine();engine.setTemplateResolver(resolver);return engine;}

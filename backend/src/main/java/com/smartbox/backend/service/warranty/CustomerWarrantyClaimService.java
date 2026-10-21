@@ -51,7 +51,7 @@ public class CustomerWarrantyClaimService {
     }
 
     private LocalDate date(Object value) {
-        return value instanceof Date d ? d.toLocalDate() : LocalDate.parse(value.toString());
+        return AcceptanceWarrantyService.parseLocalDate(value);
     }
 
     public Map<String, Object> upload(UUID warranty, MultipartFile file) {

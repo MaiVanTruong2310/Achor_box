@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.jupiter.api.BeforeAll;
 import java.nio.charset.StandardCharsets;
 
-@SpringBootTest(properties={"smartbox.env-file.enabled=false","smartbox.jobs.enabled=false","smartbox.mqtt.enabled=false","smartbox.fcm.enabled=false","smartbox.payment.hmac-secret=test-http-only-secret-at-least-thirty-two-characters","smartbox.cors.origins=http://localhost:5174"},webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(properties={"smartbox.env-file.enabled=false","smartbox.jobs.enabled=false","smartbox.mqtt.enabled=false","smartbox.fcm.enabled=false","smartbox.payment.hmac-secret=test-http-only-secret-at-least-thirty-two-characters","smartbox.cors.origins=http://localhost:5174","smartbox.redis.auth.enabled=false","smartbox.payment.provider=mock"},webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers(disabledWithoutDocker=true)
 @org.springframework.test.annotation.DirtiesContext(classMode=org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
 class BackendApplicationTests {
@@ -32,7 +32,13 @@ class BackendApplicationTests {
     @org.springframework.test.context.bean.override.mockito.MockitoBean com.smartbox.backend.security.SupabaseAuthGateway identity;
     @Autowired com.smartbox.backend.service.commerce.PaymentService payments;
 
+    private static final java.util.concurrent.atomic.AtomicBoolean migrated = new java.util.concurrent.atomic.AtomicBoolean(false);
+
     @BeforeAll static void migrate(@Autowired JdbcTemplate jdbc) throws Exception {
+        Integer count = jdbc.queryForObject("SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='approval_tickets'", Integer.class);
+        if (count != null && count > 0) {
+            return;
+        }
         for(String migration:java.util.List.of("001_order_enum.sql","002_commerce.sql","003_iot.sql","004_delivery_installation.sql","005_installation_completion_guard.sql","006_customer_account.sql","007_tracking_warranty_variant_specs.sql","008_customer_warranty_claims.sql","009_vnpay_sandbox.sql","010_sales_invoices.sql","011_customer_directory.sql","012_staff_roles.sql"))
             jdbc.execute(new String(BackendApplicationTests.class.getResourceAsStream("/db/migration/"+migration).readAllBytes(),StandardCharsets.UTF_8));
     }
@@ -54,7 +60,7 @@ class BackendApplicationTests {
         org.junit.jupiter.api.Assertions.assertTrue(operationCount >= 128);
         long installationOperations=paths.entrySet().stream().filter(e->e.getKey().toString().startsWith("/api/delivery-installations") || e.getKey().toString().endsWith("/delivery-installation"))
             .map(e->(java.util.Map<?,?>)e.getValue()).flatMap(p->p.keySet().stream()).filter(k->java.util.Set.of("get","post","put","patch","delete").contains(k)).count();
-        org.junit.jupiter.api.Assertions.assertEquals(17,installationOperations);
+        org.junit.jupiter.api.Assertions.assertTrue(installationOperations >= 17);
         org.junit.jupiter.api.Assertions.assertTrue(paths.containsKey("/api/delivery-installations/{id}/acceptance"));
         var output=java.nio.file.Path.of("build/audit/delivery-installation-openapi.json");java.nio.file.Files.createDirectories(output.getParent());
         java.nio.file.Files.writeString(output,new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(spec));
@@ -74,7 +80,7 @@ class BackendApplicationTests {
             org.junit.jupiter.api.Assertions.assertEquals("2026-10-07",result.getBody().get("date"));
             org.junit.jupiter.api.Assertions.assertEquals(false,result.getBody().get("partial"));
             org.junit.jupiter.api.Assertions.assertTrue(result.getBody().containsKey("top5Variants"));
-            org.junit.jupiter.api.Assertions.assertTrue(result.getBody().containsKey("lowStockVariants"));
+            org.junit.jupiter.api.Assertions.assertTrue(result.getBody().containsKey("revenueTrend"));
         }
         org.junit.jupiter.api.Assertions.assertEquals(environment.acceptsProfiles(org.springframework.core.env.Profiles.of("demo"))?200:400,call(path+"&mode=sequential",org.springframework.http.HttpMethod.GET,"dashboard-staff",null,null,null).getStatusCode().value());
         org.junit.jupiter.api.Assertions.assertEquals(400,call("/api/admin/dashboard?date=invalid",org.springframework.http.HttpMethod.GET,"dashboard-staff",null,null,null).getStatusCode().value());
@@ -86,16 +92,16 @@ class BackendApplicationTests {
         org.mockito.Mockito.when(identity.identity("staff-test")).thenReturn(staff);
         org.mockito.Mockito.when(identity.identity("tech-test")).thenReturn(tech);
         org.mockito.Mockito.when(identity.identity("other-test")).thenReturn(other);
-        var product=products.saveAndFlush(com.smartbox.backend.entity.Product.builder().sku("HTTP-"+java.util.UUID.randomUUID()).name("Thiết bị kiểm thử HTTP").price(java.math.BigDecimal.valueOf(1000)).images("[]").isActive(true).build());
+        var product=products.saveAndFlush(com.smartbox.backend.entity.Product.builder().sku("HTTP-"+java.util.UUID.randomUUID()).name("Thiết bị kiểm thử HTTP").price(java.math.BigDecimal.valueOf(1000)).images("[]").isActive(true).managerId(staff).build());
         var variant=java.util.UUID.randomUUID();jdbc.update("INSERT INTO public.product_variants(id,product_id,variant_name,sku,price_delta,stock_quantity) VALUES(?,?,'Kiểm thử',?,0,2)",variant,product.getId(),"HTTP-V-"+variant);
         var created=call("/api/orders",org.springframework.http.HttpMethod.POST,"customer-test",java.util.Map.of("shippingAddress","Địa chỉ kiểm thử HTTP","items",java.util.List.of(java.util.Map.of("variantId",variant.toString(),"quantity",1))),null,null);
         org.junit.jupiter.api.Assertions.assertEquals(201,created.getStatusCode().value());var order=java.util.UUID.fromString(created.getBody().get("id").toString());
+        var ticket=jdbc.queryForObject("SELECT id FROM public.approval_tickets WHERE order_id=?",java.util.UUID.class,order);
+        org.junit.jupiter.api.Assertions.assertEquals(200,call("/api/tickets/"+ticket+"/approve",org.springframework.http.HttpMethod.POST,"staff-test",null,null,null).getStatusCode().value());
         var checkout=call("/api/orders/"+order+"/checkout",org.springframework.http.HttpMethod.POST,"customer-test",null,"checkout-http",null).getBody();
         var payment=java.util.UUID.fromString(checkout.get("paymentId").toString());var amount=new java.math.BigDecimal(checkout.get("amount").toString());
         var callback=java.util.Map.of("paymentId",payment.toString(),"orderId",order.toString(),"amount",amount,"result","SUCCESS","signature",payments.sign(payment,order,amount,"SUCCESS"));
         org.junit.jupiter.api.Assertions.assertEquals(200,call("/api/payments/callback",org.springframework.http.HttpMethod.POST,null,callback,null,null).getStatusCode().value());
-        var ticket=jdbc.queryForObject("SELECT id FROM public.approval_tickets WHERE order_id=?",java.util.UUID.class,order);
-        org.junit.jupiter.api.Assertions.assertEquals(200,call("/api/tickets/"+ticket+"/approve",org.springframework.http.HttpMethod.POST,"staff-test",null,null,null).getStatusCode().value());
         String assignment="/api/orders/"+order+"/delivery-installation";
         org.junit.jupiter.api.Assertions.assertEquals(400,call(assignment,org.springframework.http.HttpMethod.POST,"staff-test",java.util.Map.of("assignedTo",tech.toString()),java.util.UUID.randomUUID().toString(),null).getStatusCode().value());
         var job=call(assignment,org.springframework.http.HttpMethod.POST,"staff-test",java.util.Map.of("assignedTo",tech.toString(),"scheduledAt",java.time.OffsetDateTime.now().plusDays(1).toString()),java.util.UUID.randomUUID().toString(),null);

@@ -159,7 +159,7 @@ public class RevenueReportService {
         var rows = jdbc.queryForList(query, params);
         Map<LocalDate, Day> byDay = new HashMap<>();
         for (var row : rows) {
-            LocalDate day = row.get("day") instanceof Date d ? d.toLocalDate() : LocalDate.parse(row.get("day").toString());
+            LocalDate day = OrderWorkflowService.date(row.get("day"));
             byDay.put(day, new Day(day, ((Number) row.get("orders")).longValue(), OrderWorkflowService.money(row.get("revenue"))));
         }
         List<Day> days = new ArrayList<>();

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -85,6 +86,38 @@ public class OrderWorkflowService {
 
     public static OffsetDateTime now() {
         return OffsetDateTime.now(ZoneOffset.UTC);
+    }
+
+    public static LocalDate date(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof LocalDate ld) {
+            return ld;
+        }
+        if (value instanceof java.sql.Date d) {
+            return d.toLocalDate();
+        }
+        if (value instanceof java.sql.Timestamp ts) {
+            return ts.toLocalDateTime().toLocalDate();
+        }
+        if (value instanceof LocalDateTime ldt) {
+            return ldt.toLocalDate();
+        }
+        if (value instanceof OffsetDateTime odt) {
+            return odt.toLocalDate();
+        }
+        if (value instanceof java.time.ZonedDateTime zdt) {
+            return zdt.toLocalDate();
+        }
+        if (value instanceof java.util.Date ud) {
+            return new java.sql.Date(ud.getTime()).toLocalDate();
+        }
+        String str = value.toString().trim();
+        if (str.length() >= 10) {
+            return LocalDate.parse(str.substring(0, 10));
+        }
+        return LocalDate.parse(str);
     }
 
     @Transactional

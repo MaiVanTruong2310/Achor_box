@@ -1,4 +1,4 @@
-/* ticket-detail.css - Professional Compact PO Ticket Workspace */
+/* ticket-detail.css - Streamlined Master-Detail PO Ticket Workspace */
 
 :root {
   --tkd-bg-canvas: #f8fafc;
@@ -11,6 +11,8 @@
   --tkd-text-main: #0f172a;
   --tkd-text-muted: #64748b;
   --tkd-text-secondary: #334155;
+  --accent-primary: #ea580c;
+  --accent-sky: #0284c7;
 }
 
 [data-theme="dark"] {
@@ -26,177 +28,93 @@
   --tkd-text-secondary: #cbd5e1;
 }
 
-/* Page Container - Compact, Ergonomic, Centered (Not Sprawling) */
+/* Page Container */
 .tkd-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 14px 20px 48px;
+  padding: 16px 20px 48px;
   animation: fadeIn 0.25s ease-out;
 }
 
-/* 1. Top Navigation Bar & Sáng sủa Nút Back */
-.tkd-top-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.tkd-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  background: var(--tkd-card-bg);
-  border: 1px solid #cbd5e1;
-  color: var(--tkd-text-main);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  box-shadow: var(--tkd-shadow-btn);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-.tkd-back-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #2563eb;
-  transition: transform 0.2s ease;
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.tkd-back-btn:hover {
-  background: #ffffff;
-  border-color: #2563eb;
-  color: #2563eb;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.16);
-  transform: translateX(-3px);
+/* 1. Header Strip & Navigation Sub-bar */
+.tkd-header-wrap {
+  margin-bottom: 16px;
 }
 
-.tkd-back-btn:hover .tkd-back-icon {
-  transform: translateX(-2px);
-}
-
-.tkd-refresh-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: var(--tkd-card-bg);
-  border: 1px solid #cbd5e1;
-  color: var(--tkd-text-secondary);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: var(--tkd-shadow-btn);
-  transition: all 0.2s ease;
-}
-
-.tkd-refresh-btn:hover:not(:disabled) {
-  border-color: #94a3b8;
-  color: var(--tkd-text-main);
-  background: #f8fafc;
-}
-
-/* 2. Header Card - Compact & Bright */
-.tkd-header-card {
+.tkd-subbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 14px 18px;
-  border-radius: 12px;
-  background: var(--tkd-card-bg);
-  border: 1px solid var(--tkd-card-border);
-  box-shadow: var(--tkd-shadow-card);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
-.tkd-header-left {
+.tkd-subbar-left {
   display: flex;
   align-items: center;
-  gap: 14px;
-}
-
-.tkd-header-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.04) 100%);
-  color: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(37, 99, 235, 0.2);
-  flex-shrink: 0;
-}
-
-.tkd-header-title {
-  margin: 0 0 4px 0;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--tkd-text-main);
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  flex-wrap: wrap;
-}
-
-.tkd-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 16px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
-.tkd-header-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   color: var(--tkd-text-muted);
 }
 
-.tkd-meta-item {
+.tkd-back-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  color: var(--tkd-text-main);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  box-shadow: var(--tkd-shadow-btn);
 }
 
-.tkd-seq-tag {
+.tkd-back-link:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.tkd-subbar-sep {
+  color: var(--tkd-card-border);
+}
+
+.tkd-meta-tag {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 6px;
   font-family: var(--font-mono, monospace);
-  font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  color: var(--tkd-text-secondary);
 }
 
-.tkd-seq-tag.po {
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
-  border: 1px solid rgba(37, 99, 235, 0.25);
-}
-
-.tkd-seq-tag.order {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.25);
-}
-
-.tkd-copy-icon-btn {
+.tkd-copy-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -204,19 +122,193 @@
   color: inherit;
   display: inline-flex;
   align-items: center;
-  opacity: 0.75;
+  opacity: 0.7;
   transition: opacity 0.15s;
 }
 
-.tkd-copy-icon-btn:hover {
+.tkd-copy-btn:hover {
   opacity: 1;
 }
 
-/* 3. Main Workspace Grid - Balanced & Compact */
+.tkd-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  color: var(--tkd-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: var(--tkd-shadow-btn);
+}
+
+.tkd-refresh-btn:hover:not(:disabled) {
+  border-color: #94a3b8;
+  color: var(--tkd-text-main);
+}
+
+/* Main Title & Status Badge */
+.tkd-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tkd-title-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tkd-main-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--tkd-text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tkd-title-badges {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tkd-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.tkd-badge-payment {
+  cursor: default;
+}
+
+.tkd-badge-settlement {
+  font-size: 0.72rem;
+  letter-spacing: 0.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px 10px;
+}
+
+/* Payment Status Strip (Compact, clean banner) */
+.tkd-payment-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  transition: all 0.2s ease;
+}
+
+.tkd-payment-strip.paid {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  color: #065f46;
+}
+
+[data-theme="dark"] .tkd-payment-strip.paid {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.tkd-payment-strip.pending {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #92400e;
+}
+
+[data-theme="dark"] .tkd-payment-strip.pending {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.tkd-payment-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tkd-payment-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tkd-payment-strip.paid .tkd-payment-icon {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.tkd-payment-strip.pending .tkd-payment-icon {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.tkd-payment-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.tkd-payment-sub {
+  font-size: 0.78rem;
+  color: var(--tkd-text-muted);
+  margin-top: 2px;
+}
+
+.tkd-payment-tag {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.tkd-payment-strip.paid .tkd-payment-tag {
+  background: rgba(16, 185, 129, 0.18);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.tkd-payment-strip.pending .tkd-payment-tag {
+  background: rgba(245, 158, 11, 0.18);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* 2. Main Workspace Layout: 2 Columns */
 .tkd-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.8fr) minmax(310px, 1.1fr);
+  gap: 16px;
   align-items: start;
 }
 
@@ -226,390 +318,779 @@
   }
 }
 
-/* Common Card */
-.tkd-card {
+/* Common Section Container Card */
+.tkd-section-card {
   background: var(--tkd-card-bg);
   border: 1px solid var(--tkd-card-border);
-  border-radius: 12px;
-  padding: 14px 18px;
+  border-radius: 14px;
+  padding: 16px 18px;
   box-shadow: var(--tkd-shadow-card);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
-.tkd-card-header {
+.tkd-section-card:last-child {
+  margin-bottom: 0;
+}
+
+.tkd-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--tkd-card-border);
 }
 
-.tkd-card-title {
+.tkd-section-title {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.98rem;
+  font-weight: 800;
   color: var(--tkd-text-main);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.tkd-card-subtitle {
-  font-size: 0.78rem;
-  color: var(--tkd-text-muted);
-}
-
-/* Customer & Order 2-Column Info Grid */
-.tkd-info-cols {
+/* SECTION 1: THÔNG TIN ĐƠN HÀNG (GỘP KHÁCH HÀNG & TỔNG GIÁ TRỊ) */
+.tkd-order-summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--tkd-card-border);
 }
 
-@media (max-width: 768px) {
-  .tkd-info-cols {
+@media (max-width: 640px) {
+  .tkd-order-summary-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
-.tkd-info-block {
-  background: var(--tkd-sub-bg);
-  border: 1px solid var(--tkd-sub-border);
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.tkd-info-block-title {
-  font-size: 0.76rem;
+.tkd-block-label {
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--tkd-text-muted);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
-.tkd-info-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 6px;
-  font-size: 0.83rem;
-}
-
-.tkd-info-row:last-child {
-  margin-bottom: 0;
-}
-
-.tkd-info-label {
-  color: var(--tkd-text-muted);
-  width: 88px;
-  flex-shrink: 0;
-  font-size: 0.8rem;
-}
-
-.tkd-info-val {
+.tkd-customer-name {
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--tkd-text-main);
-  font-weight: 600;
-  flex: 1;
-  word-break: break-word;
-  font-size: 0.83rem;
+  margin-bottom: 3px;
 }
 
-/* Item Approval Cards */
-.tkd-item-list {
+.tkd-customer-contact {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
+  font-size: 0.84rem;
+  color: var(--tkd-text-secondary);
 }
 
-.tkd-item-card {
+.tkd-customer-contact a {
+  color: var(--accent-sky);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.tkd-customer-contact a:hover {
+  text-decoration: underline;
+}
+
+.tkd-total-amount {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #10b981;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.tkd-total-meta {
+  font-size: 0.8rem;
+  color: var(--tkd-text-muted);
+  margin-top: 4px;
+}
+
+/* Shipping Address & Note Row */
+.tkd-address-row {
+  padding: 12px 0 14px;
+  border-bottom: 1px dashed var(--tkd-card-border);
+}
+
+.tkd-address-text {
+  font-size: 0.88rem;
+  color: var(--tkd-text-main);
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.tkd-address-note {
+  margin-top: 8px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.22);
+  font-size: 0.82rem;
+  color: #c2410c;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .tkd-address-note {
+  background: rgba(249, 115, 22, 0.14);
+  color: #fdba74;
+}
+
+/* SECTION 2: DANH MỤC SẢN PHẨM */
+.tkd-products-box {
+  padding-top: 14px;
+}
+
+.tkd-product-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 10px 12px;
   border-radius: 10px;
   background: var(--tkd-sub-bg);
   border: 1px solid var(--tkd-sub-border);
-  transition: all 0.2s ease;
+  margin-bottom: 8px;
+  transition: all 0.15s ease;
 }
 
-.tkd-item-card:hover {
-  border-color: rgba(37, 99, 235, 0.4);
-  background: var(--tkd-card-bg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+.tkd-product-row:last-child {
+  margin-bottom: 0;
 }
 
-.tkd-item-left {
+.tkd-product-row:hover {
+  border-color: #cbd5e1;
+}
+
+.tkd-product-left {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: 1;
-  min-width: 0;
+  min-width: 220px;
 }
 
-.tkd-item-icon-box {
-  width: 38px;
-  height: 38px;
+.tkd-product-icon {
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   background: var(--tkd-card-bg);
   border: 1px solid var(--tkd-card-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
+  color: var(--accent-primary);
   flex-shrink: 0;
 }
 
-.tkd-item-info {
+.tkd-product-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  min-width: 0;
+  gap: 2px;
 }
 
-.tkd-item-title {
+.tkd-product-title {
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--tkd-text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.tkd-item-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 0.76rem;
+.tkd-product-subtitle {
+  font-size: 0.78rem;
   color: var(--tkd-text-muted);
 }
 
-.tkd-sku-tag {
-  color: #0ea5e9;
-  font-family: var(--font-mono, monospace);
-  font-size: 0.76rem;
-}
-
-.tkd-po-managed-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-  font-weight: 700;
-  font-size: 0.72rem;
-}
-
-.tkd-item-right {
+.tkd-product-right {
   display: flex;
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
 }
 
-.tkd-item-price-box {
+.tkd-product-price-box {
   text-align: right;
-  min-width: 110px;
+  min-width: 90px;
 }
 
-.tkd-item-unit {
+.tkd-product-price {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.tkd-product-qty {
   font-size: 0.76rem;
   color: var(--tkd-text-muted);
 }
 
-.tkd-item-subtotal {
-  font-size: 0.96rem;
-  font-weight: 800;
-  color: #10b981;
+.tkd-product-status {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
 
-.tkd-item-actions {
+/* SECTION 3: QUYẾT ĐỊNH THẨM ĐỊNH PO TICKET */
+.tkd-decision-strip {
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.tkd-decision-strip.approved {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.tkd-decision-strip.rejected {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.tkd-decision-strip.returned {
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.tkd-decision-status-title {
+  font-size: 0.92rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* Action Decision Box */
-.tkd-decision-card {
+.tkd-decision-status-desc {
+  margin: 4px 0 0 26px;
+  font-size: 0.82rem;
+  color: var(--tkd-text-secondary);
+  line-height: 1.45;
+}
+
+/* Decision Action Buttons for PENDING */
+.tkd-action-box {
   background: var(--tkd-card-bg);
   border: 1px solid rgba(37, 99, 235, 0.25);
   border-radius: 12px;
   padding: 14px 18px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
-.tkd-decision-desc {
-  margin: 4px 0 0 0;
-  font-size: 0.82rem;
-  color: var(--tkd-text-muted);
-  line-height: 1.45;
-}
-
-.tkd-decision-buttons {
+.tkd-action-buttons {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 12px;
-}
-
-.tkd-decision-status-banner {
   margin-top: 10px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid transparent;
 }
 
-.tkd-decision-status-row {
-  display: flex;
+.btn-tkd-approve {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.88rem;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1px solid #059669;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  transition: all 0.15s ease;
 }
 
-.tkd-decision-status-reason {
-  margin: 4px 0 0 0;
-  font-size: 0.8rem;
-  color: var(--tkd-text-secondary);
+.btn-tkd-approve:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
 }
 
-.tkd-reason-box {
+.btn-tkd-return {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #0284c7;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-tkd-return:hover:not(:disabled) {
+  background: rgba(14, 165, 233, 0.15);
+}
+
+.btn-tkd-reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-tkd-reject:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Reason Input Box */
+.tkd-reason-dropdown {
   margin-top: 12px;
-  padding: 12px 14px;
+  padding: 12px;
   border-radius: 10px;
   background: var(--tkd-sub-bg);
   border: 1px solid var(--tkd-sub-border);
-  animation: slideUp 0.2s ease-out;
+  animation: slideUp 0.15s ease-out;
 }
 
-.tkd-reason-chips {
+.tkd-chips-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin: 8px 0 10px;
 }
 
-.tkd-chip {
-  padding: 4px 10px;
+.tkd-chip-btn {
+  padding: 3px 8px;
   border-radius: 6px;
   background: var(--tkd-card-bg);
   border: 1px solid var(--tkd-card-border);
   color: var(--tkd-text-secondary);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.tkd-chip:hover {
+.tkd-chip-btn:hover {
   background: #2563eb;
   border-color: #2563eb;
-  color: #ffffff;
+  color: #fff;
 }
 
-/* Right Sidebar: Audit Trail */
-.tkd-audit-header {
+.tkd-textarea {
+  width: 100%;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid var(--tkd-card-border);
+  background: var(--tkd-card-bg);
+  color: var(--tkd-text-main);
+  font-size: 0.85rem;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.tkd-textarea:focus {
+  border-color: #2563eb;
+}
+
+/* SECTION 4: NGHIỆM THU & BÀN GIAO */
+.tkd-acceptance-section {
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--tkd-shadow-card);
+}
+
+.tkd-acceptance-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 12px;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--tkd-card-border);
 }
 
-.tkd-audit-timeline {
+.tkd-acceptance-sub {
+  font-size: 0.82rem;
+  color: var(--tkd-text-muted);
+  margin-top: 2px;
+}
+
+/* Proof Photo Block */
+.tkd-proof-box {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  margin-bottom: 14px;
+}
+
+.tkd-proof-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 0.84rem;
+}
+
+.tkd-proof-count {
+  font-weight: 700;
+  color: var(--tkd-text-main);
+}
+
+.tkd-proof-hint {
+  font-size: 0.78rem;
+  color: var(--tkd-text-muted);
+}
+
+.tkd-thumbs-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tkd-thumb-item {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--tkd-card-border);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #000;
+}
+
+.tkd-thumb-item:hover {
+  transform: translateY(-2px) scale(1.04);
+  border-color: #10b981;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.tkd-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.2s ease;
+}
+
+.tkd-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.tkd-thumb-item:hover .tkd-thumb-overlay {
+  opacity: 1;
+}
+
+/* Acceptance Meta & Technician */
+.tkd-acceptance-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: var(--tkd-text-secondary);
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .tkd-acceptance-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tkd-acceptance-meta-item strong {
+  color: var(--tkd-text-main);
+}
+
+/* Acceptance PO Review Actions */
+.tkd-acceptance-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--tkd-card-border);
+}
+
+/* 3. Right Column: Timeline & Guidelines */
+.tkd-history-card {
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--tkd-shadow-card);
+  margin-bottom: 14px;
+}
+
+.tkd-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--tkd-card-border);
+}
+
+.tkd-history-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--tkd-text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tkd-history-count {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-sky);
+}
+
+/* Continuous Timeline List - Clean & Connected */
+.tkd-continuous-timeline {
   list-style: none;
   padding: 0;
   margin: 0;
   position: relative;
 }
 
-.tkd-audit-timeline::before {
+.tkd-continuous-timeline::before {
   content: '';
   position: absolute;
-  top: 8px;
+  top: 6px;
   bottom: 8px;
-  left: 11px;
+  left: 9px;
   width: 2px;
   background: var(--tkd-card-border);
 }
 
-.tkd-audit-item {
+.tkd-timeline-event {
   position: relative;
   padding-left: 28px;
   margin-bottom: 14px;
 }
 
-.tkd-audit-item:last-child {
+.tkd-timeline-event:last-child {
   margin-bottom: 0;
 }
 
-.tkd-audit-dot {
+.tkd-timeline-dot {
   position: absolute;
-  left: 7px;
+  left: 5px;
   top: 4px;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #2563eb;
+  background: #3b82f6;
   border: 2px solid var(--tkd-card-bg);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  transition: all 0.2s ease;
 }
 
-.tkd-audit-dot.newest {
+.tkd-timeline-dot.newest {
   background: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
 }
 
-.tkd-audit-action {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--tkd-text-main);
+.tkd-event-headline {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2px;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--tkd-text-main);
 }
 
-.tkd-audit-time {
-  font-size: 0.73rem;
+.tkd-event-tag {
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.tkd-event-time {
+  font-size: 0.74rem;
   color: var(--tkd-text-muted);
   font-weight: 500;
+  margin-top: 1px;
 }
 
-.tkd-audit-note {
+.tkd-event-note {
   font-size: 0.78rem;
   color: var(--tkd-text-secondary);
   background: var(--tkd-sub-bg);
   border: 1px solid var(--tkd-sub-border);
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: 4px 8px;
   margin-top: 4px;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
-/* Guidelines Box */
-.tkd-guidelines-card {
+/* History Toggle Button */
+.tkd-history-toggle-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 7px 10px;
+  border-radius: 8px;
   background: var(--tkd-sub-bg);
   border: 1px solid var(--tkd-sub-border);
+  color: var(--accent-sky);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.tkd-guidelines-list {
+.tkd-history-toggle-btn:hover {
+  background: rgba(2, 132, 199, 0.08);
+  border-color: rgba(2, 132, 199, 0.3);
+}
+
+/* Accordion: Quy trình xuất kho PO */
+.tkd-guidelines-accordion {
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.tkd-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.tkd-accordion-header:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .tkd-accordion-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tkd-accordion-title {
   margin: 0;
-  padding-left: 16px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--tkd-text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tkd-accordion-body {
+  padding: 10px 14px 12px;
+  border-top: 1px dashed var(--tkd-card-border);
   font-size: 0.78rem;
   color: var(--tkd-text-secondary);
   line-height: 1.55;
 }
 
-/* In-Page Item Reject Modal */
+.tkd-accordion-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.tkd-accordion-list li {
+  margin-bottom: 4px;
+}
+
+.tkd-accordion-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* 4. Fullscreen Lightbox Modal */
+.tkd-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.tkd-lightbox-wrap {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tkd-lightbox-img {
+  max-width: 85vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+}
+
+.tkd-lightbox-close {
+  position: absolute;
+  top: -40px;
+  right: -10px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tkd-lightbox-close:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  transform: rotate(90deg);
+}
+
+/* Modals */
 .tkd-modal-overlay {
   position: fixed;
   inset: 0;
@@ -632,4 +1113,407 @@
   padding: 18px 20px;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
   animation: scaleIn 0.2s ease-out;
+}
+
+/* Acceptance Quick Trigger Box inside History Card */
+.tkd-acceptance-quick-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  margin-bottom: 14px;
+  transition: all 0.2s ease;
+}
+
+.tkd-acceptance-quick-box:hover {
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tkd-quick-box-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.tkd-quick-box-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--tkd-text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tkd-quick-box-sub {
+  font-size: 0.76rem;
+  color: var(--tkd-text-muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tkd-btn-acceptance-modal-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  background: var(--tkd-card-bg);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  box-shadow: var(--tkd-shadow-btn);
+}
+
+.tkd-btn-acceptance-modal-trigger:hover {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: #10b981;
+  color: #059669;
+  transform: translateY(-1px);
+}
+
+.tkd-mini-badge {
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.tkd-photo-count-pill {
+  font-size: 0.72rem;
+  color: var(--tkd-text-muted);
+  font-weight: 600;
+}
+
+.tkd-timeline-inline-link {
+  background: none;
+  border: none;
+  color: #10b981;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tkd-timeline-inline-link:hover {
+  color: #059669;
+}
+
+/* Compact Alert Banner in Left Column when WAITING_PO_CONFIRMATION */
+.tkd-acceptance-pending-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.tkd-pending-alert-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tkd-alert-icon {
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.tkd-alert-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #b45309;
+}
+
+[data-theme="dark"] .tkd-alert-title {
+  color: #fbbf24;
+}
+
+.tkd-alert-desc {
+  font-size: 0.78rem;
+  color: var(--tkd-text-secondary);
+  margin-top: 2px;
+}
+
+/* Acceptance Modal Detail View */
+.tkd-acceptance-modal-box {
+  max-width: 680px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tkd-accmodal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--tkd-card-border);
+  background: var(--tkd-sub-bg);
+}
+
+.tkd-accmodal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tkd-accmodal-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tkd-accmodal-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--tkd-text-main);
+}
+
+.tkd-accmodal-subtitle {
+  font-size: 0.78rem;
+  color: var(--tkd-text-muted);
+  margin-top: 2px;
+}
+
+.tkd-accmodal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--tkd-text-muted);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.tkd-accmodal-close-btn:hover {
+  color: var(--tkd-text-main);
+  background: var(--tkd-card-border);
+}
+
+.tkd-accmodal-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tkd-accmodal-card {
+  background: var(--tkd-sub-bg);
+  border: 1px solid var(--tkd-sub-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.tkd-accmodal-card-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--tkd-text-main);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tkd-accmodal-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.tkd-accmodal-meta-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.82rem;
+}
+
+.tkd-meta-label {
+  font-size: 0.75rem;
+  color: var(--tkd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.tkd-meta-val-strong {
+  font-weight: 700;
+  color: var(--tkd-text-main);
+}
+
+.tkd-meta-val {
+  color: var(--tkd-text-secondary);
+}
+
+.tkd-meta-sub a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.tkd-accmodal-devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tkd-accmodal-device-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  font-size: 0.82rem;
+}
+
+.tkd-device-num {
+  font-weight: 700;
+  color: var(--tkd-text-muted);
+}
+
+.tkd-device-serial strong {
+  color: #10b981;
+  font-family: var(--font-mono, monospace);
+}
+
+.tkd-sensor-pill {
+  margin-left: 10px;
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0284c7;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.tkd-empty-photos-box {
+  text-align: center;
+  padding: 20px;
+  color: var(--tkd-text-muted);
+  font-size: 0.82rem;
+}
+
+.tkd-criteria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.tkd-criteria-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+}
+
+.tkd-criteria-item.pass {
+  color: #059669;
+}
+
+[data-theme="dark"] .tkd-criteria-item.pass {
+  color: #34d399;
+}
+
+.criteria-icon {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.tkd-completion-note-box {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  font-size: 0.82rem;
+  color: var(--tkd-text-secondary);
+}
+
+.tkd-rework-note-box {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  font-size: 0.82rem;
+  color: #dc2626;
+}
+
+.tkd-accmodal-actions-bar {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tkd-accmodal-actions-hint {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #d97706;
+}
+
+.tkd-accmodal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--tkd-card-border);
+  display: flex;
+  justify-content: flex-end;
+  background: var(--tkd-sub-bg);
+}
+
+.btn-tkd-close {
+  padding: 6px 18px;
+  border-radius: 8px;
+  background: var(--tkd-card-bg);
+  border: 1px solid var(--tkd-card-border);
+  color: var(--tkd-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-tkd-close:hover {
+  background: var(--tkd-card-border);
+  color: var(--tkd-text-main);
 }

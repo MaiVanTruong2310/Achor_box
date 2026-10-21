@@ -23,6 +23,7 @@ import {
   UploadCloud,
   ArrowUpDown,
   Sparkles,
+  Sliders,
   ArrowDownLeft,
   Clock,
   User,
@@ -720,6 +721,17 @@ export const Products: React.FC = () => {
           >
             <RefreshCw size={15} className={loading || loadingProducts || loadingMovements ? 'spin' : ''} />
           </button>
+
+          {(isSuperAdmin || isProductManager) && (
+            <button
+              type="button"
+              className="icon-btn-clean"
+              onClick={() => navigate(isProductManager ? '/po/products/specifications' : '/admin/products/specifications')}
+              title="Thông số biến thể kỹ thuật"
+            >
+              <Sliders size={15} />
+            </button>
+          )}
 
           {canCreate && (
             <button

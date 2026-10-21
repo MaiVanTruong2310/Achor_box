@@ -167,8 +167,7 @@ public class VnpayGateway {
         params.put("vnp_OrderInfo", "Thanh toan SmartBox " + payment);
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
-        OffsetDateTime safeExpires = (expires != null && expires.isAfter(created.plusMinutes(20)))
-                ? expires : created.plusMinutes(30);
+        OffsetDateTime safeExpires = expires != null ? expires : created.plusMinutes(15);
         params.put("vnp_CreateDate", DATE.format(created.atZoneSameInstant(VIETNAM)));
         params.put("vnp_ExpireDate", DATE.format(safeExpires.atZoneSameInstant(VIETNAM)));
         params.put("vnp_ReturnUrl", returnUrl);
