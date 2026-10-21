@@ -1,0 +1,72 @@
+/* Shared storefront palette, matched to the blue and white campaign artwork. */
+:root {
+  --brand-blue:#0866e8;
+  --brand-blue-hover:#0051c7;
+  --brand-blue-bright:#0874df;
+  --brand-blue-soft:#edf6ff;
+  --brand-blue-border:#c8e0fb;
+  --brand-blue-ink:#143a76;
+  --accent:var(--brand-blue);
+  --accent-hover:var(--brand-blue-hover);
+  --accent-soft:var(--brand-blue-soft);
+  --accent-border:var(--brand-blue-border);
+  --ink:#112b50;
+  --muted:#506682;
+  --surface:#fff;
+  --border:#dce8f5;
+  background:#fff;
+  color:var(--ink);
+  scroll-padding-top:calc(var(--store-header-height, 170px) + 20px);
+}
+body { background:#fff; color:var(--ink); }
+::selection { background:#d9ecff; color:#12346a; }
+.store-topbar { background:#edf6ff; color:#375b87; border-bottom:1px solid #dceafb; }
+.store-topbar a { color:#315b91; }
+.store-topbar a:hover { color:var(--brand-blue-hover); }
+
+/* Keep both rows visible on scroll; the top information strip scrolls normally. */
+.commerce-header { position:sticky; top:0; z-index:70; background:#fff; color:var(--ink); border-bottom-color:#d5e6f8; box-shadow:0 4px 20px #163c7010; }
+.commerce-header .brand { color:#103775; }
+.commerce-header .brand-icon { background:linear-gradient(135deg,#0874df,#0051c7); color:#fff; }
+.commerce-header .brand-dot { color:var(--brand-blue); }
+.commerce-search { border-color:#c8dbf2; background:#fff; }
+.commerce-search:focus-within { border-color:var(--brand-blue); box-shadow:0 0 0 3px #0866e814; }
+.commerce-search-category { border-right-color:#deebf8; }
+.commerce-search select { color:#315b87; background:#f6faff; }
+.commerce-search button { background:var(--brand-blue); color:#fff; }
+.commerce-search button:hover { background:var(--brand-blue-hover); color:#fff; }
+.commerce-icon-action,.commerce-account>svg { color:#164d93; }
+.commerce-icon-action:hover,.commerce-account a:hover { color:var(--brand-blue); }
+.commerce-bag small { background:var(--brand-blue); border-color:#fff; }
+.commerce-header .notification-bell { background:#f0f7ff; border-color:#c8def6; color:#1555a5; }
+.commerce-header-bottom { background:#f0f7ff; border-top-color:#deebf9; }
+.commerce-main-nav a:hover,.commerce-main-nav a.active { color:var(--brand-blue-hover); border-bottom-color:var(--brand-blue); }
+.commerce-header-support { color:#315c8d; }
+.commerce-header-support a+a { border-left-color:#cadff5; }
+.commerce-departments>button { color:#124987; }
+.commerce-departments>button:hover,.commerce-departments>button[aria-expanded=true],.commerce-menu-toggle:hover,.commerce-menu-toggle[aria-expanded=true] { color:var(--brand-blue-hover); background:transparent; }
+.commerce-department-list { border-color:#d5e5f7; box-shadow:0 14px 36px #163c701c; }
+.commerce-department-list a:hover { background:var(--brand-blue-soft); color:var(--brand-blue-hover); }
+.commerce-menu-toggle { color:#14539b; }
+.commerce-main-nav.open { border-color:#d5e5f7; }
+
+.store-home .catalog-toolbar,.catalog-toolbar { background:#f6faff; border-color:#dce8f5; }
+.store-discovery { background:#f4f9ff; border-color:#dfebf9; }
+.product-placeholder { background:#f2f8ff; }
+.store-footer { background:linear-gradient(180deg,#f5faff,#edf6ff); border-top:1px solid #d9e8f8; color:#183f70; }
+.store-footer .brand { color:#103775; }
+.store-footer p { color:#526e90; }
+.store-footer h2 { color:#153e74; }
+.store-footer-grid>div>a:not(.brand) { color:#3c608c; }
+.store-footer a:hover { color:var(--brand-blue-hover); }
+.store-footer-bottom { border-top-color:#d7e6f7; color:#567191; }
+.account-avatar { background:var(--brand-blue-soft); color:var(--brand-blue); }
+.commerce-workspace { --commerce-accent:var(--brand-blue); --commerce-line:#dce8f5; }
+.commerce-workspace .button:hover { background:var(--brand-blue-hover); border-color:var(--brand-blue-hover); }
+.commerce-workspace .button.secondary:hover { background:var(--brand-blue-soft); color:var(--brand-blue-hover); border-color:var(--brand-blue-border); }
+@media(max-width:767px) {
+  .commerce-main-nav a.active { background:var(--brand-blue-soft); }
+  .commerce-main-nav.open { max-height:calc(100dvh - var(--store-header-height, 182px) - 12px); }
+}
+.commerce-department-list { max-height:min(65vh,calc(100dvh - var(--store-header-height, 170px) - 12px)); }
+@media print { .commerce-header { position:static; box-shadow:none; } }
