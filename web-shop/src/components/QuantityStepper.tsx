@@ -1,0 +1,7 @@
+import { useEffect, useId, useState } from 'react';
+export function QuantityStepper({ value, onChange, max = 99, disabled = false, label = 'Số lượng' }: { value: number; onChange: (value: number) => void; max?: number; disabled?: boolean; label?: string }) {
+  const id = useId(); const limit = Math.min(99, Math.max(1, max)); const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+  const commit = () => { const parsed = Number(draft); if (Number.isInteger(parsed) && parsed >= 1 && parsed <= limit) onChange(parsed); else setDraft(String(value)); };
+  return <div className="quantity-field"><label htmlFor={id}>{label}</label><div className="quantity-stepper"><button type="button" disabled={disabled || max < 1 || value <= 1} aria-label={`Giảm ${label.toLowerCase()}`} onClick={() => onChange(Math.max(1, value - 1))}>−</button><input id={id} disabled={disabled || max < 1} type="number" inputMode="numeric" min={1} max={limit} step={1} value={draft} onChange={e => { setDraft(e.target.value); const parsed = Number(e.target.value); if (Number.isInteger(parsed) && parsed >= 1 && parsed <= limit) onChange(parsed); }} onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }} /><button type="button" disabled={disabled || max < 1 || value >= limit} aria-label={`Tăng ${label.toLowerCase()}`} onClick={() => onChange(Math.min(limit, value + 1))}>+</button></div><small>{max < 1 ? 'Hết hàng' : `Từ 1 đến ${limit}`}</small></div>;
+}
