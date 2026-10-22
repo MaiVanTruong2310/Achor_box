@@ -161,6 +161,28 @@ public class UserService {
         throw new AppException(503, "AUTH_PROVIDER_RECOVERY_REQUIRED: Chưa có tích hợp reset hotline an toàn; không báo thành công khi mật khẩu chưa đổi");
     }
 
+    @Transactional
+    public Map<String, Object> resetStaffPassword(UUID id, String newPassword) {
+        actors.get().requireRoles("super_admin");
+        if (newPassword == null || newPassword.trim().length() < 8 || newPassword.trim().length() > 72) {
+            throw new AppException(400, "Mật khẩu mới phải từ 8 đến 72 ký tự");
+        }
+        Profile profile = profileRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Nhân sự", "id", id));
+
+        if (!java.util.Set.of("super_admin", "product_manager", "technician").contains(profile.getRole())) {
+            throw new AppException(400, "Chỉ được phép đặt lại mật khẩu cho tài khoản nhân sự nội bộ");
+        }
+
+        authProvider.updateUserPassword(id, newPassword.trim());
+        commerce.audit(actors.get().id(), "RESET_STAFF_PASSWORD", "profiles", id, "Admin đặt lại mật khẩu cho " + profile.getEmail());
+
+        return Map.of(
+            "success", true,
+            "message", "Đã đặt lại mật khẩu thành công cho nhân viên " + (profile.getFullName() != null ? profile.getFullName() : profile.getEmail())
+        );
+    }
+
     public UserProfileResponse mapToResponse(Profile p) {
         String email = p.getEmail();
 

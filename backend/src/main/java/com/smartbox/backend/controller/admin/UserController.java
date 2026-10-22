@@ -87,4 +87,12 @@ public class UserController {
             @RequestBody VerifyResetPasswordRequest request) {
         return ResponseEntity.ok(userService.verifyOtpAndResetPassword(id, request.getOtp(), request.getNewPassword()));
     }
+
+    @PostMapping("/{id}/reset-password")
+    @Operation(summary = "Admin đặt lại mật khẩu cho nhân sự nội bộ", description = "Cho phép Super Admin đặt lại mật khẩu mới trực tiếp cho tài khoản nhân viên (super_admin, product_manager, technician)")
+    public ResponseEntity<Map<String, Object>> resetStaffPassword(
+            @PathVariable UUID id,
+            @RequestBody @Valid com.smartbox.backend.dto.request.admin.AdminResetPasswordRequest request) {
+        return ResponseEntity.ok(userService.resetStaffPassword(id, request.getNewPassword()));
+    }
 }

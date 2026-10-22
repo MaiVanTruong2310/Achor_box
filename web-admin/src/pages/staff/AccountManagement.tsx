@@ -27,7 +27,11 @@ import {
   Calendar,
   Clock,
   IdCard,
-  UserCheck
+  UserCheck,
+  KeyRound,
+  Copy,
+  Sparkles,
+  EyeOff
 } from 'lucide-react';
 import './staff-management.css';
 
@@ -85,6 +89,14 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
 
   // Staff Profile Details Modal (Staff only info, NO orders/devices)
   const [staffDetail, setStaffDetail] = useState<Profile | null>(null);
+
+  // Reset Password Modal
+  const [resetTarget, setResetTarget] = useState<Profile | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+  const [copiedResetPassword, setCopiedResetPassword] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -200,6 +212,54 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
       setMessage('Đã cấp tài khoản nhân viên mới thành công.');
     } catch (e) {
       setCreateStaffError((e as Error).message);
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const generateRandomPassword = () => {
+    const charsUpper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const charsLower = 'abcdefghijkmnopqrstuvwxyz';
+    const charsNum = '23456789';
+    let pwd = 'SB@';
+    for (let i = 0; i < 3; i++) pwd += charsUpper[Math.floor(Math.random() * charsUpper.length)];
+    for (let i = 0; i < 4; i++) pwd += charsLower[Math.floor(Math.random() * charsLower.length)];
+    for (let i = 0; i < 3; i++) pwd += charsNum[Math.floor(Math.random() * charsNum.length)];
+    setResetPassword(pwd);
+    setCopiedResetPassword(false);
+  };
+
+  const handleOpenResetPassword = (user: Profile) => {
+    setResetTarget(user);
+    setResetPassword('');
+    setShowResetPassword(false);
+    setResetError('');
+    setResetSuccess(null);
+    setCopiedResetPassword(false);
+  };
+
+  const handleConfirmResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetTarget || !resetPassword.trim()) return;
+    if (resetPassword.trim().length < 8) {
+      setResetError('Mật khẩu mới phải dài từ 8 đến 72 ký tự.');
+      return;
+    }
+
+    setBusy(resetTarget.id);
+    setResetError('');
+    try {
+      const res = await adminRequest<{ success: boolean; message: string }>(
+        `/users/${resetTarget.id}/reset-password`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ newPassword: resetPassword.trim() })
+        }
+      );
+      setResetSuccess(res.message || 'Đã đặt lại mật khẩu thành công!');
+      setMessage(`Đã cập nhật mật khẩu mới cho ${resetTarget.full_name || resetTarget.email}.`);
+    } catch (e: any) {
+      setResetError(e.message || 'Không thể đặt lại mật khẩu.');
     } finally {
       setBusy('');
     }
@@ -546,6 +606,18 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
 
                         <button
                           type="button"
+                          className="staff-btn"
+                          disabled={!!busy}
+                          onClick={() => handleOpenResetPassword(user)}
+                          title="Đặt lại mật khẩu cho nhân viên"
+                          style={{ color: 'var(--fpt-orange)', borderColor: 'rgba(234, 88, 12, 0.35)' }}
+                        >
+                          <KeyRound size={13} />
+                          <span>Đổi MK</span>
+                        </button>
+
+                        <button
+                          type="button"
                           className={`staff-btn ${user.is_locked ? 'success' : 'danger'}`}
                           disabled={!!busy || isSelf}
                           onClick={() => handleOpenLock(user)}
@@ -829,6 +901,185 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
         </div>
       )}
 
+      {/* Modal Đặt lại mật khẩu cán bộ nhân viên */}
+      {resetTarget && (
+        <div className="fpt-modal-overlay" onClick={() => !busy && setResetTarget(null)}>
+          <div className="fpt-modal-box" style={{ maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
+            <div className="fpt-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'rgba(234, 88, 12, 0.12)',
+                    color: 'var(--fpt-orange)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <KeyRound size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Đặt lại mật khẩu nhân viên</h3>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    Cấp mật khẩu mới trực tiếp cho nhân sự nội bộ
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={!!busy}
+                onClick={() => setResetTarget(null)}
+                style={{ padding: '6px', borderRadius: '8px' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmResetPassword}>
+              <div className="fpt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Thông tin nhân viên */}
+                <div style={{ background: 'var(--bg-surface)', padding: '12px 14px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="staff-avatar-badge" style={{ background: getRoleGradient(resetTarget.role), width: 34, height: 34, fontSize: '0.75rem' }}>
+                      {(resetTarget.full_name || resetTarget.email || 'NV').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <strong style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'block' }}>
+                        {resetTarget.full_name || 'Chưa cập nhật tên'}
+                      </strong>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {resetTarget.email}
+                      </span>
+                    </div>
+                  </div>
+                  {getRoleBadge(resetTarget.role)}
+                </div>
+
+                {/* Thông báo lỗi nếu có */}
+                {resetError && (
+                  <div className="card" style={{ padding: '8px 12px', background: 'var(--fpt-rose-soft)', color: 'var(--fpt-rose)', borderColor: 'var(--fpt-rose)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertCircle size={15} />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                {/* Thông báo thành công nếu có */}
+                {resetSuccess ? (
+                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '12px 14px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--fpt-emerald)', fontWeight: 600, fontSize: '0.85rem' }}>
+                      <CheckCircle2 size={16} />
+                      <span>{resetSuccess}</span>
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      Mật khẩu mới đã được cập nhật thành công trên hệ thống. Hãy sao chép để gửi cho nhân viên:
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+                      <code style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--fpt-orange)', flex: 1 }}>{resetPassword}</code>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(resetPassword);
+                          setCopiedResetPassword(true);
+                          setTimeout(() => setCopiedResetPassword(false), 2000);
+                        }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }}
+                      >
+                        {copiedResetPassword ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+                        <span>{copiedResetPassword ? 'Đã chép' : 'Sao chép'}</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Nhập mật khẩu mới */}
+                    <div className="fpt-form-group">
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <label style={{ margin: 0 }}>Mật khẩu mới *</label>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={generateRandomPassword}
+                          disabled={!!busy}
+                          style={{ fontSize: '0.725rem', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="Tạo mật khẩu ngẫu nhiên an toàn"
+                        >
+                          <Sparkles size={11} color="var(--fpt-orange)" />
+                          <span>Tạo ngẫu nhiên</span>
+                        </button>
+                      </div>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showResetPassword ? 'text' : 'password'}
+                          placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự)..."
+                          value={resetPassword}
+                          onChange={e => setResetPassword(e.target.value)}
+                          disabled={!!busy}
+                          required
+                          style={{ width: '100%', paddingRight: '40px', fontFamily: showResetPassword ? 'inherit' : 'var(--font-mono)' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowResetPassword(!showResetPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--text-muted)',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                          tabIndex={-1}
+                        >
+                          {showResetPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
+                      <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                        Độ dài từ 8 đến 72 ký tự. Nên có chữ hoa, chữ thường và chữ số.
+                      </span>
+                    </div>
+
+                    <div style={{ background: 'var(--bg-shell)', padding: '10px 12px', borderRadius: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45, borderLeft: '3px solid var(--fpt-orange)' }}>
+                      Mật khẩu mới sẽ có hiệu lực ngay lập tức. Cán bộ nhân viên sẽ sử dụng mật khẩu này để đăng nhập vào Retail OS.
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="fpt-modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={!!busy}
+                  onClick={() => setResetTarget(null)}
+                >
+                  {resetSuccess ? 'Đóng' : 'Hủy'}
+                </button>
+                {!resetSuccess && (
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={!!busy || !resetPassword.trim()}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    {busy === resetTarget.id ? <RefreshCw size={13} className="spin" /> : <KeyRound size={13} />}
+                    <span>Xác nhận đổi mật khẩu</span>
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* 9. Modal Hồ Sơ Cán Bộ Nhân Viên (CHỈ HIỂN THỊ THÔNG TIN NHÂN SỰ, KHÔNG CÓ ĐƠN HÀNG) */}
       {staffDetail && (
         <div className="fpt-modal-overlay" onClick={() => setStaffDetail(null)}>
@@ -899,7 +1150,20 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
               </div>
             </div>
 
-            <div className="fpt-modal-footer">
+            <div className="fpt-modal-footer" style={{ justifyContent: 'space-between' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  const target = staffDetail;
+                  setStaffDetail(null);
+                  handleOpenResetPassword(target);
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--fpt-orange)', borderColor: 'rgba(234, 88, 12, 0.3)' }}
+              >
+                <KeyRound size={13} />
+                <span>Đặt lại mật khẩu</span>
+              </button>
               <button
                 type="button"
                 className="btn btn-secondary"
