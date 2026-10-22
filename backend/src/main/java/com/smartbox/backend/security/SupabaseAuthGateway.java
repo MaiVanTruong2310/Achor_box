@@ -122,6 +122,15 @@ public class SupabaseAuthGateway {
         if(serviceKey.isBlank())throw new AppException(503,"AUTH_ADMIN_NOT_CONFIGURED");
         client.delete().uri("/admin/users/"+id).header("apikey",serviceKey).header("Authorization","Bearer "+serviceKey).retrieve().toBodilessEntity();
     }
+    public void updateUserPassword(UUID id, String password) {
+        configured();
+        if(serviceKey.isBlank())throw new AppException(503,"AUTH_ADMIN_NOT_CONFIGURED");
+        try {
+            client.put().uri("/admin/users/"+id).header("apikey",serviceKey).header("Authorization","Bearer "+serviceKey)
+                .body(Map.of("password",password)).retrieve().toBodilessEntity();
+        }catch(RestClientResponseException ex){throw new AppException(400,"AUTH_PASSWORD_UPDATE_FAILED");}
+        catch(org.springframework.web.client.ResourceAccessException ex){throw new AppException(503,"AUTH_PROVIDER_UNAVAILABLE");}
+    }
     public void recovery(String email) {
         recovery(email,null);
     }
