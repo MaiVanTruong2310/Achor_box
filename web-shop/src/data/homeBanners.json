@@ -1,0 +1,50 @@
+[
+  {
+    "id": "achor-box-banner-1",
+    "title": "Hộp nhận hàng thông minh",
+    "imageAlt": "Hộp nhận hàng thông minh",
+    "ctaLabel": "Khám phá ngay",
+    "imageUrl": "/banners/achor-box-banner-wide-1.webp",
+    "targetUrl": "/products",
+    "position": "hero_home",
+    "displayOrder": 1,
+    "isActive": true,
+    "layout": "image"
+  },
+  {
+    "id": "achor-box-banner-2",
+    "title": "Quản lý hộp nhận hàng dễ dàng trên điện thoại",
+    "imageAlt": "Quản lý hộp nhận hàng dễ dàng trên điện thoại",
+    "ctaLabel": "Tìm hiểu ứng dụng",
+    "imageUrl": "/banners/achor-box-banner-wide-2.webp",
+    "targetUrl": "/app",
+    "position": "hero_home",
+    "displayOrder": 2,
+    "isActive": true,
+    "layout": "image"
+  },
+  {
+    "id": "achor-box-banner-3",
+    "title": "Giải pháp giao nhận thông minh",
+    "imageAlt": "Giải pháp giao nhận thông minh",
+    "ctaLabel": "Tìm hiểu ngay",
+    "imageUrl": "/banners/achor-box-banner-wide-3.webp",
+    "targetUrl": "/technology",
+    "position": "hero_home",
+    "displayOrder": 3,
+    "isActive": true,
+    "layout": "image"
+  },
+  {
+    "id": "achor-box-banner-4",
+    "title": "Hộp nhận hàng thông minh cho cuộc sống hiện đại",
+    "imageAlt": "Hộp nhận hàng thông minh cho cuộc sống hiện đại",
+    "ctaLabel": "Tìm hiểu ngay",
+    "imageUrl": "/banners/achor-box-banner-wide-4.webp",
+    "targetUrl": "/products",
+    "position": "hero_home",
+    "displayOrder": 4,
+    "isActive": true,
+    "layout": "image"
+  }
+]
