@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/localization/language_controller.dart';
+import '../../../core/utils/device_serial.dart';
+import '../../../data/models/device_access.dart';
 import '../../../services/supabase_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/liquid_glass_container.dart';
@@ -65,9 +67,9 @@ class _AddDeviceQrScreenState extends State<AddDeviceQrScreen>
   }
 
   Future<void> _pairDevice(String serial) async {
-    final normalizedSerial = _normalizeDeviceSerial(serial);
+    final normalizedSerial = normalizeDeviceSerial(serial);
     if (_isProcessing) return;
-    if (!RegExp(r'^DBX-[0-9A-F]{12}$').hasMatch(normalizedSerial)) {
+    if (!isValidDeviceSerial(normalizedSerial)) {
       AppToast.show(
         context,
         message: context.tr(
@@ -129,6 +131,7 @@ class _AddDeviceQrScreenState extends State<AddDeviceQrScreen>
       "name": device['name'] ?? "DropSafe Box",
       "serial": device['serial_number'] ?? normalizedSerial,
       "mqttTopicId": device['serial_number'] ?? normalizedSerial,
+      "accessLevel": DeviceAccessLevel.owner,
       "isOnline": device['status'] == 'online',
       "statusText": device['status'] == 'online' ? "Online" : "Offline",
       "locationText": device['location_label'] ?? "Chưa thiết lập vị trí",
@@ -146,39 +149,6 @@ class _AddDeviceQrScreenState extends State<AddDeviceQrScreen>
               : "Đóng"),
       "icon": Icons.inventory_2_outlined,
     });
-  }
-
-  String _normalizeDeviceSerial(String input) {
-    final raw = input.trim();
-    final upper = raw.toUpperCase();
-
-    // 1. Thử parse JSON nếu QR chứa object JSON
-    try {
-      if (raw.startsWith('{') && raw.endsWith('}')) {
-        final matchSerial = RegExp(
-                r'"(?:serial|serial_number|id|device_id)"\s*:\s*"([^"]+)"',
-                caseSensitive: false)
-            .firstMatch(raw);
-        if (matchSerial != null) {
-          return _normalizeDeviceSerial(matchSerial.group(1)!);
-        }
-      }
-    } catch (_) {}
-
-    // 2. Tìm cú pháp DBX-XXXXXXXXXXXX
-    final embedded = RegExp(r'DBX[\s_:-]*([0-9A-F]{12})').firstMatch(upper);
-    if (embedded != null) return 'DBX-${embedded.group(1)}';
-
-    // 3. Chấp nhận chuỗi 12 ký tự Hex bất kỳ
-    final compact = upper.replaceAll(RegExp(r'[^0-9A-Z]'), '');
-    if (RegExp(r'^[0-9A-F]{12}$').hasMatch(compact)) {
-      return 'DBX-$compact';
-    }
-    if (RegExp(r'^DBX[0-9A-F]{12}$').hasMatch(compact)) {
-      return 'DBX-${compact.substring(3)}';
-    }
-
-    return '';
   }
 
   Future<void> _showManualEntry() async {
@@ -245,7 +215,7 @@ class _AddDeviceQrScreenState extends State<AddDeviceQrScreen>
                     letterSpacing: 0.8,
                   ),
                   decoration: InputDecoration(
-                    hintText: "VD: DS-8921-X7",
+                    hintText: "VD: DBX-98C377AD9D60",
                     hintStyle: const TextStyle(color: Color(0xFF7F91A8)),
                     filled: true,
                     fillColor: Colors.black.withOpacity(0.20),

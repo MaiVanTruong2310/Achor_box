@@ -1,20 +1,25 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/localization/language_controller.dart';
+import '../../../data/models/device_access.dart';
 import '../../../services/mqtt_service.dart';
 import '../../../services/supabase_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/animated_delivery_box.dart';
+import '../../widgets/device_pin_dialogs.dart';
 import '../../widgets/liquid_glass_container.dart';
 import '../../widgets/ios26_back_button.dart';
 import '../../widgets/neon_bubble_background.dart';
+import 'access_screen.dart';
 import 'wifi_provisioning_screen.dart';
 
 class DeviceDetailScreen extends StatefulWidget {
   final String deviceId;
+
+  /// The box serial; MQTT topics are `delivery_box/<serial>/...`.
   final String mqttTopicId;
+  final DeviceAccessLevel accessLevel;
   final String boxName;
   final bool isOnline;
   final String statusText;
@@ -27,6 +32,7 @@ class DeviceDetailScreen extends StatefulWidget {
     super.key,
     required this.deviceId,
     required this.mqttTopicId,
+    required this.accessLevel,
     required this.boxName,
     required this.isOnline,
     required this.statusText,
@@ -88,7 +94,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
     // Nếu thiết bị chưa Online (chưa có Wi-Fi), nẩy Popup hỗ trợ nạp Wi-Fi qua Bluetooth BLE ngay
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Give a newly provisioned ESP32 enough time to reboot, join Wi-Fi and
-      // publish its first authenticated heartbeat.
+      // publish its first authenticated heartbeat. Only the owner configures
+      // the box's Wi-Fi.
+      if (!widget.accessLevel.isOwner) return;
       await Future<void>.delayed(const Duration(seconds: 20));
       if (mounted && !_isOnline) _promptWifiProvisioning();
     });
@@ -128,9 +136,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
         context,
         MaterialPageRoute(
           builder: (_) => WifiProvisioningScreen(
-            deviceSerial: widget.mqttTopicId.startsWith('DBX')
-                ? widget.mqttTopicId
-                : 'DBX-98C377AD9D60',
+            deviceSerial: widget.mqttTopicId,
           ),
         ),
       );
@@ -212,7 +218,11 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
   }
 
   void _startHold() {
-    if (_isUnlocking || _currentLockStatus == 'Mở') return;
+    if (!widget.accessLevel.canControl ||
+        _isUnlocking ||
+        _currentLockStatus == 'Mở') {
+      return;
+    }
     setState(() {
       _isHolding = true;
       _holdProgress = 0.0;
@@ -305,7 +315,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
   }
 
   Future<void> _triggerLock() async {
-    if (_isUnlocking) return;
+    if (!widget.accessLevel.canControl || _isUnlocking) return;
     setState(() => _isUnlocking = true);
 
     final commandId = SupabaseService.newDeviceCommandId();
@@ -360,6 +370,10 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
         'WRONG_PIN' => 'Nhập sai mã',
         'KEYPAD_LOCKED' => 'Bàn phím bị khóa',
         'ONLINE' => 'Thiết bị trực tuyến',
+        'REMOTE_UNLOCK' => 'Lệnh mở khóa từ ứng dụng',
+        'REMOTE_LOCK' => 'Lệnh đóng khóa từ ứng dụng',
+        'REMOTE_TARE' => 'Lệnh đặt lại cân',
+        'ONE_TIME_PIN_USED' => 'Mở bằng PIN một lần',
         _ => type.replaceAll('_', ' '),
       };
 
@@ -372,19 +386,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
   }
 
   Future<void> _showChangePinDialog() async {
-    final titleText = context.tr(vi: 'Đổi mã PIN hộp', en: 'Change box PIN');
-    final cancelText = context.tr(vi: 'Hủy', en: 'Cancel');
-    final saveText = context.tr(vi: 'Lưu PIN', en: 'Save PIN');
-
-    final newPin = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => _ChangePinDialogWidget(
-        titleText: titleText,
-        cancelText: cancelText,
-        saveText: saveText,
-      ),
-    );
-
+    final newPin = await showChangeDevicePinDialog(context);
     if (newPin == null || !mounted) return;
 
     final saved = await SupabaseService.setDeviceAccessPin(
@@ -419,7 +421,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
       expiresMinutes: 30,
     );
     if (!mounted) return;
-    if (result == null || result['pin_code'] == null) {
+    if (result == null) {
       AppToast.show(
         context,
         message: context.tr(
@@ -430,58 +432,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
       );
       return;
     }
-
-    final pin = result['pin_code'].toString();
-    final expiresAt =
-        DateTime.tryParse(result['expires_at']?.toString() ?? '')?.toLocal();
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.tr(vi: 'PIN dùng một lần', en: 'One-time PIN')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.password_rounded,
-                size: 42, color: AppColors.brandBlue),
-            const SizedBox(height: 14),
-            SelectableText(
-              pin,
-              style: const TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 10,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              expiresAt == null
-                  ? 'Mã hết hạn sau 30 phút và chỉ dùng được một lần.'
-                  : 'Hết hạn lúc ${_eventTime(expiresAt.toIso8601String())}. '
-                      'Mã chỉ dùng được một lần.',
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: pin));
-              if (dialogContext.mounted) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  const SnackBar(content: Text('Đã sao chép PIN một lần.')),
-                );
-              }
-            },
-            icon: const Icon(Icons.copy_rounded),
-            label: Text(context.tr(vi: 'Sao chép', en: 'Copy')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.tr(vi: 'Xong', en: 'Done')),
-          ),
-        ],
-      ),
-    );
+    await showOneTimePinCreatedDialog(context, result);
   }
 
   @override
@@ -600,20 +551,24 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                                 : _holdProgress,
                             isOpen: _currentLockStatus == 'Mở',
                             isBusy: _isUnlocking,
-                            instruction: _currentLockStatus == 'Mở'
+                            instruction: !widget.accessLevel.canControl
                                 ? context.tr(
-                                    vi: 'NHẤN ĐỂ ĐÓNG', en: 'TAP TO LOCK')
-                                : (_isUnlocking
+                                    vi: 'Bạn chỉ có quyền xem',
+                                    en: 'You have view-only access')
+                                : _currentLockStatus == 'Mở'
                                     ? context.tr(
-                                        vi: 'Đang gửi lệnh mở...',
-                                        en: 'Sending unlock...')
-                                    : _isHolding
+                                        vi: 'NHẤN ĐỂ ĐÓNG', en: 'TAP TO LOCK')
+                                    : (_isUnlocking
                                         ? context.tr(
-                                            vi: 'Giữ để mở khóa...',
-                                            en: 'Keep holding...')
-                                        : context.tr(
-                                            vi: 'Giữ để mở',
-                                            en: 'Hold to Open')),
+                                            vi: 'Đang gửi lệnh mở...',
+                                            en: 'Sending unlock...')
+                                        : _isHolding
+                                            ? context.tr(
+                                                vi: 'Giữ để mở khóa...',
+                                                en: 'Keep holding...')
+                                            : context.tr(
+                                                vi: 'Giữ để mở',
+                                                en: 'Hold to Open')),
                           ),
                         ),
                       ),
@@ -832,183 +787,196 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                       )),
                 const SizedBox(height: 24),
 
-                // 4. Advanced Settings Collapsible Menu (Dạng Xếp Chồng / ExpansionTile Glass)
-                LiquidGlassContainer(
-                  borderRadius: 20.0,
-                  blur: 16.0,
-                  tintOpacity: 0.12,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 4.0),
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      dividerColor: Colors.transparent,
-                      splashColor: Colors.transparent,
-                    ),
-                    child: ExpansionTile(
-                      leading: Icon(
-                        Icons.settings_outlined,
-                        color: isDark
-                            ? const Color(0xFF38BDF8)
-                            : AppColors.brandBlue,
+                // 4. Advanced Settings (owner only: PIN, Wi-Fi, members, unbind)
+                if (widget.accessLevel.isOwner)
+                  LiquidGlassContainer(
+                    borderRadius: 20.0,
+                    blur: 16.0,
+                    tintOpacity: 0.12,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 4.0),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        dividerColor: Colors.transparent,
+                        splashColor: Colors.transparent,
                       ),
-                      title: Text(
-                        context.tr(
-                          vi: "Cài đặt & Thao tác thiết bị",
-                          en: "Device Settings & Actions",
+                      child: ExpansionTile(
+                        leading: Icon(
+                          Icons.settings_outlined,
+                          color: isDark
+                              ? const Color(0xFF38BDF8)
+                              : AppColors.brandBlue,
                         ),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: primaryText,
-                        ),
-                      ),
-                      subtitle: Text(
-                        context.tr(
-                          vi: "Mã PIN, Wi-Fi, Thành viên, Liên kết",
-                          en: "PIN, Wi-Fi, Members, Unbind",
-                        ),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: secondaryText,
-                        ),
-                      ),
-                      children: [
-                        const Divider(height: 1, color: Colors.white10),
-                        ListTile(
-                          leading: Icon(Icons.share_outlined,
-                              color: AppColors.brandBlue),
-                          title: Text(
-                            context.tr(vi: "Chia sẻ PIN", en: "Share PIN"),
-                            style: TextStyle(color: primaryText, fontSize: 14),
+                        title: Text(
+                          context.tr(
+                            vi: "Cài đặt & Thao tác thiết bị",
+                            en: "Device Settings & Actions",
                           ),
-                          trailing: const Icon(Icons.chevron_right, size: 20),
-                          onTap: _createAndShareOneTimePin,
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.pin_outlined,
-                              color: AppColors.brandBlue),
-                          title: Text(
-                            context.tr(
-                                vi: "Quản lý Mã PIN", en: "Manage PIN Codes"),
-                            style: TextStyle(color: primaryText, fontSize: 14),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: primaryText,
                           ),
-                          trailing: const Icon(Icons.chevron_right, size: 20),
-                          onTap: _showChangePinDialog,
                         ),
-                        ListTile(
-                          leading: const Icon(Icons.wifi_find_rounded,
-                              color: Color(0xFF10B981)),
-                          title: Text(
-                            context.tr(
-                                vi: "Đổi cấu hình Wi-Fi",
-                                en: "Change Wi-Fi Config"),
-                            style: TextStyle(color: primaryText, fontSize: 14),
+                        subtitle: Text(
+                          context.tr(
+                            vi: "Mã PIN, Wi-Fi, Thành viên, Liên kết",
+                            en: "PIN, Wi-Fi, Members, Unbind",
                           ),
-                          trailing: const Icon(Icons.chevron_right, size: 20),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (dialogCtx) => WifiProvisioningScreen(
-                                  deviceSerial: widget.mqttTopicId,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: secondaryText,
+                          ),
+                        ),
+                        children: [
+                          const Divider(height: 1, color: Colors.white10),
+                          ListTile(
+                            leading: Icon(Icons.share_outlined,
+                                color: AppColors.brandBlue),
+                            title: Text(
+                              context.tr(vi: "Chia sẻ PIN", en: "Share PIN"),
+                              style:
+                                  TextStyle(color: primaryText, fontSize: 14),
+                            ),
+                            trailing: const Icon(Icons.chevron_right, size: 20),
+                            onTap: _createAndShareOneTimePin,
+                          ),
+                          ListTile(
+                            leading: Icon(Icons.pin_outlined,
+                                color: AppColors.brandBlue),
+                            title: Text(
+                              context.tr(
+                                  vi: "Quản lý Mã PIN", en: "Manage PIN Codes"),
+                              style:
+                                  TextStyle(color: primaryText, fontSize: 14),
+                            ),
+                            trailing: const Icon(Icons.chevron_right, size: 20),
+                            onTap: _showChangePinDialog,
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.wifi_find_rounded,
+                                color: Color(0xFF10B981)),
+                            title: Text(
+                              context.tr(
+                                  vi: "Đổi cấu hình Wi-Fi",
+                                  en: "Change Wi-Fi Config"),
+                              style:
+                                  TextStyle(color: primaryText, fontSize: 14),
+                            ),
+                            trailing: const Icon(Icons.chevron_right, size: 20),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (dialogCtx) =>
+                                      WifiProvisioningScreen(
+                                    deviceSerial: widget.mqttTopicId,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.people_outline,
-                              color: Color(0xFF8B5CF6)),
-                          title: Text(
-                            context.tr(
-                                vi: "Quản lý Thành viên",
-                                en: "Members Management"),
-                            style: TextStyle(color: primaryText, fontSize: 14),
+                              );
+                            },
                           ),
-                          trailing: const Icon(Icons.chevron_right, size: 20),
-                          onTap: () {
-                            AppToast.show(context,
-                                message: "Quản lý Thành viên",
-                                type: ToastType.info);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.link_off_rounded,
-                              color: Colors.redAccent),
-                          title: Text(
-                            context.tr(
-                                vi: "Hủy quyền sở hữu hộp",
-                                en: "Unbind Device"),
-                            style: const TextStyle(
-                                color: Colors.redAccent,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600),
-                          ),
-                          trailing: const Icon(Icons.chevron_right,
-                              size: 20, color: Colors.redAccent),
-                          onTap: () async {
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: Text(context.tr(
-                                  vi: 'Hủy quyền sở hữu?',
-                                  en: 'Unbind Device?',
-                                )),
-                                content: Text(context.tr(
-                                  vi: 'Thiết bị ${widget.boxName} sẽ chuyển sang trạng thái tự do (bất hoạt) để người dùng khác có thể liên kết.',
-                                  en: 'Device ${widget.boxName} will be unlinked and set to inactive state for new owners to claim.',
-                                )),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: Text(
-                                        context.tr(vi: 'Hủy', en: 'Cancel')),
+                          ListTile(
+                            leading: const Icon(Icons.people_outline,
+                                color: Color(0xFF8B5CF6)),
+                            title: Text(
+                              context.tr(
+                                  vi: "Quản lý Thành viên",
+                                  en: "Members Management"),
+                              style:
+                                  TextStyle(color: primaryText, fontSize: 14),
+                            ),
+                            trailing: const Icon(Icons.chevron_right, size: 20),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AccessScreen(
+                                    initialDeviceId: widget.deviceId,
+                                    showBackButton: true,
                                   ),
-                                  FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.link_off_rounded,
+                                color: Colors.redAccent),
+                            title: Text(
+                              context.tr(
+                                  vi: "Hủy quyền sở hữu hộp",
+                                  en: "Unbind Device"),
+                              style: const TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            trailing: const Icon(Icons.chevron_right,
+                                size: 20, color: Colors.redAccent),
+                            onTap: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: Text(context.tr(
+                                    vi: 'Hủy quyền sở hữu?',
+                                    en: 'Unbind Device?',
+                                  )),
+                                  content: Text(context.tr(
+                                    vi: 'Thiết bị ${widget.boxName} sẽ chuyển sang trạng thái tự do (bất hoạt) để người dùng khác có thể liên kết.',
+                                    en: 'Device ${widget.boxName} will be unlinked and set to inactive state for new owners to claim.',
+                                  )),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: Text(
+                                          context.tr(vi: 'Hủy', en: 'Cancel')),
                                     ),
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: Text(context.tr(
-                                        vi: 'Hủy sở hữu', en: 'Unbind')),
-                                  ),
-                                ],
-                              ),
-                            );
+                                    FilledButton(
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: Text(context.tr(
+                                          vi: 'Hủy sở hữu', en: 'Unbind')),
+                                    ),
+                                  ],
+                                ),
+                              );
 
-                            if (confirmed == true && context.mounted) {
-                              final success =
-                                  await SupabaseService.unbindDevice(
-                                      widget.deviceId);
-                              if (context.mounted) {
-                                if (success) {
-                                  AppToast.show(
-                                    context,
-                                    message: context.tr(
-                                      vi: 'Đã hủy quyền sở hữu thiết bị!',
-                                      en: 'Device unbind successful!',
-                                    ),
-                                    type: ToastType.success,
-                                  );
-                                  Navigator.pop(context, widget.deviceId);
-                                } else {
-                                  AppToast.show(
-                                    context,
-                                    message: context.tr(
-                                      vi: 'Không thể hủy liên kết. Hãy thử lại.',
-                                      en: 'Failed to unbind device. Try again.',
-                                    ),
-                                    type: ToastType.error,
-                                  );
+                              if (confirmed == true && context.mounted) {
+                                final success =
+                                    await SupabaseService.unbindDevice(
+                                        widget.deviceId);
+                                if (context.mounted) {
+                                  if (success) {
+                                    AppToast.show(
+                                      context,
+                                      message: context.tr(
+                                        vi: 'Đã hủy quyền sở hữu thiết bị!',
+                                        en: 'Device unbind successful!',
+                                      ),
+                                      type: ToastType.success,
+                                    );
+                                    Navigator.pop(context, widget.deviceId);
+                                  } else {
+                                    AppToast.show(
+                                      context,
+                                      message: context.tr(
+                                        vi: 'Không thể hủy liên kết. Hãy thử lại.',
+                                        en: 'Failed to unbind device. Try again.',
+                                      ),
+                                      type: ToastType.error,
+                                    );
+                                  }
                                 }
                               }
-                            }
-                          },
-                        ),
-                      ],
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 const SizedBox(height: 32),
               ],
             ),
@@ -1017,8 +985,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
       ),
     );
   }
-
-
 
   Widget _buildLiveValue({
     required IconData icon,
@@ -1038,103 +1004,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
               fontSize: 12, fontWeight: FontWeight.w700, color: color),
-        ),
-      ],
-    );
-  }
-}
-
-class _ChangePinDialogWidget extends StatefulWidget {
-  final String titleText;
-  final String cancelText;
-  final String saveText;
-
-  const _ChangePinDialogWidget({
-    required this.titleText,
-    required this.cancelText,
-    required this.saveText,
-  });
-
-  @override
-  State<_ChangePinDialogWidget> createState() => _ChangePinDialogWidgetState();
-}
-
-class _ChangePinDialogWidgetState extends State<_ChangePinDialogWidget> {
-  late final TextEditingController _pinController;
-  late final TextEditingController _confirmController;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _pinController = TextEditingController();
-    _confirmController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _pinController.dispose();
-    _confirmController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.titleText),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _pinController,
-              autofocus: true,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 4,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'PIN mới (4 số)',
-                border: OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _confirmController,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 4,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Nhập lại PIN',
-                border: OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: Colors.redAccent)),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(widget.cancelText),
-        ),
-        FilledButton(
-          onPressed: () {
-            if (_pinController.text.length != 4) {
-              setState(() => _error = 'PIN phải có đúng 4 chữ số.');
-            } else if (_pinController.text != _confirmController.text) {
-              setState(() => _error = 'Hai mã PIN không khớp.');
-            } else {
-              Navigator.pop(context, _pinController.text);
-            }
-          },
-          child: Text(widget.saveText),
         ),
       ],
     );

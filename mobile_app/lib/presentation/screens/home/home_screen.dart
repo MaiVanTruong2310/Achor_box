@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/localization/language_controller.dart';
 import '../../../core/notifications/notification_controller.dart';
+import '../../../data/models/device_access.dart';
 import '../../../services/mqtt_service.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/supabase_service.dart';
@@ -32,6 +33,7 @@ class HomeScreenState extends State<HomeScreen>
   late String _userName;
 
   final List<Map<String, dynamic>> _devices = [];
+  Map<String, DeviceAccessLevel> _accessLevels = const {};
   final Set<String> _recentlyUnboundDeviceIds = {};
   StreamSubscription<List<Map<String, dynamic>>>? _devicesSubscription;
   Timer? _onlineRefreshTimer;
@@ -66,7 +68,7 @@ class HomeScreenState extends State<HomeScreen>
     final stream = SupabaseService.getDevicesStream();
     if (stream == null) return;
 
-    _devicesSubscription = stream.listen((rows) {
+    _devicesSubscription = stream.listen((rows) async {
       if (!mounted) return;
       setState(() {
         _devices
@@ -75,6 +77,15 @@ class HomeScreenState extends State<HomeScreen>
               .where((row) =>
                   !_recentlyUnboundDeviceIds.contains(row['id']?.toString()))
               .map(_mapDatabaseDevice));
+      });
+      // Shared devices need the member's level from device_access.
+      final levels = await SupabaseService.getMyDeviceAccessLevels(rows);
+      if (!mounted) return;
+      setState(() {
+        _accessLevels = levels;
+        for (final device in _devices) {
+          device['accessLevel'] = levels[device['id']?.toString()];
+        }
       });
     });
   }
@@ -88,10 +99,15 @@ class HomeScreenState extends State<HomeScreen>
     final weight = row['weight_kg'] ?? row['weight'];
     final lock = row['lock_status']?.toString();
 
+    final isOwner =
+        row['owner_id']?.toString() == SupabaseService.currentUser?.id;
     return {
       'id': row['id'],
       'serial': row['serial_number'],
       'mqttTopicId': row['serial_number'],
+      'accessLevel': isOwner
+          ? DeviceAccessLevel.owner
+          : _accessLevels[row['id']?.toString()],
       'name': row['name'] ?? row['serial_number'] ?? 'Hộp giao hàng',
       'isOnline': status == 'online' && isRecentlySeen,
       'statusText': status == 'online' && isRecentlySeen ? 'Online' : 'Offline',
@@ -135,12 +151,13 @@ class HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _handleRemoteUnlock(Map<String, dynamic> device) async {
+    final level = device['accessLevel'] as DeviceAccessLevel?;
+    if (level == null || !level.canControl) return;
     setState(() {
       _isUnlocking = true;
     });
 
-    final String topicId =
-        device['serial'] ?? device['mqttTopicId'] ?? 'DBX-98C377AD9D60';
+    final String topicId = device['serial'].toString();
     final commandId = SupabaseService.newDeviceCommandId();
     final sentByMqtt = _mqttService.sendCommand(topicId, {
       'command': 'UNLOCK',
@@ -166,20 +183,15 @@ class HomeScreenState extends State<HomeScreen>
       return;
     }
 
+    if (!mounted) return;
+    // The server logs the command and notifies the owner (device_commands
+    // trigger), so no client-side notification is created here.
     AppToast.show(
       context,
       message: context.tr(
           vi: "Đã gửi lệnh MỞ KHÓA TỪ XA đến ${device['name']}!",
           en: "Remote UNLOCK command sent to ${device['name']}!"),
       type: ToastType.success,
-    );
-    await NotificationService.create(
-      type: 'remote_unlock',
-      title: 'Remote unlock',
-      body: context.tr(
-        vi: 'Đã gửi lệnh mở khóa đến ${device['name']}.',
-        en: 'An unlock command was sent to ${device['name']}.',
-      ),
     );
 
     await Future.delayed(const Duration(seconds: 2));
@@ -195,8 +207,9 @@ class HomeScreenState extends State<HomeScreen>
       MaterialPageRoute(
         builder: (context) => DeviceDetailScreen(
           deviceId: device['id'].toString(),
-          mqttTopicId:
-              device['serial'] ?? device['mqttTopicId'] ?? 'DBX-98C377AD9D60',
+          mqttTopicId: device['serial'].toString(),
+          accessLevel: device['accessLevel'] as DeviceAccessLevel? ??
+              DeviceAccessLevel.viewOnly,
           boxName: device['name'],
           isOnline: device['isOnline'],
           statusText: device['statusText'],
@@ -605,7 +618,12 @@ class HomeScreenState extends State<HomeScreen>
                             iconData:
                                 device['icon'] ?? Icons.inventory_2_outlined,
                             onCardTap: () => _openDeviceDetail(device),
-                            onUnlockTap: () => _handleRemoteUnlock(device),
+                            onUnlockTap:
+                                (device['accessLevel'] as DeviceAccessLevel?)
+                                            ?.canControl ==
+                                        true
+                                    ? () => _handleRemoteUnlock(device)
+                                    : null,
                           ),
                         )),
                   ],
@@ -627,7 +645,7 @@ class HomeScreenState extends State<HomeScreen>
     required String timeAgo,
     required IconData iconData,
     required VoidCallback onCardTap,
-    required VoidCallback onUnlockTap,
+    required VoidCallback? onUnlockTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryText =
@@ -746,34 +764,40 @@ class HomeScreenState extends State<HomeScreen>
                 style: TextStyle(fontSize: 12, color: secondaryText),
               ),
               const Spacer(),
-              SizedBox(
-                height: 40,
-                child: ElevatedButton.icon(
-                  onPressed: _isUnlocking ? null : onUnlockTap,
-                  icon: const Icon(
-                    Icons.lock_open_rounded,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                  label: Text(
-                    context.tr(vi: "MỞ KHÓA", en: "UNLOCK"),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+              if (onUnlockTap == null)
+                Text(
+                  context.tr(vi: 'Chỉ xem', en: 'View only'),
+                  style: TextStyle(fontSize: 12, color: secondaryText),
+                )
+              else
+                SizedBox(
+                  height: 40,
+                  child: ElevatedButton.icon(
+                    onPressed: _isUnlocking ? null : onUnlockTap,
+                    icon: const Icon(
+                      Icons.lock_open_rounded,
+                      size: 16,
                       color: Colors.white,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandBlue,
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    elevation: 1,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
+                    label: Text(
+                      context.tr(vi: "MỞ KHÓA", en: "UNLOCK"),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandBlue,
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      elevation: 1,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ],

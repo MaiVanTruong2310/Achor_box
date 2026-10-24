@@ -46,7 +46,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _selectedTheme = "Light";
         break;
       case ThemeMode.system:
-      default:
         _selectedTheme = "System";
         break;
     }

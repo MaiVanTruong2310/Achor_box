@@ -93,10 +93,10 @@ class AppNotification {
             vi: 'Kiện hàng đã được khóa an toàn', en: 'Parcel secured'),
         'device_added' =>
           context.tr(vi: 'Đã thêm thiết bị', en: 'Device added'),
-        'access_invited' =>
-          context.tr(vi: 'Đã gửi lời mời', en: 'Invitation sent'),
-        'access_revoked' =>
-          context.tr(vi: 'Đã thu hồi quyền', en: 'Access revoked'),
+        'access_invited' => context.tr(
+            vi: 'Bạn được chia sẻ một hộp', en: 'A box was shared with you'),
+        'access_revoked' => context.tr(
+            vi: 'Quyền truy cập đã bị thu hồi', en: 'Your access was revoked'),
         'pin_created' => context.tr(vi: 'Đã tạo mã PIN', en: 'PIN created'),
         'pin_used' => context.tr(vi: 'Mã PIN đã được dùng', en: 'PIN used'),
         'pin_expired' => context.tr(vi: 'Mã PIN đã hết hạn', en: 'PIN expired'),
