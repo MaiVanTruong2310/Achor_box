@@ -1,9 +1,10 @@
-import 'dart:typed_data';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/supabase_config.dart';
+import '../data/models/device_access.dart';
+import '../data/models/device_pin.dart';
 
 class SupabaseService {
   static String newDeviceCommandId() {
@@ -268,13 +269,12 @@ class SupabaseService {
     }
   }
 
-  /// Stream real-time device status from PostgreSQL table `devices`
+  /// Stream real-time device status from PostgreSQL table `devices`.
+  /// RLS returns owned devices plus devices shared with the user.
   static Stream<List<Map<String, dynamic>>>? getDevicesStream() {
     if (!_isInitialized || client == null || currentUser == null) return null;
     try {
-      return client!
-          .from('devices')
-          .stream(primaryKey: ['id']).eq('owner_id', currentUser!.id);
+      return client!.from('devices').stream(primaryKey: ['id']);
     } catch (e) {
       return null;
     }
@@ -284,9 +284,34 @@ class SupabaseService {
     if (!_isInitialized || client == null || currentUser == null) return null;
     return client!
         .from('devices')
-        .stream(primaryKey: ['id'])
-        .eq('id', deviceId)
-        .eq('owner_id', currentUser!.id);
+        .stream(primaryKey: ['id']).eq('id', deviceId);
+  }
+
+  /// Access level per device id for the signed-in user (owned + shared).
+  static Future<Map<String, DeviceAccessLevel>> getMyDeviceAccessLevels(
+    Iterable<Map<String, dynamic>> deviceRows,
+  ) async {
+    final user = currentUser;
+    final levels = <String, DeviceAccessLevel>{};
+    if (!_isInitialized || client == null || user == null) return levels;
+    for (final row in deviceRows) {
+      if (row['owner_id']?.toString() == user.id) {
+        levels[row['id'].toString()] = DeviceAccessLevel.owner;
+      }
+    }
+    try {
+      final rows = await client!
+          .from('device_access')
+          .select('device_id, level')
+          .eq('user_id', user.id);
+      for (final row in rows) {
+        final level = DeviceAccessLevel.fromServer(row['level'] as String?);
+        if (level != null) levels[row['device_id'].toString()] = level;
+      }
+    } catch (error) {
+      debugPrint('Load device access levels error: $error');
+    }
+    return levels;
   }
 
   static Future<bool> waitForDeviceOnline(
@@ -347,7 +372,7 @@ class SupabaseService {
     }
   }
 
-  static Future<Map<String, dynamic>?> createOneTimeDevicePin({
+  static Future<CreatedOneTimePin?> createOneTimeDevicePin({
     required String deviceId,
     int expiresMinutes = 30,
   }) async {
@@ -361,13 +386,158 @@ class SupabaseService {
         },
       );
       if (result is List && result.isNotEmpty) {
-        return Map<String, dynamic>.from(result.first as Map);
+        return CreatedOneTimePin.fromJson(
+            Map<String, dynamic>.from(result.first as Map));
       }
       return null;
     } catch (error) {
       debugPrint('Create one-time device PIN error: $error');
       return null;
     }
+  }
+
+  static Future<DevicePinOverview?> getDevicePinOverview(
+      String deviceId) async {
+    if (!_isInitialized || client == null || currentUser == null) return null;
+    try {
+      final result = await client!.rpc(
+        'get_device_pin_overview',
+        params: {'p_device_id': deviceId},
+      );
+      if (result is List && result.isNotEmpty) {
+        return DevicePinOverview.fromJson(
+            Map<String, dynamic>.from(result.first as Map));
+      }
+      return null;
+    } catch (error) {
+      debugPrint('Load PIN overview error: $error');
+      return null;
+    }
+  }
+
+  /// One-time PINs of the last 30 days, newest first. Null on failure.
+  static Future<List<OneTimePinInfo>?> listOneTimeDevicePins(
+      String deviceId) async {
+    if (!_isInitialized || client == null || currentUser == null) return null;
+    try {
+      final result = await client!.rpc(
+        'list_device_one_time_pins',
+        params: {'p_device_id': deviceId},
+      );
+      return (result as List)
+          .map((row) =>
+              OneTimePinInfo.fromJson(Map<String, dynamic>.from(row as Map)))
+          .toList();
+    } catch (error) {
+      debugPrint('List one-time PINs error: $error');
+      return null;
+    }
+  }
+
+  /// Expires an unused one-time PIN. False if it was already used/expired.
+  static Future<bool> revokeOneTimeDevicePin(String pinId) async {
+    if (!_isInitialized || client == null || currentUser == null) return false;
+    try {
+      final result = await client!.rpc(
+        'revoke_device_one_time_pin',
+        params: {'p_pin_id': pinId},
+      );
+      return result == true;
+    } catch (error) {
+      debugPrint('Revoke one-time PIN error: $error');
+      return false;
+    }
+  }
+
+  // ──────────────────────────────────────
+  // Device sharing
+  // ──────────────────────────────────────
+
+  static String? lastSharingError;
+
+  /// Owner + members of a device. Null on failure.
+  static Future<List<DeviceMember>?> listDeviceMembers(String deviceId) async {
+    if (!_isInitialized || client == null || currentUser == null) return null;
+    try {
+      final result = await client!.rpc(
+        'list_device_members',
+        params: {'p_device_id': deviceId},
+      );
+      return (result as List)
+          .map((row) =>
+              DeviceMember.fromJson(Map<String, dynamic>.from(row as Map)))
+          .toList();
+    } catch (error) {
+      debugPrint('List device members error: $error');
+      return null;
+    }
+  }
+
+  /// Shares a device with a registered user. Inviting an existing member
+  /// again updates their access level.
+  static Future<bool> inviteDeviceMember({
+    required String deviceId,
+    required String email,
+    required DeviceAccessLevel level,
+  }) async {
+    lastSharingError = null;
+    if (!_isInitialized || client == null || currentUser == null) {
+      lastSharingError = sharingErrorMessage('Authentication required');
+      return false;
+    }
+    try {
+      await client!.rpc(
+        'invite_device_member',
+        params: {
+          'p_device_id': deviceId,
+          'p_email': email.trim().toLowerCase(),
+          'p_access_level': level.serverValue,
+        },
+      );
+      return true;
+    } catch (error) {
+      debugPrint('Invite device member error: $error');
+      lastSharingError = sharingErrorMessage(error);
+      return false;
+    }
+  }
+
+  static Future<bool> revokeDeviceMember({
+    required String deviceId,
+    required String userId,
+  }) async {
+    lastSharingError = null;
+    if (!_isInitialized || client == null || currentUser == null) return false;
+    try {
+      final result = await client!.rpc(
+        'revoke_device_member',
+        params: {'p_device_id': deviceId, 'p_user_id': userId},
+      );
+      return result == true;
+    } catch (error) {
+      debugPrint('Revoke device member error: $error');
+      lastSharingError = sharingErrorMessage(error);
+      return false;
+    }
+  }
+
+  /// Maps server exceptions of the sharing RPCs to Vietnamese messages.
+  static String sharingErrorMessage(Object error) {
+    final message = error.toString();
+    if (message.contains('Authentication required')) {
+      return 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.';
+    }
+    if (message.contains('User not found')) {
+      return 'Email này chưa đăng ký tài khoản Anchor Box.';
+    }
+    if (message.contains('Cannot invite yourself')) {
+      return 'Bạn đã là chủ sở hữu của hộp này.';
+    }
+    if (message.contains('not owned by user') ||
+        message.contains('Device not found')) {
+      return 'Chỉ chủ sở hữu mới quản lý được thành viên của hộp.';
+    }
+    return 'Không thể cập nhật quyền truy cập. Vui lòng thử lại.';
   }
 
   static Future<bool> queueDeviceCommand({
@@ -514,25 +684,6 @@ class SupabaseService {
       return 'Bạn đã nhập sai OTP quá số lần cho phép.';
     }
     return 'Không thể kết nối hộp. Vui lòng thử lại.';
-  }
-
-  /// Insert Unlock / Access Event into Supabase `device_events` table
-  static Future<bool> logUnlockEvent(String deviceId, String eventType,
-      {Map<String, dynamic>? payload}) async {
-    if (!_isInitialized || client == null) return false;
-    try {
-      await client!.from('device_events').insert({
-        'device_id': deviceId,
-        'event_type': eventType,
-        'payload':
-            payload ?? {'requested_by': currentUser?.email ?? 'Flutter App'},
-        'created_at': DateTime.now().toIso8601String(),
-      });
-      return true;
-    } catch (e) {
-      debugPrint("Could not log device event to Supabase: $e");
-      return false;
-    }
   }
 
   // ──────────────────────────────────────

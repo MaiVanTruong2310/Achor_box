@@ -22,3 +22,11 @@ mobile_app/lib/core/constants/supabase_config.dart
 mobile_app/supabase/.temp/
 **/local.properties
 *.bak_old_project
+docs/
+# Documents, legacy backend and database scripts stay local
+docs/
+database/
+backend/
+
+# Flutter Android build output
+mobile_app/android/build/

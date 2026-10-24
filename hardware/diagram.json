@@ -1,115 +1,113 @@
 {
   "version": 1,
-  "author": "Smart Delivery Box - ESP32-S3 + Solenoid Lock",
+  "author": "Anchor Box - matches PCB_DELIVERY BOX-IOT (MainSCH.SchDoc)",
   "editor": "wokwi",
   "parts": [
     {
       "type": "board-esp32-s3-devkitc-1",
       "id": "esp",
-      "top": 40,
+      "top": 0,
       "left": 0,
       "attrs": { "flashSize": "16" }
     },
-    { "type": "wokwi-hc-sr04", "id": "ultrasonic", "top": -160, "left": -260, "attrs": {} },
-    { "type": "wokwi-hx711", "id": "hx711", "top": 160, "left": -260, "attrs": {} },
-    { "type": "wokwi-relay-module", "id": "relay_lock", "top": -160, "left": 200, "attrs": {} },
-    {
-      "type": "wokwi-led",
-      "id": "solenoid_placeholder",
-      "top": -60,
-      "left": 260,
-      "attrs": { "color": "orange" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r_solenoid",
-      "top": -60,
-      "left": 300,
-      "attrs": { "value": "220" }
-    },
-    {
-      "type": "wokwi-slide-switch",
-      "id": "mc38_switch",
-      "top": 196.4,
-      "left": 175.9,
-      "attrs": {}
-    },
-    { "type": "wokwi-membrane-keypad", "id": "keypad", "top": -11.6, "left": 340, "attrs": {} },
-    { "type": "wokwi-buzzer", "id": "buzzer", "top": -220, "left": 0, "attrs": {} },
-    {
-      "type": "wokwi-led",
-      "id": "led_green",
-      "top": 320,
-      "left": -40,
-      "attrs": { "color": "green" }
-    },
-    { "type": "wokwi-led", "id": "led_red", "top": 320, "left": 20, "attrs": { "color": "red" } },
-    {
-      "type": "wokwi-led",
-      "id": "led_blue",
-      "top": 320,
-      "left": 80,
-      "attrs": { "color": "blue" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r_green",
-      "top": 340,
-      "left": -60,
-      "attrs": { "value": "220" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r_red",
-      "top": 340,
-      "left": 0,
-      "attrs": { "value": "220" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r_blue",
-      "top": 340,
-      "left": 60,
-      "attrs": { "value": "220" }
-    }
+
+    { "type": "wokwi-text", "id": "t_title", "top": -150, "left": -250, "attrs": { "text": "ANCHOR BOX - PCB pinout (U2 ESP32-S3-DevKitC-1 N16R8)" } },
+
+    { "type": "wokwi-hx711", "id": "hx711", "top": 10, "left": -300, "attrs": { "type": "5kg" } },
+    { "type": "wokwi-text", "id": "t_hx711", "top": -10, "left": -300, "attrs": { "text": "H2 HX711: DATA=GPIO9, SCK=GPIO10, 3V3" } },
+
+    { "type": "wokwi-lcd1602", "id": "lcd", "top": 140, "left": -380, "attrs": { "pins": "i2c" } },
+    { "type": "wokwi-text", "id": "t_lcd", "top": 120, "left": -380, "attrs": { "text": "H3 LCD1602 I2C 0x27: SDA=GPIO4, SCL=GPIO5, 5V (R3/R7 4.7k pull-up)" } },
+    { "type": "wokwi-resistor", "id": "r3", "top": 290, "left": -300, "rotate": 90, "attrs": { "value": "4700" } },
+    { "type": "wokwi-resistor", "id": "r7", "top": 290, "left": -260, "rotate": 90, "attrs": { "value": "4700" } },
+
+    { "type": "wokwi-text", "id": "t_keypad", "top": 360, "left": -380, "attrs": { "text": "U1 PCF8574T @0x20 + JP1 KEYPAD 4x4 share I2C GPIO4/5 (PCF8574 not available in Wokwi)" } },
+
+    { "type": "wokwi-slide-switch", "id": "mc38", "top": 300, "left": 180, "attrs": {} },
+    { "type": "wokwi-text", "id": "t_mc38", "top": 280, "left": 180, "attrs": { "text": "H6 MC-38 reed: GPIO17 (INPUT_PULLUP, LOW=closed)" } },
+
+    { "type": "wokwi-servo", "id": "servo", "top": -40, "left": 260, "attrs": {} },
+    { "type": "wokwi-text", "id": "t_servo", "top": -60, "left": 260, "attrs": { "text": "H5 SERVO: PWM=GPIO16 (R13 220R), 5V" } },
+
+    { "type": "wokwi-led", "id": "solenoid", "top": 90, "left": 300, "attrs": { "color": "orange", "label": "Solenoid" } },
+    { "type": "wokwi-resistor", "id": "r12", "top": 120, "left": 220, "attrs": { "value": "220" } },
+    { "type": "wokwi-text", "id": "t_solenoid", "top": 70, "left": 220, "attrs": { "text": "H4 SOLENOID 12V via Q2 AO3400: gate=GPIO8 (R12 220R). LED = stand-in" } },
+
+    { "type": "wokwi-buzzer", "id": "buzzer", "top": 170, "left": 300, "attrs": { "volume": "0.2" } },
+    { "type": "wokwi-text", "id": "t_buzzer", "top": 150, "left": 220, "attrs": { "text": "LS1 BUZZER via Q1 C1815: GPIO15 (R6 220R)" } },
+
+    { "type": "wokwi-led", "id": "led_red", "top": 400, "left": 20, "attrs": { "color": "red", "label": "L1" } },
+    { "type": "wokwi-led", "id": "led_yellow", "top": 400, "left": 80, "attrs": { "color": "yellow", "label": "L2 WiFi" } },
+    { "type": "wokwi-led", "id": "led_green", "top": 400, "left": 140, "attrs": { "color": "green", "label": "L3" } },
+    { "type": "wokwi-resistor", "id": "r9", "top": 360, "left": 0, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r10", "top": 360, "left": 60, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r11", "top": 360, "left": 120, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-text", "id": "t_leds", "top": 470, "left": 0, "attrs": { "text": "LED1 red=GPIO13, LED2 yellow=GPIO14, LED3 green=GPIO47 (220R)" } },
+
+    { "type": "wokwi-text", "id": "t_option", "top": -150, "left": 480, "attrs": { "text": "OPTIONAL UPGRADES (on PCB, not used by base firmware)" } },
+    { "type": "wokwi-hc-sr04", "id": "ultrasonic", "top": -110, "left": 480, "attrs": { "distance": "30" } },
+    { "type": "wokwi-text", "id": "t_hcsr04", "top": -20, "left": 480, "attrs": { "text": "H1 HC-SR04: TRIG=GPIO6, ECHO=GPIO7 (R1 1k / R2 2k divider on PCB), 5V" } },
+    { "type": "wokwi-pushbutton", "id": "bt1", "top": 30, "left": 480, "attrs": { "color": "blue", "label": "BT1" } },
+    { "type": "wokwi-pushbutton", "id": "bt2", "top": 30, "left": 580, "attrs": { "color": "blue", "label": "BT2" } },
+    { "type": "wokwi-resistor", "id": "r4", "top": 110, "left": 480, "rotate": 90, "attrs": { "value": "10000" } },
+    { "type": "wokwi-resistor", "id": "r5", "top": 110, "left": 580, "rotate": 90, "attrs": { "value": "10000" } },
+    { "type": "wokwi-text", "id": "t_bt", "top": 180, "left": 480, "attrs": { "text": "BT1=GPIO11, BT2=GPIO12 (10k pull-up to 3V3, active LOW)" } }
   ],
   "connections": [
-    [ "esp:GND.1", "ultrasonic:GND", "black", [ "v0" ] ],
-    [ "esp:5V", "ultrasonic:VCC", "red", [ "v0" ] ],
-    [ "esp:5", "ultrasonic:TRIG", "blue", [ "v0" ] ],
-    [ "esp:18", "ultrasonic:ECHO", "green", [ "v0" ] ],
-    [ "esp:GND.1", "hx711:GND", "black", [ "v0" ] ],
-    [ "esp:3V3.1", "hx711:VCC", "red", [ "v0" ] ],
-    [ "esp:4", "hx711:DT", "orange", [ "v0" ] ],
-    [ "esp:6", "hx711:SCK", "yellow", [ "v0" ] ],
-    [ "esp:GND.1", "relay_lock:GND", "black", [ "v0" ] ],
-    [ "esp:5V", "relay_lock:VCC", "red", [ "v0" ] ],
-    [ "esp:7", "relay_lock:IN", "purple", [ "v0" ] ],
-    [ "relay_lock:COM", "r_solenoid:1", "orange", [ "v0" ] ],
-    [ "r_solenoid:2", "solenoid_placeholder:A", "orange", [ "v0" ] ],
-    [ "esp:GND.1", "solenoid_placeholder:C", "black", [ "v0" ] ],
-    [ "relay_lock:NO", "esp:5V", "red", [ "v0" ] ],
-    [ "esp:GND.1", "mc38_switch:1", "black", [ "v0" ] ],
-    [ "esp:8", "mc38_switch:2", "cyan", [ "v0" ] ],
-    [ "esp:9", "keypad:R1", "green", [ "v0" ] ],
-    [ "esp:10", "keypad:R2", "green", [ "v0" ] ],
-    [ "esp:11", "keypad:R3", "green", [ "v0" ] ],
-    [ "esp:12", "keypad:R4", "green", [ "v0" ] ],
-    [ "esp:13", "keypad:C1", "blue", [ "v0" ] ],
-    [ "esp:14", "keypad:C2", "blue", [ "v0" ] ],
-    [ "esp:15", "keypad:C3", "blue", [ "v0" ] ],
-    [ "esp:16", "keypad:C4", "blue", [ "v0" ] ],
-    [ "esp:GND.1", "buzzer:1", "black", [ "v0" ] ],
-    [ "esp:17", "buzzer:2", "magenta", [ "v0" ] ],
-    [ "esp:21", "r_green:1", "green", [ "v0" ] ],
-    [ "r_green:2", "led_green:A", "green", [ "v0" ] ],
-    [ "esp:GND.1", "led_green:C", "black", [ "v0" ] ],
-    [ "esp:38", "r_red:1", "red", [ "v0" ] ],
-    [ "r_red:2", "led_red:A", "red", [ "v0" ] ],
-    [ "esp:GND.1", "led_red:C", "black", [ "v0" ] ],
-    [ "esp:39", "r_blue:1", "blue", [ "v0" ] ],
-    [ "r_blue:2", "led_blue:A", "blue", [ "v0" ] ],
-    [ "esp:GND.1", "led_blue:C", "black", [ "v0" ] ]
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+
+    [ "hx711:VCC", "esp:3V3.1", "red", [] ],
+    [ "hx711:GND", "esp:GND.1", "black", [] ],
+    [ "hx711:DT", "esp:9", "orange", [] ],
+    [ "hx711:SCK", "esp:10", "yellow", [] ],
+
+    [ "lcd:VCC", "esp:5V", "red", [] ],
+    [ "lcd:GND", "esp:GND.1", "black", [] ],
+    [ "lcd:SDA", "esp:4", "green", [] ],
+    [ "lcd:SCL", "esp:5", "blue", [] ],
+    [ "r3:1", "esp:3V3.1", "red", [] ],
+    [ "r3:2", "esp:4", "green", [] ],
+    [ "r7:1", "esp:3V3.1", "red", [] ],
+    [ "r7:2", "esp:5", "blue", [] ],
+
+    [ "mc38:2", "esp:17", "cyan", [] ],
+    [ "mc38:1", "esp:GND.1", "black", [] ],
+
+    [ "servo:V+", "esp:5V", "red", [] ],
+    [ "servo:GND", "esp:GND.1", "black", [] ],
+    [ "servo:PWM", "esp:16", "orange", [] ],
+
+    [ "esp:8", "r12:1", "purple", [] ],
+    [ "r12:2", "solenoid:A", "purple", [] ],
+    [ "solenoid:C", "esp:GND.1", "black", [] ],
+
+    [ "buzzer:2", "esp:15", "magenta", [] ],
+    [ "buzzer:1", "esp:GND.1", "black", [] ],
+
+    [ "esp:13", "r9:1", "red", [] ],
+    [ "r9:2", "led_red:A", "red", [] ],
+    [ "led_red:C", "esp:GND.1", "black", [] ],
+    [ "esp:14", "r10:1", "gold", [] ],
+    [ "r10:2", "led_yellow:A", "gold", [] ],
+    [ "led_yellow:C", "esp:GND.1", "black", [] ],
+    [ "esp:47", "r11:1", "green", [] ],
+    [ "r11:2", "led_green:A", "green", [] ],
+    [ "led_green:C", "esp:GND.1", "black", [] ],
+
+    [ "ultrasonic:VCC", "esp:5V", "red", [] ],
+    [ "ultrasonic:GND", "esp:GND.1", "black", [] ],
+    [ "ultrasonic:TRIG", "esp:6", "blue", [] ],
+    [ "ultrasonic:ECHO", "esp:7", "green", [] ],
+
+    [ "bt1:1.l", "esp:11", "blue", [] ],
+    [ "bt1:2.l", "esp:GND.1", "black", [] ],
+    [ "r4:1", "esp:3V3.1", "red", [] ],
+    [ "r4:2", "esp:11", "blue", [] ],
+    [ "bt2:1.l", "esp:12", "blue", [] ],
+    [ "bt2:2.l", "esp:GND.1", "black", [] ],
+    [ "r5:1", "esp:3V3.1", "red", [] ],
+    [ "r5:2", "esp:12", "blue", [] ]
   ],
   "dependencies": {}
 }

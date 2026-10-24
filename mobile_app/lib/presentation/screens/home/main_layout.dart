@@ -2,15 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/localization/language_controller.dart';
 import '../../../core/notifications/notification_controller.dart';
-import '../../../services/supabase_service.dart';
-import '../../widgets/app_toast.dart';
-import '../../widgets/liquid_glass_container.dart';
 import '../../widgets/liquid_glass_segmented_control.dart';
-import '../../widgets/neon_bubble_background.dart';
 import 'access_screen.dart';
 import 'devices_screen.dart';
 import 'home_screen.dart';
-import '../auth/login_screen.dart';
 import 'profile_screen.dart';
 
 class MainLayout extends StatefulWidget {
@@ -138,136 +133,6 @@ class _MainLayoutState extends State<MainLayout> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  final String title;
-  final IconData icon;
-
-  const _PlaceholderTab({
-    super.key,
-    required this.title,
-    required this.icon,
-  });
-
-  Future<void> _handleLogout(BuildContext context) async {
-    globalNotificationController.reset();
-    await SupabaseService.signOut();
-
-    if (!context.mounted) return;
-
-    AppToast.show(
-      context,
-      message: "Đã đăng xuất khỏi tài khoản.",
-      type: ToastType.info,
-    );
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isAccountTab = title == "Tài Khoản";
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return NeonBubbleBackground(
-      preset: NeonBubblePreset.iosLiquid,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(
-            title,
-            style: TextStyle(
-              color: isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          iconTheme: IconThemeData(
-            color: isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary,
-          ),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: LiquidGlassContainer(
-              borderRadius: 24,
-              blur: 24,
-              tintOpacity: 0.22,
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 54,
-                    color:
-                        isDark ? const Color(0xFF38BDF8) : AppColors.brandBlue,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? const Color(0xFFF1F5F9)
-                          : AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isAccountTab
-                        ? "Tài khoản của bạn: ${SupabaseService.currentUser?.email ?? 'Khách'}"
-                        : "Tính năng đang được tích hợp dữ liệu Supabase",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDark
-                          ? const Color(0xFFA7B5C8)
-                          : AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  if (isAccountTab) ...[
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _handleLogout(context),
-                        icon: const Icon(Icons.logout,
-                            size: 18, color: Colors.white),
-                        label: const Text(
-                          "ĐĂNG XUẤT",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444),
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

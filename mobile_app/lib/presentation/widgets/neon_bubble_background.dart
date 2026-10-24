@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 enum NeonBubblePreset {
   iosLiquid, // Sky Blue, Purple, Mint Cyan, Soft Coral
   cyberpunk, // Electric Blue, Neon Magenta, Golden Amber
-  emerald,   // Emerald Green, Teal, Cyan, Mint
-  sunset,    // Warm Orange, Deep Rose, Golden Yellow
+  emerald, // Emerald Green, Teal, Cyan, Mint
+  sunset, // Warm Orange, Deep Rose, Golden Yellow
 }
 
 /// Data class representing an ambient glowing color bubble
@@ -77,33 +77,84 @@ class _NeonBubbleBackgroundState extends State<NeonBubbleBackground>
     switch (widget.preset) {
       case NeonBubblePreset.cyberpunk:
         return const [
-          NeonBubble(alignment: Alignment(-1.2, -0.8), radius: 240, color: Color(0xFF00E5FF), opacity: 0.30),
-          NeonBubble(alignment: Alignment(1.3, -0.2), radius: 260, color: Color(0xFFFF007F), opacity: 0.28),
-          NeonBubble(alignment: Alignment(-0.8, 0.7), radius: 220, color: Color(0xFFFFB300), opacity: 0.25),
+          NeonBubble(
+              alignment: Alignment(-1.2, -0.8),
+              radius: 240,
+              color: Color(0xFF00E5FF),
+              opacity: 0.30),
+          NeonBubble(
+              alignment: Alignment(1.3, -0.2),
+              radius: 260,
+              color: Color(0xFFFF007F),
+              opacity: 0.28),
+          NeonBubble(
+              alignment: Alignment(-0.8, 0.7),
+              radius: 220,
+              color: Color(0xFFFFB300),
+              opacity: 0.25),
         ];
       case NeonBubblePreset.emerald:
         return const [
-          NeonBubble(alignment: Alignment(1.2, -0.9), radius: 250, color: Color(0xFF00E676), opacity: 0.28),
-          NeonBubble(alignment: Alignment(-1.1, -0.1), radius: 230, color: Color(0xFF00B0FF), opacity: 0.25),
-          NeonBubble(alignment: Alignment(1.0, 0.8), radius: 220, color: Color(0xFF1DE9B6), opacity: 0.25),
+          NeonBubble(
+              alignment: Alignment(1.2, -0.9),
+              radius: 250,
+              color: Color(0xFF00E676),
+              opacity: 0.28),
+          NeonBubble(
+              alignment: Alignment(-1.1, -0.1),
+              radius: 230,
+              color: Color(0xFF00B0FF),
+              opacity: 0.25),
+          NeonBubble(
+              alignment: Alignment(1.0, 0.8),
+              radius: 220,
+              color: Color(0xFF1DE9B6),
+              opacity: 0.25),
         ];
       case NeonBubblePreset.sunset:
         return const [
-          NeonBubble(alignment: Alignment(-1.1, -0.9), radius: 260, color: Color(0xFFFF6D00), opacity: 0.30),
-          NeonBubble(alignment: Alignment(1.3, -0.3), radius: 240, color: Color(0xFFFF1744), opacity: 0.25),
-          NeonBubble(alignment: Alignment(-0.9, 0.8), radius: 230, color: Color(0xFFFFD600), opacity: 0.22),
+          NeonBubble(
+              alignment: Alignment(-1.1, -0.9),
+              radius: 260,
+              color: Color(0xFFFF6D00),
+              opacity: 0.30),
+          NeonBubble(
+              alignment: Alignment(1.3, -0.3),
+              radius: 240,
+              color: Color(0xFFFF1744),
+              opacity: 0.25),
+          NeonBubble(
+              alignment: Alignment(-0.9, 0.8),
+              radius: 230,
+              color: Color(0xFFFFD600),
+              opacity: 0.22),
         ];
       case NeonBubblePreset.iosLiquid:
-      default:
         return const [
           // Top Right Sky Blue
-          NeonBubble(alignment: Alignment(1.3, -0.95), radius: 250, color: Color(0xFF64B5F6), opacity: 0.32),
+          NeonBubble(
+              alignment: Alignment(1.3, -0.95),
+              radius: 250,
+              color: Color(0xFF64B5F6),
+              opacity: 0.32),
           // Center Left Soft Purple
-          NeonBubble(alignment: Alignment(-1.3, -0.1), radius: 240, color: Color(0xFFBA68C8), opacity: 0.28),
+          NeonBubble(
+              alignment: Alignment(-1.3, -0.1),
+              radius: 240,
+              color: Color(0xFFBA68C8),
+              opacity: 0.28),
           // Bottom Right Mint Cyan
-          NeonBubble(alignment: Alignment(1.2, 0.8), radius: 260, color: Color(0xFF4DB6AC), opacity: 0.28),
+          NeonBubble(
+              alignment: Alignment(1.2, 0.8),
+              radius: 260,
+              color: Color(0xFF4DB6AC),
+              opacity: 0.28),
           // Bottom Left Coral Pink
-          NeonBubble(alignment: Alignment(-1.1, 0.95), radius: 210, color: Color(0xFFFF8A80), opacity: 0.22),
+          NeonBubble(
+              alignment: Alignment(-1.1, 0.95),
+              radius: 210,
+              color: Color(0xFFFF8A80),
+              opacity: 0.22),
         ];
     }
   }
@@ -131,8 +182,10 @@ class _NeonBubbleBackgroundState extends State<NeonBubbleBackground>
                 final index = entry.key;
                 final bubble = entry.value;
 
-                final double currentYOffset = (index % 2 == 0) ? floatOffset : -floatOffset;
-                final double currentXOffset = (index % 3 == 0) ? floatOffset * 0.5 : -floatOffset * 0.5;
+                final double currentYOffset =
+                    (index % 2 == 0) ? floatOffset : -floatOffset;
+                final double currentXOffset =
+                    (index % 3 == 0) ? floatOffset * 0.5 : -floatOffset * 0.5;
 
                 return Align(
                   alignment: bubble.alignment,
