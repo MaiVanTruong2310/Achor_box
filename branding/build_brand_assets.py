@@ -15,7 +15,7 @@ import vtracer
 from PIL import Image, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-APP = os.path.join(HERE, '..', 'mobile_app')
+APP = os.path.join(HERE, '..', 'app')
 SOURCE = os.path.join(HERE, 'source', 'anchor_box_logo_reference.png')
 
 NAVY = (11, 31, 58)

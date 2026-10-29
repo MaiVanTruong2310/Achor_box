@@ -2,13 +2,13 @@
 > **Development of an IoT-based Smart Delivery Box with a Mobile Application**
 > *Đồ Án Tốt Nghiệp*
 
-Hệ thống gồm 3 phần chính:
+Repo chia theo 3 nền tảng:
 
-| Thành phần | Công nghệ | Thư mục |
+| Thư mục | Nền tảng | Công nghệ |
 |---|---|---|
-| Firmware hộp nhận hàng | ESP32-S3, PlatformIO (Arduino) | `firmware/` |
-| Ứng dụng di động | Flutter (Android) | `mobile_app/` |
-| Backend | Supabase (Postgres, Auth, Storage, Realtime) | `mobile_app/supabase/migrations/` |
+| `device/` | Thiết bị: firmware hộp, sơ đồ mạch, PCB | ESP32-S3, PlatformIO (Arduino), Altium |
+| `app/` | Ứng dụng di động + backend Supabase (`app/supabase/migrations/`) | Flutter (Android), Supabase (Postgres, Auth, Storage, Realtime) |
+| `web/` | Web quản trị, web bán hàng và REST API | Spring Boot, React + Vite |
 
 ---
 
@@ -32,22 +32,29 @@ Hệ thống gồm 3 phần chính:
 ### Cấu trúc thư mục
 
 ```
-├── firmware/                 # Mã nguồn ESP32-S3 (PlatformIO)
-│   ├── platformio.ini        # env esp32s3 (16MB flash, PSRAM)
-│   ├── include/config.h      # Pinout, ngưỡng cảm biến, MQTT topic
-│   ├── include/device_secrets.example.h
-│   ├── src/main.cpp          # Cảm biến, bàn phím, LCD, máy trạng thái khóa, MQTT, BLE
-│   └── solenoid_test/, solenoid_retest/   # Project test phần cứng riêng
-├── mobile_app/               # Ứng dụng Flutter
-│   ├── lib/core/             # Theme, ngôn ngữ (vi/en), constants
-│   ├── lib/services/         # Supabase, MQTT, thông báo, khóa ứng dụng
-│   ├── lib/presentation/     # Màn hình & widget Liquid Glass
-│   ├── supabase/migrations/  # Toàn bộ schema, RLS, RPC của Supabase
-│   └── rule.txt              # Quy tắc phát triển app (đọc trước khi sửa)
-├── hardware/                 # Sơ đồ mạch & mô phỏng Wokwi
-├── docs/                     # Đề cương đồ án (.docx) & script tạo file
-├── backend/, docker/, database/   # Thiết kế cũ (Express + Postgres + Mosquitto), không còn dùng
-└── CLAUDE.md                 # Hướng dẫn cho Claude Code
+├── device/                       # THIẾT BỊ
+│   ├── firmware/                 # Mã nguồn ESP32-S3 (PlatformIO)
+│   │   ├── platformio.ini        # env esp32s3 (16MB flash, PSRAM)
+│   │   ├── include/config.h      # Pinout, ngưỡng cảm biến, MQTT topic
+│   │   ├── include/device_secrets.example.h
+│   │   ├── src/main.cpp          # Cảm biến, bàn phím, LCD, máy trạng thái khóa, MQTT, BLE
+│   │   └── solenoid_test/, solenoid_retest/   # Project test phần cứng riêng
+│   ├── hardware/                 # Sơ đồ mạch & mô phỏng Wokwi
+│   ├── pcb/                      # Thiết kế mạch in Altium (SchDoc, PcbDoc, PDF)
+│   └── platformio.ini, wokwi.toml  # Cấu hình mô phỏng Wokwi (ESP32 DevKit)
+├── app/                          # ỨNG DỤNG DI ĐỘNG
+│   ├── lib/core/                 # Theme, ngôn ngữ (vi/en), cache, constants
+│   ├── lib/services/             # Supabase, MQTT, thông báo, khóa ứng dụng
+│   ├── lib/presentation/         # Màn hình & component Liquid Glass
+│   ├── supabase/migrations/      # Toàn bộ schema, RLS, RPC của Supabase
+│   └── rule.txt                  # Quy tắc phát triển app (đọc trước khi sửa)
+├── web/                          # WEB
+│   ├── backend/                  # Spring Boot REST API
+│   ├── web-admin/                # Trang quản trị (React, Vite)
+│   ├── web-shop/                 # Trang bán hàng (React, Vite)
+│   └── docker-compose.yml        # Postgres, Redis, Mailpit, pgAdmin cho môi trường local
+├── branding/                     # Logo & script sinh ảnh thương hiệu
+└── CLAUDE.md                     # Hướng dẫn cho Claude Code
 ```
 
 ---
@@ -59,7 +66,7 @@ Hệ thống gồm 3 phần chính:
 1. Tạo project mới trên [supabase.com](https://supabase.com).
 2. Cài [Supabase CLI](https://supabase.com/docs/guides/cli), liên kết và đẩy migration:
    ```bash
-   cd mobile_app
+   cd app
    supabase login
    supabase link --project-ref <PROJECT_REF>
    supabase migration list --linked   # kiểm tra các migration đang chờ
@@ -76,7 +83,7 @@ Hệ thống gồm 3 phần chính:
 ### 2. Ứng dụng di động
 
 ```bash
-cd mobile_app
+cd app
 cp lib/core/constants/supabase_config.example.dart lib/core/constants/supabase_config.dart
 # điền supabaseUrl và publishable/anon key (Dashboard → Settings → API)
 flutter pub get
@@ -88,29 +95,36 @@ Kiểm tra trước khi commit: `dart format <file>` và `flutter analyze --no-p
 ### 3. Firmware ESP32-S3
 
 ```powershell
-cd firmware
+cd device\firmware
 copy include\device_secrets.example.h include\device_secrets.h
 # điền WIFI_SSID, WIFI_PASSWORD, SUPABASE_URL, SUPABASE_ANON_KEY, DEVICE_AUTH_TOKEN
 & "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run --target upload --upload-port COM4
 & "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" device monitor -b 115200
 ```
 
-Hoặc mở thư mục `firmware/` bằng VS Code có extension PlatformIO và bấm **Upload**.
+Hoặc mở thư mục `device/firmware/` bằng VS Code có extension PlatformIO và bấm **Upload**.
 
-### 4. Tạo lại file Word đề cương
+### 4. Web (Spring Boot + React)
 
-```bash
-cd docs
-python generate_doc.py
+```powershell
+cd web
+copy .env.example .env               # đặt POSTGRES_PASSWORD, PGADMIN_DEFAULT_PASSWORD
+docker compose up -d                 # Postgres, Redis, Mailpit, pgAdmin
+cd backend
+copy .env.example .env               # cấu hình DB, Supabase, VNPAY sandbox, SMTP...
+.\run-local.ps1                      # hoặc .\gradlew.bat bootRun sau khi export biến môi trường
 ```
+
+Chi tiết web-admin, web-shop và API: xem [web/README.md](web/README.md).
 
 ---
 
 ## Bảo mật
 
 Không commit các file sau (đã có trong `.gitignore`):
-- `firmware/include/device_secrets.h`
-- `mobile_app/lib/core/constants/supabase_config.dart`
-- `mobile_app/supabase/.temp/`
+- `device/firmware/include/device_secrets.h`
+- `app/lib/core/constants/supabase_config.dart`
+- `app/supabase/.temp/`
+- mọi file `.env` (web dùng `.env.example` làm mẫu, không chứa giá trị thật)
 
 Ứng dụng Flutter chỉ dùng publishable/anon key. Mọi quyền truy cập dữ liệu được kiểm soát bằng RLS theo `auth.uid()` và các hàm `SECURITY DEFINER` trong migration.
