@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/localization/language_controller.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/device_pin.dart';
+import '../components/components.dart';
 import 'app_toast.dart';
 
 /// Asks for a new 4-digit permanent box PIN. Returns the PIN, or null if the
 /// user cancelled. Controllers live in the dialog's own State.
 Future<String?> showChangeDevicePinDialog(BuildContext context) {
-  return showDialog<String>(
-    context: context,
-    builder: (_) => const _ChangeDevicePinDialog(),
-  );
+  return showGlassDialog<String>(context, const _ChangeDevicePinDialog());
 }
 
 /// Shows a freshly created one-time PIN. This is the only time the code is
@@ -31,18 +29,20 @@ Future<void> showOneTimePinCreatedDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.password_rounded,
-                size: 42, color: AppColors.brandBlue),
-            const SizedBox(height: 14),
+            Icon(
+              AppIcons.pinFill,
+              size: 42,
+              color: dialogContext.colors.accent,
+            ),
+            const SizedBox(height: AppSpacing.sm),
             SelectableText(
               pin.code,
-              style: const TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.w800,
+              style: dialogContext.text.displaySmall?.copyWith(
                 letterSpacing: 10,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               expiresAt == null
                   ? dialogContext.tr(
@@ -57,14 +57,14 @@ Future<void> showOneTimePinCreatedDialog(
                     ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               dialogContext.tr(
                 vi: 'Hãy lưu hoặc gửi mã ngay: sau khi đóng sẽ không xem lại được.',
                 en: 'Save or share it now: it cannot be shown again.',
               ),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12),
+              style: dialogContext.text.bodySmall,
             ),
           ],
         ),
@@ -83,7 +83,7 @@ Future<void> showOneTimePinCreatedDialog(
                 );
               }
             },
-            icon: const Icon(Icons.copy_rounded),
+            icon: const Icon(AppIcons.copy, size: 18),
             label: Text(dialogContext.tr(vi: 'Sao chép', en: 'Copy')),
           ),
           FilledButton(
@@ -140,59 +140,41 @@ class _ChangeDevicePinDialogState extends State<_ChangeDevicePinDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(context.tr(vi: 'Đổi mã PIN hộp', en: 'Change box PIN')),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _pinController,
-              autofocus: true,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              maxLength: 4,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(
-                labelText:
-                    context.tr(vi: 'PIN mới (4 số)', en: 'New PIN (4 digits)'),
-                border: const OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _confirmController,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              maxLength: 4,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onSubmitted: (_) => _submit(),
-              decoration: InputDecoration(
-                labelText: context.tr(vi: 'Nhập lại PIN', en: 'Confirm PIN'),
-                border: const OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: Colors.redAccent)),
-            ],
-          ],
-        ),
+    return GlassDialog(
+      icon: AppIcons.keyFill,
+      title: context.tr(vi: 'Đổi mã PIN hộp', en: 'Change box PIN'),
+      message: context.tr(
+        vi: 'Mã 4 số dùng để mở hộp trên bàn phím của hộp.',
+        en: 'The 4-digit code that opens the box on its keypad.',
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.tr(vi: 'Hủy', en: 'Cancel')),
+      fields: [
+        AppTextField(
+          controller: _pinController,
+          label: context.tr(vi: 'PIN mới (4 số)', en: 'New PIN (4 digits)'),
+          prefixIcon: AppIcons.lock,
+          autofocus: true,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          maxLength: 4,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(context.tr(vi: 'Lưu PIN', en: 'Save PIN')),
+        AppTextField(
+          controller: _confirmController,
+          label: context.tr(vi: 'Nhập lại PIN', en: 'Confirm PIN'),
+          prefixIcon: AppIcons.lock,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
+          maxLength: 4,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onSubmitted: (_) => _submit(),
         ),
       ],
+      error: _error,
+      confirmLabel: context.tr(vi: 'Lưu PIN', en: 'Save PIN'),
+      onConfirm: _submit,
+      onCancel: () => Navigator.pop(context),
     );
   }
 }

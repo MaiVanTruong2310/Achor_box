@@ -37,6 +37,7 @@ class NotificationService {
         .stream(primaryKey: ['id'])
         .eq('user_id', user.id)
         .order('created_at', ascending: false)
+        .limit(200)
         .map((rows) => rows.map(AppNotification.fromJson).toList());
   }
 
@@ -118,36 +119,59 @@ class NotificationService {
     }
   }
 
-  static Future<void> markRead(String id) async {
+  /// The write methods return whether Supabase confirmed the change; the
+  /// returned rows guard against an RLS-filtered no-op.
+  static Future<bool> setRead(String id, {bool read = true}) async {
     final client = SupabaseService.client;
     final user = SupabaseService.currentUser;
-    if (client == null || user == null) return;
-    await client
-        .from('notifications')
-        .update({'is_read': true})
-        .eq('id', id)
-        .eq('user_id', user.id);
+    if (client == null || user == null) return false;
+    try {
+      final rows = await client
+          .from('notifications')
+          .update({'is_read': read})
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .select('id');
+      return rows.isNotEmpty;
+    } catch (error) {
+      debugPrint('Mark notification read error: $error');
+      return false;
+    }
   }
 
-  static Future<void> markAllRead() async {
+  static Future<bool> markAllRead() async {
     final client = SupabaseService.client;
     final user = SupabaseService.currentUser;
-    if (client == null || user == null) return;
-    await client
-        .from('notifications')
-        .update({'is_read': true})
-        .eq('user_id', user.id)
-        .eq('is_read', false);
+    if (client == null || user == null) return false;
+    try {
+      await client
+          .from('notifications')
+          .update({'is_read': true})
+          .eq('user_id', user.id)
+          .eq('is_read', false)
+          .select('id');
+      return true;
+    } catch (error) {
+      debugPrint('Mark all notifications read error: $error');
+      return false;
+    }
   }
 
-  static Future<void> delete(String id) async {
+  static Future<bool> delete(String id) async {
     final client = SupabaseService.client;
     final user = SupabaseService.currentUser;
-    if (client == null || user == null) return;
-    await client
-        .from('notifications')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+    if (client == null || user == null) return false;
+    try {
+      final rows = await client
+          .from('notifications')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .select('id');
+      return rows.isNotEmpty;
+    } catch (error) {
+      debugPrint('Delete notification error: $error');
+      return false;
+    }
   }
 }

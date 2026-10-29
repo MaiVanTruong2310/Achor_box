@@ -2,9 +2,17 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/cache/session_cache.dart';
 import '../core/constants/supabase_config.dart';
 import '../data/models/device_access.dart';
 import '../data/models/device_pin.dart';
+
+enum PasswordChangeResult {
+  success,
+  wrongCurrentPassword,
+  newPasswordRejected,
+  failed,
+}
 
 class SupabaseService {
   static String newDeviceCommandId() {
@@ -220,6 +228,7 @@ class SupabaseService {
   /// Clear profile cache on sign out
   static Future<void> signOut() async {
     _cachedProfile = null;
+    SessionCache.clear();
     avatarUrlNotifier.value = null;
     userNameNotifier.value = null;
     if (!_isInitialized || client == null) return;
@@ -252,20 +261,39 @@ class SupabaseService {
     }
   }
 
-  static Future<bool> changeAuthenticatedPassword({
+  /// Re-authenticates with [currentPassword] before updating, so a stolen
+  /// session alone cannot change the password.
+  static Future<PasswordChangeResult> changeAuthenticatedPassword({
     required String currentPassword,
     required String newPassword,
   }) async {
     final user = currentUser;
-    if (!_isInitialized || client == null || user?.email == null) return false;
+    if (!_isInitialized || client == null || user?.email == null) {
+      return PasswordChangeResult.failed;
+    }
     try {
       await client!.auth
           .signInWithPassword(email: user!.email!, password: currentPassword);
-      await client!.auth.updateUser(UserAttributes(password: newPassword));
-      return true;
+    } on AuthException catch (error) {
+      debugPrint('Re-authenticate error: ${error.statusCode} ${error.code}');
+      return error.code == 'invalid_credentials' || error.statusCode == '400'
+          ? PasswordChangeResult.wrongCurrentPassword
+          : PasswordChangeResult.failed;
     } catch (error) {
-      debugPrint('Change authenticated password error: $error');
-      return false;
+      debugPrint('Re-authenticate error: $error');
+      return PasswordChangeResult.failed;
+    }
+    try {
+      await client!.auth.updateUser(UserAttributes(password: newPassword));
+      return PasswordChangeResult.success;
+    } on AuthException catch (error) {
+      debugPrint('Update password error: ${error.statusCode} ${error.code}');
+      return error.code == 'same_password' || error.code == 'weak_password'
+          ? PasswordChangeResult.newPasswordRejected
+          : PasswordChangeResult.failed;
+    } catch (error) {
+      debugPrint('Update password error: $error');
+      return PasswordChangeResult.failed;
     }
   }
 

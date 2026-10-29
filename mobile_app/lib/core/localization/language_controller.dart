@@ -45,7 +45,12 @@ class LanguageController extends ChangeNotifier {
 final LanguageController globalLanguageController = LanguageController();
 
 extension AppTranslation on BuildContext {
+  /// Also subscribes the calling widget to the app's [Localizations], so it
+  /// rebuilds as soon as the language changes, even when it is a cached or
+  /// `const` widget (e.g. a tab kept alive by the main layout). Do not call
+  /// it from `initState` or `dispose`.
   String tr({required String vi, required String en}) {
+    Localizations.maybeLocaleOf(this);
     return globalLanguageController.isEnglish ? en : vi;
   }
 }

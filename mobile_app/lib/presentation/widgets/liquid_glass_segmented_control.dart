@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/legacy_colors.dart';
 
 /// Data class for segmented item / bottom nav tab
 class LiquidGlassSegmentItem {
@@ -55,7 +55,7 @@ class LiquidGlassSegmentedControl extends StatelessWidget {
     final innerSelectorRadius = BorderRadius.circular(selectorBorderRadius);
 
     final resolvedActiveColor = activeColor ??
-        (isDark ? const Color(0xFF7DD3FC) : AppColors.brandBlue);
+        (isDark ? const Color(0xFF7DD3FC) : LegacyColors.brandBlue);
     final resolvedInactiveColor = inactiveColor ??
         (isDark ? const Color(0xFFB7C4D6) : const Color(0xFF64748B));
 
@@ -111,12 +111,14 @@ class LiquidGlassSegmentedControl extends StatelessWidget {
                 final totalWidth = constraints.maxWidth - (padding * 2);
                 final itemWidth = totalWidth / items.length;
                 final selectorHeight = height - (padding * 2);
-                final resolvedPosition =
-                    (position ?? selectedIndex.toDouble()).clamp(
-                  0.0,
-                  (items.length - 1).toDouble(),
-                ).toDouble();
-                final dragFraction = resolvedPosition - resolvedPosition.floor();
+                final resolvedPosition = (position ?? selectedIndex.toDouble())
+                    .clamp(
+                      0.0,
+                      (items.length - 1).toDouble(),
+                    )
+                    .toDouble();
+                final dragFraction =
+                    resolvedPosition - resolvedPosition.floor();
                 final stretch = math.sin(math.pi * dragFraction) * 0.08;
                 final selectorWidth = itemWidth * (1 + stretch);
                 final selectorLeft = padding +
@@ -140,7 +142,8 @@ class LiquidGlassSegmentedControl extends StatelessWidget {
                           borderRadius: innerSelectorRadius,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.16 : 0.10),
+                              color: Colors.black
+                                  .withOpacity(isDark ? 0.16 : 0.10),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -218,19 +221,23 @@ class LiquidGlassSegmentedControl extends StatelessWidget {
                                       fontSize: item.icon == null ? 13 : 12.5,
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         if (item.icon != null) ...[
                                           AnimatedScale(
-                                            scale: 1.0 + (0.12 * selectedAmount),
+                                            scale:
+                                                1.0 + (0.12 * selectedAmount),
                                             duration: position == null
-                                                ? const Duration(milliseconds: 250)
+                                                ? const Duration(
+                                                    milliseconds: 250)
                                                 : Duration.zero,
                                             curve: Curves.easeOutBack,
                                             child: Icon(
                                               selectedAmount > 0.5
-                                                  ? (item.selectedIcon ?? item.icon!)
+                                                  ? (item.selectedIcon ??
+                                                      item.icon!)
                                                   : item.icon!,
                                               size: 21,
                                               color: itemColor,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
+
 /// A code-drawn acrylic box with a door hinged on its vertical left edge.
 class AnimatedDeliveryBox extends StatelessWidget {
   const AnimatedDeliveryBox({
@@ -19,27 +21,12 @@ class AnimatedDeliveryBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isOpen ? const Color(0xFF10B981) : const Color(0xFF36A3FF);
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 350),
+    // Same lock colors as Home: orange when open, green when locked. The
+    // illustration sits directly on the caller's glass card.
+    final accent = isOpen ? context.colors.unlocked : context.colors.locked;
+    return SizedBox(
       width: double.infinity,
       height: 218,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF152B45), Color(0xFF0A1526)],
-        ),
-        border: Border.all(color: accent.withValues(alpha: 0.42)),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: 0.17),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),
         child: Stack(

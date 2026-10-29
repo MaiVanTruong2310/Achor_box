@@ -20,7 +20,9 @@ class ThemeController extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedIndex = prefs.getInt(_themePrefKey);
-      if (savedIndex != null && savedIndex >= 0 && savedIndex < ThemeMode.values.length) {
+      if (savedIndex != null &&
+          savedIndex >= 0 &&
+          savedIndex < ThemeMode.values.length) {
         _themeMode = ThemeMode.values[savedIndex];
         notifyListeners();
       }

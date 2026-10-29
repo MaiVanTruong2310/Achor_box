@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'liquid_glass_container.dart';
+
+import '../../core/localization/language_controller.dart';
+import '../../core/theme/app_theme.dart';
+import '../../data/models/app_notification.dart';
 
 enum ToastType { success, error, info }
 
@@ -47,7 +50,8 @@ class _ToastWidget extends StatefulWidget {
   State<_ToastWidget> createState() => _ToastWidgetState();
 }
 
-class _ToastWidgetState extends State<_ToastWidget> with TickerProviderStateMixin {
+class _ToastWidgetState extends State<_ToastWidget>
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
   late AnimationController _progressController;
   late Animation<double> _fadeAnimation;
@@ -100,52 +104,30 @@ class _ToastWidgetState extends State<_ToastWidget> with TickerProviderStateMixi
     super.dispose();
   }
 
-  Color get _glassTintColor {
-    switch (widget.type) {
-      case ToastType.success:
-        return const Color(0xFFE8FFF6);
-      case ToastType.error:
-        return const Color(0xFFFFEEEE);
-      case ToastType.info:
-        return const Color(0xFFEDF5FF);
-    }
-  }
+  /// Same green / blue / red as notifications and device history.
+  NotificationSeverity get _severity => switch (widget.type) {
+        ToastType.success => NotificationSeverity.success,
+        ToastType.error => NotificationSeverity.danger,
+        ToastType.info => NotificationSeverity.info,
+      };
 
-  Color get _accentColor {
-    switch (widget.type) {
-      case ToastType.success:
-        return const Color(0xFF10B981);
-      case ToastType.error:
-        return const Color(0xFFEF4444);
-      case ToastType.info:
-        return const Color(0xFF0066CC);
-    }
-  }
+  IconData get _iconData => switch (widget.type) {
+        ToastType.success => AppIcons.success,
+        ToastType.error => AppIcons.error,
+        ToastType.info => AppIcons.info,
+      };
 
-  IconData get _iconData {
-    switch (widget.type) {
-      case ToastType.success:
-        return Icons.check_circle_rounded;
-      case ToastType.error:
-        return Icons.error_rounded;
-      case ToastType.info:
-        return Icons.info_rounded;
-    }
-  }
-
-  String get _typeTitle {
-    switch (widget.type) {
-      case ToastType.success:
-        return "Thành công";
-      case ToastType.error:
-        return "Thất bại";
-      case ToastType.info:
-        return "Thông báo";
-    }
-  }
+  String _typeTitle(BuildContext context) => switch (widget.type) {
+        ToastType.success => context.tr(vi: 'Thành công', en: 'Done'),
+        ToastType.error => context.tr(vi: 'Có lỗi', en: 'Something went wrong'),
+        ToastType.info => context.tr(vi: 'Thông báo', en: 'Notice'),
+      };
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = _severity.color(colors);
     return Positioned(
       top: MediaQuery.of(context).padding.top + 16,
       right: 16,
@@ -158,13 +140,27 @@ class _ToastWidgetState extends State<_ToastWidget> with TickerProviderStateMixi
             child: Container(
               width: MediaQuery.of(context).size.width * 0.82,
               constraints: const BoxConstraints(maxWidth: 320),
-              child: LiquidGlassContainer(
-                borderRadius: 20,
-                blur: 24,
-                tintColor: _glassTintColor,
-                tintOpacity: 0.42,
-                borderColor: Colors.white,
-                borderWidth: 1.1,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  // Theme surface tinted with the tone, so it reads in
+                  // both Light and Dark Mode.
+                  color: Color.alphaBlend(
+                    accent.withValues(alpha: isDark ? 0.16 : 0.08),
+                    colors.surface,
+                  ),
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(color: accent.withValues(alpha: 0.35)),
+                  ),
+                  shadows: [
+                    BoxShadow(
+                      color:
+                          Colors.black.withValues(alpha: isDark ? 0.4 : 0.14),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: Column(
@@ -180,16 +176,13 @@ class _ToastWidgetState extends State<_ToastWidget> with TickerProviderStateMixi
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: _accentColor.withOpacity(0.13),
+                                color: accent,
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: _accentColor.withOpacity(0.22),
-                                ),
                               ),
                               child: Icon(
                                 _iconData,
-                                color: _accentColor,
-                                size: 23,
+                                color: Colors.white,
+                                size: 20,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -201,21 +194,19 @@ class _ToastWidgetState extends State<_ToastWidget> with TickerProviderStateMixi
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    _typeTitle,
-                                    style: TextStyle(
-                                      color: _accentColor,
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                    _typeTitle(context),
+                                    style: context.text.titleSmall
+                                        ?.copyWith(color: accent),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    widget.message,
-                                    style: const TextStyle(
-                                      color: Color(0xFF263244),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.35,
+                                  Semantics(
+                                    liveRegion: true,
+                                    child: Text(
+                                      widget.message,
+                                      style: context.text.bodySmall?.copyWith(
+                                        color: colors.textPrimary
+                                            .withValues(alpha: 0.85),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -232,12 +223,13 @@ class _ToastWidgetState extends State<_ToastWidget> with TickerProviderStateMixi
                                 height: 30,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.32),
+                                  color: colors.textPrimary
+                                      .withValues(alpha: 0.08),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.close_rounded,
-                                  color: Color(0xFF64748B),
+                                  color: colors.textSecondary,
                                   size: 17,
                                 ),
                               ),
@@ -258,8 +250,8 @@ class _ToastWidgetState extends State<_ToastWidget> with TickerProviderStateMixi
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    _accentColor.withOpacity(0.55),
-                                    _accentColor,
+                                    accent.withValues(alpha: 0.55),
+                                    accent,
                                   ],
                                 ),
                                 borderRadius: const BorderRadius.only(

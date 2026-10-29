@@ -3,16 +3,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/localization/language_controller.dart';
 import '../../../core/security/app_lock_controller.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/form_validators.dart';
 import '../../../services/app_lock_service.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/supabase_service.dart';
+import '../../components/components.dart';
 import '../../widgets/app_toast.dart';
-import '../../widgets/ios26_back_button.dart';
-import '../../widgets/liquid_glass_container.dart';
-import '../../widgets/neon_bubble_background.dart';
+
+/// Returns an error to show inside the dialog, or null when it may close.
+typedef _DialogSubmit<T> = Future<String?> Function(T value);
 
 class SecurityScreen extends StatefulWidget {
   const SecurityScreen({super.key});
@@ -25,432 +27,277 @@ class _SecurityScreenState extends State<SecurityScreen> {
   @override
   void initState() {
     super.initState();
-    _refresh();
+    globalAppLockController.refresh();
   }
 
-  Future<void> _refresh() async {
-    await globalAppLockController.refresh();
-    if (mounted) setState(() {});
-  }
+  String _wrongPin() =>
+      context.tr(vi: 'Mã PIN không đúng.', en: 'Incorrect PIN.');
 
-  String _biometricName(BuildContext context) {
-    if (Platform.isIOS) return 'Face ID';
-    return context.tr(vi: 'Vân tay', en: 'Fingerprint');
-  }
+  String _storageError() => context.tr(
+        vi: 'Không lưu được mã PIN trên thiết bị. Hãy thử lại.',
+        en: 'Could not save the PIN on this device. Please try again.',
+      );
 
-  Future<String?> _pinDialog({required bool confirm}) async {
-    return showDialog<String>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.48),
-      builder: (_) => _PinSecurityDialog(confirm: confirm),
+  void _toast(String vi, String en) => AppToast.show(
+        context,
+        message: context.tr(vi: vi, en: en),
+        type: ToastType.success,
+      );
+
+  Future<bool> _showPinDialog(
+      _PinDialogMode mode, _DialogSubmit<_PinValues> submit) async {
+    final done = await showGlassDialog<bool>(
+      context,
+      _PinDialog(mode: mode, onSubmit: submit),
     );
+    return done ?? false;
   }
 
-  Future<void> _togglePin(bool enabled) async {
-    if (enabled) {
-      final pin = await _pinDialog(confirm: true);
-      if (pin == null) return;
+  Future<String?> _savePin(String pin) async {
+    try {
       await AppLockService.setPin(pin);
-    } else {
-      final pin = await _pinDialog(confirm: false);
-      if (pin == null || !await AppLockService.verifyPin(pin)) {
-        if (mounted)
-          AppToast.show(context,
-              message:
-                  context.tr(vi: 'Mã PIN không đúng.', en: 'Incorrect PIN.'),
-              type: ToastType.error);
-        return;
-      }
-      await AppLockService.disablePin();
+      return null;
+    } catch (error) {
+      debugPrint('Save app PIN error: $error');
+      return _storageError();
     }
-    await _refresh();
   }
 
-  Future<void> _toggleBiometric(bool enabled) async {
-    if (!globalAppLockController.isPinEnabled) {
-      AppToast.show(context,
-          message: context.tr(
-              vi: 'Hãy thiết lập PIN 6 số trước.',
-              en: 'Set a 6-digit PIN first.'),
-          type: ToastType.info);
-      return;
-    }
-    if (enabled) {
+  Future<void> _togglePin(bool enable) async {
+    final done = enable
+        ? await _showPinDialog(
+            _PinDialogMode.create, (values) => _savePin(values.newPin!))
+        : await _showPinDialog(_PinDialogMode.disable, (values) async {
+            if (!await AppLockService.verifyPin(values.currentPin!)) {
+              return _wrongPin();
+            }
+            // Turning the PIN off also turns biometrics off.
+            await AppLockService.disablePin();
+            return null;
+          });
+    await globalAppLockController.refresh();
+    if (!done || !mounted) return;
+    enable
+        ? _toast('Đã bật khóa ứng dụng bằng PIN.', 'App lock with PIN is on.')
+        : _toast('Đã tắt khóa ứng dụng.', 'App lock is off.');
+  }
+
+  Future<void> _changePin() async {
+    final done = await _showPinDialog(_PinDialogMode.change, (values) async {
+      if (!await AppLockService.verifyPin(values.currentPin!)) {
+        return _wrongPin();
+      }
+      return _savePin(values.newPin!);
+    });
+    if (done && mounted) _toast('Đã đổi mã PIN.', 'PIN changed.');
+  }
+
+  Future<void> _toggleBiometric(bool enable) async {
+    if (enable) {
       if (!globalAppLockController.canUseBiometrics) {
-        AppToast.show(context,
-            message: context.tr(
-                vi: 'Thiết bị chưa cài đặt sinh trắc học.',
-                en: 'Biometrics are not set up on this device.'),
-            type: ToastType.error);
+        AppToast.show(
+          context,
+          message: context.tr(
+            vi: 'Điện thoại chưa đăng ký vân tay. Hãy thêm vân tay trong Cài đặt.',
+            en: 'No fingerprint is enrolled. Add one in your phone settings.',
+          ),
+          type: ToastType.error,
+        );
         return;
       }
       final accepted = await AppLockService.authenticateBiometric(context.tr(
-          vi: 'Xác thực để bật mở khóa sinh trắc học',
-          en: 'Authenticate to enable biometric unlock'));
+          vi: 'Xác thực để bật mở khóa bằng vân tay',
+          en: 'Authenticate to turn on fingerprint unlock'));
       if (!accepted) return;
     }
-    await AppLockService.setBiometricEnabled(enabled);
-    await _refresh();
+    await AppLockService.setBiometricEnabled(enable);
+    await globalAppLockController.refresh();
+  }
+
+  Future<String?> _submitPassword(_PasswordValues values) async {
+    final result = await SupabaseService.changeAuthenticatedPassword(
+      currentPassword: values.current,
+      newPassword: values.next,
+    );
+    if (!mounted) return null;
+    return switch (result) {
+      PasswordChangeResult.success => null,
+      PasswordChangeResult.wrongCurrentPassword => context.tr(
+          vi: 'Mật khẩu hiện tại không đúng.',
+          en: 'The current password is incorrect.'),
+      PasswordChangeResult.newPasswordRejected => context.tr(
+          vi: 'Mật khẩu mới quá yếu hoặc trùng mật khẩu cũ.',
+          en: 'The new password is too weak or matches the old one.'),
+      PasswordChangeResult.failed => context.tr(
+          vi: 'Không đổi được mật khẩu. Hãy kiểm tra kết nối mạng.',
+          en: 'Could not change the password. Check your connection.'),
+    };
   }
 
   Future<void> _changePassword() async {
-    final values = await showDialog<_PasswordChangeValues>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.48),
-      builder: (_) => const _PasswordSecurityDialog(),
+    final done = await showGlassDialog<bool>(
+      context,
+      _PasswordDialog(onSubmit: _submitPassword),
     );
-    if (values == null) return;
-    final success = await SupabaseService.changeAuthenticatedPassword(
-        currentPassword: values.currentPassword,
-        newPassword: values.newPassword);
-    if (!mounted) return;
-    AppToast.show(context,
-        message: success
-            ? context.tr(
-                vi: 'Đổi mật khẩu thành công.', en: 'Password changed.')
-            : context.tr(
-                vi: 'Mật khẩu hiện tại không đúng.',
-                en: 'The current password is incorrect.'),
-        type: success ? ToastType.success : ToastType.error);
-    if (success)
-      NotificationService.create(
-          type: 'password_changed',
-          title: 'Password changed',
-          body: context.tr(
-              vi: 'Mật khẩu tài khoản vừa được thay đổi.',
-              en: 'Your account password was changed.'));
+    if (done != true || !mounted) return;
+    _toast('Đã đổi mật khẩu.', 'Password changed.');
+    await NotificationService.create(
+      type: 'password_changed',
+      title: 'Password changed',
+      body: context.tr(
+          vi: 'Mật khẩu tài khoản vừa được thay đổi.',
+          en: 'Your account password was changed.'),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary;
-    return NeonBubbleBackground(
-      preset: NeonBubblePreset.iosLiquid,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: AnimatedBuilder(
-            animation: globalAppLockController,
-            builder: (context, child) => ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
-              children: [
-                Row(children: [
-                  const Ios26BackButton(),
-                  Expanded(
-                      child: Text(
-                          context.tr(vi: 'Bảo mật & 2FA', en: 'Security & 2FA'),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: primary))),
-                  const SizedBox(width: 88)
-                ]),
-                const SizedBox(height: 24),
-                LiquidGlassContainer(
-                  borderRadius: 24,
-                  blur: 20,
-                  tintOpacity: 0.12,
-                  child: Column(children: [
-                    ListTile(
-                        leading: const Icon(Icons.password_rounded,
-                            color: AppColors.brandBlue),
-                        title: Text(
-                            context.tr(
-                                vi: 'Đổi mật khẩu', en: 'Change password'),
-                            style: TextStyle(
-                                color: primary, fontWeight: FontWeight.w600)),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: _changePassword),
-                    Divider(
-                        height: 1,
-                        indent: 58,
-                        color: primary.withValues(alpha: 0.08)),
-                    SwitchListTile.adaptive(
-                        secondary: const Icon(Icons.pin_rounded,
-                            color: AppColors.brandBlue),
-                        title: Text(
-                            context.tr(
-                                vi: 'Khóa ứng dụng bằng PIN',
-                                en: 'App lock with PIN'),
-                            style: TextStyle(
-                                color: primary, fontWeight: FontWeight.w600)),
-                        subtitle: Text(context.tr(
-                            vi: 'Mã PIN gồm 6 chữ số như MoMo',
-                            en: 'A 6-digit PIN similar to MoMo')),
-                        value: globalAppLockController.isPinEnabled,
-                        onChanged: _togglePin),
-                    Divider(
-                        height: 1,
-                        indent: 58,
-                        color: primary.withValues(alpha: 0.08)),
-                    SwitchListTile.adaptive(
-                        secondary: Icon(
-                            Platform.isIOS
-                                ? Icons.face_rounded
-                                : Icons.fingerprint_rounded,
-                            color: AppColors.brandBlue),
-                        title: Text(_biometricName(context),
-                            style: TextStyle(
-                                color: primary, fontWeight: FontWeight.w600)),
-                        subtitle: Text(Platform.isIOS
-                            ? context.tr(
-                                vi: 'Sẽ hỗ trợ trong phiên bản iOS sau',
-                                en: 'Coming in a future iOS version')
-                            : context.tr(
-                                vi: 'Mở khóa nhanh bằng vân tay',
-                                en: 'Quick unlock using fingerprint')),
-                        value: Platform.isIOS
-                            ? false
-                            : globalAppLockController.isBiometricEnabled,
-                        onChanged: Platform.isIOS ? null : _toggleBiometric),
-                  ]),
-                ),
-                const SizedBox(height: 14),
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                        context.tr(
-                            vi:
-                                'PIN chỉ được lưu dưới dạng mã băm trong vùng lưu trữ bảo mật của thiết bị. Ứng dụng không truy cập dữ liệu vân tay hoặc khuôn mặt.',
-                            en:
-                                'The PIN is stored only as a hash in secure device storage. The app never accesses fingerprint or face data.'),
-                        style: TextStyle(
-                            fontSize: 12,
-                            height: 1.4,
-                            color: primary.withValues(alpha: 0.56)))),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+    return ListenableBuilder(
+      listenable: globalAppLockController,
+      builder: (context, _) {
+        final pinOn = globalAppLockController.isPinEnabled;
+        // Face ID stays disabled until there is a tested iOS target.
+        final biometricSupported = !Platform.isIOS;
 
-class _PinSecurityDialog extends StatefulWidget {
-  final bool confirm;
-  const _PinSecurityDialog({required this.confirm});
-
-  @override
-  State<_PinSecurityDialog> createState() => _PinSecurityDialogState();
-}
-
-class _PinSecurityDialogState extends State<_PinSecurityDialog> {
-  final _first = TextEditingController();
-  final _second = TextEditingController();
-  String? _error;
-
-  @override
-  void dispose() {
-    _first.dispose();
-    _second.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (_first.text.length != 6 ||
-        (widget.confirm && _second.text.length != 6)) {
-      setState(() => _error = context.tr(
-          vi: 'PIN phải có đúng 6 chữ số.',
-          en: 'PIN must contain exactly 6 digits.'));
-      return;
-    }
-    if (widget.confirm && _first.text != _second.text) {
-      setState(() => _error =
-          context.tr(vi: 'Hai mã PIN không khớp.', en: 'PINs do not match.'));
-      return;
-    }
-    Navigator.pop(context, _first.text);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary;
-    return Dialog(
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 22),
-      child: LiquidGlassContainer(
-        borderRadius: 30,
-        blur: 30,
-        tintOpacity: isDark ? 0.26 : 0.38,
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        return AppPage(
+          showBackButton: true,
+          title: context.tr(vi: 'Bảo mật', en: 'Security'),
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: AppColors.brandBlue.withValues(alpha: 0.13),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child:
-                      const Icon(Icons.pin_rounded, color: AppColors.brandBlue),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.confirm
-                            ? context.tr(vi: 'Thiết lập PIN', en: 'Set app PIN')
-                            : context.tr(vi: 'Xác nhận PIN', en: 'Confirm PIN'),
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: primary),
-                      ),
-                      Text(
-                        context.tr(
-                            vi: 'Sử dụng 6 chữ số dễ nhớ với bạn',
-                            en: 'Use 6 digits you can remember'),
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: primary.withValues(alpha: 0.55)),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded),
+            _Section(
+              header: context.tr(vi: 'Tài khoản', en: 'Account'),
+              footer: context.tr(
+                vi: 'Bạn cần nhập mật khẩu hiện tại để đổi sang mật khẩu mới.',
+                en: 'You need your current password to set a new one.',
+              ),
+              tiles: (context) => [
+                GroupedTile(
+                  leading: IconBadge(
+                      icon: AppIcons.password,
+                      color: context.colors.accent,
+                      size: 30),
+                  title: context.tr(vi: 'Đổi mật khẩu', en: 'Change password'),
+                  onTap: _changePassword,
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            _LiquidPinField(
-              controller: _first,
-              label: context.tr(vi: 'Mã PIN 6 số', en: '6-digit PIN'),
-              autofocus: true,
-              onSubmitted: widget.confirm ? null : _submit,
-            ),
-            if (widget.confirm) ...[
-              const SizedBox(height: 12),
-              _LiquidPinField(
-                controller: _second,
-                label: context.tr(vi: 'Nhập lại mã PIN', en: 'Confirm PIN'),
-                onSubmitted: _submit,
+            _Section(
+              header: context.tr(vi: 'Khóa ứng dụng', en: 'App lock'),
+              footer: context.tr(
+                vi: 'Mã PIN chỉ lưu dạng mã băm trong vùng bảo mật của điện thoại, không gửi lên máy chủ. Ứng dụng không đọc dữ liệu vân tay.',
+                en: 'The PIN is kept only as a hash in secure phone storage and never leaves the device. The app never reads fingerprint data.',
               ),
-            ],
-            AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              child: _error == null
-                  ? const SizedBox(height: 8)
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline_rounded,
-                              size: 16, color: Colors.redAccent),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(_error!,
-                                style: const TextStyle(
-                                    color: Colors.redAccent, fontSize: 12)),
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16))),
-                    child: Text(context.tr(vi: 'Hủy', en: 'Cancel')),
-                  ),
+              tiles: (context) => [
+                GroupedTile(
+                  leading: IconBadge(
+                      icon: AppIcons.lock,
+                      color: context.colors.locked,
+                      size: 30),
+                  title:
+                      context.tr(vi: 'Khóa bằng mã PIN', en: 'Lock with PIN'),
+                  subtitle: context.tr(
+                      vi: 'Hỏi PIN 6 số khi mở ứng dụng',
+                      en: 'Ask for a 6-digit PIN on open'),
+                  trailing:
+                      Switch.adaptive(value: pinOn, onChanged: _togglePin),
+                  onTap: () => _togglePin(!pinOn),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _submit,
-                    style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        backgroundColor: AppColors.brandBlue,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16))),
-                    child: Text(context.tr(vi: 'Xác nhận', en: 'Confirm')),
+                if (pinOn)
+                  GroupedTile(
+                    leading: IconBadge(
+                        icon: AppIcons.key,
+                        color: context.colors.indigo,
+                        size: 30),
+                    title: context.tr(vi: 'Đổi mã PIN', en: 'Change PIN'),
+                    onTap: _changePin,
+                  ),
+                GroupedTile(
+                  leading: IconBadge(
+                      icon: Platform.isIOS
+                          ? Icons.face_rounded
+                          : Icons.fingerprint_rounded,
+                      color: context.colors.alert,
+                      size: 30),
+                  title: Platform.isIOS
+                      ? 'Face ID'
+                      : context.tr(
+                          vi: 'Mở khóa bằng vân tay', en: 'Fingerprint unlock'),
+                  subtitle: !biometricSupported
+                      ? context.tr(
+                          vi: 'Sẽ hỗ trợ trong phiên bản iOS sau',
+                          en: 'Coming in a future iOS version')
+                      : pinOn
+                          ? context.tr(
+                              vi: 'Mở nhanh, vẫn dùng được PIN dự phòng',
+                              en: 'Quick unlock, PIN still works as backup')
+                          : context.tr(
+                              vi: 'Bật khóa bằng mã PIN trước',
+                              en: 'Turn on the PIN lock first'),
+                  trailing: Switch.adaptive(
+                    value: biometricSupported &&
+                        globalAppLockController.isBiometricEnabled,
+                    onChanged:
+                        biometricSupported && pinOn ? _toggleBiometric : null,
                   ),
                 ),
               ],
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-class _LiquidPinField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final bool autofocus;
-  final VoidCallback? onSubmitted;
+/// [GroupedSection] whose tiles are built under the page's theme, so their
+/// colors come from the dark wallpaper theme rather than the caller.
+class _Section extends StatelessWidget {
+  final String header;
+  final String footer;
+  final List<Widget> Function(BuildContext context) tiles;
 
-  const _LiquidPinField({
-    required this.controller,
-    required this.label,
-    this.autofocus = false,
-    this.onSubmitted,
+  const _Section({
+    required this.header,
+    required this.footer,
+    required this.tiles,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      autofocus: autofocus,
-      obscureText: true,
-      obscuringCharacter: '●',
-      keyboardType: TextInputType.number,
-      textInputAction:
-          onSubmitted == null ? TextInputAction.next : TextInputAction.done,
-      maxLength: 6,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(6),
-      ],
-      onSubmitted: (_) => onSubmitted?.call(),
-      decoration: InputDecoration(
-        labelText: label,
-        counterText: '',
-        prefixIcon: const Icon(Icons.lock_outline_rounded),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      ),
+    return GroupedSection(
+      header: header,
+      footer: footer,
+      children: tiles(context),
     );
   }
 }
 
-class _PasswordChangeValues {
-  final String currentPassword;
-  final String newPassword;
-  const _PasswordChangeValues(this.currentPassword, this.newPassword);
+enum _PinDialogMode { create, disable, change }
+
+class _PinValues {
+  final String? currentPin;
+  final String? newPin;
+  const _PinValues({this.currentPin, this.newPin});
 }
 
-class _PasswordSecurityDialog extends StatefulWidget {
-  const _PasswordSecurityDialog();
+class _PinDialog extends StatefulWidget {
+  final _PinDialogMode mode;
+  final _DialogSubmit<_PinValues> onSubmit;
+
+  const _PinDialog({required this.mode, required this.onSubmit});
 
   @override
-  State<_PasswordSecurityDialog> createState() =>
-      _PasswordSecurityDialogState();
+  State<_PinDialog> createState() => _PinDialogState();
 }
 
-class _PasswordSecurityDialogState extends State<_PasswordSecurityDialog> {
+class _PinDialogState extends State<_PinDialog> {
   final _current = TextEditingController();
   final _next = TextEditingController();
   final _confirm = TextEditingController();
   String? _error;
+  bool _busy = false;
+
+  bool get _asksCurrent => widget.mode != _PinDialogMode.create;
+  bool get _asksNew => widget.mode != _PinDialogMode.disable;
 
   @override
   void dispose() {
@@ -460,120 +307,226 @@ class _PasswordSecurityDialogState extends State<_PasswordSecurityDialog> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_current.text.isEmpty || _next.text.length < 8) {
-      setState(() => _error = context.tr(
-          vi: 'Mật khẩu mới phải có ít nhất 8 ký tự.',
-          en: 'The new password must contain at least 8 characters.'));
+  Future<void> _submit() async {
+    if (_busy) return;
+    String? error;
+    if ((_asksCurrent && _current.text.length != 6) ||
+        (_asksNew && (_next.text.length != 6 || _confirm.text.length != 6))) {
+      error = context.tr(
+          vi: 'Mã PIN phải có đúng 6 chữ số.',
+          en: 'The PIN must have exactly 6 digits.');
+    } else if (_asksNew && _next.text != _confirm.text) {
+      error = context.tr(
+          vi: 'Hai mã PIN mới không khớp.', en: 'The new PINs do not match.');
+    }
+    if (error != null) {
+      setState(() => _error = error);
       return;
     }
-    if (_next.text != _confirm.text) {
-      setState(() => _error = context.tr(
-          vi: 'Mật khẩu nhập lại không khớp.',
-          en: 'The confirmation password does not match.'));
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final result = await widget.onSubmit(_PinValues(
+      currentPin: _asksCurrent ? _current.text : null,
+      newPin: _asksNew ? _next.text : null,
+    ));
+    if (!mounted) return;
+    if (result == null) {
+      Navigator.pop(context, true);
       return;
     }
-    Navigator.pop(context, _PasswordChangeValues(_current.text, _next.text));
+    setState(() {
+      _busy = false;
+      _error = result;
+      if (_asksCurrent) _current.clear();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary;
-    return Dialog(
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-      child: SingleChildScrollView(
-        child: LiquidGlassContainer(
-          borderRadius: 30,
-          blur: 30,
-          tintOpacity: isDark ? 0.26 : 0.38,
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                      color: AppColors.brandBlue.withValues(alpha: 0.13),
-                      borderRadius: BorderRadius.circular(14)),
-                  child: const Icon(Icons.password_rounded,
-                      color: AppColors.brandBlue),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                    child: Text(
-                        context.tr(vi: 'Đổi mật khẩu', en: 'Change password'),
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: primary))),
-                IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded)),
-              ]),
-              const SizedBox(height: 18),
-              _passwordField(_current,
-                  context.tr(vi: 'Mật khẩu hiện tại', en: 'Current password')),
-              const SizedBox(height: 12),
-              _passwordField(
-                  _next, context.tr(vi: 'Mật khẩu mới', en: 'New password')),
-              const SizedBox(height: 12),
-              _passwordField(
-                  _confirm,
-                  context.tr(
-                      vi: 'Nhập lại mật khẩu mới', en: 'Confirm new password'),
-                  done: true),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Row(children: [
-                    const Icon(Icons.error_outline_rounded,
-                        size: 16, color: Colors.redAccent),
-                    const SizedBox(width: 6),
-                    Expanded(
-                        child: Text(_error!,
-                            style: const TextStyle(
-                                color: Colors.redAccent, fontSize: 12))),
-                  ]),
-                ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _submit,
-                  icon: const Icon(Icons.shield_outlined),
-                  label: Text(context.tr(
-                      vi: 'CẬP NHẬT MẬT KHẨU', en: 'UPDATE PASSWORD')),
-                  style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                      backgroundColor: AppColors.brandBlue,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16))),
-                ),
-              ),
-            ],
-          ),
+    final title = switch (widget.mode) {
+      _PinDialogMode.create => context.tr(vi: 'Tạo mã PIN', en: 'Create a PIN'),
+      _PinDialogMode.disable =>
+        context.tr(vi: 'Tắt khóa ứng dụng', en: 'Turn off app lock'),
+      _PinDialogMode.change => context.tr(vi: 'Đổi mã PIN', en: 'Change PIN'),
+    };
+    final fields = <Widget>[
+      if (_asksCurrent)
+        _PinField(
+          controller: _current,
+          label: context.tr(vi: 'Mã PIN hiện tại', en: 'Current PIN'),
+          autofocus: true,
         ),
-      ),
+      if (_asksNew) ...[
+        _PinField(
+          controller: _next,
+          label: context.tr(vi: 'Mã PIN mới (6 số)', en: 'New PIN (6 digits)'),
+          autofocus: !_asksCurrent,
+        ),
+        _PinField(
+          controller: _confirm,
+          label: context.tr(vi: 'Nhập lại mã PIN mới', en: 'Confirm new PIN'),
+        ),
+      ],
+    ];
+
+    return GlassDialog(
+      icon: widget.mode == _PinDialogMode.disable
+          ? AppIcons.unlock
+          : AppIcons.keyFill,
+      iconColor: context.colors.locked,
+      title: title,
+      message: widget.mode == _PinDialogMode.disable
+          ? context.tr(
+              vi: 'Nhập mã PIN để tắt khóa. Mở khóa bằng vân tay cũng sẽ tắt.',
+              en: 'Enter your PIN to turn the lock off. Fingerprint unlock turns off too.')
+          : null,
+      fields: fields,
+      error: _error,
+      busy: _busy,
+      confirmLabel: widget.mode == _PinDialogMode.disable
+          ? context.tr(vi: 'Tắt khóa', en: 'Turn off')
+          : context.tr(vi: 'Lưu', en: 'Save'),
+      destructive: widget.mode == _PinDialogMode.disable,
+      onConfirm: _submit,
     );
   }
+}
 
-  Widget _passwordField(TextEditingController controller, String label,
-      {bool done = false}) {
-    return TextField(
+class _PinField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final bool autofocus;
+
+  const _PinField({
+    required this.controller,
+    required this.label,
+    this.autofocus = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppTextField(
       controller: controller,
+      label: label,
+      prefixIcon: AppIcons.lock,
+      autofocus: autofocus,
       obscureText: true,
-      textInputAction: done ? TextInputAction.done : TextInputAction.next,
-      onSubmitted: done ? (_) => _submit() : null,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(Icons.lock_outline_rounded),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.next,
+      maxLength: 6,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    );
+  }
+}
+
+class _PasswordValues {
+  final String current;
+  final String next;
+  const _PasswordValues(this.current, this.next);
+}
+
+class _PasswordDialog extends StatefulWidget {
+  final _DialogSubmit<_PasswordValues> onSubmit;
+
+  const _PasswordDialog({required this.onSubmit});
+
+  @override
+  State<_PasswordDialog> createState() => _PasswordDialogState();
+}
+
+class _PasswordDialogState extends State<_PasswordDialog> {
+  final _current = TextEditingController();
+  final _next = TextEditingController();
+  final _confirm = TextEditingController();
+  String? _error;
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _next.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_busy) return;
+    String? error;
+    if (_current.text.isEmpty) {
+      error = context.tr(
+          vi: 'Hãy nhập mật khẩu hiện tại.',
+          en: 'Enter your current password.');
+    } else if (FormValidators.newPassword(context)(_next.text)
+        case final message?) {
+      // Same rule as registration.
+      error = message;
+    } else if (_next.text == _current.text) {
+      error = context.tr(
+          vi: 'Mật khẩu mới phải khác mật khẩu hiện tại.',
+          en: 'The new password must differ from the current one.');
+    } else if (_next.text != _confirm.text) {
+      error = context.tr(
+          vi: 'Mật khẩu nhập lại không khớp.',
+          en: 'The confirmation does not match.');
+    }
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final result =
+        await widget.onSubmit(_PasswordValues(_current.text, _next.text));
+    if (!mounted) return;
+    if (result == null) {
+      Navigator.pop(context, true);
+      return;
+    }
+    setState(() {
+      _busy = false;
+      _error = result;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassDialog(
+      icon: AppIcons.password,
+      title: context.tr(vi: 'Đổi mật khẩu', en: 'Change password'),
+      message: context.tr(
+        vi: 'Ít nhất ${FormValidators.minPasswordLength} ký tự, gồm cả chữ và số.',
+        en: 'At least ${FormValidators.minPasswordLength} characters with letters and numbers.',
       ),
+      fields: [
+        PasswordField(
+          controller: _current,
+          label: context.tr(vi: 'Mật khẩu hiện tại', en: 'Current password'),
+          textInputAction: TextInputAction.next,
+        ),
+        PasswordField(
+          controller: _next,
+          label: context.tr(vi: 'Mật khẩu mới', en: 'New password'),
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.newPassword],
+        ),
+        PasswordField(
+          controller: _confirm,
+          label: context.tr(
+              vi: 'Nhập lại mật khẩu mới', en: 'Confirm new password'),
+          autofillHints: const [AutofillHints.newPassword],
+          onSubmitted: (_) => _submit(),
+        ),
+      ],
+      error: _error,
+      busy: _busy,
+      confirmLabel: context.tr(vi: 'Đổi mật khẩu', en: 'Change password'),
+      onConfirm: _submit,
     );
   }
 }

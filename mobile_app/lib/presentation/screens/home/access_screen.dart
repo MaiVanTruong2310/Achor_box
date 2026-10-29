@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
+import '../../../core/cache/session_cache.dart';
 import '../../../core/localization/language_controller.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/form_validators.dart';
 import '../../../data/models/device_access.dart';
 import '../../../services/supabase_service.dart';
+import '../../components/components.dart';
 import '../../widgets/app_toast.dart';
-import '../../widgets/ios26_back_button.dart';
-import '../../widgets/liquid_glass_container.dart';
-import '../../widgets/neon_bubble_background.dart';
 import '../../widgets/owned_device_picker.dart';
 
-/// Access tab: share an owned box with other registered users.
+/// Sharing tab: share an owned box with other registered users.
 /// Also pushed from the device detail screen with [initialDeviceId].
 class AccessScreen extends StatefulWidget {
   final String? initialDeviceId;
@@ -25,6 +25,8 @@ class AccessScreen extends StatefulWidget {
   @override
   State<AccessScreen> createState() => _AccessScreenState();
 }
+
+enum _MemberAction { fullControl, viewOnly, revoke }
 
 class _AccessScreenState extends State<AccessScreen> {
   String? _deviceId;
@@ -46,12 +48,18 @@ class _AccessScreenState extends State<AccessScreen> {
       _deviceId = device?.id;
       _deviceName = device?.name ?? '';
       if (changed) {
-        _members = const [];
+        // Show the last known members at once, then refresh them.
+        _members = device == null
+            ? const []
+            : SessionCache.get<List<DeviceMember>>(_membersKey(device.id)) ??
+                const [];
         _loadFailed = false;
       }
     });
     if (device != null && changed) _reload();
   }
+
+  static String _membersKey(String deviceId) => 'members:$deviceId';
 
   Future<void> _reload() async {
     final deviceId = _deviceId;
@@ -59,10 +67,12 @@ class _AccessScreenState extends State<AccessScreen> {
     setState(() => _loading = true);
     final members = await SupabaseService.listDeviceMembers(deviceId);
     if (!mounted || _deviceId != deviceId) return;
+    if (members != null) SessionCache.set(_membersKey(deviceId), members);
     setState(() {
       _loading = false;
-      _loadFailed = members == null;
-      _members = members ?? const [];
+      // Keep showing cached members when only the refresh failed.
+      _loadFailed = members == null && _members.isEmpty;
+      _members = members ?? _members;
     });
   }
 
@@ -71,16 +81,19 @@ class _AccessScreenState extends State<AccessScreen> {
     if (deviceId == null || _busy) return;
     final invite = await showModalBottomSheet<_InviteRequest>(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => const _InviteMemberSheet(),
+      useSafeArea: true,
+      builder: (_) => _InviteMemberSheet(deviceName: _deviceName),
     );
     if (invite == null || !mounted) return;
     await _invite(deviceId, invite.email, invite.level);
   }
 
   Future<void> _invite(
-      String deviceId, String email, DeviceAccessLevel level) async {
+    String deviceId,
+    String email,
+    DeviceAccessLevel level,
+  ) async {
     setState(() => _busy = true);
     final ok = await SupabaseService.inviteDeviceMember(
       deviceId: deviceId,
@@ -104,45 +117,74 @@ class _AccessScreenState extends State<AccessScreen> {
     if (ok) _reload();
   }
 
-  Future<void> _changeLevel(DeviceMember member) async {
+  Future<void> _openMember(DeviceMember member) async {
     final deviceId = _deviceId;
-    if (deviceId == null) return;
-    final next = member.level == DeviceAccessLevel.fullControl
-        ? DeviceAccessLevel.viewOnly
-        : DeviceAccessLevel.fullControl;
-    await _invite(deviceId, member.email, next);
-  }
-
-  Future<bool> _confirmRevoke(DeviceMember member) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.tr(
-            vi: 'Thu hồi quyền truy cập?', en: 'Revoke access?')),
-        content: Text(dialogContext.tr(
-          vi: '${member.displayName} sẽ không còn xem hoặc mở được $_deviceName.',
-          en: '${member.displayName} will no longer see or open $_deviceName.',
-        )),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(dialogContext.tr(vi: 'Hủy', en: 'Cancel')),
+    if (deviceId == null || _busy || member.isOwner) return;
+    final action = await showChoiceSheet<_MemberAction>(
+      context,
+      title: member.displayName,
+      message: member.email,
+      selected: member.level == DeviceAccessLevel.fullControl
+          ? _MemberAction.fullControl
+          : _MemberAction.viewOnly,
+      options: [
+        ChoiceOption(
+          value: _MemberAction.fullControl,
+          label: context.tr(vi: 'Toàn quyền', en: 'Full access'),
+          subtitle: context.tr(
+            vi: 'Xem trạng thái và mở/khóa từ xa.',
+            en: 'View status and lock/unlock remotely.',
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(dialogContext.tr(vi: 'Thu hồi', en: 'Revoke')),
+          icon: AppIcons.unlock,
+          iconColor: context.colors.locked,
+        ),
+        ChoiceOption(
+          value: _MemberAction.viewOnly,
+          label: context.tr(vi: 'Chỉ xem', en: 'View only'),
+          subtitle: context.tr(
+            vi: 'Xem trạng thái và lịch sử, không mở khóa.',
+            en: 'View status and history, no unlocking.',
           ),
-        ],
-      ),
+          icon: AppIcons.viewOnly,
+          iconColor: context.colors.unlocked,
+        ),
+        ChoiceOption(
+          value: _MemberAction.revoke,
+          label: context.tr(vi: 'Thu hồi quyền', en: 'Remove access'),
+          icon: AppIcons.userRemove,
+          destructive: true,
+        ),
+      ],
     );
-    return confirmed == true;
+    if (action == null || !mounted) return;
+    switch (action) {
+      case _MemberAction.fullControl
+          when member.level != DeviceAccessLevel.fullControl:
+        await _invite(deviceId, member.email, DeviceAccessLevel.fullControl);
+      case _MemberAction.viewOnly
+          when member.level != DeviceAccessLevel.viewOnly:
+        await _invite(deviceId, member.email, DeviceAccessLevel.viewOnly);
+      case _MemberAction.revoke:
+        await _revoke(member);
+      default:
+        break;
+    }
   }
 
   Future<void> _revoke(DeviceMember member) async {
     final deviceId = _deviceId;
     if (deviceId == null || _busy) return;
-    if (!await _confirmRevoke(member) || !mounted) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: context.tr(vi: 'Thu hồi quyền truy cập?', en: 'Remove access?'),
+      message: context.tr(
+        vi: '${member.displayName} sẽ không còn xem hoặc mở được $_deviceName.',
+        en: '${member.displayName} will no longer see or open $_deviceName.',
+      ),
+      confirmLabel: context.tr(vi: 'Thu hồi', en: 'Remove'),
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
 
     setState(() => _busy = true);
     final ok = await SupabaseService.revokeDeviceMember(
@@ -156,11 +198,11 @@ class _AccessScreenState extends State<AccessScreen> {
       message: ok
           ? context.tr(
               vi: 'Đã thu hồi quyền của ${member.displayName}.',
-              en: 'Access revoked for ${member.displayName}.')
+              en: 'Access removed for ${member.displayName}.')
           : (SupabaseService.lastSharingError ??
               context.tr(
                   vi: 'Không thể thu hồi quyền.',
-                  en: 'Could not revoke access.')),
+                  en: 'Could not remove access.')),
       type: ok ? ToastType.success : ToastType.error,
     );
     _reload();
@@ -168,276 +210,107 @@ class _AccessScreenState extends State<AccessScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText =
-        isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary;
-    final secondaryText =
-        isDark ? const Color(0xFFA7B5C8) : AppColors.textSecondary;
-    final accent = isDark ? const Color(0xFF38BDF8) : AppColors.brandBlue;
-
-    return NeonBubbleBackground(
-      preset: NeonBubblePreset.iosLiquid,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _reload,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                  20, 16, 20, widget.showBackButton ? 32 : 108),
-              children: [
-                if (widget.showBackButton) ...[
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Ios26BackButton(),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        context.tr(vi: 'Quyền truy cập', en: 'Access'),
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: primaryText,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    if (_deviceId != null)
-                      LiquidGlassContainer(
-                        borderRadius: 16,
-                        blur: 16,
-                        tintOpacity: 0.14,
-                        padding: EdgeInsets.zero,
-                        child: SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: IconButton(
-                            tooltip: context.tr(
-                                vi: 'Mời thành viên', en: 'Invite member'),
-                            icon: Icon(Icons.person_add_outlined,
-                                size: 22, color: accent),
-                            onPressed: _busy ? null : _showInviteSheet,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                OwnedDevicePicker(
-                  selectedDeviceId: _deviceId,
-                  onChanged: _selectDevice,
-                ),
-                if (_deviceId != null) ...[
-                  const SizedBox(height: 20),
-                  Text(
-                    context.tr(
-                        vi: 'Thành viên chia sẻ thiết bị',
-                        en: 'Members with device access'),
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: primaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_loading && _members.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 32),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_loadFailed)
-                    Text(
-                      context.tr(
-                        vi: 'Không tải được danh sách thành viên. Kéo xuống để thử lại.',
-                        en: 'Could not load members. Pull down to retry.',
-                      ),
-                      style: TextStyle(color: secondaryText),
-                    )
-                  else ...[
-                    ..._members.map((member) =>
-                        _buildMemberCard(member, primaryText, secondaryText)),
-                    if (_members.length <= 1)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          context.tr(
-                            vi: 'Chưa chia sẻ với ai. Nhấn biểu tượng + để mời người đã có tài khoản.',
-                            en: 'Not shared yet. Tap + to invite someone who has an account.',
-                          ),
-                          style: TextStyle(color: secondaryText, fontSize: 13),
-                        ),
-                      ),
-                  ],
-                ],
-              ],
-            ),
-          ),
-        ),
+    return AppPage(
+      title: context.tr(vi: 'Chia sẻ', en: 'Sharing'),
+      subtitle: context.tr(
+        vi: 'Cho người thân cùng xem và mở hộp.',
+        en: 'Let family members see and open your box.',
       ),
+      showBackButton: widget.showBackButton,
+      onRefresh: _reload,
+      children: [
+        const SizedBox(height: AppSpacing.md),
+        OwnedDevicePicker(
+          selectedDeviceId: _deviceId,
+          onChanged: _selectDevice,
+        ),
+        if (_deviceId != null) ..._buildMembers(),
+      ],
     );
   }
 
-  Widget _buildMemberCard(
-      DeviceMember member, Color primaryText, Color secondaryText) {
-    final (roleLabel, roleColor) = switch (member.level) {
-      DeviceAccessLevel.owner => (
-          context.tr(vi: 'Chủ sở hữu', en: 'Owner'),
-          const Color(0xFF8B5CF6)
-        ),
-      DeviceAccessLevel.fullControl => (
-          context.tr(vi: 'Toàn quyền', en: 'Full access'),
-          const Color(0xFF10B981)
-        ),
-      DeviceAccessLevel.viewOnly => (
-          context.tr(vi: 'Chỉ xem', en: 'View only'),
-          const Color(0xFFF59E0B)
-        ),
-    };
+  List<Widget> _buildMembers() {
+    final header = SectionHeader(
+      title: context.tr(vi: 'Thành viên', en: 'Members'),
+      action: HeaderButton(
+        icon: AppIcons.plus,
+        label: context.tr(vi: 'Mời', en: 'Invite'),
+        onPressed: _busy ? null : _showInviteSheet,
+      ),
+    );
 
-    final card = LiquidGlassContainer(
-      borderRadius: 20,
-      blur: 18,
-      tintOpacity: 0.16,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: roleColor.withValues(alpha: 0.18),
-              border: Border.all(
-                  color: roleColor.withValues(alpha: 0.4), width: 1.2),
-            ),
-            child: Center(
-              child: Text(
-                member.initials,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: roleColor,
-                ),
+    if (_loading && _members.isEmpty) {
+      return [
+        header,
+        const Padding(
+          padding: EdgeInsets.only(top: AppSpacing.xl),
+          child: Center(child: CircularProgressIndicator.adaptive()),
+        ),
+      ];
+    }
+    if (_loadFailed) {
+      return [
+        header,
+        EmptyState(
+          icon: AppIcons.wifiOff,
+          title: context.tr(vi: 'Không tải được', en: 'Could not load'),
+          message: context.tr(
+            vi: 'Kéo xuống để thử lại.',
+            en: 'Pull down to try again.',
+          ),
+        ),
+      ];
+    }
+
+    final colors = context.colors;
+    return [
+      header,
+      GroupedSection(
+        footer: _members.length <= 1
+            ? context.tr(
+                vi: 'Chưa chia sẻ với ai. Người được mời cần có tài khoản Anchor Box.',
+                en: 'Not shared yet. Invitees need an Anchor Box account.',
+              )
+            : context.tr(
+                vi: 'Chạm vào thành viên để đổi quyền hoặc thu hồi.',
+                en: 'Tap a member to change or remove access.',
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        member.displayName,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: primaryText,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: roleColor.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: roleColor.withValues(alpha: 0.35),
-                            width: 0.8),
-                      ),
-                      child: Text(
-                        roleLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: roleColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  member.email,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, color: secondaryText),
-                ),
-              ],
-            ),
-          ),
-          if (!member.isOwner)
-            PopupMenuButton<String>(
-              enabled: !_busy,
-              icon:
-                  Icon(Icons.more_vert_rounded, size: 20, color: secondaryText),
-              onSelected: (value) {
-                if (value == 'level') _changeLevel(member);
-                if (value == 'revoke') _revoke(member);
-              },
-              itemBuilder: (menuContext) => [
-                PopupMenuItem(
-                  value: 'level',
-                  child: Text(member.level == DeviceAccessLevel.fullControl
-                      ? menuContext.tr(
-                          vi: 'Chuyển sang Chỉ xem', en: 'Change to View only')
-                      : menuContext.tr(
-                          vi: 'Chuyển sang Toàn quyền',
-                          en: 'Change to Full access')),
-                ),
-                PopupMenuItem(
-                  value: 'revoke',
-                  child: Text(
-                    menuContext.tr(vi: 'Thu hồi quyền', en: 'Revoke access'),
-                    style: const TextStyle(color: Colors.redAccent),
-                  ),
-                ),
-              ],
+        children: [
+          for (final member in _members)
+            GroupedTile(
+              leading: UserAvatar(
+                name: member.displayName,
+                imageUrl: member.avatarUrl,
+                size: 36,
+                color: _roleColor(colors, member.level),
+              ),
+              title: member.displayName,
+              subtitle: member.email,
+              trailing: StatusPill(
+                label: _roleLabel(member.level),
+                color: _roleColor(colors, member.level),
+              ),
+              onTap: member.isOwner || _busy ? null : () => _openMember(member),
             ),
         ],
       ),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: member.isOwner
-          ? card
-          : Dismissible(
-              key: ValueKey('member-${member.userId}'),
-              direction: DismissDirection.endToStart,
-              confirmDismiss: (_) async {
-                await _revoke(member);
-                return false; // The list reloads from the server instead.
-              },
-              background: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  context.tr(vi: 'Thu hồi', en: 'Revoke'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              child: card,
-            ),
-    );
+    ];
   }
+
+  String _roleLabel(DeviceAccessLevel level) => switch (level) {
+        DeviceAccessLevel.owner => context.tr(vi: 'Chủ hộp', en: 'Owner'),
+        DeviceAccessLevel.fullControl =>
+          context.tr(vi: 'Toàn quyền', en: 'Full access'),
+        DeviceAccessLevel.viewOnly =>
+          context.tr(vi: 'Chỉ xem', en: 'View only'),
+      };
+
+  Color _roleColor(AppColors colors, DeviceAccessLevel level) =>
+      switch (level) {
+        DeviceAccessLevel.owner => colors.purple,
+        DeviceAccessLevel.fullControl => colors.locked,
+        DeviceAccessLevel.viewOnly => colors.unlocked,
+      };
 }
 
 class _InviteRequest {
@@ -447,19 +320,20 @@ class _InviteRequest {
   const _InviteRequest(this.email, this.level);
 }
 
-/// Bottom sheet that owns its controller and validation; pops an
-/// [_InviteRequest] when the input is valid.
+/// Owns its controller and validation; pops an [_InviteRequest] when valid.
 class _InviteMemberSheet extends StatefulWidget {
-  const _InviteMemberSheet();
+  final String deviceName;
+
+  const _InviteMemberSheet({required this.deviceName});
 
   @override
   State<_InviteMemberSheet> createState() => _InviteMemberSheetState();
 }
 
 class _InviteMemberSheetState extends State<_InviteMemberSheet> {
-  final TextEditingController _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
   DeviceAccessLevel _level = DeviceAccessLevel.viewOnly;
-  String? _error;
 
   @override
   void dispose() {
@@ -468,140 +342,105 @@ class _InviteMemberSheetState extends State<_InviteMemberSheet> {
   }
 
   void _submit() {
-    final email = _emailController.text.trim();
-    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-      setState(() => _error =
-          context.tr(vi: 'Email không hợp lệ.', en: 'Invalid email address.'));
-      return;
-    }
-    Navigator.pop(context, _InviteRequest(email, _level));
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    Navigator.pop(
+      context,
+      _InviteRequest(_emailController.text.trim(), _level),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText =
-        isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary;
-    final secondaryText =
-        isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary;
+    final colors = context.colors;
+
+    GroupedTile levelTile(
+      DeviceAccessLevel level,
+      IconData icon,
+      Color color,
+      String title,
+      String subtitle,
+    ) {
+      return GroupedTile(
+        leading: IconBadge(icon: icon, color: color, size: 30),
+        title: title,
+        subtitle: subtitle,
+        showChevron: false,
+        trailing: _level == level
+            ? Icon(AppIcons.check, color: colors.accent, size: 20)
+            : null,
+        onTap: () => setState(() => _level = level),
+      );
+    }
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-        top: 20,
-        left: 16,
-        right: 16,
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
       ),
-      child: LiquidGlassContainer(
-        borderRadius: 24,
-        blur: 28,
-        tintOpacity: 0.25,
-        padding: const EdgeInsets.all(20),
+      child: Form(
+        key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    context.tr(vi: 'Mời thành viên', en: 'Invite a member'),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryText,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
+            Text(
+              context.tr(vi: 'Mời thành viên', en: 'Invite a member'),
+              textAlign: TextAlign.center,
+              style: context.text.titleMedium,
             ),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               context.tr(
-                vi: 'Người được mời phải đã đăng ký tài khoản Anchor Box.',
-                en: 'The invitee must already have an Anchor Box account.',
+                vi: 'Chia sẻ ${widget.deviceName} với người đã có tài khoản Anchor Box.',
+                en: 'Share ${widget.deviceName} with someone who has an Anchor Box account.',
               ),
-              style: TextStyle(fontSize: 12.5, color: secondaryText),
+              textAlign: TextAlign.center,
+              style: context.text.bodySmall,
             ),
-            const SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
               controller: _emailController,
-              autofocus: true,
+              label: context.tr(vi: 'Email', en: 'Email'),
+              prefixIcon: AppIcons.email,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.done,
+              autofocus: true,
+              autofillHints: const [AutofillHints.email],
+              validator: FormValidators.email(context),
               onSubmitted: (_) => _submit(),
-              decoration: InputDecoration(
-                labelText: context.tr(vi: 'Địa chỉ email', en: 'Email address'),
-                errorText: _error,
-                border: const OutlineInputBorder(),
-              ),
             ),
-            const SizedBox(height: 14),
-            Text(
-              context.tr(vi: 'Quyền hạn:', en: 'Permission:'),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: secondaryText,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
+            GroupedSection(
+              header: context.tr(vi: 'Quyền hạn', en: 'Permission'),
               children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: Text(context.tr(vi: 'Chỉ xem', en: 'View only')),
-                    selected: _level == DeviceAccessLevel.viewOnly,
-                    onSelected: (_) =>
-                        setState(() => _level = DeviceAccessLevel.viewOnly),
+                levelTile(
+                  DeviceAccessLevel.viewOnly,
+                  AppIcons.viewOnly,
+                  colors.unlocked,
+                  context.tr(vi: 'Chỉ xem', en: 'View only'),
+                  context.tr(
+                    vi: 'Xem trạng thái và lịch sử, không mở khóa.',
+                    en: 'View status and history, no unlocking.',
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ChoiceChip(
-                    label:
-                        Text(context.tr(vi: 'Toàn quyền', en: 'Full access')),
-                    selected: _level == DeviceAccessLevel.fullControl,
-                    onSelected: (_) =>
-                        setState(() => _level = DeviceAccessLevel.fullControl),
+                levelTile(
+                  DeviceAccessLevel.fullControl,
+                  AppIcons.unlock,
+                  colors.locked,
+                  context.tr(vi: 'Toàn quyền', en: 'Full access'),
+                  context.tr(
+                    vi: 'Xem trạng thái và mở/khóa từ xa.',
+                    en: 'View status and lock/unlock remotely.',
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              _level == DeviceAccessLevel.fullControl
-                  ? context.tr(
-                      vi: 'Xem trạng thái và mở/đóng khóa từ xa.',
-                      en: 'Can view status and lock/unlock remotely.')
-                  : context.tr(
-                      vi: 'Chỉ xem trạng thái và lịch sử, không mở khóa được.',
-                      en: 'Can view status and history but cannot unlock.'),
-              style: TextStyle(fontSize: 12, color: secondaryText),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brandBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: Text(
-                  context.tr(vi: 'CHIA SẺ', en: 'SHARE'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            const SizedBox(height: AppSpacing.xl),
+            AppButton(
+              label: context.tr(vi: 'Gửi lời mời', en: 'Send invite'),
+              icon: AppIcons.userAdd,
+              onPressed: _submit,
             ),
           ],
         ),

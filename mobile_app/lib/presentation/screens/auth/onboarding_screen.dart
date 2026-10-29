@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_assets.dart';
+
+import '../../../core/localization/language_controller.dart';
+import '../../../core/preferences/onboarding_store.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../components/components.dart';
 import 'login_screen.dart';
-
-class OnboardingItem {
-  final String title;
-  final String description;
-  final String buttonText;
-  final String imageAsset;
-
-  const OnboardingItem({
-    required this.title,
-    required this.description,
-    required this.buttonText,
-    required this.imageAsset,
-  });
-}
+import 'register_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -25,79 +15,15 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  final _pageController = PageController();
+  double _page = 0;
 
-  final List<OnboardingItem> _pages = const [
-    OnboardingItem(
-      title: "Điều Khiển Từ Xa",
-      description:
-          "Quản lý hộp bưu kiện an toàn của bạn từ bất cứ đâu. Giám sát trạng thái theo thời gian thực và nhận thông báo khi gói hàng được giao.",
-      buttonText: "Tiếp Tục",
-      imageAsset: AppAssets.splash1Image,
-    ),
-    OnboardingItem(
-      title: "Lưu Trữ An Toàn & Tiện Lợi",
-      description:
-          "Biến hộp Anchor Box thành nơi nhận hàng tạp hóa, thực phẩm tươi sống hoặc các gói hàng cá nhân, đảm bảo an toàn và tránh nắng mưa.",
-      buttonText: "Tiếp Tục",
-      imageAsset: AppAssets.splash2Image,
-    ),
-    OnboardingItem(
-      title: "Hệ Thống Thông Minh",
-      description:
-          "Tích hợp liền mạch với hệ thống nhà thông minh. Điều khiển khóa tự động, theo dõi bằng camera và báo cáo chi tiết qua ứng dụng.",
-      buttonText: "Bắt đầu",
-      imageAsset: AppAssets.splash3Image,
-    ),
-  ];
-
-  void _navigateToLogin() {
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 750),
-        reverseTransitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final curveAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInOutCubic,
-          );
-
-          final slideAnimation = Tween<Offset>(
-            begin: const Offset(0.0, 0.04),
-            end: Offset.zero,
-          ).animate(curveAnimation);
-
-          final scaleAnimation = Tween<double>(
-            begin: 0.95,
-            end: 1.0,
-          ).animate(curveAnimation);
-
-          return FadeTransition(
-            opacity: curveAnimation,
-            child: ScaleTransition(
-              scale: scaleAnimation,
-              child: SlideTransition(
-                position: slideAnimation,
-                child: child,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _onNextPressed() {
-    if (_currentPage < _pages.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.easeInOutCubic,
-      );
-    } else {
-      _navigateToLogin();
-    }
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      setState(() => _page = _pageController.page ?? 0);
+    });
   }
 
   @override
@@ -106,258 +32,193 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  Widget _buildPaginationDot(int index) {
-    final bool isActive = _currentPage == index;
-    if (isActive) {
-      return Container(
-        width: 28,
-        height: 6,
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(3),
-          color: Colors.white,
+  List<_Slide> _slides(BuildContext context) => [
+        _Slide(
+          icon: AppIcons.box,
+          title: context.tr(
+              vi: 'Nhận hàng cả khi vắng nhà',
+              en: 'Get parcels while you are out'),
+          body: context.tr(
+            vi: 'Người giao hàng mở hộp bằng mã PIN một lần, đặt hàng vào và hộp tự khóa lại an toàn.',
+            en: 'Couriers open the box with a one-time PIN, drop the parcel and the box locks again.',
+          ),
         ),
-      );
-    } else {
-      return Container(
-        width: 8,
-        height: 8,
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.4),
+        _Slide(
+          icon: AppIcons.notifications,
+          title: context.tr(vi: 'Biết ngay mọi chuyện', en: 'Know right away'),
+          body: context.tr(
+            vi: 'Nhận thông báo khi có hàng, khi nắp hộp mở và khi có người mở trái phép.',
+            en: 'Get notified when a parcel arrives, when the lid opens or when someone forces it.',
+          ),
         ),
-      );
-    }
+        _Slide(
+          icon: AppIcons.unlock,
+          title:
+              context.tr(vi: 'Bạn nắm toàn quyền', en: 'You stay in control'),
+          body: context.tr(
+            vi: 'Mở khóa từ xa, quản lý mã PIN và chia sẻ quyền truy cập cho người thân.',
+            en: 'Unlock remotely, manage PINs and share access with your family.',
+          ),
+        ),
+      ];
+
+  Future<void> _finish(Widget destination) async {
+    await OnboardingStore.markCompleted();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => destination),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentItem = _pages[_currentPage];
+    final slides = _slides(context);
+    final isLast = _page > slides.length - 1.5;
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Layer 1: Full Background Image with fallback to appLogo
-          Positioned.fill(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              child: Image.asset(
-                currentItem.imageAsset,
-                key: ValueKey<int>(_currentPage),
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.asset(
-                    AppAssets.appLogo,
-                    key: ValueKey<String>("fallback_$_currentPage"),
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    errorBuilder: (context, error2, stackTrace2) {
-                      return Container(
-                        color: const Color(0xFF1E293B),
-                        child: const Center(
-                          child: Icon(Icons.markunread_mailbox_outlined, size: 90, color: Colors.white30),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // Layer 2: Gray / Dark Overlay with ~80% Opacity
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.80),
-            ),
-          ),
-
-          // Layer 3: Foreground Interactive Content
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Top Bar: App Logo & SKIP Button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Mini Brand Logo Header
-                      Row(
-                        children: [
-                          Image.asset(
-                            AppAssets.appLogo,
-                            width: 32,
-                            height: 32,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.markunread_mailbox,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            "Anchor Box",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
+      body: AppBackdrop(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: AppSizes.minTapTarget + AppSpacing.xs,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: AnimatedOpacity(
+                      opacity: isLast ? 0 : 1,
+                      duration: AppDurations.fast,
+                      child: TextButton(
+                        onPressed:
+                            isLast ? null : () => _finish(const LoginScreen()),
+                        child: Text(context.tr(vi: 'Bỏ qua', en: 'Skip')),
                       ),
-
-                      // SKIP Button
-                      GestureDetector(
-                        onTap: _navigateToLogin,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Text(
-                            "SKIP",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Middle PageView Content Area
-                  Expanded(
-                    child: PageView.builder(
-                      controller: _pageController,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentPage = index;
-                        });
-                      },
-                      itemCount: _pages.length,
-                      itemBuilder: (context, index) {
-                        final item = _pages[index];
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Main Splash Logo Graphic with Hero tag for smooth glide animation
-                            Hero(
-                              tag: 'app_logo',
-                              child: Container(
-                                width: 140,
-                                height: 110,
-                                margin: const EdgeInsets.only(bottom: 32),
-                                child: Image.asset(
-                                  AppAssets.appLogo,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      index == 0
-                                          ? Icons.markunread_mailbox_outlined
-                                          : (index == 1
-                                              ? Icons.security_outlined
-                                              : Icons.smart_toy_outlined),
-                                      size: 56,
-                                      color: Colors.white,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-
-                            // Title
-                            Text(
-                              item.title,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Description Body Text
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                              child: Text(
-                                item.description,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  height: 1.5,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.white.withOpacity(0.85),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
                     ),
                   ),
-
-                  // Bottom Controls: Pagination Dots & Action Button
-                  Column(
-                    children: [
-                      // Dynamic 3-Dot Indicator
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          _pages.length,
-                          (index) => _buildPaginationDot(index),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Primary Action Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: _onNextPressed,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.brandBlue,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: Text(
-                            currentItem.buttonText,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+                ),
+                const Spacer(),
+                const BrandLogo(
+                  variant: BrandLogoVariant.stacked,
+                  height: 168,
+                ),
+                const Spacer(),
+                SizedBox(
+                  height: 190,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: slides.length,
+                    itemBuilder: (context, index) => _SlideView(slides[index]),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _PageDots(
+                  count: slides.length,
+                  position: _page,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                AppButton(
+                  label: isLast
+                      ? context.tr(vi: 'Tạo tài khoản', en: 'Create account')
+                      : context.tr(vi: 'Tiếp tục', en: 'Continue'),
+                  onPressed: isLast
+                      ? () => _finish(const RegisterScreen())
+                      : () => _pageController.nextPage(
+                            duration: AppDurations.slow,
+                            curve: Curves.easeOutCubic,
+                          ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                AnimatedOpacity(
+                  opacity: isLast ? 1 : 0,
+                  duration: AppDurations.fast,
+                  child: TextButton(
+                    onPressed:
+                        isLast ? () => _finish(const LoginScreen()) : null,
+                    child: Text(context.tr(
+                        vi: 'Tôi đã có tài khoản',
+                        en: 'I already have an account')),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
+}
+
+class _Slide {
+  final IconData icon;
+  final String title;
+  final String body;
+
+  const _Slide({required this.icon, required this.title, required this.body});
+}
+
+class _SlideView extends StatelessWidget {
+  final _Slide slide;
+
+  const _SlideView(this.slide);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(slide.icon, color: Colors.white, size: 32),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          slide.title,
+          textAlign: TextAlign.center,
+          style: context.text.headlineSmall,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          slide.body,
+          textAlign: TextAlign.center,
+          style: context.text.bodyMedium?.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PageDots extends StatelessWidget {
+  final int count;
+  final double position;
+  final Color color;
+
+  const _PageDots({
+    required this.count,
+    required this.position,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < count; i++)
+          Container(
+            width: 8 + 16 * _activeAmount(i),
+            height: 8,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.25 + 0.75 * _activeAmount(i)),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+      ],
+    );
+  }
+
+  double _activeAmount(int index) =>
+      (1 - (position - index).abs()).clamp(0.0, 1.0).toDouble();
 }

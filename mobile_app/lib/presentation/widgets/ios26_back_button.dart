@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_colors.dart';
+import '../../core/constants/legacy_colors.dart';
 import '../../core/localization/language_controller.dart';
 import 'liquid_glass_container.dart';
 
@@ -20,7 +20,7 @@ class Ios26BackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = foregroundColor ??
-        (isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary);
+        (isDark ? const Color(0xFFF8FAFC) : LegacyColors.textPrimary);
 
     return Semantics(
       button: true,

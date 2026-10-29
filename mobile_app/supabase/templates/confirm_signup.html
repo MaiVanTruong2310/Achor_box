@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Xác nhận tài khoản Anchor Box</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F2F2F7;">
+<div style="display:none;max-height:0;overflow:hidden;">Mã xác nhận Anchor Box của bạn là {{ .Token }}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F2F2F7;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <tr>
+          <td style="padding:0 8px 24px 8px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="27" valign="middle"><img src="https://fzgthczkmjdazmdkbvoe.supabase.co/storage/v1/object/public/brand/email/anchor_mark_navy_144.png" width="27" height="37" alt="Anchor Box" style="display:block;border:0;outline:none;"></td>
+                <td style="padding-left:10px;font-size:17px;font-weight:700;color:#1C1C1E;">Anchor Box</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#FFFFFF;border-radius:20px;padding:32px 28px;">
+            <p style="margin:0 0 8px 0;font-size:24px;line-height:30px;font-weight:700;color:#1C1C1E;">Xác nhận tài khoản</p>
+            <p style="margin:0 0 24px 0;font-size:15px;line-height:22px;color:#3A3A3C;">
+              Xin chào{{ if .Data.full_name }} {{ .Data.full_name }}{{ end }},<br>
+              nhập mã dưới đây vào ứng dụng Anchor Box để hoàn tất đăng ký.
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="background-color:#F2F2F7;border-radius:14px;padding:20px 12px;">
+                  <span style="font-family:'SF Mono',Menlo,Consolas,'Courier New',monospace;font-size:34px;line-height:40px;font-weight:700;letter-spacing:10px;color:#0A6CFF;">{{ .Token }}</span>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:24px 0 0 0;font-size:13px;line-height:19px;color:#6C6C72;">
+              Mã chỉ dùng được một lần và sẽ hết hạn sau ít phút. Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 8px 0 8px;font-size:12px;line-height:18px;color:#8E8E93;">
+            Email được gửi tới {{ .Email }}.<br>
+            Your Anchor Box verification code is {{ .Token }}.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

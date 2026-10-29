@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
+import '../../../core/cache/session_cache.dart';
 import '../../../core/localization/language_controller.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../data/models/device_pin.dart';
 import '../../../services/supabase_service.dart';
+import '../../components/components.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/device_pin_dialogs.dart';
-import '../../widgets/liquid_glass_container.dart';
-import '../../widgets/neon_bubble_background.dart';
 import '../../widgets/owned_device_picker.dart';
 
 /// PIN tab: the permanent box PIN and one-time PINs of an owned device.
@@ -30,14 +30,23 @@ class _DevicesScreenState extends State<DevicesScreen> {
 
   void _selectDevice(OwnedDevice? device) {
     if (device?.id == _device?.id && _overview != null) return;
+    // Show the last known data for this box at once, then refresh it.
     setState(() {
       _device = device;
-      _overview = null;
-      _oneTimePins = const [];
+      _overview = device == null
+          ? null
+          : SessionCache.get<DevicePinOverview>(_overviewKey(device.id));
+      _oneTimePins = device == null
+          ? const []
+          : SessionCache.get<List<OneTimePinInfo>>(_pinsKey(device.id)) ??
+              const [];
       _loadFailed = false;
     });
     _reload();
   }
+
+  static String _overviewKey(String deviceId) => 'pin_overview:$deviceId';
+  static String _pinsKey(String deviceId) => 'one_time_pins:$deviceId';
 
   Future<void> _reload() async {
     final device = _device;
@@ -50,11 +59,14 @@ class _DevicesScreenState extends State<DevicesScreen> {
     if (!mounted || _device?.id != device.id) return;
     final overview = results[0] as DevicePinOverview?;
     final pins = results[1] as List<OneTimePinInfo>?;
+    if (overview != null) SessionCache.set(_overviewKey(device.id), overview);
+    if (pins != null) SessionCache.set(_pinsKey(device.id), pins);
     setState(() {
       _loading = false;
-      _loadFailed = overview == null || pins == null;
-      _overview = overview;
-      _oneTimePins = pins ?? const [];
+      // Keep showing cached data when only the refresh failed.
+      _loadFailed = (overview ?? _overview) == null;
+      _overview = overview ?? _overview;
+      _oneTimePins = pins ?? _oneTimePins;
     });
   }
 
@@ -113,39 +125,21 @@ class _DevicesScreenState extends State<DevicesScreen> {
   }
 
   Future<int?> _pickExpiry() {
-    return showModalBottomSheet<int>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-        child: LiquidGlassContainer(
-          borderRadius: 24,
-          blur: 28,
-          tintOpacity: 0.25,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  sheetContext.tr(
-                      vi: 'PIN một lần có hiệu lực trong',
-                      en: 'One-time PIN valid for'),
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700),
-                ),
-              ),
-              for (final minutes in _expiryOptions)
-                ListTile(
-                  leading: const Icon(Icons.timer_outlined),
-                  title: Text(_expiryLabel(sheetContext, minutes)),
-                  onTap: () => Navigator.pop(sheetContext, minutes),
-                ),
-            ],
-          ),
-        ),
+    return showChoiceSheet<int>(
+      context,
+      title: context.tr(vi: 'PIN một lần', en: 'One-time PIN'),
+      message: context.tr(
+        vi: 'Chọn thời gian mã còn hiệu lực.',
+        en: 'Choose how long the code stays valid.',
       ),
+      options: [
+        for (final minutes in _expiryOptions)
+          ChoiceOption(
+            value: minutes,
+            label: _expiryLabel(context, minutes),
+            icon: AppIcons.expiry,
+          ),
+      ],
     );
   }
 
@@ -155,6 +149,21 @@ class _DevicesScreenState extends State<DevicesScreen> {
     }
     final hours = minutes ~/ 60;
     return context.tr(vi: '$hours giờ', en: '$hours hours');
+  }
+
+  Future<void> _confirmRevoke(OneTimePinInfo pin) async {
+    if (_busy) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: context.tr(vi: 'Hủy PIN một lần?', en: 'Revoke one-time PIN?'),
+      message: context.tr(
+        vi: 'Mã này sẽ không mở được hộp nữa.',
+        en: 'This code will no longer open the box.',
+      ),
+      confirmLabel: context.tr(vi: 'Hủy PIN', en: 'Revoke'),
+      destructive: true,
+    );
+    if (confirmed && mounted) await _revokeOneTimePin(pin);
   }
 
   Future<void> _revokeOneTimePin(OneTimePinInfo pin) async {
@@ -177,278 +186,222 @@ class _DevicesScreenState extends State<DevicesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText =
-        isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary;
-    final secondaryText =
-        isDark ? const Color(0xFFA7B5C8) : AppColors.textSecondary;
-    final accent = isDark ? const Color(0xFF38BDF8) : AppColors.brandBlue;
-
-    return NeonBubbleBackground(
-      preset: NeonBubblePreset.iosLiquid,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _reload,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 108),
-              children: [
-                Text(
-                  context.tr(vi: 'Mã PIN', en: 'PIN Codes'),
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: primaryText,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                OwnedDevicePicker(
-                  selectedDeviceId: _device?.id,
-                  onChanged: _selectDevice,
-                ),
-                if (_device != null) ...[
-                  const SizedBox(height: 20),
-                  if (_loading && _overview == null)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 40),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_loadFailed)
-                    _buildLoadError(secondaryText)
-                  else ...[
-                    _buildPermanentPinCard(primaryText, secondaryText, accent),
-                    const SizedBox(height: 24),
-                    _buildOneTimeHeader(primaryText, accent),
-                    const SizedBox(height: 12),
-                    if (_oneTimePins.isEmpty)
-                      Text(
-                        context.tr(
-                          vi: 'Chưa có PIN một lần nào trong 30 ngày qua.',
-                          en: 'No one-time PINs in the last 30 days.',
-                        ),
-                        style: TextStyle(color: secondaryText, fontSize: 14),
-                      )
-                    else
-                      ..._oneTimePins.map((pin) => _buildOneTimePinTile(
-                          pin, primaryText, secondaryText)),
-                  ],
-                ],
-              ],
-            ),
-          ),
-        ),
+    return AppPage(
+      title: context.tr(vi: 'Mã PIN', en: 'PIN codes'),
+      subtitle: context.tr(
+        vi: 'Mở hộp bằng bàn phím mà không cần điện thoại.',
+        en: 'Open the box from its keypad, no phone needed.',
       ),
-    );
-  }
-
-  Widget _buildLoadError(Color secondaryText) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 32),
-      child: Column(
-        children: [
-          Icon(Icons.cloud_off_rounded, color: secondaryText, size: 36),
-          const SizedBox(height: 10),
-          Text(
-            context.tr(
-              vi: 'Không tải được thông tin PIN. Kéo xuống để thử lại.',
-              en: 'Could not load PIN information. Pull down to retry.',
-            ),
-            textAlign: TextAlign.center,
-            style: TextStyle(color: secondaryText),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPermanentPinCard(
-      Color primaryText, Color secondaryText, Color accent) {
-    final overview = _overview;
-    final isSet = overview?.permanentPinSet == true;
-    final updatedAt = overview?.permanentPinUpdatedAt?.toLocal();
-    return LiquidGlassContainer(
-      borderRadius: 20,
-      blur: 18,
-      tintOpacity: 0.16,
-      padding: const EdgeInsets.all(18),
-      child: Row(
-        children: [
-          Icon(
-            isSet ? Icons.verified_user_outlined : Icons.pin_outlined,
-            color: isSet ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
-            size: 28,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.tr(vi: 'PIN cố định', en: 'Permanent PIN'),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: primaryText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  isSet
-                      ? (updatedAt == null
-                          ? context.tr(vi: 'Đã đặt', en: 'Set')
-                          : context.tr(
-                              vi:
-                                  'Cập nhật lúc ${formatShortDateTime(updatedAt)}',
-                              en:
-                                  'Updated at ${formatShortDateTime(updatedAt)}'))
-                      : context.tr(
-                          vi: 'Chưa đặt: bàn phím của hộp chưa mở được bằng PIN.',
-                          en: 'Not set: the keypad cannot unlock the box yet.'),
-                  style: TextStyle(fontSize: 12.5, color: secondaryText),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          TextButton(
-            onPressed: _busy ? null : _changePermanentPin,
-            child: Text(
-              isSet
-                  ? context.tr(vi: 'Đổi PIN', en: 'Change')
-                  : context.tr(vi: 'Đặt PIN', en: 'Set PIN'),
-              style: TextStyle(color: accent, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOneTimeHeader(Color primaryText, Color accent) {
-    return Row(
+      onRefresh: _reload,
       children: [
-        Expanded(
-          child: Text(
-            context.tr(vi: 'PIN một lần', en: 'One-time PINs'),
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: primaryText,
-            ),
-          ),
+        const SizedBox(height: AppSpacing.md),
+        OwnedDevicePicker(
+          selectedDeviceId: _device?.id,
+          onChanged: _selectDevice,
         ),
-        LiquidGlassContainer(
-          borderRadius: 16,
-          blur: 16,
-          tintOpacity: 0.14,
-          padding: EdgeInsets.zero,
-          child: SizedBox(
-            width: 44,
-            height: 44,
-            child: IconButton(
-              tooltip:
-                  context.tr(vi: 'Tạo PIN một lần', en: 'Create one-time PIN'),
-              icon: Icon(Icons.add_rounded, size: 24, color: accent),
-              onPressed: _busy ? null : _createOneTimePin,
-            ),
-          ),
-        ),
+        if (_device != null) ..._buildContent(),
       ],
     );
   }
 
-  Widget _buildOneTimePinTile(
-      OneTimePinInfo pin, Color primaryText, Color secondaryText) {
+  List<Widget> _buildContent() {
+    if (_loading && _overview == null) {
+      return const [
+        Padding(
+          padding: EdgeInsets.only(top: AppSpacing.xxl),
+          child: Center(child: CircularProgressIndicator.adaptive()),
+        ),
+      ];
+    }
+    if (_loadFailed) {
+      return [
+        EmptyState(
+          icon: AppIcons.wifiOff,
+          title: context.tr(vi: 'Không tải được', en: 'Could not load'),
+          message: context.tr(
+            vi: 'Kéo xuống để thử lại.',
+            en: 'Pull down to try again.',
+          ),
+        ),
+      ];
+    }
+    return [
+      SectionHeader(title: context.tr(vi: 'PIN cố định', en: 'Permanent PIN')),
+      _PermanentPinCard(
+        overview: _overview,
+        busy: _busy,
+        onChange: _changePermanentPin,
+      ),
+      SectionHeader(
+        title: context.tr(vi: 'PIN một lần', en: 'One-time PINs'),
+        action: HeaderButton(
+          icon: AppIcons.plus,
+          label: context.tr(vi: 'Tạo', en: 'New'),
+          onPressed: _busy ? null : _createOneTimePin,
+        ),
+      ),
+      if (_oneTimePins.isEmpty)
+        GroupedSection(
+          children: [
+            GroupedTile(
+              leading: IconBadge(
+                icon: AppIcons.timer,
+                color: context.colors.textSecondary,
+                filled: false,
+                size: 30,
+              ),
+              title: context.tr(vi: 'Chưa có mã nào', en: 'No codes yet'),
+              subtitle: context.tr(
+                vi: 'Tạo mã cho người giao hàng, mã mất hiệu lực sau một lần dùng.',
+                en: 'Create a code for a courier; it stops working after one use.',
+              ),
+            ),
+          ],
+        )
+      else
+        GroupedSection(
+          footer: context.tr(
+            vi: 'Các mã trong 30 ngày gần nhất.',
+            en: 'Codes from the last 30 days.',
+          ),
+          children: [
+            for (final pin in _oneTimePins)
+              _OneTimePinTile(
+                pin: pin,
+                onRevoke: _busy ? null : () => _confirmRevoke(pin),
+              ),
+          ],
+        ),
+    ];
+  }
+}
+
+class _PermanentPinCard extends StatelessWidget {
+  final DevicePinOverview? overview;
+  final bool busy;
+  final VoidCallback onChange;
+
+  const _PermanentPinCard({
+    required this.overview,
+    required this.busy,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSet = overview?.permanentPinSet == true;
+    final updatedAt = overview?.permanentPinUpdatedAt?.toLocal();
+
+    return GlassSurface(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Builder(builder: (context) {
+        final colors = context.colors;
+        final detail = !isSet
+            ? context.tr(
+                vi: 'Bàn phím chưa mở được hộp.',
+                en: 'The keypad cannot open the box yet.')
+            : updatedAt == null
+                ? context.tr(
+                    vi: '4 chữ số, dùng trên bàn phím hộp.',
+                    en: '4 digits, used on the box keypad.')
+                : context.tr(
+                    vi: 'Cập nhật ${formatShortDateTime(updatedAt)}',
+                    en: 'Updated ${formatShortDateTime(updatedAt)}');
+        return Row(
+          children: [
+            IconBadge(
+              icon: isSet ? AppIcons.securityCheck : AppIcons.warning,
+              color: isSet ? colors.locked : colors.unlocked,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isSet
+                        ? context.tr(vi: 'Đã đặt mã PIN', en: 'PIN is set')
+                        : context.tr(vi: 'Chưa đặt mã PIN', en: 'No PIN yet'),
+                    style: context.text.titleSmall,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(detail, style: context.text.bodySmall),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            FilledButton(
+              onPressed: busy ? null : onChange,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 36),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              ),
+              child: Text(
+                isSet
+                    ? context.tr(vi: 'Đổi', en: 'Change')
+                    : context.tr(vi: 'Đặt PIN', en: 'Set PIN'),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+class _OneTimePinTile extends StatelessWidget {
+  final OneTimePinInfo pin;
+  final VoidCallback? onRevoke;
+
+  const _OneTimePinTile({required this.pin, required this.onRevoke});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
     final status = pin.statusAt(DateTime.now());
     final (label, color) = switch (status) {
       OneTimePinStatus.active => (
           context.tr(vi: 'Còn hiệu lực', en: 'Active'),
-          const Color(0xFF10B981)
+          colors.locked,
         ),
       OneTimePinStatus.used => (
           context.tr(vi: 'Đã dùng', en: 'Used'),
-          AppColors.brandBlue
+          colors.accent,
         ),
       OneTimePinStatus.expired => (
           context.tr(vi: 'Hết hạn', en: 'Expired'),
-          secondaryText
+          colors.textSecondary,
         ),
     };
     final detail = switch (status) {
       OneTimePinStatus.used => context.tr(
           vi: 'Dùng lúc ${formatShortDateTime(pin.usedAt!.toLocal())}',
-          en: 'Used at ${formatShortDateTime(pin.usedAt!.toLocal())}'),
+          en: 'Used ${formatShortDateTime(pin.usedAt!.toLocal())}'),
       _ => context.tr(
-          vi: 'Hết hạn lúc ${formatShortDateTime(pin.expiresAt.toLocal())}',
-          en: 'Expires at ${formatShortDateTime(pin.expiresAt.toLocal())}'),
+          vi: 'Hết hạn ${formatShortDateTime(pin.expiresAt.toLocal())}',
+          en: 'Expires ${formatShortDateTime(pin.expiresAt.toLocal())}'),
     };
+    final active = status == OneTimePinStatus.active;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: LiquidGlassContainer(
-        borderRadius: 18,
-        blur: 16,
-        tintOpacity: 0.14,
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-        child: Row(
-          children: [
-            Icon(Icons.password_rounded, color: color),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        context.tr(
-                            vi: 'Tạo lúc ${formatShortDateTime(pin.createdAt.toLocal())}',
-                            en: 'Created ${formatShortDateTime(pin.createdAt.toLocal())}'),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: primaryText,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: color.withValues(alpha: 0.35), width: 0.8),
-                        ),
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: color,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(detail,
-                      style: TextStyle(fontSize: 12.5, color: secondaryText)),
-                ],
-              ),
-            ),
-            if (status == OneTimePinStatus.active)
-              IconButton(
-                tooltip: context.tr(vi: 'Hủy PIN', en: 'Revoke PIN'),
-                icon: const Icon(Icons.block_rounded, color: Colors.redAccent),
-                onPressed: _busy ? null : () => _revokeOneTimePin(pin),
-              ),
-          ],
-        ),
+    return GroupedTile(
+      leading: IconBadge(
+        icon: AppIcons.keyFill,
+        color: color,
+        filled: active,
+        size: 30,
       ),
+      title: context.tr(
+        vi: 'Tạo ${formatShortDateTime(pin.createdAt.toLocal())}',
+        en: 'Created ${formatShortDateTime(pin.createdAt.toLocal())}',
+      ),
+      subtitle: detail,
+      trailing: active
+          ? IconButton(
+              tooltip: context.tr(vi: 'Hủy PIN', en: 'Revoke PIN'),
+              onPressed: onRevoke,
+              icon: Icon(AppIcons.revoke, color: colors.alert, size: 22),
+            )
+          : StatusPill(label: label, color: color),
     );
   }
 }

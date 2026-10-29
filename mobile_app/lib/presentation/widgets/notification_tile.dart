@@ -1,42 +1,37 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/localization/language_controller.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/app_notification.dart';
-import 'liquid_glass_container.dart';
+import '../components/components.dart';
 
+/// One row of the notification center: glass card that swipes left to
+/// delete. Unread rows carry a bold title and an accent dot.
 class NotificationTile extends StatelessWidget {
   final AppNotification notification;
+  final String timeLabel;
+
+  /// Name of the related box, when the user still has access to it.
+  final String? deviceName;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
   final VoidCallback onDelete;
 
   const NotificationTile({
     super.key,
     required this.notification,
+    required this.timeLabel,
     required this.onTap,
+    required this.onLongPress,
     required this.onDelete,
+    this.deviceName,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (notification.severity) {
-      NotificationSeverity.success => const Color(0xFF10B981),
-      NotificationSeverity.warning => const Color(0xFFF59E0B),
-      NotificationSeverity.danger => const Color(0xFFEF4444),
-      NotificationSeverity.info => const Color(0xFF0EA5E9),
-    };
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final age = DateTime.now().difference(notification.createdAt.toLocal());
-    final time = age.inMinutes < 1
-        ? context.tr(vi: 'Vừa xong', en: 'Just now')
-        : age.inHours < 1
-            ? context.tr(
-                vi: '${age.inMinutes} phút trước', en: '${age.inMinutes}m ago')
-            : age.inDays < 1
-                ? context.tr(
-                    vi: '${age.inHours} giờ trước', en: '${age.inHours}h ago')
-                : context.tr(
-                    vi: '${age.inDays} ngày trước', en: '${age.inDays}d ago');
+    final unread = !notification.isRead;
+    final body = notification.localizedBody(context);
+    final deleteLabel = context.tr(vi: 'Xóa', en: 'Delete');
 
     return Dismissible(
       key: ValueKey(notification.id),
@@ -44,81 +39,113 @@ class NotificationTile extends StatelessWidget {
       onDismissed: (_) => onDelete(),
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        decoration: BoxDecoration(
-            color: Colors.redAccent, borderRadius: BorderRadius.circular(22)),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-      ),
-      child: LiquidGlassContainer(
-        borderRadius: 22,
-        blur: 18,
-        tintOpacity: notification.isRead ? 0.08 : 0.16,
-        padding: const EdgeInsets.all(14),
-        onTap: onTap,
+        padding: const EdgeInsets.only(right: AppSpacing.xl),
+        decoration: ShapeDecoration(
+          color: context.colors.alert,
+          shape: const RoundedSuperellipseBorder(borderRadius: AppRadius.lgAll),
+        ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(14)),
-              child: Icon(notification.icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          notification.localizedTitle(context),
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: notification.isRead
-                                ? FontWeight.w600
-                                : FontWeight.w700,
-                            color: isDark
-                                ? const Color(0xFFF8FAFC)
-                                : AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      if (!notification.isRead)
-                        Container(
-                            width: 7,
-                            height: 7,
-                            decoration: BoxDecoration(
-                                color: color, shape: BoxShape.circle)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    notification.localizedBody(context),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1.35,
-                        color: isDark
-                            ? const Color(0xFFA7B5C8)
-                            : AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 7),
-                  Text(time,
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: isDark
-                              ? const Color(0xFF7F91A8)
-                              : AppColors.textMuted)),
-                ],
-              ),
+            const Icon(AppIcons.trash, color: Colors.white, size: 20),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              deleteLabel,
+              style: context.text.titleSmall?.copyWith(color: Colors.white),
             ),
           ],
         ),
+      ),
+      child: GlassSurface(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        padding: const EdgeInsets.all(AppSpacing.sm + 2),
+        child: Builder(builder: (context) {
+          final colors = context.colors;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconBadge(
+                icon: notification.icon,
+                color: notification.severity.color(colors),
+                size: 40,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            notification.localizedTitle(context),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.text.titleSmall?.copyWith(
+                              fontWeight:
+                                  unread ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(timeLabel, style: context.text.labelMedium),
+                        if (unread) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          Semantics(
+                            label: context.tr(vi: 'Chưa đọc', en: 'Unread'),
+                            child: Container(
+                              width: 9,
+                              height: 9,
+                              margin: const EdgeInsets.only(top: 5),
+                              decoration: BoxDecoration(
+                                color: colors.accent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (body.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        body,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.text.bodySmall?.copyWith(
+                          color: colors.textPrimary
+                              .withValues(alpha: unread ? 0.8 : 0.6),
+                        ),
+                      ),
+                    ],
+                    if (deviceName != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          Icon(AppIcons.box,
+                              size: 14, color: colors.textSecondary),
+                          const SizedBox(width: AppSpacing.xxs),
+                          Flexible(
+                            child: Text(
+                              deviceName!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.text.labelMedium,
+                            ),
+                          ),
+                          Icon(AppIcons.chevronRight,
+                              size: 14, color: colors.textSecondary),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }

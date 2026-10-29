@@ -1,23 +1,21 @@
-class AppAssets {
-  static const String _basePath = 'assets';
-  static const String _imagesPath = '$_basePath/images';
-  static const String _iconsPath = '$_basePath/icons';
-  static const String _logosPath = '$_basePath/logos';
+abstract final class AppAssets {
+  static const String _images = 'assets/images';
+  static const String _icons = 'assets/icons';
+  static const String _logos = 'assets/logos';
 
-  // Figma Splash & Onboarding Assets
-  static const String ellipseDot = '$_imagesPath/Ellipse.png';
-  static const String splash1Image = '$_imagesPath/Logo_anchor_box 1.png';
-  static const String splash2Image = '$_imagesPath/Logo_anchor_box 2.png';
-  static const String splash3Image = '$_imagesPath/Logo_anchor_box 3.png';
+  static const String splash1Image = '$_images/Logo_anchor_box 1.png';
+  static const String splash2Image = '$_images/Logo_anchor_box 2.png';
+  static const String splash3Image = '$_images/Logo_anchor_box 3.png';
 
-  // Logos & App Icons
-  static const String appLogo = '$_logosPath/app_logo.png';
-  static const String appIcon = '$_iconsPath/app_icon.png';
-  static const String iotBoxBanner = '$_imagesPath/box_banner.png';
+  static const String appIcon = '$_icons/app_icon.png';
 
-  // Icons & Illustrations
-  static const String packageIcon = '$_iconsPath/package_icon.png';
-  static const String solenoidLockIcon = '$_iconsPath/lock_icon.png';
-  static const String emptyBoxIllustration = '$_imagesPath/empty_box.png';
-  static const String packageInBoxIllustration = '$_imagesPath/package_in_box.png';
+  static const String wallpaperHome = '$_images/wallpaper_home.jpg';
+
+  static const String anchorMarkWhite = '$_logos/anchor_mark_white.png';
+  static const String anchorMarkNavy = '$_logos/anchor_mark_navy.png';
+  static const String logoStackedWhite = '$_logos/logo_stacked_white.png';
+  static const String logoStackedNavy = '$_logos/logo_stacked_navy.png';
+
+  /// Previous cube logo, still used by screens not yet migrated.
+  static const String appLogo = '$_logos/app_logo.png';
 }

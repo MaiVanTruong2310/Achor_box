@@ -1,14 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/localization/language_controller.dart';
-import '../../../services/supabase_service.dart';
-import '../../widgets/app_toast.dart';
-import '../../widgets/liquid_glass_container.dart';
-import '../../widgets/ios26_back_button.dart';
 
+import '../../../core/localization/language_controller.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/device_serial.dart';
+import '../../../services/supabase_service.dart';
+import '../../components/components.dart';
+import '../../widgets/app_toast.dart';
+
+enum _Step { searching, connecting, sending, waitingOnline }
+
+/// Sends Wi-Fi credentials to a box over BLE, then waits until the box
+/// reports online to Supabase. Pops with `true` when it came online.
 class WifiProvisioningScreen extends StatefulWidget {
   final String deviceSerial;
   const WifiProvisioningScreen({super.key, required this.deviceSerial});
@@ -20,13 +26,15 @@ class WifiProvisioningScreen extends StatefulWidget {
 class _WifiProvisioningScreenState extends State<WifiProvisioningScreen> {
   final _ssidController = TextEditingController();
   final _passController = TextEditingController();
-  bool _isObscure = true;
-  bool _isSending = false;
-  String _statusText = "";
+  _Step? _step;
+  String? _error;
 
+  // Must match the GATT server in firmware/src/main.cpp.
   static const String serviceUuid = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
   static const String characteristicUuid =
       "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+
+  bool get _isSending => _step != null;
 
   @override
   void dispose() {
@@ -35,425 +43,324 @@ class _WifiProvisioningScreenState extends State<WifiProvisioningScreen> {
     super.dispose();
   }
 
-  Future<bool> _checkAndRequestBluetooth() async {
+  Future<bool> _ensureBluetoothOn() async {
     if (await FlutterBluePlus.isSupported == false) {
-      if (!mounted) return false;
-      AppToast.show(
-        context,
-        message: context.tr(
-          vi: "Thiết bị không hỗ trợ Bluetooth BLE",
-          en: "Bluetooth BLE is not supported on this device",
-        ),
-        type: ToastType.error,
-      );
+      if (mounted) {
+        setState(() => _error = context.tr(
+              vi: 'Điện thoại này không hỗ trợ Bluetooth BLE.',
+              en: 'This phone does not support Bluetooth BLE.',
+            ));
+      }
       return false;
     }
 
     final adapterState = await FlutterBluePlus.adapterState.first;
-    if (adapterState != BluetoothAdapterState.on) {
-      if (!mounted) return false;
-      final shouldTurnOn = await showDialog<bool>(
-        context: context,
-        builder: (dialogCtx) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              const Icon(Icons.bluetooth_disabled_rounded,
-                  color: Colors.blueAccent),
-              const SizedBox(width: 10),
-              Text(dialogCtx.tr(
-                  vi: "Bluetooth đang tắt", en: "Bluetooth is Off")),
-            ],
-          ),
-          content: Text(dialogCtx.tr(
-            vi: "Bạn cần bật Bluetooth để quét và nạp Wi-Fi cho Hộp thông minh. Bật Bluetooth ngay?",
-            en: "Bluetooth must be enabled to configure Wi-Fi for your Smart Box. Turn on now?",
-          )),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: Text(dialogCtx.tr(vi: "Hủy", en: "Cancel")),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: Text(dialogCtx.tr(vi: "Bật Bluetooth", en: "Turn On")),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldTurnOn == true) {
-        try {
-          await FlutterBluePlus.turnOn();
-          await Future.delayed(const Duration(seconds: 2));
-        } catch (e) {
-          if (!mounted) return false;
-          AppToast.show(
-            context,
-            message: context.tr(
-              vi: "Vui lòng mở Bluetooth trong Cài đặt hệ thống",
-              en: "Please turn on Bluetooth in System Settings",
-            ),
-            type: ToastType.info,
-          );
-          return false;
-        }
-      } else {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  Future<void> _sendWifiCredentials() async {
-    final ssid = _ssidController.text.trim();
-    final pass = _passController.text.trim();
-    final serial = widget.deviceSerial.trim().toUpperCase();
-
-    if (!RegExp(r'^DBX-[0-9A-F]{12}$').hasMatch(serial)) {
-      AppToast.show(
-        context,
-        message: context.tr(
-          vi: 'Mã QR hiện tại không chứa serial Hộp hợp lệ. Hãy nhập mã DBX-... in trên Hộp.',
-          en: 'This QR code has no valid Box serial. Enter the DBX-... code printed on the Box.',
-        ),
-        type: ToastType.error,
-      );
-      return;
-    }
-
-    if (ssid.isEmpty) {
-      AppToast.show(
-        context,
-        message: context.tr(
-            vi: "Vui lòng nhập tên Wi-Fi", en: "Please enter Wi-Fi name"),
-        type: ToastType.error,
-      );
-      return;
-    }
-
-    final isBtOk = await _checkAndRequestBluetooth();
-    if (!isBtOk) return;
-
-    setState(() {
-      _isSending = true;
-      _statusText = context.tr(
-        vi: "Đang tìm Hộp qua Bluetooth...",
-        en: "Searching for Box...",
-      );
-    });
-
+    if (adapterState == BluetoothAdapterState.on) return true;
+    if (!mounted) return false;
+    final turnOn = await showConfirmDialog(
+      context,
+      title: context.tr(vi: 'Bluetooth đang tắt', en: 'Bluetooth is off'),
+      message: context.tr(
+        vi: 'Cần bật Bluetooth để gửi Wi-Fi sang hộp.',
+        en: 'Bluetooth is needed to send Wi-Fi to the box.',
+      ),
+      confirmLabel: context.tr(vi: 'Bật Bluetooth', en: 'Turn on'),
+    );
+    if (!turnOn) return false;
     try {
-      await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 8),
-      );
-
-      final expectedBleName = 'SMARTBOX-$serial';
-      final legacyBleName = 'SMARTBOX-${serial.substring(4)}';
-      BluetoothDevice? targetDevice;
-      try {
-        final results = await FlutterBluePlus.scanResults.firstWhere((results) {
-          return results.any((r) {
-            final platformName = r.device.platformName.toUpperCase();
-            final advertisedName = r.advertisementData.advName.toUpperCase();
-            return platformName == expectedBleName ||
-                advertisedName == expectedBleName ||
-                platformName == legacyBleName ||
-                advertisedName == legacyBleName;
-          });
-        }).timeout(const Duration(seconds: 10));
-        for (final r in results) {
-          final platformName = r.device.platformName.toUpperCase();
-          final advertisedName = r.advertisementData.advName.toUpperCase();
-          if (platformName == expectedBleName ||
-              advertisedName == expectedBleName ||
-              platformName == legacyBleName ||
-              advertisedName == legacyBleName) {
-            targetDevice = r.device;
-            break;
-          }
-        }
-      } on TimeoutException {
-        // The scan stream stays open after startScan's timeout.
+      await FlutterBluePlus.turnOn();
+      await FlutterBluePlus.adapterState
+          .firstWhere((state) => state == BluetoothAdapterState.on)
+          .timeout(const Duration(seconds: 5));
+      return true;
+    } catch (error) {
+      debugPrint('Turn on Bluetooth error: $error');
+      if (mounted) {
+        setState(() => _error = context.tr(
+              vi: 'Hãy bật Bluetooth trong Cài đặt của điện thoại rồi thử lại.',
+              en: 'Turn on Bluetooth in your phone settings, then try again.',
+            ));
       }
+      return false;
+    }
+  }
 
+  Future<BluetoothDevice?> _findBox(String serial) async {
+    final names = {'SMARTBOX-$serial', 'SMARTBOX-${serial.substring(4)}'};
+    bool matches(ScanResult r) =>
+        names.contains(r.device.platformName.toUpperCase()) ||
+        names.contains(r.advertisementData.advName.toUpperCase());
+
+    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 8));
+    try {
+      final results = await FlutterBluePlus.scanResults
+          .firstWhere((results) => results.any(matches))
+          .timeout(const Duration(seconds: 10));
+      return results.firstWhere(matches).device;
+    } on TimeoutException {
+      return null;
+    } finally {
       await FlutterBluePlus.stopScan();
+    }
+  }
 
-      if (targetDevice == null) {
-        setState(() => _isSending = false);
-        if (!mounted) return;
-        AppToast.show(
-          context,
-          message: context.tr(
-            vi: "Không tìm thấy Bluetooth của Hộp. Hãy đảm bảo Hộp đang bật.",
-            en: "Box Bluetooth not found. Ensure the box is turned on.",
-          ),
-          type: ToastType.error,
-        );
+  Future<void> _send() async {
+    final ssid = _ssidController.text.trim();
+    // Wi-Fi passwords may legitimately start or end with spaces.
+    final pass = _passController.text;
+    final serial = normalizeDeviceSerial(widget.deviceSerial);
+
+    setState(() => _error = null);
+    if (!isValidDeviceSerial(serial)) {
+      setState(() => _error = context.tr(
+            vi: 'Mã serial của hộp không hợp lệ.',
+            en: 'The box serial is not valid.',
+          ));
+      return;
+    }
+    if (ssid.isEmpty) {
+      setState(() => _error = context.tr(
+            vi: 'Hãy nhập tên Wi-Fi.',
+            en: 'Enter the Wi-Fi name.',
+          ));
+      return;
+    }
+    if (!await _ensureBluetoothOn() || !mounted) return;
+
+    BluetoothDevice? box;
+    try {
+      setState(() => _step = _Step.searching);
+      box = await _findBox(serial);
+      if (!mounted) return;
+      if (box == null) {
+        _fail(context.tr(
+          vi: 'Không tìm thấy hộp qua Bluetooth. Hãy bật hộp và để điện thoại ở gần.',
+          en: 'Could not find the box over Bluetooth. Turn the box on and keep the phone close.',
+        ));
         return;
       }
 
-      setState(() {
-        _statusText = context.tr(
-          vi: "Đã tìm thấy Hộp! Đang kết nối Bluetooth...",
-          en: "Box found! Connecting via Bluetooth...",
-        );
-      });
-
-      await targetDevice.connect(timeout: const Duration(seconds: 6));
-
-      setState(() {
-        _statusText = context.tr(
-          vi: "Đang gửi cấu hình Wi-Fi xuống Hộp...",
-          en: "Sending Wi-Fi credentials to Box...",
-        );
-      });
-
-      final services = await targetDevice.discoverServices();
-      BluetoothCharacteristic? targetChar;
-
-      for (final s in services) {
-        if (s.uuid.toString().toLowerCase() == serviceUuid.toLowerCase()) {
-          for (final c in s.characteristics) {
-            if (c.uuid.toString().toLowerCase() ==
-                characteristicUuid.toLowerCase()) {
-              targetChar = c;
-              break;
-            }
+      setState(() => _step = _Step.connecting);
+      await box.connect(timeout: const Duration(seconds: 6));
+      final services = await box.discoverServices();
+      BluetoothCharacteristic? characteristic;
+      for (final service in services) {
+        if (service.uuid.toString().toLowerCase() != serviceUuid) continue;
+        for (final c in service.characteristics) {
+          if (c.uuid.toString().toLowerCase() == characteristicUuid) {
+            characteristic = c;
           }
         }
       }
-
-      if (targetChar == null) {
-        await targetDevice.disconnect();
-        setState(() => _isSending = false);
+      if (!mounted) return;
+      if (characteristic == null) {
+        await box.disconnect();
         if (!mounted) return;
-        AppToast.show(
-          context,
-          message: context.tr(
-            vi: "Không thể giao tiếp với cổng BLE của Hộp.",
-            en: "Could not communicate with Box BLE service.",
-          ),
-          type: ToastType.error,
-        );
+        _fail(context.tr(
+          vi: 'Hộp không có dịch vụ nhận Wi-Fi. Hãy cập nhật firmware.',
+          en: 'The box has no Wi-Fi setup service. Update its firmware.',
+        ));
         return;
       }
 
-      final payload = jsonEncode({"ssid": ssid, "pass": pass});
+      setState(() => _step = _Step.sending);
       try {
-        await targetChar.write(utf8.encode(payload));
-      } catch (writeErr) {
-        // Hộp ESP32 nhận xong SSID/PASS lập tức ngắt Bluetooth để ESP.restart()
-        // Nếu bắt lỗi Device is disconnected, đây chính là hành vi thành công của Hộp!
-        debugPrint(
-            "[BLE Write Note] Box disconnected after receiving Wi-Fi credentials: $writeErr");
+        await characteristic
+            .write(utf8.encode(jsonEncode({"ssid": ssid, "pass": pass})));
+      } catch (error) {
+        // The box restarts as soon as it stores the credentials, so a
+        // dropped connection here is the expected success path.
+        debugPrint('BLE write ended by box restart: $error');
       }
-
-      await Future.delayed(const Duration(milliseconds: 400));
+      await Future<void>.delayed(const Duration(milliseconds: 400));
       try {
-        await targetDevice.disconnect();
+        await box.disconnect();
       } catch (_) {}
 
       if (!mounted) return;
-      setState(() {
-        _statusText = context.tr(
-          vi: "Đang chờ Hộp kết nối Internet...",
-          en: "Waiting for the Box to connect to the Internet...",
-        );
-      });
-
-      final online = await SupabaseService.waitForDeviceOnline(
-        widget.deviceSerial,
-      );
+      setState(() => _step = _Step.waitingOnline);
+      final online = await SupabaseService.waitForDeviceOnline(serial);
       if (!mounted) return;
-      setState(() => _isSending = false);
-      AppToast.show(
-        context,
-        message: online
-            ? context.tr(
-                vi: "Hộp đã kết nối Wi-Fi và đang trực tuyến!",
-                en: "The Box is connected to Wi-Fi and online!",
-              )
-            : context.tr(
-                vi: "Đã gửi Wi-Fi nhưng chưa nhận được xác nhận online. Hãy kiểm tra mật khẩu Wi-Fi hoặc token Hộp.",
-                en: "Wi-Fi was sent, but the Box did not confirm online. Check the Wi-Fi password or device token.",
-              ),
-        type: online ? ToastType.success : ToastType.info,
-      );
-
-      Navigator.pop(context, online);
-    } catch (e) {
-      try {
-        await FlutterBluePlus.stopScan();
-      } catch (_) {}
-      if (!mounted) return;
-      setState(() => _isSending = false);
+      setState(() => _step = null);
+      if (!online) {
+        setState(() => _error = context.tr(
+              vi: 'Đã gửi Wi-Fi nhưng hộp chưa trực tuyến. Hãy kiểm tra lại mật khẩu Wi-Fi rồi thử lại.',
+              en: 'Wi-Fi was sent but the box is not online yet. Check the Wi-Fi password and try again.',
+            ));
+        return;
+      }
       AppToast.show(
         context,
         message: context.tr(
-          vi: "Lỗi kết nối Bluetooth: $e",
-          en: "Bluetooth connection error: $e",
+          vi: 'Hộp đã kết nối Wi-Fi và đang trực tuyến.',
+          en: 'The box is on Wi-Fi and online.',
         ),
-        type: ToastType.error,
+        type: ToastType.success,
       );
+      Navigator.pop(context, true);
+    } catch (error) {
+      debugPrint('Wi-Fi provisioning error: $error');
+      try {
+        await box?.disconnect();
+      } catch (_) {}
+      if (!mounted) return;
+      _fail(context.tr(
+        vi: 'Mất kết nối Bluetooth với hộp. Hãy thử lại.',
+        en: 'Lost the Bluetooth connection to the box. Please try again.',
+      ));
     }
   }
+
+  void _fail(String message) => setState(() {
+        _step = null;
+        _error = message;
+      });
+
+  String _stepLabel(_Step step) => switch (step) {
+        _Step.searching =>
+          context.tr(vi: 'Tìm hộp qua Bluetooth', en: 'Find the box'),
+        _Step.connecting =>
+          context.tr(vi: 'Kết nối với hộp', en: 'Connect to the box'),
+        _Step.sending =>
+          context.tr(vi: 'Gửi thông tin Wi-Fi', en: 'Send Wi-Fi'),
+        _Step.waitingOnline =>
+          context.tr(vi: 'Chờ hộp lên mạng', en: 'Wait for the box online'),
+      };
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Ios26BackButton(foregroundColor: Colors.white),
-                  const SizedBox(width: 12),
-                  Text(
+    return AppPage(
+      showBackButton: true,
+      title: context.tr(vi: 'Kết nối Wi-Fi', en: 'Connect Wi-Fi'),
+      subtitle: context.tr(
+        vi: 'Hộp ${widget.deviceSerial}',
+        en: 'Box ${widget.deviceSerial}',
+      ),
+      children: [
+        const SizedBox(height: AppSpacing.md),
+        AppCard(
+          child: Builder(builder: (context) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IconBadge(
+                    icon: AppIcons.bluetooth, color: context.colors.accent),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
                     context.tr(
-                        vi: "Cấu hình Wi-Fi Hộp", en: "Configure Box Wi-Fi"),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      vi: 'Bật hộp, để điện thoại ở gần rồi nhập Wi-Fi 2.4 GHz mà hộp sẽ dùng. Thông tin được gửi qua Bluetooth.',
+                      en: 'Turn the box on, keep your phone close and enter the 2.4 GHz Wi-Fi the box should use. It is sent over Bluetooth.',
                     ),
+                    style: context.text.bodyMedium,
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              LiquidGlassContainer(
-                borderRadius: 24,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.wifi_find_rounded,
-                            color: Color(0xFF38BDF8), size: 28),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                context.tr(
-                                    vi: "Đổi Wi-Fi qua Bluetooth",
-                                    en: "Change Wi-Fi via BLE"),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                "Mã Serial: ${widget.deviceSerial}",
-                                style: const TextStyle(
-                                    color: Color(0xFF94A3B8), fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _ssidController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: context.tr(
-                            vi: "Tên Wi-Fi (SSID)", en: "Wi-Fi Name (SSID)"),
-                        labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.wifi_rounded,
-                            color: Color(0xFF38BDF8)),
-                        filled: true,
-                        fillColor: Colors.black.withOpacity(0.25),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: _passController,
-                      obscureText: _isObscure,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: context.tr(
-                            vi: "Mật khẩu Wi-Fi", en: "Wi-Fi Password"),
-                        labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.lock_outline_rounded,
-                            color: Color(0xFF38BDF8)),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isObscure
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: const Color(0xFF94A3B8),
-                          ),
-                          onPressed: () =>
-                              setState(() => _isObscure = !_isObscure),
-                        ),
-                        filled: true,
-                        fillColor: Colors.black.withOpacity(0.25),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        onPressed: _isSending ? null : _sendWifiCredentials,
-                        icon: _isSending
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2),
-                              )
-                            : const Icon(Icons.bluetooth_searching_rounded,
-                                color: Colors.white),
-                        label: Text(
-                          _isSending
-                              ? context.tr(
-                                  vi: "ĐANG KẾT NỐI...", en: "CONNECTING...")
-                              : context.tr(
-                                  vi: "GỬI WI-FI SANG HỘP",
-                                  en: "SEND WI-FI TO BOX"),
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.brandBlue,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                      ),
-                    ),
-                    if (_isSending && _statusText.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Center(
-                        child: Text(
-                          _statusText,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              color: Color(0xFF38BDF8), fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ],
                 ),
+              ],
+            );
+          }),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppCard(
+          child: Column(
+            children: [
+              AppTextField(
+                controller: _ssidController,
+                label: context.tr(vi: 'Tên Wi-Fi (SSID)', en: 'Wi-Fi name'),
+                prefixIcon: AppIcons.wifi,
+                enabled: !_isSending,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              PasswordField(
+                controller: _passController,
+                label: context.tr(vi: 'Mật khẩu Wi-Fi', en: 'Wi-Fi password'),
+                autofillHints: const [],
+                onSubmitted: (_) => _isSending ? null : _send(),
               ),
             ],
           ),
         ),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          InlineMessage(_error!),
+        ],
+        if (_step != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          AppCard(
+            child: Column(
+              children: [
+                for (final step in _Step.values)
+                  _StepRow(
+                    label: _stepLabel(step),
+                    done: step.index < _step!.index,
+                    active: step == _step,
+                  ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        AppButton(
+          label: context.tr(vi: 'Gửi Wi-Fi sang hộp', en: 'Send Wi-Fi to box'),
+          icon: AppIcons.bluetooth,
+          isLoading: _isSending,
+          onPressed: _send,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        AppButton(
+          variant: AppButtonVariant.plain,
+          label: context.tr(vi: 'Để sau', en: 'Not now'),
+          onPressed: _isSending ? null : () => Navigator.pop(context, false),
+        ),
+      ],
+    );
+  }
+}
+
+class _StepRow extends StatelessWidget {
+  final String label;
+  final bool done;
+  final bool active;
+
+  const _StepRow({
+    required this.label,
+    required this.done,
+    required this.active,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs + 2),
+      child: Row(
+        children: [
+          SizedBox.square(
+            dimension: 22,
+            child: active
+                ? const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  )
+                : Icon(
+                    done ? AppIcons.success : Icons.circle_outlined,
+                    size: 20,
+                    color: done ? colors.locked : colors.textTertiary,
+                  ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              label,
+              style: context.text.bodyMedium?.copyWith(
+                color: done || active
+                    ? colors.textPrimary
+                    : colors.textPrimary.withValues(alpha: 0.5),
+                fontWeight: active ? FontWeight.w600 : null,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

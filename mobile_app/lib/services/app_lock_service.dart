@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 
@@ -17,6 +18,7 @@ class AppLockService {
   static String get _pinHashKey => '${_prefix}_pin_hash';
   static String get _pinSaltKey => '${_prefix}_pin_salt';
   static String get _biometricKey => '${_prefix}_biometric';
+  static String get _attemptsKey => '${_prefix}_failed_attempts';
 
   static Future<bool> get isPinEnabled async =>
       (await _storage.read(key: _pinHashKey)) != null;
@@ -59,7 +61,55 @@ class AppLockService {
   static Future<void> disablePin() async {
     await _storage.delete(key: _pinHashKey);
     await _storage.delete(key: _pinSaltKey);
+    await clearFailedAttempts();
     await setBiometricEnabled(false);
+  }
+
+  /// Wrong-PIN count and pause, kept in secure storage so closing the app
+  /// does not reset them.
+  static Future<FailedPinState> readFailedAttempts() async {
+    try {
+      final raw = await _storage.read(key: _attemptsKey);
+      if (raw == null) return const FailedPinState(0, null);
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return FailedPinState(
+        json['count'] as int? ?? 0,
+        DateTime.tryParse(json['blocked_until']?.toString() ?? ''),
+      );
+    } catch (error) {
+      debugPrint('Read failed PIN attempts error: $error');
+      return const FailedPinState(0, null);
+    }
+  }
+
+  static Future<void> saveFailedAttempts(FailedPinState state) async {
+    try {
+      await _storage.write(
+        key: _attemptsKey,
+        value: jsonEncode({
+          'count': state.count,
+          'blocked_until': state.blockedUntil?.toUtc().toIso8601String(),
+        }),
+      );
+    } catch (error) {
+      debugPrint('Save failed PIN attempts error: $error');
+    }
+  }
+
+  static Future<void> clearFailedAttempts() =>
+      _storage.delete(key: _attemptsKey);
+
+  static const _secureWindow = MethodChannel('anchor_box/secure_window');
+
+  /// Hides the app from the recent-apps preview and blocks screenshots
+  /// (Android FLAG_SECURE). No-op on other platforms.
+  static Future<void> setSecureWindow(bool secure) async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      await _secureWindow.invokeMethod<void>('setSecure', secure);
+    } catch (error) {
+      debugPrint('Set secure window error: $error');
+    }
   }
 
   static Future<void> setBiometricEnabled(bool enabled) async {
@@ -90,4 +140,10 @@ class AppLockService {
     }
     return difference == 0;
   }
+}
+
+class FailedPinState {
+  final int count;
+  final DateTime? blockedUntil;
+  const FailedPinState(this.count, this.blockedUntil);
 }

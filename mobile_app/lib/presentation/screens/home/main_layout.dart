@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+
+import '../../../core/constants/app_assets.dart';
+import '../../../core/devices/device_controller.dart';
 import '../../../core/localization/language_controller.dart';
+import '../../../core/security/app_lock_controller.dart';
 import '../../../core/notifications/notification_controller.dart';
-import '../../widgets/liquid_glass_segmented_control.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../components/components.dart';
 import 'access_screen.dart';
 import 'devices_screen.dart';
 import 'home_screen.dart';
@@ -16,121 +20,76 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  int _currentIndex = 0;
-  double _page = 0;
-  late final PageController _pageController;
-  final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
+  int _index = 0;
+  final Set<int> _visited = {0};
 
-  late final List<Widget> _screens;
+  late final List<Widget> _tabs = [
+    HomeScreen(onOpenTab: _select),
+    const DevicesScreen(),
+    const AccessScreen(),
+    const ProfileScreen(),
+  ];
 
   @override
   void initState() {
     super.initState();
+    // Start shared data now so every tab opens with it ready.
+    globalDeviceController.initialize();
     globalNotificationController.initialize();
-    _screens = [
-      HomeScreen(key: _homeKey),
-      const DevicesScreen(key: ValueKey('DevicesScreen')),
-      const AccessScreen(key: ValueKey('AccessScreen')),
-      const ProfileScreen(key: ValueKey('ProfileScreen')),
-    ];
-    _pageController = PageController();
-    _pageController.addListener(_syncPagePosition);
-  }
-
-  void _syncPagePosition() {
-    if (!_pageController.hasClients) return;
-    final nextPage = _pageController.page ?? _currentIndex.toDouble();
-    if (mounted && nextPage != _page) {
-      setState(() => _page = nextPage);
-    }
-  }
-
-  void _selectPage(int index) {
-    setState(() => _currentIndex = index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 420),
-      curve: Curves.easeOutCubic,
-    );
+    // After a sign-in this user's PIN settings apply from now on, without
+    // asking for the PIN right after the password.
+    globalAppLockController.refresh();
   }
 
   @override
-  void dispose() {
-    _pageController
-      ..removeListener(_syncPagePosition)
-      ..dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Decode the wallpaper once; every tab and pushed page reuses it.
+    precacheImage(const AssetImage(AppAssets.wallpaperHome), context);
+  }
+
+  void _select(int index) {
+    setState(() {
+      _index = index;
+      _visited.add(index);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
+      extendBody: true,
+      backgroundColor: Colors.black,
+      body: IndexedStack(
+        index: _index,
         children: [
-          // PageView content
-          PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              if (_currentIndex != index) {
-                setState(() => _currentIndex = index);
-              }
-            },
-            children: _screens,
+          for (var i = 0; i < _tabs.length; i++)
+            _visited.contains(i) ? _tabs[i] : const SizedBox.shrink(),
+        ],
+      ),
+      bottomNavigationBar: GlassTabBar(
+        selectedIndex: _index,
+        onSelected: _select,
+        items: [
+          GlassTabItem(
+            icon: AppIcons.box,
+            selectedIcon: AppIcons.boxFill,
+            label: context.tr(vi: 'Thiết bị', en: 'Devices'),
           ),
-
-          // Floating iOS 26 Liquid Glass Segmented Navigation Bar
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: 24,
-            child: LiquidGlassSegmentedControl(
-              height: 64,
-              borderRadius: 32,
-              selectorBorderRadius: 25,
-              selectedIndex: _currentIndex,
-              position: _page,
-              OnItemSelected: _selectPage,
-              items: [
-                LiquidGlassSegmentItem(
-                  label: context.tr(vi: "Trang chủ", en: "Home"),
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home_rounded,
-                ),
-                LiquidGlassSegmentItem(
-                  label: context.tr(vi: "Thiết bị", en: "Devices"),
-                  icon: Icons.devices_outlined,
-                  activeIcon: Icons.devices_rounded,
-                ),
-                LiquidGlassSegmentItem(
-                  label: context.tr(vi: "Truy cập", en: "Access"),
-                  icon: Icons.vpn_key_outlined,
-                  activeIcon: Icons.vpn_key_rounded,
-                ),
-                LiquidGlassSegmentItem(
-                  label: context.tr(vi: "Cá nhân", en: "Profile"),
-                  icon: Icons.person_outline_rounded,
-                  activeIcon: Icons.person_rounded,
-                ),
-              ],
-            ),
+          GlassTabItem(
+            icon: AppIcons.pin,
+            selectedIcon: AppIcons.pinFill,
+            label: context.tr(vi: 'Mã PIN', en: 'PINs'),
           ),
-
-          Positioned(
-            right: 22,
-            bottom: 104,
-            child: FloatingActionButton(
-              heroTag: 'main_add_device',
-              onPressed: () => _homeKey.currentState?.showAddDeviceModal(),
-              backgroundColor: AppColors.brandBlue,
-              elevation: 7,
-              shape: const CircleBorder(),
-              child: const Icon(
-                Icons.add_rounded,
-                color: Colors.white,
-                size: 30,
-              ),
-            ),
+          GlassTabItem(
+            icon: AppIcons.sharing,
+            selectedIcon: AppIcons.sharingFill,
+            label: context.tr(vi: 'Chia sẻ', en: 'Sharing'),
+          ),
+          GlassTabItem(
+            icon: AppIcons.profile,
+            selectedIcon: AppIcons.profileFill,
+            label: context.tr(vi: 'Cá nhân', en: 'Profile'),
           ),
         ],
       ),

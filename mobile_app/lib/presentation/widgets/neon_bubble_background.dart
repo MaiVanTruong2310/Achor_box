@@ -26,6 +26,12 @@ class NeonBubble {
 
 /// Reusable Page Wrapper Widget for Ambient Glowing Neon Blur Bubbles
 /// Perfectly pairs with LiquidGlassContainer for iOS 26 Liquid Glass UI.
+///
+/// Performance: the bubbles are static by default and painted once in their
+/// own [RepaintBoundary]. A looping animation would force a new frame 60-120
+/// times per second for as long as the page is visible, and every glass
+/// surface above it would be recomposited each frame (the phone heats up).
+/// Set [animate] only for short-lived screens.
 class NeonBubbleBackground extends StatefulWidget {
   final Widget child;
   final Color? backgroundColor;
@@ -39,7 +45,7 @@ class NeonBubbleBackground extends StatefulWidget {
     this.backgroundColor,
     this.customBubbles,
     this.preset = NeonBubblePreset.iosLiquid,
-    this.animate = true,
+    this.animate = false,
   });
 
   @override
@@ -48,24 +54,41 @@ class NeonBubbleBackground extends StatefulWidget {
 
 class _NeonBubbleBackgroundState extends State<NeonBubbleBackground>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
+  AnimationController? _animationController;
+
+  /// Shared by every `BackdropFilter.grouped` on this page, so real blurs
+  /// sample the backdrop once instead of once per glass surface.
+  final BackdropKey _backdropKey = BackdropKey();
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    );
+    _syncAnimation();
+  }
 
+  @override
+  void didUpdateWidget(covariant NeonBubbleBackground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.animate != widget.animate) _syncAnimation();
+  }
+
+  void _syncAnimation() {
     if (widget.animate) {
-      _animationController.repeat(reverse: true);
+      // The ticker is muted automatically while the page is off screen
+      // (TickerMode), so a hidden tab does not keep rendering.
+      _animationController ??= AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 8),
+      )..repeat(reverse: true);
+    } else {
+      _animationController?.dispose();
+      _animationController = null;
     }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -167,59 +190,76 @@ class _NeonBubbleBackgroundState extends State<NeonBubbleBackground>
         (isDark ? const Color(0xFF0B1220) : Colors.white);
     final glowMultiplier = isDark ? 0.55 : 1.0;
 
+    Widget bubbleLayer(double floatOffset) => Stack(
+          children: [
+            for (final (index, bubble) in bubbles.indexed)
+              Align(
+                alignment: bubble.alignment,
+                child: Transform.translate(
+                  offset: Offset(
+                    (index % 3 == 0) ? floatOffset * 0.5 : -floatOffset * 0.5,
+                    (index % 2 == 0) ? floatOffset : -floatOffset,
+                  ),
+                  child: _BubbleDot(
+                    bubble: bubble,
+                    glowMultiplier: glowMultiplier,
+                  ),
+                ),
+              ),
+          ],
+        );
+
+    final controller = _animationController;
+    final background = controller == null
+        ? bubbleLayer(0)
+        : AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) =>
+                bubbleLayer(math.sin(controller.value * math.pi) * 12),
+          );
+
     return Scaffold(
       backgroundColor: effectiveBackground,
-      body: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          final animValue = _animationController.value;
-          final floatOffset = math.sin(animValue * math.pi) * 12;
+      body: BackdropGroup(
+        backdropKey: _backdropKey,
+        child: Stack(
+          children: [
+            Positioned.fill(child: RepaintBoundary(child: background)),
+            // Page content is outside the animated subtree: it never rebuilds
+            // or repaints because the bubbles move.
+            widget.child,
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-          return Stack(
-            children: [
-              // Render background ambient neon bubbles
-              ...bubbles.asMap().entries.map((entry) {
-                final index = entry.key;
-                final bubble = entry.value;
+class _BubbleDot extends StatelessWidget {
+  final NeonBubble bubble;
+  final double glowMultiplier;
 
-                final double currentYOffset =
-                    (index % 2 == 0) ? floatOffset : -floatOffset;
-                final double currentXOffset =
-                    (index % 3 == 0) ? floatOffset * 0.5 : -floatOffset * 0.5;
+  const _BubbleDot({required this.bubble, required this.glowMultiplier});
 
-                return Align(
-                  alignment: bubble.alignment,
-                  child: Transform.translate(
-                    offset: Offset(currentXOffset, currentYOffset),
-                    child: Container(
-                      width: bubble.radius,
-                      height: bubble.radius,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            bubble.color.withOpacity(
-                              (bubble.opacity * glowMultiplier).clamp(0.0, 1.0),
-                            ),
-                            bubble.color.withOpacity(
-                              (bubble.opacity * 0.3 * glowMultiplier)
-                                  .clamp(0.0, 1.0),
-                            ),
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-
-              // Main Child Page Content
-              widget.child,
+  @override
+  Widget build(BuildContext context) {
+    final strength =
+        (bubble.opacity * glowMultiplier).clamp(0.0, 1.0).toDouble();
+    return SizedBox(
+      width: bubble.radius,
+      height: bubble.radius,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              bubble.color.withValues(alpha: strength),
+              bubble.color.withValues(alpha: strength * 0.3),
+              Colors.transparent,
             ],
-          );
-        },
+            stops: const [0.0, 0.5, 1.0],
+          ),
+        ),
       ),
     );
   }

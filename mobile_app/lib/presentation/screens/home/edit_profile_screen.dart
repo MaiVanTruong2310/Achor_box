@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/localization/language_controller.dart';
-import '../../../services/supabase_service.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/form_validators.dart';
 import '../../../services/notification_service.dart';
+import '../../../services/supabase_service.dart';
+import '../../components/components.dart';
 import '../../widgets/app_toast.dart';
-import '../../widgets/ios26_back_button.dart';
-import '../../widgets/liquid_glass_container.dart';
-import '../../widgets/neon_bubble_background.dart';
 
+enum _PhotoAction { camera, gallery, remove }
+
+/// Edits the name, phone and photo stored in `public.profiles` (and Auth
+/// metadata as fallback). The sign-in email is read-only here.
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -23,29 +26,84 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+  String _savedName = '';
+  String _savedPhone = '';
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isUploadingAvatar = false;
   String? _avatarUrl;
 
+  bool get _isDirty =>
+      _nameController.text.trim() != _savedName ||
+      _phoneController.text.trim() != _savedPhone;
+
   @override
   void initState() {
     super.initState();
+    // Show what is already known at once; the database copy follows.
+    _emailController.text = SupabaseService.currentUser?.email ?? '';
+    _nameController.text = SupabaseService.cachedUserName;
+    _avatarUrl = SupabaseService.cachedAvatarUrl;
     _loadProfile();
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadProfile() async {
-    final user = SupabaseService.currentUser;
     final profile = await SupabaseService.getCurrentProfile();
     if (!mounted) return;
-    _nameController.text =
-        (profile?['full_name'] as String?) ?? SupabaseService.cachedUserName;
-    _phoneController.text = (profile?['phone'] as String?) ?? '';
-    _emailController.text = user?.email ?? '';
     setState(() {
+      _savedName =
+          (profile?['full_name'] as String?)?.trim() ?? _nameController.text;
+      _savedPhone = (profile?['phone'] as String?)?.trim() ?? '';
+      _nameController.text = _savedName;
+      _phoneController.text = _savedPhone;
       _avatarUrl = SupabaseService.cachedAvatarUrl;
       _isLoading = false;
     });
+  }
+
+  Future<void> _choosePhoto() async {
+    final hasPhoto = _avatarUrl?.isNotEmpty == true;
+    final action = await showChoiceSheet<_PhotoAction>(
+      context,
+      title: context.tr(vi: 'Ảnh đại diện', en: 'Profile photo'),
+      options: [
+        ChoiceOption(
+          value: _PhotoAction.camera,
+          label: context.tr(vi: 'Chụp ảnh mới', en: 'Take a photo'),
+          icon: AppIcons.camera,
+        ),
+        ChoiceOption(
+          value: _PhotoAction.gallery,
+          label: context.tr(vi: 'Chọn từ thư viện', en: 'Choose from library'),
+          icon: AppIcons.photo,
+          iconColor: context.colors.indigo,
+        ),
+        if (hasPhoto)
+          ChoiceOption(
+            value: _PhotoAction.remove,
+            label: context.tr(vi: 'Xóa ảnh', en: 'Remove photo'),
+            icon: AppIcons.trash,
+            destructive: true,
+          ),
+      ],
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case _PhotoAction.camera:
+        await _changeAvatar(ImageSource.camera);
+      case _PhotoAction.gallery:
+        await _changeAvatar(ImageSource.gallery);
+      case _PhotoAction.remove:
+        await _removeAvatar();
+    }
   }
 
   Future<void> _changeAvatar(ImageSource source) async {
@@ -57,6 +115,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
     if (picked == null || !mounted) return;
 
+    final colors = context.colors;
     final cropped = await ImageCropper().cropImage(
       sourcePath: picked.path,
       compressFormat: ImageCompressFormat.jpg,
@@ -66,9 +125,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         AndroidUiSettings(
           toolbarTitle:
               context.tr(vi: 'Cắt ảnh đại diện', en: 'Crop profile photo'),
-          toolbarColor: const Color(0xFF071422),
+          toolbarColor: colors.brand,
           toolbarWidgetColor: Colors.white,
-          activeControlsWidgetColor: AppColors.brandBlue,
+          activeControlsWidgetColor: colors.accent,
           initAspectRatio: CropAspectRatioPreset.square,
           lockAspectRatio: true,
         ),
@@ -87,6 +146,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await cropped.readAsBytes(),
       'jpg',
     );
+    // Only report success when both the upload and the profile row worked.
     final updated =
         url != null && await SupabaseService.updateProfileAvatarUrl(url);
     if (!mounted) return;
@@ -101,50 +161,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               vi: 'Đã cập nhật ảnh đại diện.', en: 'Profile photo updated.')
           : (SupabaseService.lastAvatarError ??
               context.tr(
-                  vi: 'Không thể cập nhật ảnh.',
-                  en: 'Unable to update the photo.')),
+                  vi: 'Không cập nhật được ảnh. Hãy thử lại.',
+                  en: 'Could not update the photo. Please try again.')),
       type: updated ? ToastType.success : ToastType.error,
     );
   }
 
-  void _showAvatarSource() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        child: LiquidGlassContainer(
-          borderRadius: 26,
-          blur: 26,
-          tintOpacity: 0.24,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined,
-                    color: AppColors.brandBlue),
-                title: Text(
-                    context.tr(vi: 'Chụp ảnh mới', en: 'Take a new photo')),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _changeAvatar(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined,
-                    color: AppColors.brandBlue),
-                title: Text(context.tr(
-                    vi: 'Chọn từ thư viện', en: 'Choose from library')),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _changeAvatar(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+  Future<void> _removeAvatar() async {
+    setState(() => _isUploadingAvatar = true);
+    final removed = await SupabaseService.removeAvatar();
+    if (!mounted) return;
+    setState(() {
+      if (removed) _avatarUrl = null;
+      _isUploadingAvatar = false;
+    });
+    AppToast.show(
+      context,
+      message: removed
+          ? context.tr(vi: 'Đã xóa ảnh đại diện.', en: 'Profile photo removed.')
+          : context.tr(
+              vi: 'Không xóa được ảnh. Hãy thử lại.',
+              en: 'Could not remove the photo. Please try again.'),
+      type: removed ? ToastType.success : ToastType.error,
     );
   }
 
@@ -152,287 +190,240 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
     setState(() => _isSaving = true);
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
     final success = await SupabaseService.updateCurrentProfile(
-      fullName: _nameController.text,
-      phone: _phoneController.text,
+      fullName: name,
+      phone: phone,
     );
     if (!mounted) return;
-    setState(() => _isSaving = false);
+    setState(() {
+      _isSaving = false;
+      if (success) {
+        _savedName = name;
+        _savedPhone = phone;
+      }
+    });
     AppToast.show(
       context,
       message: success
           ? context.tr(vi: 'Đã lưu hồ sơ.', en: 'Profile saved.')
           : context.tr(
-              vi: 'Không thể lưu hồ sơ.', en: 'Unable to save profile.'),
+              vi: 'Không lưu được hồ sơ. Hãy kiểm tra kết nối mạng.',
+              en: 'Could not save the profile. Check your connection.'),
       type: success ? ToastType.success : ToastType.error,
     );
-    if (success) {
-      await NotificationService.create(
-        type: 'profile_updated',
-        title: 'Profile updated',
-        body: context.tr(
-          vi: 'Thông tin hồ sơ của bạn đã được cập nhật.',
-          en: 'Your profile information was updated.',
-        ),
-      );
-      if (mounted) Navigator.pop(context, true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _emailController.dispose();
-    super.dispose();
+    if (!success) return;
+    await NotificationService.create(
+      type: 'profile_updated',
+      title: 'Profile updated',
+      body: context.tr(
+        vi: 'Thông tin hồ sơ của bạn đã được cập nhật.',
+        en: 'Your profile information was updated.',
+      ),
+    );
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = isDark ? const Color(0xFFF8FAFC) : AppColors.textPrimary;
-    final secondary =
-        isDark ? const Color(0xFFA7B5C8) : AppColors.textSecondary;
-
-    return NeonBubbleBackground(
-      preset: NeonBubblePreset.iosLiquid,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Ios26BackButton(),
-                            Expanded(
-                              child: Text(
-                                context.tr(
-                                    vi: 'Chỉnh sửa hồ sơ', en: 'Edit profile'),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: primary),
-                              ),
-                            ),
-                            const SizedBox(width: 88),
-                          ],
-                        ),
-                        const SizedBox(height: 26),
-                        Center(
-                          child: GestureDetector(
-                            onTap:
-                                _isUploadingAvatar ? null : _showAvatarSource,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Container(
-                                  width: 108,
-                                  height: 108,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppColors.brandBlue
-                                        .withValues(alpha: 0.15),
-                                    border: Border.all(
-                                        color:
-                                            Colors.white.withValues(alpha: 0.8),
-                                        width: 2),
-                                    image: _avatarUrl?.isNotEmpty == true
-                                        ? DecorationImage(
-                                            image: NetworkImage(_avatarUrl!),
-                                            fit: BoxFit.cover)
-                                        : null,
-                                  ),
-                                  child: _isUploadingAvatar
-                                      ? const Center(
-                                          child: CircularProgressIndicator(
-                                              color: Colors.white))
-                                      : (_avatarUrl?.isNotEmpty == true
-                                          ? null
-                                          : Icon(Icons.person_rounded,
-                                              size: 48, color: secondary)),
-                                ),
-                                Positioned(
-                                  right: -2,
-                                  bottom: 3,
-                                  child: Container(
-                                    width: 34,
-                                    height: 34,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.brandBlue,
-                                      border: Border.all(
-                                          color: Colors.white, width: 2),
-                                    ),
-                                    child: const Icon(Icons.camera_alt_rounded,
-                                        color: Colors.white, size: 17),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Center(
-                          child: TextButton(
-                            onPressed:
-                                _isUploadingAvatar ? null : _showAvatarSource,
-                            child: Text(context.tr(
-                                vi: 'Thay đổi ảnh', en: 'Change photo')),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        LiquidGlassContainer(
-                          borderRadius: 26,
-                          blur: 22,
-                          tintOpacity: 0.13,
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _FieldLabel(
-                                  text: context.tr(
-                                      vi: 'Họ và tên', en: 'Full name'),
-                                  color: primary),
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                controller: _nameController,
-                                textInputAction: TextInputAction.next,
-                                validator: (value) =>
-                                    value == null || value.trim().length < 2
-                                        ? context.tr(
-                                            vi: 'Vui lòng nhập họ tên hợp lệ',
-                                            en: 'Enter a valid name')
-                                        : null,
-                                decoration: _decoration(
-                                    Icons.person_outline_rounded, isDark),
-                              ),
-                              const SizedBox(height: 18),
-                              _FieldLabel(
-                                  text: context.tr(vi: 'Email', en: 'Email'),
-                                  color: primary),
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                controller: _emailController,
-                                readOnly: true,
-                                decoration: _decoration(
-                                        Icons.mail_outline_rounded, isDark)
-                                    .copyWith(
-                                  suffixIcon: Icon(Icons.lock_outline_rounded,
-                                      size: 18, color: secondary),
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                context.tr(
-                                  vi: 'Email đăng nhập không thể thay đổi tại đây.',
-                                  en: 'The sign-in email cannot be changed here.',
-                                ),
-                                style:
-                                    TextStyle(fontSize: 11, color: secondary),
-                              ),
-                              const SizedBox(height: 18),
-                              _FieldLabel(
-                                  text: context.tr(
-                                      vi: 'Số điện thoại', en: 'Phone number'),
-                                  color: primary),
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                textInputAction: TextInputAction.done,
-                                onFieldSubmitted: (_) => _save(),
-                                decoration:
-                                    _decoration(Icons.phone_outlined, isDark)
-                                        .copyWith(
-                                  hintText: context.tr(
-                                      vi: 'Nhập số điện thoại',
-                                      en: 'Enter phone number'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton.icon(
-                            onPressed:
-                                _isSaving || _isUploadingAvatar ? null : _save,
-                            icon: _isSaving
-                                ? const SizedBox(
-                                    width: 19,
-                                    height: 19,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.check_rounded,
-                                    color: Colors.white),
-                            label: Text(
-                              context.tr(
-                                  vi: 'LƯU THAY ĐỔI', en: 'SAVE CHANGES'),
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.brandBlue,
-                              disabledBackgroundColor:
-                                  AppColors.brandBlue.withValues(alpha: 0.55),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+    final busy = _isSaving || _isUploadingAvatar;
+    return AppPage(
+      showBackButton: true,
+      title: context.tr(vi: 'Hồ sơ', en: 'Profile'),
+      subtitle: context.tr(
+        vi: 'Người được chia sẻ hộp sẽ thấy tên và ảnh này',
+        en: 'People you share a box with see this name and photo',
+      ),
+      children: [
+        const SizedBox(height: AppSpacing.xl),
+        _AvatarEditor(
+          name: _nameController.text,
+          imageUrl: _avatarUrl,
+          uploading: _isUploadingAvatar,
+          onTap: busy ? null : _choosePhoto,
         ),
-      ),
-    );
-  }
-
-  InputDecoration _decoration(IconData icon, bool isDark) {
-    return InputDecoration(
-      prefixIcon: Icon(icon, color: AppColors.brandBlue, size: 21),
-      filled: true,
-      fillColor: isDark
-          ? const Color(0xFF0F1C2D).withValues(alpha: 0.68)
-          : Colors.white.withValues(alpha: 0.54),
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-            color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.65)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: AppColors.brandBlue, width: 1.3),
-      ),
+        const SizedBox(height: AppSpacing.xl),
+        // Glass inputs with white text, as on the sign-in screens.
+        Theme(
+          data: AppBackdrop.theme,
+          child: Form(
+            key: _formKey,
+            onChanged: () => setState(() {}),
+            child: _ProfileFields(
+              nameController: _nameController,
+              phoneController: _phoneController,
+              emailController: _emailController,
+              enabled: !_isLoading && !_isSaving,
+              onSubmit: _save,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        AppButton(
+          label: context.tr(vi: 'Lưu thay đổi', en: 'Save changes'),
+          icon: AppIcons.check,
+          isLoading: _isSaving,
+          onPressed: _isLoading || busy || !_isDirty ? null : _save,
+        ),
+      ],
     );
   }
 }
 
-class _FieldLabel extends StatelessWidget {
-  final String text;
-  final Color color;
+class _AvatarEditor extends StatelessWidget {
+  final String name;
+  final String? imageUrl;
+  final bool uploading;
+  final VoidCallback? onTap;
 
-  const _FieldLabel({required this.text, required this.color});
+  const _AvatarEditor({
+    required this.name,
+    required this.imageUrl,
+    required this.uploading,
+    required this.onTap,
+  });
+
+  static const double _size = 116;
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style:
-            TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color));
+    return Column(
+      children: [
+        Semantics(
+          button: true,
+          label: context.tr(vi: 'Đổi ảnh đại diện', en: 'Change photo'),
+          child: GestureDetector(
+            onTap: onTap,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      width: 2,
+                    ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      UserAvatar(name: name, imageUrl: imageUrl, size: _size),
+                      if (uploading)
+                        Container(
+                          width: _size,
+                          height: _size,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withValues(alpha: 0.45),
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator.adaptive(),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 2,
+                  child: GlassSurface(
+                    capsule: true,
+                    style: GlassStyle.light,
+                    child: SizedBox.square(
+                      dimension: 38,
+                      child: Icon(
+                        AppIcons.camera,
+                        size: 20,
+                        color: context.colors.accent,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        TextButton(
+          onPressed: onTap,
+          style: TextButton.styleFrom(foregroundColor: Colors.white),
+          child: Text(context.tr(vi: 'Đổi ảnh', en: 'Change photo')),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileFields extends StatelessWidget {
+  final TextEditingController nameController;
+  final TextEditingController phoneController;
+  final TextEditingController emailController;
+  final bool enabled;
+  final VoidCallback onSubmit;
+
+  const _ProfileFields({
+    required this.nameController,
+    required this.phoneController,
+    required this.emailController,
+    required this.enabled,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppTextField(
+          controller: nameController,
+          label: context.tr(vi: 'Họ và tên', en: 'Full name'),
+          prefixIcon: AppIcons.person,
+          enabled: enabled,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.name],
+          validator: (value) => value == null || value.trim().length < 2
+              ? context.tr(
+                  vi: 'Hãy nhập họ tên (ít nhất 2 ký tự).',
+                  en: 'Enter your name (at least 2 characters).')
+              : null,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          controller: phoneController,
+          label: context.tr(vi: 'Số điện thoại', en: 'Phone number'),
+          hint: '0912 345 678',
+          prefixIcon: Icons.phone_rounded,
+          enabled: enabled,
+          keyboardType: TextInputType.phone,
+          textInputAction: TextInputAction.done,
+          autofillHints: const [AutofillHints.telephoneNumber],
+          validator: FormValidators.optionalPhone(context),
+          onSubmitted: (_) => onSubmit(),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          controller: emailController,
+          label: context.tr(vi: 'Email đăng nhập', en: 'Sign-in email'),
+          prefixIcon: AppIcons.email,
+          readOnly: true,
+          suffix:
+              Icon(AppIcons.lock, size: 18, color: context.colors.textTertiary),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+          child: Text(
+            context.tr(
+              vi: 'Email dùng để đăng nhập nên không đổi được ở đây.',
+              en: 'Your sign-in email cannot be changed here.',
+            ),
+            style: context.text.bodySmall,
+          ),
+        ),
+      ],
+    );
   }
 }

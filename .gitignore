@@ -30,3 +30,10 @@ backend/
 
 # Flutter Android build output
 mobile_app/android/build/
+
+# Playwright screenshots/logs from UI checks
+.playwright-mcp/
+
+# Altium auto-generated history and previews
+PCB_DELIVERY BOX-IOT/History/
+**/__Previews/
