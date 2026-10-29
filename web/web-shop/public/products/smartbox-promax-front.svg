@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%" fill="none">
+  <rect width="600" height="600" fill="#f8fafc" rx="12"/>
+  <ellipse cx="300" cy="540" rx="210" ry="26" fill="#cbd5e1" opacity="0.6"/>
+
+  <!-- Pro Max Body: Two-Tier Structure (Upper Envelope/Small package drop slot + Lower Main Smart Chamber) -->
+  <rect x="120" y="120" width="360" height="400" rx="14" fill="#ffffff" stroke="#090d16" stroke-width="4"/>
+
+  <!-- Top Roof / Angled weather shade -->
+  <path d="M105 120 L300 85 L495 120 Z" fill="#1e293b" stroke="#090d16" stroke-width="4"/>
+
+  <!-- Upper Section: One-way Anti-fishing Mail / Small Parcel Drop Slot -->
+  <rect x="150" y="135" width="300" height="42" rx="6" fill="#0f172a"/>
+  <rect x="170" y="145" width="260" height="12" rx="3" fill="#334155"/>
+  <text x="300" y="170" text-anchor="middle" fill="#94a3b8" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="600">KHE THẢ THƯ &amp; KIỆN NHỎ TỰ ĐỘNG CHỐNG MÓC</text>
+
+  <!-- Divider Line -->
+  <line x1="120" y1="188" x2="480" y2="188" stroke="#cbd5e1" stroke-width="2"/>
+
+  <!-- Upper Camera Hub (Front Face 2K AI Security Camera) -->
+  <rect x="225" y="200" width="150" height="34" rx="17" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="245" cy="217" r="10" fill="#020617" stroke="#60a5fa" stroke-width="2"/>
+  <circle cx="245" cy="217" r="5" fill="#1d4ed8"/>
+  <circle cx="243" cy="215" r="2" fill="#ffffff"/>
+  <circle cx="262" cy="217" r="3" fill="#10b981"/>
+  <text x="272" y="221" fill="#60a5fa" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="800">2K AI DUAL-CAM</text>
+
+  <!-- Internal Chamber Inspection Camera indicator badge -->
+  <rect x="145" y="245" width="135" height="20" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="212" y="259" text-anchor="middle" fill="#1e40af" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700">• CAM NỘI SOI BUỒNG CHỨA</text>
+
+  <rect x="320" y="245" width="135" height="20" rx="4" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="387" y="259" text-anchor="middle" fill="#15803d" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700">• PIN DỰ PHÒNG 24 GIỜ</text>
+
+  <!-- Keypad &amp; Touch Screen Hub -->
+  <rect x="220" y="280" width="160" height="150" rx="10" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+
+  <!-- Keypad Buttons -->
+  <rect x="235" y="295" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="244" y="310" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">1</text>
+  <rect x="268" y="295" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="277" y="310" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">2</text>
+  <rect x="301" y="295" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="310" y="310" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">3</text>
+  <rect x="334" y="295" width="26" height="22" rx="3" fill="#2563eb"/>
+  <text x="342" y="310" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">A</text>
+
+  <rect x="235" y="325" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="244" y="340" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">4</text>
+  <rect x="268" y="325" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="277" y="340" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">5</text>
+  <rect x="301" y="325" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="310" y="340" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">6</text>
+  <rect x="334" y="325" width="26" height="22" rx="3" fill="#2563eb"/>
+  <text x="342" y="340" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">B</text>
+
+  <rect x="235" y="355" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="244" y="370" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">7</text>
+  <rect x="268" y="355" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="277" y="370" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">8</text>
+  <rect x="301" y="355" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="310" y="370" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">9</text>
+  <rect x="334" y="355" width="26" height="22" rx="3" fill="#2563eb"/>
+  <text x="342" y="370" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">C</text>
+
+  <rect x="235" y="385" width="26" height="22" rx="3" fill="#475569"/>
+  <text x="244" y="400" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">*</text>
+  <rect x="268" y="385" width="26" height="22" rx="3" fill="#1e293b"/>
+  <text x="277" y="400" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">0</text>
+  <rect x="301" y="385" width="26" height="22" rx="3" fill="#475569"/>
+  <text x="310" y="400" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">#</text>
+  <rect x="334" y="385" width="26" height="22" rx="3" fill="#2563eb"/>
+  <text x="342" y="400" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">D</text>
+
+  <text x="300" y="422" text-anchor="middle" fill="#94a3b8" font-family="'Plus Jakarta Sans', sans-serif" font-size="8" font-weight="600">AUTO-LED ILLUMINATED</text>
+
+  <!-- Bottom Badges -->
+  <rect x="200" y="445" width="200" height="24" rx="4" fill="#0f172a"/>
+  <text x="300" y="461" text-anchor="middle" fill="#f59e0b" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="800">2-TIER • DUAL-CAM • 18KG</text>
+
+  <text x="300" y="495" text-anchor="middle" fill="#0f172a" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="700">ANCHOR BOX PRO MAX</text>
+</svg>

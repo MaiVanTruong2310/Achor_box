@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-order-enum-awaiting-payment" author="smartbox" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM pg_type WHERE typname = 'order_status'
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            ALTER TYPE public.order_status ADD VALUE IF NOT EXISTS 'awaiting_payment';
+        </sql>
+    </changeSet>
+
+    <changeSet id="001-order-enum-paid" author="smartbox" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM pg_type WHERE typname = 'order_status'
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            ALTER TYPE public.order_status ADD VALUE IF NOT EXISTS 'paid';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

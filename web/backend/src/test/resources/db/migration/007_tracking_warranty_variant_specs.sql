@@ -1,0 +1,17 @@
+BEGIN;
+ALTER TABLE public.product_variants ADD COLUMN model_tier text CHECK(model_tier IN ('BASE','PRO'));
+ALTER TABLE public.product_variants ADD COLUMN width_cm numeric CHECK(width_cm>0);
+ALTER TABLE public.product_variants ADD COLUMN height_cm numeric CHECK(height_cm>0);
+ALTER TABLE public.product_variants ADD COLUMN depth_cm numeric CHECK(depth_cm>0);
+ALTER TABLE public.product_variants ADD COLUMN weight_kg numeric CHECK(weight_kg>0);
+ALTER TABLE public.product_variants ADD COLUMN max_load_kg numeric CHECK(max_load_kg>0);
+ALTER TABLE public.product_variants ADD COLUMN images text;
+ALTER TABLE public.product_variants ADD COLUMN has_weight_sensor boolean;
+ALTER TABLE public.product_variants ADD COLUMN warranty_months integer CHECK(warranty_months BETWEEN 1 AND 120);
+ALTER TABLE public.product_variants ADD CONSTRAINT ck_variant_model_sensor CHECK(model_tier IS NULL OR (has_weight_sensor IS NOT NULL AND has_weight_sensor=(model_tier='PRO')));
+ALTER TABLE public.order_items ADD COLUMN warranty_months_snapshot integer CHECK(warranty_months_snapshot BETWEEN 1 AND 120);
+CREATE UNIQUE INDEX uk_warranty_device ON public.warranties(device_id);
+ALTER TABLE public.warranties ADD COLUMN acceptance_job_id uuid REFERENCES public.delivery_installations(id);
+ALTER TABLE public.warranties ADD COLUMN accepted_at timestamptz;
+ALTER TABLE public.warranties ADD COLUMN duration_months integer CHECK(duration_months BETWEEN 1 AND 120);
+COMMIT;

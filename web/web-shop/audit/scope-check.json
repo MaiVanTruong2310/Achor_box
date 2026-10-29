@@ -1,0 +1,35 @@
+{
+  "outsideWebshopChanged": [],
+  "modified": [
+    "web-shop/.env.example",
+    "web-shop/HANDOFF-COVERAGE.md",
+    "web-shop/package.json",
+    "web-shop/README.md",
+    "web-shop/src/App.tsx",
+    "web-shop/src/CatalogContext.tsx",
+    "web-shop/src/shop.css",
+    "web-shop/src/ShopContext.tsx",
+    "web-shop/src/api/customer.ts",
+    "web-shop/src/api/shop.ts",
+    "web-shop/src/components/DraftEditor.tsx",
+    "web-shop/src/components/QuantityStepper.tsx",
+    "web-shop/src/components/ShopUi.tsx",
+    "web-shop/src/pages/CustomerAccount.tsx",
+    "web-shop/src/pages/ShopCommerce.tsx",
+    "web-shop/src/pages/ShopPlanned.tsx",
+    "web-shop/src/pages/ShopPublic.tsx",
+    "web-shop/src/pages/ShopStories.tsx"
+  ],
+  "added": [
+    "web-shop/audit/API-INVENTORY.md",
+    "web-shop/audit/baseline.json",
+    "web-shop/audit/IMPLEMENTATION.md",
+    "web-shop/audit/webshop-before.zip",
+    "web-shop/scripts/commerce.test.mjs",
+    "web-shop/src/api/commerce.ts",
+    "web-shop/src/components/ApprovalDecision.tsx"
+  ],
+  "deleted": [],
+  "branch": "website",
+  "gitStatus": "?? web-shop/"
+}

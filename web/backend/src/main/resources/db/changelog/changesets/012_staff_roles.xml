@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="012-staff-roles" author="smartbox">
+        <sql splitStatements="false">
+UPDATE public.profiles SET role='product_manager',is_locked=true,updated_at=now()
+ WHERE role IN('support_agent','accountant');
+
+DO $$ BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_active_profile_role') THEN
+  ALTER TABLE public.profiles ADD CONSTRAINT ck_active_profile_role
+   CHECK(role::text IN('super_admin','product_manager','technician','customer'));
+ END IF;
+END $$;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

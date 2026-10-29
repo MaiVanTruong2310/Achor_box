@@ -1,0 +1,1192 @@
+/* ==========================================================================
+   SmartBox SaaS Enterprise Login Stylesheet
+   Split-Screen Layout | Premium Aesthetics | Robust Autofill Fix
+   ========================================================================== */
+
+/* Root & Theme Variables */
+.sb-auth-root {
+  --sb-navy-dark: #070d18;
+  --sb-navy-deep: #0b1528;
+  --sb-navy-surface: #111e38;
+  --sb-navy-border: rgba(255, 255, 255, 0.12);
+  --sb-blue-primary: #2563eb;
+  --sb-blue-hover: #1d4ed8;
+  --sb-blue-light: #eff6ff;
+  --sb-blue-border: #dbeafe;
+  --sb-cyan: #38bdf8;
+  --sb-cyan-glow: rgba(56, 189, 248, 0.25);
+  
+  --sb-bg-form: #f8fafc;
+  --sb-card-bg: #ffffff;
+  --sb-card-border: #e2e8f0;
+  --sb-card-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.07), 0 1px 3px rgba(15, 23, 42, 0.04);
+  
+  --sb-text-title: #0f172a;
+  --sb-text-body: #334155;
+  --sb-text-muted: #64748b;
+  --sb-input-bg: #ffffff;
+  --sb-input-border: #cbd5e1;
+  --sb-input-focus-border: #2563eb;
+  
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark Theme Overrides for Form Column */
+.sb-auth-root.sb-theme-dark {
+  --sb-bg-form: #070d18;
+  --sb-card-bg: rgba(14, 23, 40, 0.92);
+  --sb-card-border: rgba(255, 255, 255, 0.1);
+  --sb-card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  --sb-text-title: #f8fafc;
+  --sb-text-body: #cbd5e1;
+  --sb-text-muted: #94a3b8;
+  --sb-input-bg: #091120;
+  --sb-input-border: #1e2e4a;
+  --sb-input-focus-border: #38bdf8;
+  --sb-blue-light: rgba(37, 99, 235, 0.16);
+  --sb-blue-border: rgba(56, 189, 248, 0.3);
+}
+
+.sb-auth-root * {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   1. CỘT BÊN TRÁI: THƯƠNG HIỆU & GIỚI THIỆU (55% Desktop)
+   ========================================================================== */
+.sb-brand-col {
+  flex: 0 0 55%;
+  width: 55%;
+  background: linear-gradient(150deg, #060b15 0%, #0b172d 45%, #0f2347 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 56px;
+  color: #ffffff;
+  z-index: 2;
+  box-shadow: 18px 0 45px -10px rgba(5, 10, 20, 0.32);
+}
+
+/* Đường ranh giới ánh sáng chuyển sắc kết nối 2 cột (Luminous Seam) */
+.sb-brand-col::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: linear-gradient(
+    180deg,
+    rgba(56, 189, 248, 0.05) 0%,
+    rgba(56, 189, 248, 0.45) 30%,
+    rgba(37, 99, 235, 0.7) 65%,
+    rgba(56, 189, 248, 0.12) 100%
+  );
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Hiệu ứng ánh sáng & Mesh Glow */
+.sb-brand-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sb-glow-1 {
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, transparent 70%);
+  top: -80px;
+  left: -100px;
+}
+
+.sb-glow-2 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, transparent 70%);
+  bottom: -60px;
+  right: -60px;
+}
+
+/* Họa tiết lưới mờ (Tech Grid Pattern) */
+.sb-brand-grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 60%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sb-brand-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 580px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* Brand Top: Logo & Pill Badge */
+.sb-brand-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.sb-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #ffffff;
+  transition: opacity 0.2s;
+}
+
+.sb-brand-logo:hover {
+  opacity: 0.9;
+}
+
+.sb-cube-icon {
+  filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.35));
+}
+
+.sb-logo-text {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  color: #ffffff;
+}
+
+.sb-logo-text span {
+  color: #38bdf8;
+}
+
+.sb-logo-reg {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-left: 2px;
+  font-weight: 500;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.sb-account-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: #e2e8f0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.sb-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #38bdf8;
+  box-shadow: 0 0 10px #38bdf8;
+  animation: sb-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes sb-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* Brand Hero Typography */
+.sb-brand-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sb-hero-heading {
+  font-size: clamp(34px, 3.4vw, 46px);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -1.5px;
+  margin: 0;
+  color: #f8fafc;
+}
+
+.sb-highlight-gradient {
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.sb-hero-description {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: #cbd5e1;
+  margin: 0;
+  max-width: 480px;
+}
+
+/* ==========================================================================
+   IoT Status Card Widget & Floating Badge (Thay thế ảnh thô)
+   ========================================================================== */
+.sb-brand-widget-area {
+  position: relative;
+  margin: 10px 0;
+}
+
+.sb-iot-card {
+  background: rgba(17, 30, 56, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 22px 24px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.sb-iot-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.sb-iot-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 14px;
+}
+
+.sb-iot-device-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sb-iot-cube-tag {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb-text-cyan {
+  color: #38bdf8 !important;
+}
+
+.sb-iot-device-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.sb-iot-device-serial {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.sb-iot-online-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: 9999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: 0.5px;
+}
+
+.sb-live-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+/* Telemetry 3 Cột */
+.sb-iot-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.sb-telemetry-cell {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.sb-tel-label {
+  font-size: 10.5px;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.sb-tel-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sb-tel-safe {
+  color: #38bdf8;
+}
+
+.sb-tel-unit {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: normal;
+}
+
+.sb-iot-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  font-size: 11.5px;
+}
+
+.sb-otp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sb-otp-label {
+  color: #94a3b8;
+}
+
+.sb-otp-code {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+}
+
+.sb-iot-ping {
+  color: #64748b;
+  font-size: 10.5px;
+}
+
+/* Floating Badge gối góc thẻ IoT */
+.sb-floating-badge {
+  position: absolute;
+  bottom: -20px;
+  right: 14px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5);
+  color: #0f172a;
+  z-index: 3;
+  animation: sb-float 4s ease-in-out infinite;
+}
+
+@keyframes sb-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.sb-floating-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.sb-floating-line1 {
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.sb-floating-line2 {
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* 6 Vai trò ở cuối cột trái */
+.sb-roles-wrapper {
+  margin-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 22px;
+}
+
+.sb-roles-title {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.sb-roles-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.sb-role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  font-size: 11.5px;
+  color: #e2e8f0;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.sb-role-tag:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #ffffff;
+}
+
+.sb-role-check {
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+}
+
+/* ==========================================================================
+   2. CỘT BÊN PHẢI: FORM ĐĂNG NHẬP (45% Desktop)
+   ========================================================================== */
+.sb-form-col {
+  flex: 0 0 45%;
+  width: 45%;
+  /* Nền chuyển tiếp tự nhiên, nhận ánh sáng ambient xanh dịu từ cột trái */
+  background: 
+    radial-gradient(circle at 15% 25%, rgba(56, 189, 248, 0.04) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(37, 99, 235, 0.05) 0%, transparent 50%),
+    linear-gradient(155deg, #f8fafc 0%, #f1f5f9 55%, #e9eef5 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  padding: 40px 32px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Lớp hào quang ambient dịu nhẹ phía sau Card */
+.sb-form-glow-orb {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, rgba(56, 189, 248, 0.05) 40%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  filter: blur(70px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Họa tiết lưới công nghệ đồng bộ tuyệt đối kích thước 36px với cột trái */
+.sb-form-grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(15, 23, 42, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.025) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 70%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 70%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Top bar góc trên cùng bên phải */
+.sb-form-top-actions {
+  position: absolute;
+  top: 28px;
+  right: 36px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 10;
+}
+
+.sb-nav-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sb-text-muted);
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.sb-nav-back-link:hover {
+  color: var(--sb-blue-primary);
+  border-color: rgba(37, 99, 235, 0.4);
+  background: #ffffff;
+  transform: translateX(-2px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
+}
+
+.sb-theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--sb-text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.sb-theme-toggle:hover {
+  color: var(--sb-blue-primary);
+  border-color: rgba(37, 99, 235, 0.4);
+  background: #ffffff;
+  transform: rotate(15deg);
+}
+
+/* Card Đăng nhập căn giữa */
+.sb-login-card-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-login-card {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 22px;
+  padding: 38px 36px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.85) inset,
+    0 24px 48px -12px rgba(15, 23, 42, 0.08),
+    0 8px 16px -4px rgba(15, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sb-login-card:hover {
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.95) inset,
+    0 30px 60px -15px rgba(15, 23, 42, 0.12),
+    0 12px 24px -6px rgba(37, 99, 235, 0.06);
+}
+
+/* Dải gradient định vị thương hiệu tinh tế ở đỉnh Card */
+.sb-card-top-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, #2563eb 0%, #38bdf8 50%, #6366f1 100%);
+}
+
+/* Header Card */
+.sb-card-header {
+  margin-bottom: 24px;
+}
+
+.sb-lock-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: var(--sb-blue-primary);
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
+  position: relative;
+}
+
+/* Pill badge CHÀO MỪNG BẠN TRỞ LẠI (Đồng điệu với TÀI KHOẢN SMARTBOX ở cột trái) */
+.sb-welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #2563eb;
+  margin-bottom: 12px;
+  width: fit-content;
+}
+
+.sb-welcome-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+  animation: sb-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.sb-login-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--sb-text-title);
+  margin: 0 0 6px 0;
+}
+
+.sb-login-subtitle {
+  font-size: 13.5px;
+  color: var(--sb-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Banners (Warning / Error / Info) */
+.sb-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.sb-banner-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sb-status-banner p {
+  margin: 0;
+}
+
+.sb-banner-warning {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+}
+
+.sb-banner-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.sb-banner-info {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.sb-theme-dark .sb-banner-warning {
+  background-color: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.sb-theme-dark .sb-banner-error {
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.sb-theme-dark .sb-banner-info {
+  background-color: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+.sb-theme-dark .sb-form-col {
+  background: 
+    radial-gradient(circle at 15% 25%, rgba(56, 189, 248, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
+    linear-gradient(155deg, #070d18 0%, #0b1426 55%, #0e1c36 100%);
+}
+
+.sb-theme-dark .sb-form-grid-pattern {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.sb-theme-dark .sb-welcome-badge {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+.sb-theme-dark .sb-welcome-dot {
+  background-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+
+.sb-theme-dark .sb-nav-back-link,
+.sb-theme-dark .sb-theme-toggle {
+  background: rgba(16, 27, 48, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+}
+
+.sb-theme-dark .sb-nav-back-link:hover,
+.sb-theme-dark .sb-theme-toggle:hover {
+  background: #111e38;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* Form Styles */
+.sb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sb-form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sb-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sb-text-title);
+  margin-bottom: 8px;
+}
+
+.sb-field-header .sb-field-label {
+  margin-bottom: 0;
+}
+
+.sb-forgot-password-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--sb-blue-primary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.sb-forgot-password-btn:hover {
+  color: var(--sb-blue-hover);
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   CSS INPUT & AUTOFILL FIX (Xử lý triệt để lỗi phân tách mảng màu icon/input)
+   ========================================================================== */
+.sb-field-control {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.sb-field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sb-text-muted);
+  pointer-events: none;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.sb-field-control:focus-within .sb-field-icon {
+  color: var(--sb-blue-primary);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.sb-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 44px 0 42px;
+  background-color: var(--sb-input-bg);
+  border: 1.5px solid var(--sb-input-border);
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: var(--sb-text-title);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.sb-input::placeholder {
+  color: var(--sb-text-muted);
+  opacity: 0.65;
+}
+
+.sb-input:hover {
+  border-color: #94a3b8;
+}
+
+.sb-input:focus {
+  border-color: var(--sb-input-focus-border);
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.12);
+}
+
+/* Khắc phục triệt để Autofill của Chrome / Edge / Safari */
+.sb-input:-webkit-autofill,
+.sb-input:-webkit-autofill:hover,
+.sb-input:-webkit-autofill:focus,
+.sb-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-color: var(--sb-blue-primary) !important;
+}
+
+.sb-theme-dark .sb-input:-webkit-autofill,
+.sb-theme-dark .sb-input:-webkit-autofill:hover,
+.sb-theme-dark .sb-input:-webkit-autofill:focus,
+.sb-theme-dark .sb-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0b111e inset !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  caret-color: #f8fafc !important;
+  border-color: var(--sb-blue-primary) !important;
+}
+
+/* Nút ẩn/hiện mật khẩu */
+.sb-toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  color: var(--sb-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.sb-toggle-password:hover {
+  color: var(--sb-text-title);
+  background-color: rgba(148, 163, 184, 0.12);
+}
+
+/* Checkbox Ghi nhớ đăng nhập */
+.sb-remember-row {
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+.sb-checkbox-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sb-checkbox-native {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sb-checkbox-box {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--sb-input-border);
+  border-radius: 5px;
+  background-color: var(--sb-input-bg);
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sb-checkbox-check {
+  color: #ffffff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sb-checkbox-native:checked + .sb-checkbox-box {
+  background-color: var(--sb-blue-primary);
+  border-color: var(--sb-blue-primary);
+}
+
+.sb-checkbox-native:checked + .sb-checkbox-box .sb-checkbox-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sb-checkbox-native:focus-visible + .sb-checkbox-box {
+  outline: 2px solid var(--sb-blue-primary);
+  outline-offset: 2px;
+}
+
+.sb-checkbox-text {
+  font-size: 13px;
+  color: var(--sb-text-body);
+}
+
+/* Nút Submit */
+.sb-btn-submit {
+  width: 100%;
+  height: 48px;
+  background-color: var(--sb-blue-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 4px;
+}
+
+.sb-btn-submit:hover:not(:disabled) {
+  background-color: var(--sb-blue-hover);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+}
+
+.sb-btn-submit:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.sb-btn-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sb-submit-arrow {
+  transition: transform 0.2s ease;
+}
+
+.sb-btn-submit:hover:not(:disabled) .sb-submit-arrow {
+  transform: translateX(3px);
+}
+
+/* ==========================================================================
+   3. RESPONSIVE DESIGN (Chuẩn Mobile & Tablet)
+   ========================================================================== */
+@media (max-width: 1080px) {
+  .sb-brand-col {
+    padding: 40px 36px;
+  }
+  
+  .sb-form-col {
+    padding: 32px 24px;
+  }
+  
+  .sb-hero-heading {
+    font-size: 32px;
+  }
+  
+  .sb-floating-badge {
+    right: 0;
+    bottom: -16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .sb-auth-root {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  /* Chuyển thành 1 cột */
+  .sb-brand-col {
+    flex: none;
+    width: 100%;
+    padding: 36px 24px 44px;
+  }
+  
+  .sb-brand-inner {
+    max-width: 440px;
+    gap: 24px;
+  }
+  
+  .sb-hero-heading {
+    font-size: 28px;
+    letter-spacing: -1px;
+  }
+  
+  .sb-hero-description {
+    font-size: 13.5px;
+  }
+  
+  /* Thu gọn widget IoT trên mobile để tiết kiệm diện tích */
+  .sb-brand-widget-area {
+    margin: 4px 0 16px;
+  }
+  
+  .sb-floating-badge {
+    position: static;
+    margin-top: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  .sb-form-col {
+    flex: none;
+    width: 100%;
+    padding: 24px 20px 48px;
+    background-color: var(--sb-bg-form);
+  }
+  
+  .sb-form-top-actions {
+    position: static;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto 20px;
+  }
+  
+  .sb-login-card-container {
+    margin: 0 auto;
+  }
+  
+  .sb-login-card {
+    padding: 28px 22px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sb-brand-col {
+    padding: 28px 18px 36px;
+  }
+  
+  .sb-account-pill {
+    display: none;
+  }
+  
+  .sb-telemetry-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .sb-login-title {
+    font-size: 23px;
+  }
+  
+  .sb-login-card {
+    padding: 24px 18px;
+  }
+}
+

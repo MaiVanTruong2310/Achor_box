@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"/>
+  <title th:text="'Hóa đơn bán hàng ' + ${invoice.number}">Hóa đơn bán hàng SmartBox</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#eef2f7;color:#172437;font:14px/1.55 Arial,sans-serif}
+    .sheet{max-width:900px;margin:28px auto;padding:42px;background:white;border-radius:12px;box-shadow:0 8px 32px #17243712}
+    header{display:flex;gap:20px;align-items:center;border-bottom:3px solid #2374df;padding-bottom:24px}.logo{width:92px;height:92px;object-fit:contain}
+    h1{font-size:25px;margin:0;color:#1760bd}h2{font-size:13px;letter-spacing:1px;color:#617086;margin:0 0 10px;text-transform:uppercase}
+    p{margin:3px 0}.muted{color:#64748b}.break{overflow-wrap:anywhere}.title{display:flex;justify-content:space-between;gap:16px;margin:28px 0}.title strong{font-size:23px}
+    .contacts{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:20px;background:#f5f8fc;border-radius:8px;margin-bottom:24px}
+    .notice{padding:12px 16px;border:1px solid #efc36e;background:#fff8e8;color:#80520a;border-radius:6px;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;font-size:13px}thead{background:#1760bd;color:white}th,td{padding:12px 9px;text-align:left;vertical-align:top;border-bottom:1px solid #dfe7f0}
+    .right{text-align:right;white-space:nowrap}.number{text-align:center;width:34px}.sku{font-size:12px;color:#64748b}
+    .total{display:flex;justify-content:flex-end;margin-top:20px}.total div{min-width:270px;background:#eff6ff;padding:16px 20px;border-radius:8px}.total p{display:flex;justify-content:space-between;gap:24px}.amount{font-size:24px;color:#1760bd;font-weight:bold}
+    .payment{padding:18px 0;margin-top:18px;border-top:1px solid #dfe7f0}footer{text-align:center;border-top:1px solid #dfe7f0;margin-top:24px;padding-top:20px;font-size:12px;color:#64748b}
+    @media(max-width:640px){.sheet{margin:0;padding:18px;border-radius:0}.contacts{grid-template-columns:1fr;gap:16px}.title{flex-direction:column}th,td{padding:8px 4px;font-size:11px}.logo{width:64px;height:64px}.right{white-space:normal}}
+    @page{size:A4;margin:14mm}@media print{body{background:white;font-size:11px}.sheet{margin:0;padding:0;max-width:none;border-radius:0;box-shadow:none}header{padding-bottom:16px}.logo{width:70px;height:70px}.title{margin:20px 0}.contacts{break-inside:avoid}thead{display:table-header-group}tr,.total,.payment,footer{break-inside:avoid}th,td{padding:9px 6px}.notice{break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style>
+</head>
+<body><main class="sheet">
+  <header><img class="logo" th:src="${invoice.logo}" alt="Logo SmartBox"/><div class="break">
+    <h1 th:text="${invoice.shop.name}">SmartBox</h1>
+    <p th:text="${#strings.isEmpty(invoice.shop.address) ? 'Địa chỉ cửa hàng: chưa cấu hình' : invoice.shop.address}"></p>
+    <p><span th:text="${#strings.isEmpty(invoice.shop.phone) ? 'Điện thoại: chưa cấu hình' : 'Điện thoại: ' + invoice.shop.phone}"></span> · <span th:text="${#strings.isEmpty(invoice.shop.email) ? 'Email: chưa cấu hình' : invoice.shop.email}"></span></p>
+    <p th:text="${#strings.isEmpty(invoice.shop.website) ? 'Website: chưa cấu hình' : 'Website: ' + invoice.shop.website}"></p>
+    <p th:text="${#strings.isEmpty(invoice.shop.taxCode) ? 'Mã số thuế: chưa cấu hình' : 'Mã số thuế: ' + invoice.shop.taxCode}"></p>
+  </div></header>
+  <div class="title"><strong>HÓA ĐƠN BÁN HÀNG</strong><div class="break"><p>Mã hóa đơn: <b th:text="${invoice.number}"></b></p><p class="muted">Lập ngày <span th:text="${invoice.issuedDate}"></span> (giờ Việt Nam)</p></div></div>
+  <div class="notice" th:if="${invoice.simulated}">BẢN KIỂM THỬ — Giao dịch thanh toán giả lập/Sandbox, không xác nhận đã thu tiền thật.</div>
+  <div class="notice" th:if="${!#strings.isEmpty(notice)}" th:text="${notice}"></div>
+  <section class="contacts"><div class="break"><h2>Thông tin khách hàng / người nhận</h2><p><b th:text="${invoice.customer.recipientName ?: '—'}"></b></p><p th:text="'Điện thoại: ' + ${invoice.customer.phone ?: '—'}"></p><p th:text="'Email: ' + ${invoice.customer.email ?: '—'}"></p><p th:text="'Địa chỉ giao / lắp đặt: ' + ${invoice.customer.addressLine ?: '—'}"></p></div>
+    <div class="break"><h2>Thông tin đơn hàng</h2><p>Mã đơn: <span th:text="${invoice.orderId}"></span></p><p>Ngày đặt mua: <span th:text="${invoice.purchaseDate}"></span></p><p>Ngày thanh toán: <span th:text="${invoice.paidDate}"></span></p><p>Đơn vị tiền: VND</p></div></section>
+  <table><thead><tr><th class="number">STT</th><th>Sản phẩm / biến thể</th><th class="right">SL</th><th class="right">Đơn giá</th><th class="right">Thành tiền</th></tr></thead>
+    <tbody><tr th:each="item,status : ${invoice.items}"><td class="number" th:text="${status.count}"></td><td class="break"><b th:text="${item.name}"></b><p th:text="${item.variant}"></p><p class="sku" th:text="'SKU: ' + ${item.sku}"></p></td><td class="right" th:text="${item.quantity}"></td><td class="right" th:text="${item.price}"></td><td class="right" th:text="${item.subtotal}"></td></tr></tbody>
+  </table>
+  <div class="total"><div><p>Tổng giá trị hàng hóa <span th:text="${invoice.subtotal ?: invoice.total}"></span></p><p th:if="${invoice.discount != null}" style="color:#b91c1c;margin:6px 0">Giảm giá voucher <span th:if="${invoice.voucherCode != null}" th:text="'(' + ${invoice.voucherCode} + ')'"></span>: <span th:text="'- ' + ${invoice.discount}"></span></p><p style="margin-top:10px">Tổng thanh toán</p><p class="amount" th:text="${invoice.total}"></p></div></div>
+  <section class="payment break"><h2>Thanh toán</h2><p>Hình thức: <b th:text="${invoice.paymentMethod}"></b></p><p>Mã giao dịch: <span th:text="${invoice.transactionRef}"></span></p><p>Đã ghi nhận thanh toán tại thời điểm lập hóa đơn.</p></section>
+  <footer><p>Cảm ơn quý khách đã lựa chọn <b th:text="${invoice.shop.name}"></b>!</p><p>Chứng từ bán hàng của cửa hàng. Không phải hóa đơn điện tử VAT.</p></footer>
+</main></body></html>

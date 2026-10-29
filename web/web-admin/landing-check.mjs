@@ -1,0 +1,55 @@
+import { chromium } from '@playwright/test';
+import assert from 'node:assert/strict';
+const browser = await chromium.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--no-sandbox'] });
+const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, reducedMotion: 'reduce' });
+const errors = [];
+page.on('pageerror', error => errors.push(error.message));
+await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' });
+await page.screenshot({ path: 'landing-desktop.png' });
+await page.locator('.sb-hero-object canvas').waitFor();
+await page.getByRole('button', { name: 'Ảnh sản phẩm', exact: true }).click();
+assert(await page.locator('.sb-studio-photo img').evaluate(img => img.complete && img.naturalWidth > 0));
+await page.getByRole('button', { name: 'Khám phá 3D', exact: true }).click();
+await page.locator('.sb-hero-object canvas').waitFor();
+await page.getByRole('button', { name: 'Góc nhìn mặt trước', exact: true }).click();
+await page.getByRole('button', { name: 'Ảnh sản phẩm', exact: true }).click();
+await page.locator('#sb-configure').scrollIntoViewIfNeeded();
+for (const [model, prices] of [['base', ['1.290.000đ', '1.690.000đ', '2.190.000đ']], ['pro', ['1.690.000đ', '2.190.000đ', '2.790.000đ']]]) {
+  await page.locator('.sb-segment button').nth(model === 'base' ? 0 : 1).click();
+  for (let i = 0; i < 3; i++) {
+    await page.locator('.sb-size-options button').nth(i).click();
+    assert.equal(await page.locator('.sb-purchase strong').textContent(), prices[i]);
+    assert.match(await page.locator('.sb-sku').textContent(), new RegExp(`BOX-${model.toUpperCase()}-${['S', 'M', 'L'][i]}`));
+  }
+}
+await page.getByRole('button', { name: 'Chọn phiên bản này', exact: true }).click();
+assert.match(await page.getByRole('dialog').textContent(), /2.790.000 đ/);
+assert.match(await page.getByRole('dialog').textContent(), /SmartBox Pro/);
+await page.getByRole('button', { name: 'Đóng bản xem trước' }).click();
+await page.locator('#sb-app').scrollIntoViewIfNeeded();
+await page.getByRole('button', { name: 'Mở khóa SmartBox', exact: true }).click();
+assert.equal(await page.locator('.sb-phone-metrics strong').first().textContent(), 'Đã mở');
+await page.locator('.sb-phone-nav').getByRole('button', { name: 'Lịch sử', exact: true }).click();
+assert.match(await page.locator('.sb-phone-history').textContent(), /Vừa xong · SmartBox đã mở khóa/);
+await page.locator('.sb-phone-nav').getByRole('button', { name: 'Thông báo', exact: true }).click();
+assert.match(await page.locator('.sb-phone-notification').textContent(), /2,4 kg/);
+await page.locator('.sb-layer-list button').nth(3).click();
+assert.match(await page.locator('.sb-layer-list .active p').textContent(), /thay đổi khối lượng/);
+await page.locator('.sb-steps button').nth(5).click();
+assert.match(await page.locator('.sb-step-scene h3').textContent(), /thông báo/);
+await page.screenshot({ path: 'landing-full.png', fullPage: true });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' });
+assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+await page.getByRole('button', { name: 'Mở hoặc đóng menu' }).click();
+await page.getByRole('navigation', { name: 'Điều hướng chính' }).getByRole('link', { name: 'Ứng dụng' }).click();
+assert.equal(await page.getByRole('button', { name: 'Mở hoặc đóng menu' }).getAttribute('aria-expanded'), 'false');
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.getByRole('button', { name: 'Khám phá 3D', exact: true }).click();
+await page.locator('.sb-hero-object canvas').waitFor();
+await page.getByRole('button', { name: 'Ảnh sản phẩm', exact: true }).click();
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.screenshot({ path: 'landing-mobile.png', fullPage: true });
+assert.deepEqual(errors, []);
+console.log('PASS: all six variants, prices/SKUs, app lock/history/notifications, technology, delivery steps, mobile navigation, overflow, and runtime errors.');
+await browser.close();

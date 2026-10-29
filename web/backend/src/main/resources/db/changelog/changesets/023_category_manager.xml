@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="023-add-manager-id-to-product-categories" author="smartbox">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="product_categories" columnName="manager_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="product_categories">
+            <column name="manager_id" type="uuid">
+                <constraints foreignKeyName="fk_product_categories_manager" references="profiles(id)"/>
+            </column>
+        </addColumn>
+        <createIndex tableName="product_categories" indexName="idx_product_categories_manager_id">
+            <column name="manager_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

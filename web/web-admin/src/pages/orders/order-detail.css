@@ -1,0 +1,776 @@
+/* ==========================================================================
+   Senior SaaS 2-Column Order Detail Styling (Clean, Organized, 4 Balanced Cards)
+   ========================================================================== */
+
+.order-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-bottom: 28px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* 1. Unified Top Header Strip */
+.order-header-strip {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.order-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-back-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-back-compact:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-glass);
+  color: var(--text-primary);
+}
+
+.order-code-text {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+}
+
+.order-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.order-badge-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.order-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.order-total-highlight {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.order-total-highlight strong {
+  font-size: 17px;
+  color: #ea580c;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* 2. Asymmetric 2-Column Layout (Left 1.35fr, Right 1fr) */
+.order-asymmetric-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .order-asymmetric-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.order-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.order-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ==========================================================================
+   Standard Card Panels (All 4 Cards share this consistent structure)
+   ========================================================================== */
+.order-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.2s ease;
+}
+
+.order-panel:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.order-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.order-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.order-panel-title svg {
+  color: #ea580c;
+}
+
+.order-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   CARD 1: SẢN PHẨM & THANH TOÁN
+   ========================================================================== */
+.compact-prod-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.compact-prod-table th {
+  background: var(--bg-surface);
+  padding: 9px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.compact-prod-table th:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.compact-prod-table th:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.compact-prod-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.compact-prod-table tr:last-child td {
+  border-bottom: none;
+}
+
+.compact-prod-link {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.15s ease;
+}
+
+.compact-prod-link:hover {
+  color: #ea580c;
+}
+
+.compact-finance-summary {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.compact-finance-row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+}
+
+.compact-finance-row.grand {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ea580c;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.compact-payment-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+}
+
+.compact-payment-strip.pending {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* ==========================================================================
+   CARD 2: GIAO HÀNG & LẮP ĐẶT (Tidy & Structured)
+   ========================================================================== */
+.delivery-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 680px) {
+  .delivery-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.delivery-tile {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.delivery-tile-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.delivery-tile-content {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tracking-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.tracking-input-group input {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-shell, rgba(0,0,0,0.3));
+  color: var(--text-primary);
+  flex: 1;
+  outline: none;
+  font-family: var(--font-mono, monospace);
+}
+
+.tracking-input-group input:focus {
+  border-color: #ea580c;
+}
+
+.tracking-input-group button {
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background: #ea580c;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.tracking-input-group button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-proof-slim {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.btn-proof-slim:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   CARD 3: THÔNG TIN KHÁCH HÀNG
+   ========================================================================== */
+.compact-kv-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compact-kv-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+  padding-bottom: 7px;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.compact-kv-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.compact-kv-lbl {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.compact-kv-val {
+  color: var(--text-primary);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.compact-kv-val a {
+  color: #ea580c;
+  text-decoration: none;
+}
+
+.compact-kv-val a:hover {
+  text-decoration: underline;
+}
+
+.compact-address-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   CARD 4: BIỂU ĐỒ TIẾN TRÌNH ĐƠN HÀNG (TIMELINE STEPPER & AUDIT FLOW)
+   ========================================================================== */
+
+/* Mini Horizontal Roadmap / Phase Stepper */
+.timeline-stepper-chart {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.stepper-connector {
+  position: absolute;
+  top: 22px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--border-subtle);
+  z-index: 1;
+}
+
+.stepper-connector-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #ea580c);
+  transition: width 0.3s ease;
+}
+
+.stepper-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.stepper-node {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.stepper-step.completed .stepper-node {
+  background: #10b981;
+  border-color: #10b981;
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.stepper-step.active .stepper-node {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.25);
+  animation: pulseNode 1.8s infinite;
+}
+
+@keyframes pulseNode {
+  0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(234, 88, 12, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
+}
+
+.stepper-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stepper-step.completed .stepper-label {
+  color: #10b981;
+}
+
+.stepper-step.active .stepper-label {
+  color: #ea580c;
+  font-weight: 700;
+}
+
+/* Detailed Vertical Visual Flow Chart */
+.visual-timeline-flow-container {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.visual-timeline-flow-container::-webkit-scrollbar {
+  width: 4px;
+}
+.visual-timeline-flow-container::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+}
+
+.visual-flow-chart {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: 30px;
+  gap: 10px;
+}
+
+.visual-flow-chart::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 11px;
+  width: 2px;
+  background: linear-gradient(180deg, #10b981 0%, #3b82f6 50%, var(--border-subtle) 100%);
+}
+
+.flow-node-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-node-icon {
+  position: absolute;
+  left: -30px;
+  top: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  color: var(--text-muted);
+  z-index: 2;
+  transition: transform 0.15s;
+}
+
+.flow-node-item.latest .flow-node-icon {
+  background: #10b981;
+  border-color: #fff;
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.flow-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid #64748b;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.flow-node-item.latest .flow-card {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.06);
+  border-top-color: rgba(16, 185, 129, 0.25);
+  border-right-color: rgba(16, 185, 129, 0.25);
+  border-bottom-color: rgba(16, 185, 129, 0.25);
+}
+
+.flow-node-item:hover .flow-card {
+  transform: translateX(2px);
+  border-color: rgba(234, 88, 12, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.flow-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.flow-timestamp {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.flow-stage-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-shell, rgba(0,0,0,0.3));
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.flow-node-item.latest .flow-stage-tag {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.flow-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 1px;
+}
+
+.flow-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   Modal: Proof of Acceptance
+   ========================================================================== */
+.proof-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.proof-modal-box {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.proof-modal-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.proof-modal-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #10b981;
+}
+
+.proof-modal-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 12.5px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.proof-banner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.proof-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+
+.proof-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+}

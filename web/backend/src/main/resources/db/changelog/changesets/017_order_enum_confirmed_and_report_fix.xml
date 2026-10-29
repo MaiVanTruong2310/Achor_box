@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="017-order-enum-confirmed" author="smartbox" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM pg_type WHERE typname = 'order_status'
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            ALTER TYPE public.order_status ADD VALUE IF NOT EXISTS 'confirmed';
+        </sql>
+    </changeSet>
+
+    <changeSet id="017-update-report-definitions-safe-enum" author="smartbox">
+        <sql>
+            UPDATE public.report_definitions 
+            SET query_sql = REPLACE(query_sql, 'o.status IN (''paid'',''confirmed'',''completed'')', 'CAST(o.status AS text) IN (''paid'',''confirmed'',''completed'')')
+            WHERE code = 'RPT_REVENUE_DAILY';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

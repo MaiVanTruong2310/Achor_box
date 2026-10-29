@@ -1,0 +1,2051 @@
+{
+  "files": [
+    {
+      "path": ".gitignore",
+      "hash": "42BA3BA5AEA853A03740704D34B546A97BD5EF4B0C7835556198652EC5B5FFFC"
+    },
+    {
+      "path": "database.sql",
+      "hash": "238E9BAD1FD6C6B287D0D6B2D3830DE6286094FA4883DE71260C8F55B8F66F87"
+    },
+    {
+      "path": "docker-compose.yml",
+      "hash": "F194BEB0C684B63F7FE9B64143F81A19056935D04D498AFA57B4E18551B6B04B"
+    },
+    {
+      "path": "pgadmin-servers.json",
+      "hash": "E414C4849B74A6C2D23F410FE91F95E4F1FEC914B3397167257097935B75141C"
+    },
+    {
+      "path": "README.md",
+      "hash": "9A4D67A618EC9C92A4DB3F5136A579E661E24F0C9164D976398BCFC22E45A758"
+    },
+    {
+      "path": "backend\\.env",
+      "hash": "9699489A135B508E4B33DA4B25A963ADA30EF327D5C33AC38CDD101CD479F760"
+    },
+    {
+      "path": "backend\\.env.example",
+      "hash": "6829484BBCB33981037348B5A0612AC81941D8E8465D755611252AC2CF6EA70E"
+    },
+    {
+      "path": "backend\\.gitattributes",
+      "hash": "FE495E43270D435B102B52732F83383357AC97D0633E8644B4B41A65BB03A66F"
+    },
+    {
+      "path": "backend\\.gitignore",
+      "hash": "35AB27D6A44E05CA61013ECA857E0ECE777C10B33140402E660D4CDDC7C1D566"
+    },
+    {
+      "path": "backend\\build.gradle",
+      "hash": "332140D0DC94D1198543EBDEC4B3E9F0A1DB0EE7AC6CFBA48907D94BB817E556"
+    },
+    {
+      "path": "backend\\gradlew",
+      "hash": "A5A5C199BA02189AE8C46A334223371A20599D9C298EF65E7540EDE4A3F72D59"
+    },
+    {
+      "path": "backend\\gradlew.bat",
+      "hash": "D539676C48B596AFDA64C963EC8F7EE56C7B3FE7E3B81D1DBE2D1A1E3DD9E9F8"
+    },
+    {
+      "path": "backend\\run-local.ps1",
+      "hash": "FF718C17AE8CC0A69742BFB1B25897307F7B9AD59956BB1FDE520F422A7D13BA"
+    },
+    {
+      "path": "backend\\settings.gradle",
+      "hash": "3F0D322BB1FC8D36FE4532E8319795AED819BCE956F9E390D60942C7BDE3AE84"
+    },
+    {
+      "path": "backend\\docs\\ADMIN_COMMERCE_COMPLETION.md",
+      "hash": "A41C94A11DA42FD90C98B18CB81C350395FC4E629D8F0715EDEDB6F3660C08A7"
+    },
+    {
+      "path": "backend\\docs\\ADMIN_WORKSPACE.md",
+      "hash": "8928047A93265D7D69826537B7C09E9F4EC88CD84B1E3DA2F22A861081E3258D"
+    },
+    {
+      "path": "backend\\docs\\CURRENT_REQUIREMENTS_COVERAGE.md",
+      "hash": "2A05A7BD6D53B75919C8143613DC01BF247F3DF0EDCBC2D4C303AE1AB117D6BE"
+    },
+    {
+      "path": "backend\\docs\\CUSTOMER_ACCOUNT.md",
+      "hash": "76F37DA2AAF3CA2C23B1A157D12E5C57F8AED2BEE806187EBCAB53E42C741329"
+    },
+    {
+      "path": "backend\\docs\\DELIVERY_INSTALLATION.md",
+      "hash": "A0DE34B258C6E3EFF6ACB940F7AFBF7D718F26A6BD21A0113BDC0B3A2548797D"
+    },
+    {
+      "path": "backend\\docs\\FINAL_REVIEW.md",
+      "hash": "9F769442B2CFFFD89BAD7A2B4500108F725059A0B29BC20F058545352BD79B3E"
+    },
+    {
+      "path": "backend\\docs\\IMPLEMENTATION_PLAN.md",
+      "hash": "673563483EC2E3D77F0BB30524F7782D7549E3A51BA2DBB1EDACBB3405FA7CA0"
+    },
+    {
+      "path": "backend\\docs\\PAYMENT_LIFECYCLE.md",
+      "hash": "EBC7BEE7882A3FFB68C841B36AF99B248F2A1B543195C310E80897DC3B2855A0"
+    },
+    {
+      "path": "backend\\docs\\REQ05_DASHBOARD.md",
+      "hash": "C722D63494C9DB1403069E69196448B2DA263E41C56D90D0FA02CC1E790D70E5"
+    },
+    {
+      "path": "backend\\docs\\REQUIREMENTS_COVERAGE.md",
+      "hash": "5F5B5DE44D29A5D8C39859D09A6C0B893FA605B0E52EC94DE65679D07988024B"
+    },
+    {
+      "path": "backend\\docs\\RUNBOOK.md",
+      "hash": "159CA09BE1066E17295599EDA9930FB8EA44F77CD3943F54F3CF29C5EB8C04A3"
+    },
+    {
+      "path": "backend\\docs\\SALES_INVOICE.md",
+      "hash": "BC4054A77EA02886E80932D6D76A4E180E5F95F1BBFA7379351838B19293AED1"
+    },
+    {
+      "path": "backend\\docs\\TRACKING_WARRANTY_SPECS_BACKLOG.md",
+      "hash": "DBCD3A66488EFDDEF5B4A10DCA6649231EC78154DB8D7C572B63441B5AC5125E"
+    },
+    {
+      "path": "backend\\docs\\VNPAY_SANDBOX.md",
+      "hash": "66A26E5DF313D34D7F2D235D9F84CD7D3C860153A841021341C1A6316CC95B11"
+    },
+    {
+      "path": "backend\\gradle\\wrapper\\gradle-wrapper.jar",
+      "hash": "7A9CE74CFF467CA1BF60A4FCD9F05185ACCEDA4D0F382434D393E17864262C5D"
+    },
+    {
+      "path": "backend\\gradle\\wrapper\\gradle-wrapper.properties",
+      "hash": "B8177AD860B448B587E0702899283F932FE643C32C69ACD3B36C8765A79B67CF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\BackendApplication.java",
+      "hash": "75425E4DD6FA3D50A379FFE3659FFBAE0550721AC9E7AE9D1FA6B4727E39E84B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\common\\AdminSearch.java",
+      "hash": "AF4BACF7F572EC0EBAB6A8A075E27819618FC6702816D311CAEFE8E2C3F80E1A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\common\\ApiResponse.java",
+      "hash": "2AFB44A7FEE365D8FD837F155370DFEA3651760464E8E004534609E070F7D9F9"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\common\\AppConstants.java",
+      "hash": "0BDCFB997FCFF6E2539BA61AD75067BD6874F4BF4D2E15CFD5192A9FD430F036"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\common\\PaginationUtil.java",
+      "hash": "6E266221BE3B0F649BBE0384B40AF93C06AF1C48B2E515950B8B45E61C012F91"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\AuthRateLimitFilter.java",
+      "hash": "43A024C48C83F34F88ED040A57B90E4E65BC1D9E7AD3723187F9C256E5AFA498"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\CorsConfig.java",
+      "hash": "4724D1DF0C0CB12B13614B3F2E4DC7360564F79DDCB44DD9D6214DD6005812AD"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\DashboardDemoConfig.java",
+      "hash": "23B76072624EBE0042CB1BDB635BC98D2A88C3E56CCD99F6270D68DEC3925B6B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\DashboardExecutorConfig.java",
+      "hash": "8726AFC565DB357CE3E99ADF5CC234162A94EE17F18377F0DFB409C5AE31833F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\InvoiceShopConfig.java",
+      "hash": "98BA1C996B9AD4CE68FA7F6E3002CDE0F5B4FB4FA899E469A6ACD3891F3D1223"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\JwtAuthenticationFilter.java",
+      "hash": "5EDDDC40AC670E8FEC4E215B5F6821CB875F714A6D2DA175981BB64C7249F0BA"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\JwtProvider.java",
+      "hash": "9E44D5F3E42C61D3FE8E1ACA40AA70DB60D22DCC2CFC1A29594A69E6C30DC394"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\LocalEnvEnvironmentPostProcessor.java",
+      "hash": "F5F014FE29C678226F7569BD2ED6B8F3C303DDC56A3256090378A79EF1C73B26"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\MqttIntegration.java",
+      "hash": "81EDAAE5E5B90CE1BF099C76C7B31DA2D2BB181D86B364761544905C88E8EACD"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\OpenApiConfig.java",
+      "hash": "BE1464DB50A252FC226E61F1C0F07C294ECE43E253EC328ECE504683ACFD4565"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\RedisConfig.java",
+      "hash": "F120282D2B2C87C5A5AAB0B7B693C42661C86FC8C79ED14FD93D8C4FA1B0948E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\SecurityConfig.java",
+      "hash": "5B3193CAB03F4025A6811C1476FDB15E53FED8BDA2BF61747836FBB512594C4B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\config\\TraceFilter.java",
+      "hash": "27ECB58E660726EDFC9208CE6EE6F069F9E9729FE61E682D7DE37DDE57ACC4D9"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\AdminNotificationsController.java",
+      "hash": "9742CD9A71EEBD3EEE47BB10447B753CF8D7C8BDF4D4E0AF5B207B031C4A4614"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\AdminSettingsController.java",
+      "hash": "9F99ED87BC92F93B19F69B15A02835C3C3269A847EFF2F6414F9EE5AC3FD43D6"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\AuditLogController.java",
+      "hash": "4849BB32ECFA6831875DB6F33DAF077E2E46801B0C682750369C283BAEAF61E5"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\ConcurrentDashboardController.java",
+      "hash": "ED0B3D7E778654E014E59582A5010F843329D9B7FECF13B4DBBFF2DC6531E92A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\ContentController.java",
+      "hash": "B7C27433DFD639D0840D35A68624AE861241A82EE645F1151A7845FCBA52E827"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\DashboardController.java",
+      "hash": "16DD05BCC737500242FA816D71A112032B59BDEB08A9C79FE3E1806402C9BE64"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\NotificationController.java",
+      "hash": "CE2C7C4E49AE8948B2CC6E38E7DD4A1B7304F9B11E29E5EABA944D0B2859861D"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\RevenueReportController.java",
+      "hash": "44424EA7589AA1A26108DA8AE27C4FFADA2D623CAC3D791923700C943C5E555A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\SettingsController.java",
+      "hash": "C773E060080C120CB64C2333848FEB7A2BA9BDFA9CA5D39414DA6DE436888149"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\admin\\UserController.java",
+      "hash": "A7DE33DD14F23DC9FC7B8ADE0348DE769FC62C9645B8217FF92517C204F32588"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\auth\\AuthController.java",
+      "hash": "A570316C2171D867A0CEC72E4EC80F218DD50E009A8611B3476A156AFC90D9A0"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\auth\\CustomerAccountController.java",
+      "hash": "6E376DB21D5368BD3AE89B90507285865E8398517DBBD2DFB39FDB63C6BD3B3A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\auth\\CustomerAuthController.java",
+      "hash": "87634C17C677176D56732D14EB93E4572CE6E656E8C74878E345D45452F59578"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\catalog\\ProductController.java",
+      "hash": "3A61A4879573E592CFABE115FD4C73D81617EDFE75D4B9DDF127BBD012287BDE"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\catalog\\PromotionController.java",
+      "hash": "37CA5D04C7330F2B3F345BAEE9BF632B40E547176E166483153E612225C5E791"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\catalog\\VariantSpecificationController.java",
+      "hash": "0F9E04A82CEA305CC8C04583549CE908992DDB16C212D40F3316255214ECC0AC"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\CommerceController.java",
+      "hash": "6DB8E36B010B8F85A43FECCAC35306E8F6D440825D2C14EDE24FBC2913D41EA9"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\CustomerOrderController.java",
+      "hash": "7EAE1BA0FF0E2AC75945E858A024A9E47ACF564F7786419993C0ADF53A5C2B9B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\DeliveryInstallationController.java",
+      "hash": "8E19A95F6FF94B06866DDC61B0CD9C75E7BFAB224EB6EF6D8B8DD20661956D46"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\MockPaymentController.java",
+      "hash": "9A69EAC12C5083CC0B840AEDA9ED79B092BA90AA9163527778FDB49E57E2E09E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\OrderController.java",
+      "hash": "ED6130DD59AC25C56CB2296A83EF971A853F1649F3895B0FBE203E1BAF72D6F1"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\OrderTrackingController.java",
+      "hash": "BE3D3A43859DE3AEED28E92FC30BC3233208B7029B85637AC91CB8FB2DBD232D"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\PaymentAuditController.java",
+      "hash": "CD53D41003A65E325CBCC634447EA3BA99E1A0CFD06F7428877ED7AC0774EF05"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\PricingController.java",
+      "hash": "13E948999BF3D6960C0C9159920A963A5AC399D53A1143DD39E3232C65419471"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\SalesInvoiceController.java",
+      "hash": "8CF8075212F77E4FB4A7D020EC0B1F1214E24BCAE657492421379806492415AF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\commerce\\VnpayController.java",
+      "hash": "6AC1AD6D81363BC880D343447ED2DA1117BFCA0F1CE6D4220A0C1B6E0CBC14BC"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\customer\\CustomerDirectoryController.java",
+      "hash": "922D02916F939D9BE24034725F93C5BB52539A209D6537CF9C611A93D03D28BB"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\device\\DeviceController.java",
+      "hash": "7D421BB1B336D9E65B087826E8BC29F13D78ED3E3AD72EE955FB5CDC3F8AE4A9"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\device\\DeviceWorkflowController.java",
+      "hash": "7A9D8741454ADCAD1FB2FB090A037F8BB99F702D6327F4E1C5943F5F0BD52D9D"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\warranty\\CustomerWarrantyController.java",
+      "hash": "37CA4C27B092ED298D9B94FCA90D0C82179FC4B57A70606AA2C925DABFF70E26"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\controller\\warranty\\WarrantyController.java",
+      "hash": "9B6BAEC00AF78C85DD09B7E904D305B8AE1CC95ED2DDA4BE2AC88AB33B441A0A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\AdminSettingsRequests.java",
+      "hash": "74E7C1902BF9D30E7FFC770F06D328C91D6B02EF699962C072C1CA44A8B627F4"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\ArticleRequest.java",
+      "hash": "6AC9F40676BF8B83AC954C624D935A20C7131279D16294EFB1390E58BBA4F904"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\AuditLogRequest.java",
+      "hash": "F5BAED6F6869A8DE6A309E4571C5AAB637D7170FEFBD2DE7EAA197CB8F984712"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\BannerRequest.java",
+      "hash": "DE4CD63D1D8EE6A11EDDAEA9CE35E779BD488CF77717A273E0C54856B0471E26"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\CreateStaffRequest.java",
+      "hash": "5559C56B85E9B917160D45AEFCF12D01D0BE406489C36A63F57708B524BC788B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\FaqRequest.java",
+      "hash": "35FDD662BBDCD61B8F151045C0A421846E940D0C2B8DD54CD6C8B4F1BCCE7AE7"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\RoleUpdateRequest.java",
+      "hash": "0CD24EF49C369A198ABD835D84C092459F683C42C51EBAD05599608D95B29ED5"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\TemplateUpdateRequest.java",
+      "hash": "7047CA0984DBB5BAF5169F1327042EAFA140F36909729B07D3518394F69A4D2E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\admin\\TestSendTemplateRequest.java",
+      "hash": "329226FF1AB30F1372C193EE7A906B43C249A322A6FBD6E2C694D7A740EDFFC3"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\auth\\LoginRequest.java",
+      "hash": "948F09EB275B1DD90EC17DE79924B6817CE1ADA1271250DEC395D3CB59FA6ACB"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\auth\\RefreshTokenRequest.java",
+      "hash": "85E8B1DE14D96F3F4AE70EEB9669DAF11005BDE7580B21FDCDD6BEF2E039888A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\auth\\VerifyResetPasswordRequest.java",
+      "hash": "46A32804D6061278924F6AD85C9C6C1E30131280E442C79F684400B042130F23"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\ProductCategoryRequest.java",
+      "hash": "BCE69D13784A68B3BEE8E13BC5666901CB02D441362EE7D1BB7A51F8964E89F6"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\ProductRequest.java",
+      "hash": "FB7D97E7F4F67567149A3FC942850E9FDB5FA84E565A98B2C7D4B7E2CB9596B7"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\ProductReviewRequest.java",
+      "hash": "41A03D4FDAD5D73E9E0D3B903839B824438199E81425F2CBAD602E926639139F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\ProductVariantRequest.java",
+      "hash": "8A3A0C5C5E5DD9DABBE00101F5E04F9053E8F14D0690AEE4D7D0C086BA9F88B6"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\PromotionRequest.java",
+      "hash": "CF3474765DB02C0359989A278BF484EFCE1BCA9104FED6A7D3EF7C4F17D82DC7"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\ReviewReplyRequest.java",
+      "hash": "154DDC56A40371C976006D8255BF66C60DAE1B451F50315308BA34C99F679D97"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\ReviewStatusUpdateRequest.java",
+      "hash": "6FD53EEE2599FCC71CE09937915F9922D7DD2460FFF6AB1B34E3389E3D333D40"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\StockAdjustRequest.java",
+      "hash": "4618C06279D7AB38002F2BC82FFA8BAD9EAD166D033D981BF4B3EE6800CFE3A2"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\catalog\\ValidateCouponRequest.java",
+      "hash": "F95B59D3DFEF544763F21183393281B57F1950E1F5F03CE7F79B057ECAEED41B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\commerce\\CalculatePricingRequest.java",
+      "hash": "7629D5FF88A9F6071C6B73DBE38FE9AA308A7820E7A938D1008F5D36AE184FB3"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\commerce\\CommerceRequests.java",
+      "hash": "2E850119A7B75F8ECD10521DF32A11A3A07B122C0B162E4DA34DCB86673E4EF8"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\commerce\\DeliveryInstallationRequests.java",
+      "hash": "6FF26833E45B21AC49148BE8D49F40A7CEFF16D05FCA01BFA6897A3F37DD36BA"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\commerce\\OrderStatusUpdateRequest.java",
+      "hash": "B13D45C4B22050E802212ED1E9CB9B276230BBFFD7737CB16FC1064172B0A236"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\commerce\\TrackingUpdateRequest.java",
+      "hash": "FDB4A56978140FE601F2CEBD1E1A6F3B1926311EE12689855DF58012344002A9"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\commerce\\VnpayCreatePaymentRequest.java",
+      "hash": "4C5182A8CB875AFAA243885F70CF548016C50951D259C270C4F6C47CD2E1A475"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\customer\\CustomerDirectoryRequests.java",
+      "hash": "E4904D3BE3F52394A4FB540D2ABA9BAB74063DF4E9156EEAF27742B49BA89D48"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\customer\\CustomerRequests.java",
+      "hash": "AB86B9D66D3F4E276273837F96A2D9555EF527A868165D72CDDC3438D000502E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\device\\DeviceStatusUpdateRequest.java",
+      "hash": "5FF0B35B6BDC20D9C6566CFADFCA1075337DC6AA8401D29C100B860B253C1499"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\device\\LockUpdateRequest.java",
+      "hash": "FD9328A7DCFFADC70E2C5E7EAD903FAE2DA72FC0B6E39986B73B7578C355DE6A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\warranty\\AssignTechnicianRequest.java",
+      "hash": "288E1924193DBF13074081B5A2A26A00F4710670F11EA8F7CE1E3E397B4C3A78"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\warranty\\ClaimStatusUpdateRequest.java",
+      "hash": "927595E34058159D0FA4C219850DF96B24511CC6CB0DE2D709DDC22E2346468E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\warranty\\CustomerClaimRequest.java",
+      "hash": "4315E706F106F096967460E9BE81CE362A46B9E5D7658C7796476D86F90D65DB"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\request\\warranty\\NotesUpdateRequest.java",
+      "hash": "B9ADBFFD18863F3F5FAC1E9A2888C1CAE2889C04CE636328C324A863FC813126"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\ArticleResponse.java",
+      "hash": "97E911614ED9026197A5E886826BDA22ED7BF1500FA90844DE0140658590DD37"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\AuditLogResponse.java",
+      "hash": "D7C26AB9F54F67AA73FEDEE917D84C1C04D16CEC3C0A1C00A8BA45800772F640"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\BannerResponse.java",
+      "hash": "3C9336D0CD525623DA0F2F72B489F059C137ADC17E1A07B5FB9E16C19778894A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\ContentSummaryStatsResponse.java",
+      "hash": "DF3641C62FE2FF960FCE1B8334D77A4CDF080FF5267DBFB7A940B4892C4E8552"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\DashboardStatsResponse.java",
+      "hash": "F6F32517E03EAABB9C94A014F8D4935152F9DDC7AA724B7DDE04B25B5527EAE8"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\FaqResponse.java",
+      "hash": "C6DE14B1DC9D40CB46F788A5BE85DF9E9C639F115C37BE9B9359CAAC87848834"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\MonthlyRevenueItem.java",
+      "hash": "C82BE40690B224F186156E3A0A1B3CD302CB6190ECFAF4A129960E2277AC935B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\ProductSalesItem.java",
+      "hash": "AC1E7D229878FA5C442A09BE012DAD1D8FFB2D84108147E38FD9872FEFA3FE5F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\SystemSettingsResponse.java",
+      "hash": "D9275A2D13F1EDB7364A1168D5ADBAD4B979DCF9E663DE74CBEBA986CD2EC05C"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\admin\\TestSendResponse.java",
+      "hash": "E09EC5CD0934A914CFB361D3DFD4380667DF3ABA1CBBC993E387D75F55ED89BF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\auth\\LoginResponse.java",
+      "hash": "C6E5280052FF4F83632F7205D3FEDE4F9AB24D632906B50480B38DB22A99594D"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\auth\\RefreshTokenResponse.java",
+      "hash": "F336EB9C3C03774DFC0F233027CFC3F55FB9833A6A543BA2AB798934B60D49A9"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\auth\\ResetPasswordResponse.java",
+      "hash": "6D42EB2E00ECFA257C5FF8E522F737A6AD7A0F9499B5CD869EB030BF190AE271"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\auth\\SendOtpResponse.java",
+      "hash": "7C2053D3C2BA064D3612A8AA2B8B24E8CCCD9E9FDC87AC13EA994562BE7ECB98"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\auth\\UserProfileResponse.java",
+      "hash": "B1AE8DD2D0068AE1E883BD1F5E11F8E2A45027DA81D29D2351EBF8911118CF16"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\catalog\\ProductResponse.java",
+      "hash": "A5580576F20740F3A413EFDB3B06255C14700BB9728B90535845B6716A5C8C6F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\catalog\\ProductReviewResponse.java",
+      "hash": "53E41748E6B967A666B66B935E9E8AF7AD26E8A963C51614CB2E4DE3D1202F19"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\catalog\\ProductVariantResponse.java",
+      "hash": "1372A77F153AE393294AC90FD20AD0F5FB9E5C1C2C2429BF8E5B96846F7ABFEF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\catalog\\PromotionResponse.java",
+      "hash": "9099A9D861A031106BEC7F9FA3DF3C2C7BF8A4C5F91EB558D3235AB7412ACAD8"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\catalog\\ValidateCouponResponse.java",
+      "hash": "27A8F52A4D26908ED3FF41675DDBD15BFDE9BAEF6C05B5763FF617190F386CED"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\commerce\\CalculatePricingResponse.java",
+      "hash": "988AC6B3D43E7D66ED394142C61C515FA6092843D3A1C108E1E102BDBE83BC94"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\commerce\\OrderItemResponse.java",
+      "hash": "CEDC3538E5BF48647482804E99E0B5794D2B5187781374618C5CDD609AA88EE5"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\commerce\\OrderResponse.java",
+      "hash": "FC7CDA1B4F4453C3711ECCC05310CF1ECE8B9665A84252BA3BD2135C9BF395AF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\commerce\\VnpayPaymentResponse.java",
+      "hash": "BDBC0986757776EB5972FCDDA4BD14610C9746D8D3D84969E7ED0612D3340CDE"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\commerce\\VnpayReturnResponse.java",
+      "hash": "927662CD2851E25D9E5F9C14121F81E72289DD2560E09FCE1C15A086660016C0"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\customer\\Customer360Response.java",
+      "hash": "6709582A826D4113573753DF918E3725AC9D005103DD6D69EE5915B286AF74A6"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\device\\DeviceEventResponse.java",
+      "hash": "52BE824114954FDE79810973919C053BF49D13F30E77D3AA8F925E281273D518"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\device\\DeviceResponse.java",
+      "hash": "390A6F1ABD082C6F99FC20E867176E3CB39A5F5A609BB36BC4DB20B1FC79A647"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\warranty\\ClaimResponse.java",
+      "hash": "5B099B801BCBA7E8746880664DD8833E82E3400107AA0BAC1721CE95B12F45FB"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\dto\\response\\warranty\\WarrantyLookupResponse.java",
+      "hash": "3CA108C2CFB04BCAA728D3CC1A02BED2A397D1612C86E657FB6F2E4EEE525FAE"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Article.java",
+      "hash": "8FDDB50F99C6510B28CD103E43953E4C3D19A02DA862DBA4D0813C55F1C13CCE"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\AuditLog.java",
+      "hash": "EBD6874809A7BEDEE9BA5B6D0D8FA02F578E5FE07E8F3515E250F6B7294C7FEC"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Banner.java",
+      "hash": "9540BC0F215DA1504A889833AF20F22905D957B18E0061D239443375F146919A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Device.java",
+      "hash": "4F5BB83751CE62C89EC80BF3BABA7C4203D9BEB6BB2F6D8A3358F760D4E69CEA"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\DeviceEvent.java",
+      "hash": "728C6B54F6DC64A17149D5CCBF98F23D0067B3F4AB973AD31307201E8AC8E822"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\FaqItem.java",
+      "hash": "1F11AB4B9B322879B8086B524D549B913B10A5C471A77E435AFF865B4AE8F781"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\MessageTemplate.java",
+      "hash": "65A2E1636B8223105F6D921A97DD6E695098CF01B5A939F743BA7841CE781E1F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Order.java",
+      "hash": "609E4849472A8CDD48A479C0CDC4935B78BA9A929C3CFA757FB237CA89E2E992"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\OrderItem.java",
+      "hash": "F77A846AAE2F0AD0303F310AE311A49376700FAA07E80496A5F58C071D5B9B70"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Payment.java",
+      "hash": "6D20DA41AA4E7AB1A8F8D8B3E5C88522E2BD8057658533D12F0BA10EA4B01BB8"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\PaymentMethod.java",
+      "hash": "666F817C813D960C3ED6B7926B8E63E76288C2EF9AE69F53134E899D4D435F2B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Product.java",
+      "hash": "FD91A7AAB1DF01E056AAD9B68383B539339F7BD490FC6395A2EC0833C1CC0C9E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\ProductCategory.java",
+      "hash": "B484421DA3691968A682EF16925412376219F681898E4906B4C0A2E267E3DC82"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\ProductReview.java",
+      "hash": "CF5C643B9E8E6D6CE345F8DB3DB47164B6792F7D51871B6A043C9D9A0E89E3BC"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\ProductVariant.java",
+      "hash": "E4C4286EEE8568A207F1E61AFDF989355A3573B019852E507490347064A506E0"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Profile.java",
+      "hash": "FFA005F80DB1DC7E100D5BFD561646AB94653DE82BA3A16A40089474DD60E372"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Promotion.java",
+      "hash": "9018A505BB4E3E1D209F8F69F54B9E5ED10B1B708B272B0BDA931330E3215A7C"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\ShippingMethod.java",
+      "hash": "DEB7B3C229CCE4B074EB72BF6D97462EE6C45EED853BC93D0A0B218536ACC1B8"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\Warranty.java",
+      "hash": "9A6BB9CE07733B6AE485BC757138B06AF24042C80C316627F898CECB28142CE3"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\entity\\WarrantyClaim.java",
+      "hash": "3EEE6159F9E7587CA410D6E460D16F26B0D52E2F585473A950A7204DBDFA50A2"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\enums\\ClaimStatus.java",
+      "hash": "30192A2847CE12BA103D594B83F3A1CD669F4E7845F3B846E61542310002382E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\enums\\DeviceStatus.java",
+      "hash": "0DB3B71D2126DD4BCA783E6B28966EF609FB74A0069748F56F48EFD2C427D97F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\enums\\DiscountType.java",
+      "hash": "71F5755F8434D98143E585CA549FF3A6C739FD0EAC1AAE8A7A3E7CAEC8A66D3A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\enums\\InstallationStatus.java",
+      "hash": "F15B21EA4527E57463297D51A477ACD7B0BD38F98FB8A3D76451EA5A7EEA2EF6"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\enums\\OrderStatus.java",
+      "hash": "6963415B41D1145C4194570ADC4300F6ABF53F88A3807E9C6D3AF7F48FF762DF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\enums\\PaymentStatus.java",
+      "hash": "54876011B31CA80779F0FB01B03AD0C4A98CD44B565933BDD1C1FD0F7213D8BC"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\enums\\UserRole.java",
+      "hash": "DF47591F17ABDCB79FA01A81D53D0F19FB341634CB0A3E57F1D9570B0B77477E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\enums\\WarrantyStatus.java",
+      "hash": "54A9BED11A4F553F5829707266F6D908BD4110C11A13BE1BBE2AC04ACFE53BC2"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\exception\\AppException.java",
+      "hash": "AD95B50B0FDB52896E776EFE76FDF9FEEC5F47623767BF7626D1FBCE0AA0DA6B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\exception\\BadRequestException.java",
+      "hash": "0C1379E14DB575CE819230DCBC8B804EFF699F5AF1DCDB967B99F54999374439"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\exception\\ConflictException.java",
+      "hash": "752C86EF45FCFE8AFDF248161017BAD79BED8AD47DEEF52A09C671E72428563D"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\exception\\ForbiddenException.java",
+      "hash": "ABF2F08C1872CAF342D6A15D0630502D88AE83AA87EEB1100E445CD1466B2C3B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\exception\\GlobalExceptionHandler.java",
+      "hash": "5C84B5F29C871CBF01D43174206D913D732946492B64B621EE0FEB46FB6FDCCF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\exception\\ReportParamsException.java",
+      "hash": "3F12BFD599921DB06502822FC1FF75CBC22EE76989313879B2FF368B8D1C0D63"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\exception\\ResourceNotFoundException.java",
+      "hash": "F431D4D7CD33B22390DCBDC2DA6B7C768F9CF334764533B77203CFCED915C8D0"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\exception\\UnauthorizedException.java",
+      "hash": "32EABEE9FE266152AD71483484D6D5D20D4F2175417C3A2C118D23388FE2570C"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\mapper\\DeviceMapper.java",
+      "hash": "C39EFF1E03D00EFE7E68FD7504DFCDE6FB40D4E00FF0CE249677E40F98ED7C89"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\mapper\\OrderMapper.java",
+      "hash": "535CD6BD517D57F970A12B990AECB19B7710DBB8E6F4A2AA5F959FBBA462BF28"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\mapper\\ProductMapper.java",
+      "hash": "66E546393928944FE3ADDA6242126D3AAFE7D552D4C5614037B827AEF9849AA9"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\mapper\\ProductVariantMapper.java",
+      "hash": "9FBA5A8ABA15D9A1FEFF42526ADBE699183047CE83311EFF3BF0FAB38E572118"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\ArticleRepository.java",
+      "hash": "478440A278EB7D98C46F7FA729A396BD9B28BE18BE52FC97696C57CEB0FC1CFF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\AuditLogRepository.java",
+      "hash": "93E7ED480E505FEF91A8B151E2132D864CFCF7B5F8800393B467FA4CDD679195"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\BannerRepository.java",
+      "hash": "FDBC570384487777AFB355E1C4A1BE9F7411928EBDF020A91CC186097F5000DA"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\CommerceRepository.java",
+      "hash": "320EC0A81D5D6618CDBE6EB492D2B52653744E0B5D836772B2645E586D6034B6"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\DeviceEventRepository.java",
+      "hash": "30A7EB2AB15FC3F342607930F3AEBA66218505DCB36E052A0076D3B7E8452E20"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\DeviceRepository.java",
+      "hash": "33D4AA4A9571232FB8B3952C36DB9DC2E3319037A2A752C5EC50D6806A229870"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\FaqRepository.java",
+      "hash": "1B6F755F3F466DE87AA23CA325C9FA800BD100529D8FF9605432CE6F7BE44768"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\MessageTemplateRepository.java",
+      "hash": "11C0E0F4BE1CA199706A769ABBF26BDEFFF3FADECD33CEBBF255F2E798F2E78F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\OrderItemRepository.java",
+      "hash": "0C032C17D21057D572A52D4E2B8D270751ABD7E8BBC66BB99365D9D3275A41AD"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\OrderRepository.java",
+      "hash": "C445B7FA48176A9CF998F903527BBF61AF0B593C3E0BAF70C96E09F8CA03F47A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\PaymentMethodRepository.java",
+      "hash": "51C783CF106683913074FAFFF34971D174A965A1432241FAA44A790D384EE88A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\PaymentRepository.java",
+      "hash": "AB16B4EFC78DF510B57165D64B3B0400FB0C8037CBB1ED100AECF1B9684BA5E8"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\ProductCategoryRepository.java",
+      "hash": "28A17BEA4B17852E17D4A63595BCD86D02507C2CF0922B2A3BF6854F6A8C06C6"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\ProductRepository.java",
+      "hash": "08AB5408CAD7FF859419D1FB00C1471989EAB07D851D65AE24B40F3020F9349D"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\ProductReviewRepository.java",
+      "hash": "4810B484364228E4EAB913152AAECC4CD788C8AD635444302A00F206AC3323EC"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\ProductVariantRepository.java",
+      "hash": "764B672F1E3434586B1C653570B1D3EB90D67CEF45037AE967F43978F1076A58"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\ProfileRepository.java",
+      "hash": "C5D4EEFC7C1DE219F714DEC95DB428402F8B729C5961CBB38BBBAE58B1914DEA"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\PromotionRepository.java",
+      "hash": "CF51DAF884A3023469772D2DA40F9E7CC9F80B9E96D4A44D3E338C6634CD5849"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\ShippingMethodRepository.java",
+      "hash": "1D174C5E735FC0ED57A2CC73391CB191D52D9F04A358C019173570675407923F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\WarrantyClaimRepository.java",
+      "hash": "DDF97E31960A49B97E35CA9022A468D6A1E7E3617848F0939D309DCCE2ABD08F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\repository\\WarrantyRepository.java",
+      "hash": "9D6610A4FFAC904DB6CA437A1DA31014829615B62080B7CA80100E03F475FA90"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\security\\CurrentActor.java",
+      "hash": "8D63527E6BB8129904FAF51BA9E1C171F9971CBBFC8F4582C66CC71955BEAB41"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\security\\SupabaseAuthGateway.java",
+      "hash": "D58D0B6C606B17B132DD7129FDCC8FE2373DE663A7CD321FE30ACE31ACFB2628"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\AdminNotificationsService.java",
+      "hash": "3ABA2AF69671A5F6934B84629CC11C36649F6FA4B64F947426839343FC2D451B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\AdminSettingsService.java",
+      "hash": "0E476D95BA4013DDBF43ECAAF17D13153891346AD6AF30C1449C7D52AFFC7826"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\AuditLogService.java",
+      "hash": "1B9047671B1ADEC09D83D94B65E6DAC1D1CB1E29D5E4AB65949805D0E6155594"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\ConcurrentDashboardService.java",
+      "hash": "71BD5E9E5902E19DEE12E8952131F9DC161DAF08FFE5755ADFA600BD44A64F1F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\ContentService.java",
+      "hash": "DCF39CCD055587DF19718E901AC69AB3986DB053310BF815168BADCBC74349AF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\DashboardService.java",
+      "hash": "15F8D79519595CC665D5E6FCD4F8AE30BBEF2AB1EA0B783F28A034E020EBE6D1"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\EmailOutboxWorker.java",
+      "hash": "83C4446A6B376E8018144A3DE72ED3E79A25C43DCF880011A98A7042BD955B69"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\EmailService.java",
+      "hash": "BF5B402B249127ACB2CE347D529DB9CE874B8F8C6503CC0AFC0C976BA2DE4C18"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\FcmWorker.java",
+      "hash": "D1592AC2AE4B7BFE1B3AF09A7C83438D59E9408A34948E32BD171D953E396951"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\OutboxService.java",
+      "hash": "320022541FBE513877D7EAD7296D707D54FE946D12DAA58DE57C1E9042DE316B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\PoProductReportService.java",
+      "hash": "8123EF4A3572183D721E932BDA3F133B7E3E7C8028AC39F79253EB2EC9FBE361"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\PushNotificationService.java",
+      "hash": "2BD70441EDFE25501BC693F68B7338FEB092B1D2568B7A2B75DD666DA54D854F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\RevenueReportService.java",
+      "hash": "2DD718FDB1E26D26B4B32C51C13093538984FDE018FFBFB3DFA9A81DE0702134"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\SettingsService.java",
+      "hash": "DB6F0B3C953450147880A64D84D63D53314D6D98720E9759318121F26C774B3D"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\admin\\UserService.java",
+      "hash": "EC6903964459AD14BF2D3044DAF4974441F909C14F0E7B6ABE51A8A36E7A7F56"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\auth\\AuthService.java",
+      "hash": "73973EA01AA23FC1F52798ECB7934306B767B408245CBC778179993D893136D5"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\auth\\CustomerAccountService.java",
+      "hash": "78F0227BF3B1AFFCA810378FC8C219E1AC10A63B3F74F5F5F87B84840C9C7C03"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\auth\\CustomerAuthService.java",
+      "hash": "D8BD057CF7ED21D920C135E12FF140DD510B9CC7B0FD6858022ED795B0180F01"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\auth\\CustomerIdentityService.java",
+      "hash": "ABD96ABA933030F79D58DBEC25521E83959C35FF5F9AFC330EF85053E813DF08"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\auth\\RedisAuthService.java",
+      "hash": "18C5CA9142388EECF8F39878814F0DC943201DD67E8767FEF9502BC8984B524D"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\catalog\\ProductService.java",
+      "hash": "ECD9454D42FAEC7A49FB7E9B3AD82073F441E44EBE7F6D6F15B184DAD5AC3B15"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\catalog\\PromotionService.java",
+      "hash": "D0FD7D38D059F102F501D377BD83787698CB7674EB25E5D3340C94B8D6522518"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\catalog\\VariantInventoryService.java",
+      "hash": "7A5B9581FAB34D090574CA56155A7476B5A0F6A3811165E5D18C233E6AE3D72E"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\catalog\\VariantSpecifications.java",
+      "hash": "84E1A94882C301B59C2187BBE3541F2004885AD66860EF90F93C09D4198CA018"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\catalog\\VariantSpecificationService.java",
+      "hash": "079A79E17D590A6C410C95206527F0E70D539141BFCB151FE2D0527E2DA05EB7"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\ApprovalTicketService.java",
+      "hash": "4021B6FBD4B1A2BB09C5E9604CCA9CC89B7219D5F97F705A8C52CE39FF9D27E1"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\CustomerOrderService.java",
+      "hash": "840C55336378D0D932D3BA34B41901D69D895E5D746B0F675EB99376BFEEDAFD"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\DeliveryInstallationService.java",
+      "hash": "2005737BAD1972E3F55DA852F038F9E1D3B3E8621326854435B626DDA8CA4FF0"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\FulfillmentService.java",
+      "hash": "0A69F5320B9222BA0B744125417DB305F3262EF95E3995B9FCEB33D17F2570FC"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\InstallationDashboardService.java",
+      "hash": "75302E29C65EED0CC1828B98DA5AB541F2E6ED9EC37CCBB1FB07DD6AB5C26601"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\OrderExpiryJob.java",
+      "hash": "89FEEBC7846693263F977F21D49ED4AF581BEB4307E192EA23DAAF18A12AA492"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\OrderService.java",
+      "hash": "75E1D346CC4616FE92AE49E25A7B995B4AF915CFE8BA9399B92FBCE775B81206"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\OrderStateMachine.java",
+      "hash": "50BD7D018811A7B10531BFC1C894FA2FAE7C840AC1189BEF193FFC7106E3704F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\OrderTrackingService.java",
+      "hash": "272AFC156E440F74DD975F1A8211D67812AC592327DE6764353BC52A10FADD7A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\OrderWorkflowService.java",
+      "hash": "5EF00022A68E9B70A2748ECD23F40F3750D430347C3BA4690003EA570AB87EAE"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\PaymentAuditService.java",
+      "hash": "8FCB910EB29B1A462728FCD79A1C8EC6B357B740DD1220557D1F19321FE8A91F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\PaymentService.java",
+      "hash": "285F23940AC4174859C0453001EA0D13537674B17B2E857B44C759269AD25ED1"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\PricingService.java",
+      "hash": "71D51944EE0ABA85E8F8C7D39F7BD3F1785689CABB6C41E23F6236C5746C8737"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\SalesInvoiceService.java",
+      "hash": "286A04DAD67C19F890FB157B5569F76E9A65465CF3321821E228C805B20A58C9"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\TechnicianReminderJob.java",
+      "hash": "4D05B3A87B19E8B6372511032001A0B7A4E40315FAA9509302FAB884A1099A44"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\VnpayGateway.java",
+      "hash": "55B07A3B7BD405F3A04E2C4591897567A573F87C81EAC7528EC6C09B713A4CD0"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\commerce\\VnpayService.java",
+      "hash": "1A1C7C31D3ADA896B5C66E613CAE3D994264AF4022391707A1D30286B7B6ED7F"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\customer\\CustomerDirectoryService.java",
+      "hash": "F44D1CB982300C42831AAC1B881114C6FB47991CB8F117F60C75D1A9661D255B"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\device\\DeviceService.java",
+      "hash": "913B74AE7C7587937DABEB0C3AAB042669498A7323233C192A18E9D930BC5EEF"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\device\\DeviceWorkflowService.java",
+      "hash": "590B78BF64C6DD280D5FA858E714DF0C56B55F0012585DAA7349A3569C0623B8"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\device\\MqttDeviceService.java",
+      "hash": "EAC45102431E60BF725432C93850B9143CBAD298816E51CF5961485380289E96"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\warranty\\AcceptanceWarrantyService.java",
+      "hash": "26E9C7B62B268ECCCCF3C3DDAE499020CB23A737724E25A526ADDF17AA607660"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\warranty\\ClaimImageStorage.java",
+      "hash": "E31D98487B6134806F63A6B91BA5F6CA6C75B17A71D69172CCAAF5427C2A1C50"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\warranty\\CloudinaryClaimImageStorage.java",
+      "hash": "1B0C9B947229FC7A0053828C0210D0C881CF6FC607E355B940C1C3310A963290"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\warranty\\CustomerWarrantyClaimService.java",
+      "hash": "41BE1E03B26A71FA4F44D869F5B5CB1051D80A4766D556263AD50B4B12110A41"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\service\\warranty\\WarrantyService.java",
+      "hash": "13E99706B4F50C483F4661D92AFCB01CC56BE8BC3BF793B95C0D7685E6C9FECB"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\specification\\DeviceSpecification.java",
+      "hash": "C953334E50BA6B19F0A6BB18B8106A9664B1D29128E49719231DBCC82B5AEE2A"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\specification\\ProductSpecification.java",
+      "hash": "8FC4B9412010E5FD93C76F5C0CBB30B954F493CC760D0360FC782F12F9AFEA01"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\validation\\PhoneNumber.java",
+      "hash": "44FB3EC4EE1851FCEA6FA3C13AE4B5FCE4D4BCBFE75E2DE66B0A5C29347D1D41"
+    },
+    {
+      "path": "backend\\src\\main\\java\\com\\smartbox\\backend\\validation\\PhoneNumberValidator.java",
+      "hash": "CF5A4ACF15191D662DD45FE507D626774E23D2305A623168B2D7979D49782B65"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\application-demo.properties",
+      "hash": "E0EA273D4195AD88BA41D36576A84B98430D1E45747A7DF5A9BB1C266EE5CECD"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\application.properties",
+      "hash": "F424584D95158F023B6ED8D4280F05CC527D2A2841387E0142FDD0B62DEAD300"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\db.changelog-master.xml",
+      "hash": "7A5E2AD51B43AD7623B6A22BF77B0D9D5A9948238D4E97B0AEADE54054DC1790"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\000_base_schema.xml",
+      "hash": "84C324EC139C9D6E3002E4127152EDB4B2D3B914985845135C12530D8F296926"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\001_order_enum.xml",
+      "hash": "85EFADB1D4569A2DEA0BC53D45A1CC924E2B3C775F2A157D58E2EC5FE5E29975"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\002_commerce.xml",
+      "hash": "F7CB7A96C1AF06327EDA0676D7767842B316EEF3F5C1A25000235DE3F63900E9"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\003_iot.xml",
+      "hash": "E2D89286184B108A848210201745161DE862A5E3D86D149CA6792F03EE1C277B"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\004_delivery_installation.xml",
+      "hash": "450BE99751EEFE611AFCC5EA093242C6D758D67A647D773C9D83CA3AE84E481D"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\005_installation_completion_guard.xml",
+      "hash": "3A1DD305FDA0CFE8FDA9ABA4B64E61E3A64612C0CE995CDDE4ADA0CEF8FFFFCB"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\006_customer_account.xml",
+      "hash": "C84DE8D45E1F4845AA922F9F26590914FA82DABB1AA6236257EC702CF7C2C0BB"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\007_tracking_warranty_variant_specs.xml",
+      "hash": "5478FB9EC513D1CB11822D02078DD4B7C6B62D3CBDE475DB8C0CB5CC9AFADDBC"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\008_customer_warranty_claims.xml",
+      "hash": "23915D8AA86C0100DB810C676C084E77611CE9C91323844B16449A77EDB40BEA"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\009_vnpay_sandbox.xml",
+      "hash": "48BF6ED1CAE3CC6532E7F5B542C7FC705F63492DED62AF9F976B401A176AE407"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\010_sales_invoices.xml",
+      "hash": "26A760C7CCB4DE463EDA5B3502FC2497E9991F78385F05B70DB23B4E04E6A589"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\011_customer_directory.xml",
+      "hash": "DDA10891EE5D756589579BBAAB1AE1AD287E8EDBE22B040B837B6A055CF045A3"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\012_staff_roles.xml",
+      "hash": "B2311E4A73DBED512536F55E7E0EB1A5DFE5DB3A1C6F46777574949213C8656C"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\013_smartbox_catalog_seed.xml",
+      "hash": "9D338EA1B6BAFDB1C3B83F15AC5512145B3277BA7CC9786B4D339BA1AD705033"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\014_claim_status_assigned.xml",
+      "hash": "B6F5FC83CD7A0D5A0E179C4431C5A676B2EE88C97852E3603C5E24D1288AF2F1"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\015_order_approval_workflow_v3.xml",
+      "hash": "AF1FEA2BD097D23C58B53523495C0C6EE5F421491ED397F61584640519A13043"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\016_remove_catalog_seed_data.xml",
+      "hash": "681BB5088F4335E87E9D5EDD5499B88CC0A3A3D1E772A198728FA95217FCCF31"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\017_order_enum_confirmed_and_report_fix.xml",
+      "hash": "F77176E1A4DD0302DA2905C1AC5D3FF8AABD082B5B414FC093310344345E5FDB"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\018_order_tracking_number.xml",
+      "hash": "34BB4F7417F6231528533B47098FCB9B1AAE655D68409B5F9FF162D0785646AF"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\019_settings_and_cms_tables.xml",
+      "hash": "C8E7DD8CDD0638956AE64911DCF556E3E525C02A3921BB8117B649178DBEE39B"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\020_warranty_claims_schema_sync.xml",
+      "hash": "9BD37C139E8E4370C22588943F8FBD2402525A6A6F7320746EDDF170852D7487"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\021_delivery_dispatch_and_acceptance.xml",
+      "hash": "40801EC6906B0185856DEDB10F4B8A66D0A0A3056E2E9492D9997890FE495925"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\db\\changelog\\changesets\\022_profiles_email_index.xml",
+      "hash": "998CCBACD20372B5BD8A61B6F26ED2DEA35DF8954D0CA4F667E9DD77FFA4AFC2"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\invoice\\logo.png",
+      "hash": "B2643EE006E8CBCFB7D1F13ECC5750DF979A1504BECF130CD231EA4F5110FAEF"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\META-INF\\spring.factories",
+      "hash": "E722F7D9CF4F192746CC5344AEB6EB9A08AB97B458F272114718E29A2FF1B854"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\reports\\po-products.jrxml",
+      "hash": "5AD2730175A00FB9C4D48B8DDD9525EDF4C3A3E2462EE8D4C19E4E8E986896E9"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\reports\\revenue-daily.jrxml",
+      "hash": "D9F3C492A3BEF7EA20190FB34B4088F0A57CA7B13021CECBBDFBF60BA017A4F9"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\templates\\invoice\\sales-invoice.html",
+      "hash": "5E6344F2994E0C2F45D553A8CE29F73466343E14DA9170C136A33D34B31E10FD"
+    },
+    {
+      "path": "backend\\src\\main\\resources\\templates\\mail\\order-notification.html",
+      "hash": "0E1CA0E47015D67CEA3DE461F704C4A69319A424576F928BBD9D1F194CA39F7D"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\AdminOperationsHttpTests.java",
+      "hash": "B58E841605E78EB1C637CDD9D8C6F797BFE1C55B4134A89F3B280EC6FC62B102"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\AdminWorkspaceTests.java",
+      "hash": "6EA4B13D0812416B7287E1F193C3153F2040E5C79ACCA045ABFAE01F00F5F97A"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\ApprovalTicketPermissionsTests.java",
+      "hash": "B8C63AF5CAC8CBA7F9C888919BA43609C7D229FDC5912F263DAFCE4A3F074E7F"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\BackendApplicationTests.java",
+      "hash": "CB8FB1CA0C28848C61E86CADF101B622D3A84814B5961FF16EFD93F97C5EF73B"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\CommerceIntegrationTests.java",
+      "hash": "037405FBF464CA1B0D1BDC3EC53B2FEF7A7F64435BF14A2F034BE247CEBA444B"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\CustomerAccountIntegrationTests.java",
+      "hash": "D0B30E3E359345CE0FD6D77E21BCDC036AABCB02EBAC74264487F42CAAE98FC6"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\CustomerAuthGatewayTests.java",
+      "hash": "57779B815F1D702CB37F37EB55B49CCE32C2D88D61C3AD9F9AD2F5AE82341DC0"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\CustomerDirectoryHttpTests.java",
+      "hash": "7349C6AAA32C8C14BAD4D69D797BBFBD2405C1196C9D37B4E4475223B0351275"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\DashboardAndEmailTests.java",
+      "hash": "FE6DC8F0A8E434CC15924B93381EB4115F479CE26A51AABC1C7DB59E69C62997"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\DeliveryInstallationIntegrationTests.java",
+      "hash": "04F33AE46CD4AABCDB7FBE3F973CF415C398A210D50CED9E36EC531BA41BCCCE"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\DemoPaymentHttpTests.java",
+      "hash": "FB79B94B96C6A65E735A61890A76C103A72725E41D5BA7995E20EF447975440C"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\MultiPoApprovalWorkflowTests.java",
+      "hash": "303F54807DC26B14CB8E4D98B99A559A4518DBE03023DBCF08077D34485B4697"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PaymentLifecycleTests.java",
+      "hash": "13D1F9A886091C3E3F30ED4775F3A851BF00A7B6C3F79E017D0B582DD234B6B7"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PaymentModeTests.java",
+      "hash": "A9533B6D1C3C807DC684CFEA855AAF434489B23C9F28E837076F3B5E48EB2D5E"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PostgresCommerceIntegrationTests.java",
+      "hash": "35B9E2B60153B15A3ADC035C94A5AAF0334387F92568989D200FD42A8D0DDA72"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PostgresCustomerAccountIntegrationTests.java",
+      "hash": "24AD766F41A29CB072665755762B42AA4E6E6F03B70E586F4224C7CA9098C6D6"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PostgresDashboardTests.java",
+      "hash": "5B42FD4E557D486DD7782C29ED02E377E3312A68E5CECBAC200EB488DB91E2F5"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PostgresDeliveryInstallationIntegrationTests.java",
+      "hash": "6B284BFCC80D0B76CFB43ECC4B7DA46EDC0620E96A03B7567211CD947466971F"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PostgresPaymentLifecycleTests.java",
+      "hash": "BFA91A9101D03C25EC4EA8A35887526444BA878A616966EB0EA380F18B49F4CB"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PostgresVnpayIntegrationTests.java",
+      "hash": "9C477205E0451663FB1680564243614297AF312B68B611EE70B27BED5BFAEA15"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\PricingServiceTests.java",
+      "hash": "79EB1DE40C9C4AA4FF7A01773B7310D1A9EB842BF8251EE1BD1DB626E36D3349"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\RedisAuthServiceTests.java",
+      "hash": "1B478289B1C87A5386B42160A0290FB3EEE832917708B12D700A799CE97DAA31"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\SalesInvoiceHttpTests.java",
+      "hash": "5268A677F707139DCE2C77882D8CFE8A823DFA88943AE288F2BA4636AB769D2F"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\SecurityTests.java",
+      "hash": "731280EA55335CC5439EE6DE59A01B0C4CFC36ADB2BC8F439086A40C1A6AD9FB"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\VariantSpecificationsTests.java",
+      "hash": "BCC68810FC3E1901BB0563DD048CDB1E260E8B1DAE33AD6E5C99390015583A92"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\VnpayGatewayTests.java",
+      "hash": "3507348C001CD7BDC3F08D22C05595879F637B9C0121192BFC7DDB69546BCE51"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\VnpayHttpTests.java",
+      "hash": "238CF97E75AAC43F619EC33B4225F61F149D31BDA04CB45BE053C9EFC6309F4B"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\VnpayIntegrationTests.java",
+      "hash": "9F9F5844E60BC70891666AABD51A23422394A4065818233BC71CDE03BE67A519"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\config\\LocalEnvEnvironmentPostProcessorTests.java",
+      "hash": "0ADAA5EAC51466C28F1373B046ABCC25BC9943C75653FEEF12B3A1AF55E2A6F0"
+    },
+    {
+      "path": "backend\\src\\test\\java\\com\\smartbox\\backend\\service\\CloudinaryClaimImageStorageTests.java",
+      "hash": "1D9543A3DA696182DCBDDDFA54001F3E4B2D366E21E502C449928770BC3CED7E"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\commerce-base.sql",
+      "hash": "7158D7881C1803AD1DA3D3520569F974557965ACDEC0EDA221822D789CBD2543"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\full-schema.sql",
+      "hash": "33BF73D56AC82209CC8FE06B3004D38BEBA93137A3742D5F2D05657F56607794"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\001_order_enum.sql",
+      "hash": "0246A87A79FA9500378200D00AC201B1BCABAC19FD3BCB7EE832A49E2E616E35"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\002_commerce.sql",
+      "hash": "3DA283DF37F7801C0460B77A954BE49F252E3698E752BEFD2331CC6DCFDB1F76"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\003_iot.sql",
+      "hash": "AE6F91E2052F49117653F2FC9418AA42529964DF8A27C313387E8B2DC39C94C1"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\004_delivery_installation.sql",
+      "hash": "BCA40B3B9E3F02A8FD2997CC1569BF731E0232382DC7EEF3635425AF1F1B6475"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\005_installation_completion_guard.sql",
+      "hash": "331C0DB70FA0878877D9BF49ADE138B340DEBBF8BFFCD792A5B02F4B27AEEF3B"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\006_customer_account.sql",
+      "hash": "ECE70692061E9F4BB5A8D926C9968034A3E683F3894359689AA63815F19E2D82"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\007_tracking_warranty_variant_specs.sql",
+      "hash": "F73565B968E86D56174329AE79C6896B47BDC9387DB7F9E96E506E6925B77C30"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\008_customer_warranty_claims.sql",
+      "hash": "80DF5C6F6EB1B5D582E343AC1B569A9E4B8592DFE6D9606A952D3BF3BF22C7FB"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\009_vnpay_sandbox.sql",
+      "hash": "B841772D9D63A43ADC920F76C129857C9F90BB17F124F147953FA31D7E283090"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\010_sales_invoices.sql",
+      "hash": "992CCA6FEDF891DE03FD74BA5FFE17BE568E4FFA8428D3069B96300C8572219A"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\011_customer_directory.sql",
+      "hash": "50F03B6B5DE14C70DBC3B8D5FEE9EB62333D2BEAAC7C3DEBA5966EA73B60596F"
+    },
+    {
+      "path": "backend\\src\\test\\resources\\db\\migration\\012_staff_roles.sql",
+      "hash": "3C7DDFFB6660904B3CF13296483A3F410A8B73EA49F2471177BF2F190D647833"
+    },
+    {
+      "path": "web-admin\\.env",
+      "hash": "DA98FEF883AEC04FFFC967C92E9286B68CF82822737A009957564B216AC0333A"
+    },
+    {
+      "path": "web-admin\\.env.example",
+      "hash": "8ABE6DEC4C43A976A6CFF891B63CB949B24B2A7E39CC42A506406ED032427874"
+    },
+    {
+      "path": "web-admin\\.gitignore",
+      "hash": "B135FFD3A719C5A5D4BAB1E601191DB3D463BC86E039AEC7DCBC619B8F5428B5"
+    },
+    {
+      "path": "web-admin\\index.html",
+      "hash": "B3E089FC3412D8EB70DFD7E92007D55D295954625EF040104425E19603BC99E8"
+    },
+    {
+      "path": "web-admin\\landing-check.mjs",
+      "hash": "C44A7D640FE64BC71D42B7EF4C7AEFB70CBA1D56981B89A66706975EC98ED3D0"
+    },
+    {
+      "path": "web-admin\\login-check.mjs",
+      "hash": "27088948313CC085AA75B73031F109F52DA65B9BC30A6DC28FF4EBAE44392E67"
+    },
+    {
+      "path": "web-admin\\package-lock.json",
+      "hash": "F3C505927DE16B438B454DFDFB35CD07C99B4C6938F29197A75E0128DBC51DA7"
+    },
+    {
+      "path": "web-admin\\package.json",
+      "hash": "995D9B84A1907AE347998BBB5A2FD0299582C0CAB2BA8ED4F030363739C1D9AF"
+    },
+    {
+      "path": "web-admin\\supabase_seed_data.sql",
+      "hash": "1900A8BD32C1653A0FD4A5D4CFE44C492B7D99C60F3909F3E2555B15CFD80EBF"
+    },
+    {
+      "path": "web-admin\\tsconfig.json",
+      "hash": "7416AA095A92FF1639846496C2F754C810F21AA1055745B9F074F319883FAFFE"
+    },
+    {
+      "path": "web-admin\\vite.config.ts",
+      "hash": "47ACD3D9E7A74E6029E34FA073764FEEB3C5CF1F6112466503DE912C07B30848"
+    },
+    {
+      "path": "web-admin\\archive\\iot\\Devices.tsx",
+      "hash": "668EEBD2B2A24EE4DB5C51CF17B402E3831C9EC79A2D27265A9DC8B083A6C848"
+    },
+    {
+      "path": "web-admin\\archive\\iot\\RealDeviceMap.tsx",
+      "hash": "C4E975E4323484C5F5F565A8200F2EECD8F6A511DD40474AA0DEAA0B7AA69702"
+    },
+    {
+      "path": "web-admin\\archive\\landing\\ProductShowcaseAndGuide.tsx",
+      "hash": "E1C7FC1CD4CD412B3D3F27DFA8986926AF1FF5D6ED177E0F163D1021A264712D"
+    },
+    {
+      "path": "web-admin\\archive\\landing\\SmartSafeInteractiveScrolly.tsx",
+      "hash": "799F512DECB04D2D912E7FE0C2EFCC7AECA65F5E8A27527F3FE378FDD6501666"
+    },
+    {
+      "path": "web-admin\\archive\\landing\\landing_components\\catalog.ts",
+      "hash": "DA809D897F5812ECF8A2D5A6FF828FE48A5733BBB153CCB70A3105BB0761DB5B"
+    },
+    {
+      "path": "web-admin\\archive\\landing\\landing_components\\premium.css",
+      "hash": "74E903EB56052FA358D3EC7710A3EAB9473773BCE7078A54015169443995C89B"
+    },
+    {
+      "path": "web-admin\\archive\\landing\\landing_components\\PremiumLanding.tsx",
+      "hash": "2B6F7B69482AAECC2B59BD3C5F034BD75BACA33642F17859B29358C2411747C2"
+    },
+    {
+      "path": "web-admin\\archive\\landing\\landing_components\\types.ts",
+      "hash": "866A9448848B2F30438C226B2D0BEF7C75671E3CE533101C475E5FE2EAF0E7DC"
+    },
+    {
+      "path": "web-admin\\archive\\landing\\landing_components\\three\\SmartBoxCanvas.tsx",
+      "hash": "22F2426D4F5498389E7C2E2E780E2C3E99DCC7525EBDBE68E0E981B82A1C38A9"
+    },
+    {
+      "path": "web-admin\\archive\\landing\\landing_components\\three\\SmartBoxModel.ts",
+      "hash": "30FE96FDB4408A90B3EC4E478BC87097EE3B190FD0FF86D8B4316533701AF80E"
+    },
+    {
+      "path": "web-admin\\archive\\legacy_users\\Users.tsx",
+      "hash": "E11D98B44E06864604AC5996A3D7BA4D361F98A1C60001D9984BFDDBC83D7B6D"
+    },
+    {
+      "path": "web-admin\\public\\Logo.png",
+      "hash": "B2643EE006E8CBCFB7D1F13ECC5750DF979A1504BECF130CD231EA4F5110FAEF"
+    },
+    {
+      "path": "web-admin\\public\\robot_403.jpg",
+      "hash": "AB730180A4DFA49D37862BD258E735DD252E09F1F0982E1581AB2172CB5926DA"
+    },
+    {
+      "path": "web-admin\\public\\smart_safe_board.png",
+      "hash": "D8A8B32CA63C43685DACA59044D112A4FD20684DFD5559B0CC6AC3BE8855E406"
+    },
+    {
+      "path": "web-admin\\public\\smart_safe_cropped.png",
+      "hash": "0E2F1FA6A6B2DF2991442563E32F4A09B1E43170DB12419C570212A6A65F40AB"
+    },
+    {
+      "path": "web-admin\\public\\smart_safe_cutout.png",
+      "hash": "EA8C08A42C9BABAFA778A1F58DD59EAE1A58B00E85D9068FE7AC598714D385DA"
+    },
+    {
+      "path": "web-admin\\public\\smart_safe_keypad.png",
+      "hash": "6738247EC4CABA35C18DCF30DD217E0A1982244F8D7E0C2F442D67B215702A91"
+    },
+    {
+      "path": "web-admin\\public\\smart_safe_lcd.png",
+      "hash": "963C368FFCD9EE9AC37764CA123829DC1D30E4AD13DB3544F70500B4D77E9C91"
+    },
+    {
+      "path": "web-admin\\public\\smartbox-studio-v1.png",
+      "hash": "D4C6765626BB021D1E13C7C02D43624A0CCD7C1252EE0DD3EA3C28EACA5A218C"
+    },
+    {
+      "path": "web-admin\\scripts\\seed_mock_orders.js",
+      "hash": "702DEFA6E03BF0744415C7FA1CDD88BAC68E4C656D4BDB9C20B6C4D6E96F2E7C"
+    },
+    {
+      "path": "web-admin\\src\\App.tsx",
+      "hash": "F61CFC774519686E3825DA497D33E3F35E601EAEECE4B7A049555F48F8FF2DB3"
+    },
+    {
+      "path": "web-admin\\src\\index.css",
+      "hash": "25295EC6C8ECBAFD78064DB773D0730E759F281381FD43ED58BB9753B6ABB6A3"
+    },
+    {
+      "path": "web-admin\\src\\main.tsx",
+      "hash": "DE8ED40B6E904E8849B8A6C6F3A6272BA1B4E0D8CCDD48D1BFE49E7FC2414270"
+    },
+    {
+      "path": "web-admin\\src\\navigation.ts",
+      "hash": "FC47D2FEEBCF1773C77BAFDB702E744199FE946E7EEE9F6BC96480E692C6FB41"
+    },
+    {
+      "path": "web-admin\\src\\vite-env.d.ts",
+      "hash": "424FAF9241DD699DDA995B367ED36665732DA1E6EC1F33B2FD40394488ECAC92"
+    },
+    {
+      "path": "web-admin\\src\\components\\admin-workspace.css",
+      "hash": "5F39E84C9E6317607F3AF09DEEE433590C3AE793F79E9F3C41FCBCB75A3D8E3B"
+    },
+    {
+      "path": "web-admin\\src\\components\\AdminCatalogSettings.tsx",
+      "hash": "7F415C4F152BC2F4D3AF8D94256FC0AB9F0E1E45398348390A8E58D54614A3D7"
+    },
+    {
+      "path": "web-admin\\src\\components\\AdminLayout.tsx",
+      "hash": "B4EED97956AC0079BD20DB3D934412348DADF9B031D3C53DBDCDF513C7CA9A8F"
+    },
+    {
+      "path": "web-admin\\src\\components\\create-order-modal.css",
+      "hash": "4C42C8E1C9FF21BF0A7147ED708B6E472405640B502B875A94AAC02E45C5DDA7"
+    },
+    {
+      "path": "web-admin\\src\\components\\CreateOrderModal.tsx",
+      "hash": "E4A1CD26B39E5714F6FB073541138137073E3291AF4786B88EC33F6CEFD299EE"
+    },
+    {
+      "path": "web-admin\\src\\components\\InstallationBacklog.tsx",
+      "hash": "08B12DD20869A163722BE6AD60EEA70C778BF59A3FA38C49A3E0B96E8B16A269"
+    },
+    {
+      "path": "web-admin\\src\\components\\Pagination.tsx",
+      "hash": "345E2A1508ABBEF82B4F3C4CC7865BFE4F90E853BEF5383D88D02EC2210DBA3E"
+    },
+    {
+      "path": "web-admin\\src\\components\\ProtectedRoute.tsx",
+      "hash": "C319DB1501EB238234DE150D9C6E3ED250E45F2133B79657F08282688542B539"
+    },
+    {
+      "path": "web-admin\\src\\components\\SalesInvoiceModal.tsx",
+      "hash": "316859C9C334A8AF5C62E49476ACC4334EE63AC227EA5C811B7368A853144267"
+    },
+    {
+      "path": "web-admin\\src\\components\\TemplateManager.tsx",
+      "hash": "21515B0E3E3F13F2E85233425E8DF11E8720786C30B7C66D5581269081A3C2C0"
+    },
+    {
+      "path": "web-admin\\src\\components\\UserProfileModal.tsx",
+      "hash": "16D84B35E59960E0B65A5E671E008C755144CB9F68AE3A9F46794C32B054CC09"
+    },
+    {
+      "path": "web-admin\\src\\components\\delivery\\po-delivery.css",
+      "hash": "6EA0724A797624D4DACC3D7105093E6DE4BC9FF1DD1283C5EF37CB76AEF8C89E"
+    },
+    {
+      "path": "web-admin\\src\\components\\delivery\\PoAcceptanceReview.tsx",
+      "hash": "7AB39B7AC442299D5BFF728B780DA76BACF1F189A58F37ADF0EB1F424069AA7F"
+    },
+    {
+      "path": "web-admin\\src\\components\\delivery\\PoDeliveryDispatch.tsx",
+      "hash": "AA147A1505AA37CBC6A4FC0C87F36EE556F7B5B26500A247356B5E27A88018E7"
+    },
+    {
+      "path": "web-admin\\src\\contexts\\AdminNotificationsContext.tsx",
+      "hash": "919B04574244FE1888F99B01DFDEAD663F75DCC7177D6AAF7A0E8A0F812CA272"
+    },
+    {
+      "path": "web-admin\\src\\contexts\\AuthContext.tsx",
+      "hash": "F6298FD0923BB117C6BC42B6D537E70148CDB8FEA39E523A33097B829942924C"
+    },
+    {
+      "path": "web-admin\\src\\contexts\\ThemeContext.tsx",
+      "hash": "CE618D48A090A12C9F4B4CACC1979A2EDB1763885B34D9751CBBFF0106A9D47F"
+    },
+    {
+      "path": "web-admin\\src\\contexts\\toast.css",
+      "hash": "0DEB3B392946CB5597684B8220CD1DF6A6E9ADDD60A5935F640916B568F27753"
+    },
+    {
+      "path": "web-admin\\src\\contexts\\ToastContext.tsx",
+      "hash": "721CED87074C891607E880BFD5F79C651917058769460B2FA01AF61DA2A9C4E9"
+    },
+    {
+      "path": "web-admin\\src\\pages\\auth\\Forbidden403.tsx",
+      "hash": "A46D83AA21EB60C76437536536260C69F4D460E15F58551F011DB602D9AA1979"
+    },
+    {
+      "path": "web-admin\\src\\pages\\auth\\login.css",
+      "hash": "7175029EEA7D8F0F6EBB94EAFA03F0C164693E73542977405790809599270258"
+    },
+    {
+      "path": "web-admin\\src\\pages\\auth\\Login.tsx",
+      "hash": "7ACCD2E1F7FAF45182FBB64855AB8EA75E8B2B0D6C42D4801AE72BC0B6DC1D6C"
+    },
+    {
+      "path": "web-admin\\src\\pages\\catalog\\Categories.tsx",
+      "hash": "371C94E01F096A896E97EC0AC49939DDC47F01AD598B14889B7F757ACE694B4D"
+    },
+    {
+      "path": "web-admin\\src\\pages\\catalog\\product-detail.css",
+      "hash": "127A338E36D502D9735EDF4421045DF8F8A5CEBDF15310BA795A5A45A4EC4181"
+    },
+    {
+      "path": "web-admin\\src\\pages\\catalog\\ProductDetail.tsx",
+      "hash": "38F4CAF2131CB8710EE443486600C23C5952053DA6775AC35775BF7B00BA91ED"
+    },
+    {
+      "path": "web-admin\\src\\pages\\catalog\\products.css",
+      "hash": "08941906165120B4CD5797AE78717CF73D55C3F673488F123990F369D2B1DBF1"
+    },
+    {
+      "path": "web-admin\\src\\pages\\catalog\\Products.tsx",
+      "hash": "72E6F3016E41901BF4593C2F493FF19B337E7A24F20B86CE761FB4616D1F1329"
+    },
+    {
+      "path": "web-admin\\src\\pages\\catalog\\VariantSpecifications.tsx",
+      "hash": "BE0746D79F393754717E02AD8C889871E74F9323DFB8211EF1166DB38BF34F34"
+    },
+    {
+      "path": "web-admin\\src\\pages\\coupons\\Coupons.tsx",
+      "hash": "68AA536722D9E27CC06357B9B5DCD058F23665586AEE48E01D36181EE99D5020"
+    },
+    {
+      "path": "web-admin\\src\\pages\\customers\\customers.css",
+      "hash": "3D896D059222A38A1BBA9FF1B097C80FEA81B6E8EECC21239919C26CE4C0EDDA"
+    },
+    {
+      "path": "web-admin\\src\\pages\\customers\\Customers.tsx",
+      "hash": "343908654FE5B1207A267AFCB27BC2B03BE80B26497774A35BDCC3BB9C887520"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\approval-tickets.css",
+      "hash": "B0778E6971192E0EF7914741BFC386B2D46D7BE4DAC28D7B1D9AF4B2E5746AE4"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\ApprovalTickets.tsx",
+      "hash": "7662A4B90C3D3259DF7150FC132412BACE3FFA9AA3E3437FD6F7EFABE389EBA4"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\delivery-installations.css",
+      "hash": "44844F8FA54C94B22F99052DEAA1417770BCC91F4B8CE48BF2640B07FA13515E"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\DeliveryInstallations.tsx",
+      "hash": "8B95F3FC4CF8183CBB19BD708E35F29D8C20D74AA5121BF793DE4AC4BCF35BF8"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\order-detail.css",
+      "hash": "F1E51CE5C5E3D3D3E43529574E5A9CA5BF14001E89067C8D4D22C6FAAC2B3B9A"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\OrderDetail.tsx",
+      "hash": "2A7706ECB79D196277952BA2891EB947531548F360A4A353DB172B4310E8F395"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\OrderProcessingHistory.tsx",
+      "hash": "21414AAA51A35584D9C85C96808ACCE9A081ADD10DB090BF941652537C3F21AC"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\orders.css",
+      "hash": "AF326B6C14381A4580D506ABF928B5C0E5C0907F1C3C19E4B7F3EAB3E4E4C3D9"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\Orders.tsx",
+      "hash": "1C97B5D0AE8A914F80BE974479CB2192F8F04A4887DD2F179BEA67D2479816A6"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\ticket-detail.css",
+      "hash": "85E23CFD5BA63B54FCAB04A63E671BBD2327C07B3666D1ED879D4E44D7B4B180"
+    },
+    {
+      "path": "web-admin\\src\\pages\\orders\\TicketDetail.tsx",
+      "hash": "9A01DAB839AA01F90DB3E51D6A4EB4772673C8D54795535EC6C21B4DCEAB70A6"
+    },
+    {
+      "path": "web-admin\\src\\pages\\reports\\po-reports.css",
+      "hash": "8550EB759FFA0012011B686347962AEDEA093ED117CC1217090D6A6527BAD1D7"
+    },
+    {
+      "path": "web-admin\\src\\pages\\reports\\PoReports.tsx",
+      "hash": "9885A0C9D10919CAC242160CBD18FD6C3EBE74032361DEF12FFB95DB3DC6D649"
+    },
+    {
+      "path": "web-admin\\src\\pages\\staff\\AccountManagement.tsx",
+      "hash": "272694C563A5542DD803231F51ACCAA24ECCCB4A940C5A60B2D39AED414180A8"
+    },
+    {
+      "path": "web-admin\\src\\pages\\staff\\staff-management.css",
+      "hash": "0BA2B1483B6B2D60FEE74B2C991F9AB40BE90F57AE25E36A260C2F66AAB183C4"
+    },
+    {
+      "path": "web-admin\\src\\pages\\system\\AuditLogs.tsx",
+      "hash": "7899108D952E3D7269FF2ED343F2938FF09359B70F10DE505225013D08B87A29"
+    },
+    {
+      "path": "web-admin\\src\\pages\\system\\Content.tsx",
+      "hash": "9DE6D085926E335020C97035ADF1CF7A61FE3E626C8A6678478A887F1614D7B5"
+    },
+    {
+      "path": "web-admin\\src\\pages\\system\\Dashboard.tsx",
+      "hash": "725124C5EB141B6354ECC3C8903162A4345257767F2D160D1E4D03A34F09A06E"
+    },
+    {
+      "path": "web-admin\\src\\pages\\system\\email-history.css",
+      "hash": "C9F2B26D69D3AADFDAE9C44B02680FB7E8A5E09B2C058BB28967C0E0E46D414E"
+    },
+    {
+      "path": "web-admin\\src\\pages\\system\\EmailHistory.tsx",
+      "hash": "F9297C159245A1303A0C74C34D8440488C6958BD078910677C069F0B4C50A61A"
+    },
+    {
+      "path": "web-admin\\src\\pages\\system\\reports.css",
+      "hash": "46D14D552882CC471CFBEFE68893CE3FCD69540015C098822E036BE2A702CC36"
+    },
+    {
+      "path": "web-admin\\src\\pages\\system\\Reports.tsx",
+      "hash": "4B58E258D3A2612F882B35E7C379D6F1A4368DA7265FA65FAFD0E54240D7E7DC"
+    },
+    {
+      "path": "web-admin\\src\\pages\\system\\Settings.tsx",
+      "hash": "500788011CB2189ED21707C29AFB0F6C877875968CE1BBAEB2E60E228BEE20E7"
+    },
+    {
+      "path": "web-admin\\src\\pages\\technician\\technician-tasks.css",
+      "hash": "34D75091424109C80DBD50F99163A921EE1D3E056049EA0C6670F459286082C8"
+    },
+    {
+      "path": "web-admin\\src\\pages\\technician\\TechnicianDailyTasks.tsx",
+      "hash": "FC16244E3A9E795D3ECDA0EFF1B93FDD152187AE2ED786A90909E4777074D2C5"
+    },
+    {
+      "path": "web-admin\\src\\pages\\warranties\\Warranties.tsx",
+      "hash": "7B3CD90D193FC89B726E74EB68A2467BC79F5BDB0D4B7C5980613321C3D90FDC"
+    },
+    {
+      "path": "web-admin\\src\\pages\\warranties\\WarrantyLookup.tsx",
+      "hash": "0B8FC0BD74CAF5284372E5042977DA1243EA06915949EBCE0D01EC6BE094744B"
+    },
+    {
+      "path": "web-admin\\src\\services\\adminCatalogApi.ts",
+      "hash": "8CA7A54A7AA4B85E7AE19A50066D9CA462ECE6ECC011395DF1137CEA19053BBD"
+    },
+    {
+      "path": "web-admin\\src\\services\\adminRequest.ts",
+      "hash": "061E1794D96074FDEED9F6A2202CB0B893F65A8C112E18664D9285DF02BAE68C"
+    },
+    {
+      "path": "web-admin\\src\\services\\api.ts",
+      "hash": "1C8CC0B407C4BC0E6275234002C7F6FCBA21D0805EC3ADEC6D7350D77943A748"
+    },
+    {
+      "path": "web-admin\\src\\services\\concurrentDashboardApi.ts",
+      "hash": "4EAA8C9AD5A00CB9F8210EAD6249F2C761A4A6481DD2EBB57E8B9182E0E40BAF"
+    },
+    {
+      "path": "web-admin\\src\\services\\couponService.ts",
+      "hash": "107506489B4FCB31BF7F88462DD8B9959511714B4C14703AD9EBA7DCD3C80051"
+    },
+    {
+      "path": "web-admin\\src\\services\\customerDirectoryApi.ts",
+      "hash": "1274707E0C6857B204C7E4F12BD2D676388B602875D031817C975F8053B7D107"
+    },
+    {
+      "path": "web-admin\\src\\services\\deliveryInstallation.ts",
+      "hash": "C06CB31C7584F5457084676B0929C9D0A2B533DB61378B69301C852F7A2B7AD4"
+    },
+    {
+      "path": "web-admin\\src\\services\\reportApi.ts",
+      "hash": "39D8B5C9BF6340EF85FA2040FE46B5BA3AAA96769AC92118DBCA8F75A321F3EA"
+    },
+    {
+      "path": "web-admin\\src\\services\\salesInvoiceApi.ts",
+      "hash": "BDEAED4E61FA313E39FF224D1B2D81AD5FEE51487ECA206718CDAF15C7A6FF99"
+    },
+    {
+      "path": "web-admin\\src\\services\\supabase.ts",
+      "hash": "2CC11268FB0475EF6D25D391A343AE76AA5F972EB7434256684523A03283979D"
+    },
+    {
+      "path": "web-admin\\src\\types\\database.ts",
+      "hash": "90500FA7D9DB864BE07AC201E7CA54C4C88935C0AB33C3B43BCD2B72A73CD32D"
+    },
+    {
+      "path": "web-admin\\tests\\admin-api.test.mjs",
+      "hash": "13E83FFBF4C99AFFB55085D03CD30918962E0E32FB26272C048DA76E3898CEEF"
+    },
+    {
+      "path": "web-admin\\tests\\admin-workspace.browser.mjs",
+      "hash": "F5D02186F4536728EAE8C1912681F01114F3A616FD70D86ED40A9BD065E2A941"
+    },
+    {
+      "path": "web-shop\\.env",
+      "hash": "BB9019FC0A13C7D72B2AF6719EE0553F8473A07FCE59323B0F8BE9A2099AA17D"
+    },
+    {
+      "path": "web-shop\\.env.example",
+      "hash": "13BDFF451AA12FAF564960A712BB45BF9D91A23F3A3947CE2559778FD77312D1"
+    },
+    {
+      "path": "web-shop\\.gitignore",
+      "hash": "FDBAB0EDB9D44A7ED1660410561C75AC1A6F83B3F8C6B81082D28FB4CB288697"
+    },
+    {
+      "path": "web-shop\\HANDOFF-COVERAGE.md",
+      "hash": "EEF3E23F6264C8EDAA438A15D3BD65D30446CEEBF9A2520B95F9CE31DCAD3B42"
+    },
+    {
+      "path": "web-shop\\index.html",
+      "hash": "EFD8AD444ED7C0873502336534F0A0AB3D53B981D54C71F9FC991985A5B4F2E6"
+    },
+    {
+      "path": "web-shop\\package-lock.json",
+      "hash": "6063C907FD4E5C7DC15FF72769856137570B728AF60162C962595994487D86CB"
+    },
+    {
+      "path": "web-shop\\package.json",
+      "hash": "5EAC246652C9BAE285D42668069919582A026D874005A97BE4B13F2BFAAD13DE"
+    },
+    {
+      "path": "web-shop\\README.md",
+      "hash": "270907B908824782EC75051A397D58FC5FB1B766ADA5F295F90793116CF4D0FA"
+    },
+    {
+      "path": "web-shop\\tsconfig.json",
+      "hash": "D3F293F50D6811619052D86C22D7A3C05314E999702100FCD046A72DB6E0B46D"
+    },
+    {
+      "path": "web-shop\\vite.config.ts",
+      "hash": "81F46D89C0CDCFC8D979907A5423FAA8CAAE7EFFA8DBA5159F19987F18924BD7"
+    },
+    {
+      "path": "web-shop\\public\\smartbox-icon.svg",
+      "hash": "63210907C20D8E7D3FDD14BC2F1BF8AD74ECA77B2872A20E79FD8FBE8A37D09B"
+    },
+    {
+      "path": "web-shop\\public\\images\\smartbox-base.svg",
+      "hash": "025DDB85ADD1872ECCEB2E0B3FDD7A2F3D87BB3940F8DD01009DC3A953EC583B"
+    },
+    {
+      "path": "web-shop\\public\\images\\smartbox-pro.svg",
+      "hash": "5ADEE827E5ADD7C4915B7D1F5DA642E6C26FBC94AA94D190EBAF157FACC31302"
+    },
+    {
+      "path": "web-shop\\public\\products\\accessory-camera.svg",
+      "hash": "DD3A1D9C5A088AFF5170094D6C5033ADAFDFFC10E33ACE149D5E36E4668BA346"
+    },
+    {
+      "path": "web-shop\\public\\products\\accessory-keypad.svg",
+      "hash": "36808533F42E261CD11C549A86BB8C61D6DD937AB4C8230370758AFB91AA6BBE"
+    },
+    {
+      "path": "web-shop\\public\\products\\accessory-mount.svg",
+      "hash": "5797EC47D15A3C0AF5513318BC32D2D5BA20CF10F1D408A741CBB39B36CAFA19"
+    },
+    {
+      "path": "web-shop\\public\\products\\hero-smartbox-delivery.svg",
+      "hash": "C768B08E605C5567AE059BAFE9B3FC1E812A071D72CDFCFE174403AD25EF199D"
+    },
+    {
+      "path": "web-shop\\public\\products\\smartbox-compact-front.svg",
+      "hash": "F2C362A627B6FF009B2524AF963E534253DE2764A5D0D1D3F96BEA5503EE9136"
+    },
+    {
+      "path": "web-shop\\public\\products\\smartbox-plus-front.svg",
+      "hash": "ACD4C870A941BE38BC88CA55C795A6429DACB1AF4E1E9A0A8F98B19D0D776A7F"
+    },
+    {
+      "path": "web-shop\\public\\products\\smartbox-promax-front.svg",
+      "hash": "2479AA41E77D155C820297A6D03BBD1C72741E35C9A29972E4A6461B65AA4CE9"
+    },
+    {
+      "path": "web-shop\\public\\products\\smartbox-std-diagram.svg",
+      "hash": "B6193CCDD872EE3E2AC86B44A8ABDF77ED4EEF0431F84EB9CCC6664779B0F08C"
+    },
+    {
+      "path": "web-shop\\public\\products\\smartbox-std-front.svg",
+      "hash": "F9CD28C4532E9C5F5C18704C1762E34DD70765C0A7F0FAC9502D9D84476456DD"
+    },
+    {
+      "path": "web-shop\\public\\products\\smartbox-std-inside.svg",
+      "hash": "5BCEF22E5B9188D9EC172D0C17349733E3581744338556CBCD0969BEF1DCBDD7"
+    },
+    {
+      "path": "web-shop\\public\\viewer\\index.html",
+      "hash": "E92AA868793EC68928A379047F19A4B858D4EEC169544F03610BCF2AC44B2A75"
+    },
+    {
+      "path": "web-shop\\public\\viewer\\viewer.css",
+      "hash": "97ADE3A185440DC3946D86A0F5738CDC1BB19CA86047A2C2361A78F572F1DEE3"
+    },
+    {
+      "path": "web-shop\\public\\viewer\\viewer.js",
+      "hash": "954DAEA35B449C8B00AB4284A606C1BF3B6B1B40D8639D713F3D80E34D4347BA"
+    },
+    {
+      "path": "web-shop\\scripts\\contract.test.mjs",
+      "hash": "D47700303A9FC91043865117BCA8EF0E99518F490FA4C3AACF2FAC5B2A1650F3"
+    },
+    {
+      "path": "web-shop\\scripts\\customer.test.mjs",
+      "hash": "CA1AB10BCE430992ACC81C6731B5C82C31B164F9C7A2F6C04D88601CDE8AC6C6"
+    },
+    {
+      "path": "web-shop\\scripts\\viewer.test.mjs",
+      "hash": "3F3A4EA70A055735D24D1CC6377749CE22F7CB15DC45B803A534563021C03C4E"
+    },
+    {
+      "path": "web-shop\\src\\App.tsx",
+      "hash": "EF2141579BADF2E8447356F2A93ED8019B0CE88D165A15DF0611AB7A21763364"
+    },
+    {
+      "path": "web-shop\\src\\CatalogContext.tsx",
+      "hash": "F06A43C2159320C8D42857EBABFE0C63AA52BE4316896813998847AE61D937E0"
+    },
+    {
+      "path": "web-shop\\src\\main.tsx",
+      "hash": "C8E80986D0804E3163CD4F9AE4B909DB0EB56B4F4FE78304718D85BDB8D3EF4F"
+    },
+    {
+      "path": "web-shop\\src\\shop.css",
+      "hash": "1D3FE021D40D2931BE2030196BA578328D697F2DA6C6FC44FED4580400F14276"
+    },
+    {
+      "path": "web-shop\\src\\ShopContext.tsx",
+      "hash": "4E88EF7EF51D4D1BB05CB1F8A5BEBD438A8C8E47D05ED72C4884F3AC72B64939"
+    },
+    {
+      "path": "web-shop\\src\\vite-env.d.ts",
+      "hash": "65996936FBB042915F7B74A200FCDDE7E410F32A669B1AB9597CFAA4B0FADDB5"
+    },
+    {
+      "path": "web-shop\\src\\api\\catalog.ts",
+      "hash": "FFA3E87D2C3C97363D2C6E8AD9091E9E3EB41040EDCF01270288D898D5922E23"
+    },
+    {
+      "path": "web-shop\\src\\api\\customer.ts",
+      "hash": "EA5BB0740B9725DFC0C115CAAE4BC063F7822BA5111218A0FF3998CCB1B99B03"
+    },
+    {
+      "path": "web-shop\\src\\api\\payment.ts",
+      "hash": "8D4AB49EDC96A76E8E5B1FAF478EA8FBF13D285FD7D524A4DE3C32762181DD9E"
+    },
+    {
+      "path": "web-shop\\src\\api\\shop.ts",
+      "hash": "5466C80DAC672421B92593C365E71F23AAFDD51D63B7E94ED4011C1FEF87E84F"
+    },
+    {
+      "path": "web-shop\\src\\components\\DraftEditor.tsx",
+      "hash": "8CB7D599C9E2EB633BE960DC12CB122750A0344A9E987B3A9AB2E56A2C808409"
+    },
+    {
+      "path": "web-shop\\src\\components\\MarketingMotion.tsx",
+      "hash": "E622985F03CF177980AA27834FB98B2160F72C6C05E852A6B8CD31E25AA8BCEF"
+    },
+    {
+      "path": "web-shop\\src\\components\\ProductStory.tsx",
+      "hash": "3088D3A6A738E2AA93426D81E8E4C07D5C67B0EB3DB02FC8E2DD4F2AD5BBFA8F"
+    },
+    {
+      "path": "web-shop\\src\\components\\QuantityStepper.tsx",
+      "hash": "810A1A4FE3EFB481E774C2CD2E0AB94CE465881094AE7A4579500ED28D31EFF1"
+    },
+    {
+      "path": "web-shop\\src\\components\\ShopUi.tsx",
+      "hash": "793F8AF0E58E6D183948BCAFBFEA3E49A59E85111034CC864B2F4FD088BC9823"
+    },
+    {
+      "path": "web-shop\\src\\pages\\CustomerAccount.tsx",
+      "hash": "46AD10679F97C27FFD862A9E4E32A3ED0CD489A80CA9A6D1CADD20864824F89F"
+    },
+    {
+      "path": "web-shop\\src\\pages\\CustomerWarranty.tsx",
+      "hash": "A5C4A8068516C059FC6F962957F27F44DF46D406FEFE97AF7AACC2C1D8A74932"
+    },
+    {
+      "path": "web-shop\\src\\pages\\SalesInvoice.tsx",
+      "hash": "ABED4A4B5DD3DD544BA74698894D7665697F2F928E10E648CD6565524F9F6439"
+    },
+    {
+      "path": "web-shop\\src\\pages\\ShopCommerce.tsx",
+      "hash": "8B67344CD5609DA8EE0DE625FAFA4FC42AF7F9818BA760F8B2DA53192C473CC2"
+    },
+    {
+      "path": "web-shop\\src\\pages\\ShopDevices.tsx",
+      "hash": "D8AEE7EA05E70B9626EADA2EE477C6A6DE3927BF91D2B445398E96531C743D0F"
+    },
+    {
+      "path": "web-shop\\src\\pages\\ShopPlanned.tsx",
+      "hash": "160EFA6DEAF9259B9EFCE6B6C58408AAE48F2E4DE3156E0E6873920E78B90D94"
+    },
+    {
+      "path": "web-shop\\src\\pages\\ShopPublic.tsx",
+      "hash": "620D043B3C0B4FD5DAB282CFC6C2E09A0AC8FDD7A2424A5702ABF0C882CDFD63"
+    },
+    {
+      "path": "web-shop\\src\\pages\\ShopStories.tsx",
+      "hash": "D75892A3C7CA07760BC95EFEFB85775805D8CC54300929883CB28EBCAD703458"
+    },
+    {
+      "path": "web-shop\\src\\pages\\VnpayReturn.tsx",
+      "hash": "430F85D99D3F21B99C22AFED535D37C12803393BF38690194EEEA44B05B848CF"
+    }
+  ],
+  "gitStatus": [
+    "?? web-shop/.env.example",
+    "?? web-shop/.gitignore",
+    "?? web-shop/HANDOFF-COVERAGE.md",
+    "?? web-shop/README.md",
+    "?? web-shop/index.html",
+    "?? web-shop/package-lock.json",
+    "?? web-shop/package.json",
+    "?? web-shop/public/images/smartbox-base.svg",
+    "?? web-shop/public/images/smartbox-pro.svg",
+    "?? web-shop/public/products/accessory-camera.svg",
+    "?? web-shop/public/products/accessory-keypad.svg",
+    "?? web-shop/public/products/accessory-mount.svg",
+    "?? web-shop/public/products/hero-smartbox-delivery.svg",
+    "?? web-shop/public/products/smartbox-compact-front.svg",
+    "?? web-shop/public/products/smartbox-plus-front.svg",
+    "?? web-shop/public/products/smartbox-promax-front.svg",
+    "?? web-shop/public/products/smartbox-std-diagram.svg",
+    "?? web-shop/public/products/smartbox-std-front.svg",
+    "?? web-shop/public/products/smartbox-std-inside.svg",
+    "?? web-shop/public/smartbox-icon.svg",
+    "?? web-shop/public/viewer/index.html",
+    "?? web-shop/public/viewer/viewer.css",
+    "?? web-shop/public/viewer/viewer.js",
+    "?? web-shop/scripts/contract.test.mjs",
+    "?? web-shop/scripts/customer.test.mjs",
+    "?? web-shop/scripts/viewer.test.mjs",
+    "?? web-shop/src/App.tsx",
+    "?? web-shop/src/CatalogContext.tsx",
+    "?? web-shop/src/ShopContext.tsx",
+    "?? web-shop/src/api/catalog.ts",
+    "?? web-shop/src/api/customer.ts",
+    "?? web-shop/src/api/payment.ts",
+    "?? web-shop/src/api/shop.ts",
+    "?? web-shop/src/components/DraftEditor.tsx",
+    "?? web-shop/src/components/MarketingMotion.tsx",
+    "?? web-shop/src/components/ProductStory.tsx",
+    "?? web-shop/src/components/QuantityStepper.tsx",
+    "?? web-shop/src/components/ShopUi.tsx",
+    "?? web-shop/src/main.tsx",
+    "?? web-shop/src/pages/CustomerAccount.tsx",
+    "?? web-shop/src/pages/CustomerWarranty.tsx",
+    "?? web-shop/src/pages/SalesInvoice.tsx",
+    "?? web-shop/src/pages/ShopCommerce.tsx",
+    "?? web-shop/src/pages/ShopDevices.tsx",
+    "?? web-shop/src/pages/ShopPlanned.tsx",
+    "?? web-shop/src/pages/ShopPublic.tsx",
+    "?? web-shop/src/pages/ShopStories.tsx",
+    "?? web-shop/src/pages/VnpayReturn.tsx",
+    "?? web-shop/src/shop.css",
+    "?? web-shop/src/vite-env.d.ts",
+    "?? web-shop/tsconfig.json",
+    "?? web-shop/vite.config.ts"
+  ],
+  "branch": "website"
+}

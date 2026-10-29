@@ -1,0 +1,120 @@
+/* Consultation contact, shared hotline and responsive call actions. */
+.store-topbar-links { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; }
+.contact-page .consultation-panel { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 40px; align-items: center; padding: clamp(24px, 4vw, 48px); margin: 32px 0 48px; background: var(--accent-soft, #fff7ed); border-color: var(--accent-border, #fed7aa); }
+.contact-page .consultation-panel h2 { font-size: clamp(24px, 3vw, 34px); }
+.contact-page .consultation-panel p { margin-bottom: 0; }
+.contact-page .consultation-panel .eyebrow { margin-bottom: 12px; }
+.consultation-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; min-width: 0; }
+.consultation-number { font-size: clamp(26px, 3vw, 38px); font-weight: 750; line-height: 1.2; color: var(--ink, #0f1d32); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.consultation-number:hover { text-decoration: underline; text-underline-offset: 6px; }
+.consultation-actions > p { font-size: 14px; }
+.consultation-actions .button { min-height: 48px; }
+.contact-page .product-grid > .panel { padding: 24px; }
+.contact-page .product-grid h3 { margin-top: 0; }
+@media (max-width: 767px) {
+  .store-topbar > .container { flex-wrap: wrap; gap: 4px 12px; padding-block: 6px; }
+  .store-topbar-links { gap: 6px 16px; justify-content: flex-start; }
+  .contact-page .consultation-panel { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .consultation-actions .button { width: 100%; }
+}
+
+
+/* Persistent phone-information and Zalo shortcuts. */
+.floating-contact {
+  position: fixed;
+  left: max(20px, env(safe-area-inset-left));
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 78px;
+}
+.floating-contact .floating-consultation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 78px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  color: #ffffff;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.floating-consultation-icon, .floating-zalo-icon {
+  position: relative;
+  isolation: isolate;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  transition: background .18s ease, transform .18s ease;
+}
+.floating-consultation-icon { background: #dc2626; box-shadow: 0 4px 16px #991b1b42; }
+.floating-consultation-icon::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  border: 2px solid #dc26264d;
+  border-radius: inherit;
+  animation: consultation-call-ring 2.6s ease-out infinite;
+  pointer-events: none;
+}
+.floating-consultation:hover .floating-consultation-icon { background: #b91c1c; transform: translateY(-2px); }
+.floating-zalo-icon { border: 0; border-radius: 14px; background: transparent; box-shadow: 0 4px 16px #0068e833; overflow: hidden; }
+.floating-zalo-icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.floating-zalo:hover .floating-zalo-icon { transform: translateY(-2px); }
+.floating-consultation-label {
+  color: #7f1d1d;
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  padding: 3px 8px;
+  box-shadow: 0 2px 8px #10233c0d;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.floating-zalo .floating-consultation-label { color: #0756ad; border-color: #bfdbfe; }
+.floating-phone-panel {
+  position: absolute;
+  left: 90px;
+  bottom: 86px;
+  width: min(300px, calc(100vw - 130px));
+  padding: 18px;
+  background: #ffffff;
+  color: #0f1d32;
+  border: 1px solid #dce4ed;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px #10233c26;
+}
+.floating-phone-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.floating-phone-heading h2 { margin: 0; font-size: 17px; line-height: 1.4; letter-spacing: normal; }
+.floating-phone-panel .floating-phone-close { display: grid; place-items: center; flex: 0 0 auto; min-height: 36px; width: 36px; padding: 0; background: #f1f5f9; border: 0; box-shadow: none; color: #475569; }
+.floating-phone-panel > p { margin: 10px 0 14px; color: #4b5d73; font-size: 13px; line-height: 1.6; }
+.floating-phone-number { display: block; width: fit-content; margin-bottom: 14px; color: #b91c1c; font-size: clamp(20px, 3vw, 27px); font-weight: 750; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.floating-phone-call { width: 100%; min-height: 44px; font-size: 14px; }
+@keyframes consultation-call-ring {
+  0% { transform: scale(.85); opacity: .8; }
+  75%, 100% { transform: scale(1.2); opacity: 0; }
+}
+@media (max-width: 767px) {
+  .floating-contact { left: max(10px, env(safe-area-inset-left)); width: 68px; bottom: calc(84px + env(safe-area-inset-bottom)); gap: 14px; }
+  .floating-contact .floating-consultation { width: 68px; }
+  .floating-consultation-icon, .floating-zalo-icon { width: 50px; height: 50px; }
+  .floating-phone-panel { left: 78px; width: min(300px, calc(100vw - 108px)); padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .floating-consultation-icon::before { animation: none; opacity: .35; }
+  .floating-consultation-icon, .floating-zalo-icon { transition: none; }
+}

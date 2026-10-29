@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" 
+              name="po_products" 
+              pageWidth="842" 
+              pageHeight="595" 
+              orientation="Landscape"
+              columnWidth="762" 
+              leftMargin="40" 
+              rightMargin="40" 
+              topMargin="35" 
+              bottomMargin="35" 
+              whenNoDataType="AllSectionsNoDetail">
+              
+	<property name="net.sf.jasperreports.export.xlsx.freeze.row" value="7"/>
+	<style name="Default" isDefault="true" fontName="DejaVu Sans" fontSize="9" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+	<style name="TitleStyle" fontName="DejaVu Sans" fontSize="16" isBold="true"/>
+	<style name="HeaderStyle" fontName="DejaVu Sans" fontSize="9" isBold="true"/>
+	<style name="DetailStyle" fontName="DejaVu Sans" fontSize="9"/>
+	<style name="SummaryStyle" fontName="DejaVu Sans" fontSize="9" isBold="true"/>
+
+	<parameter name="managerName" class="java.lang.String"/>
+	<parameter name="managerEmail" class="java.lang.String"/>
+	<parameter name="period" class="java.lang.String"/>
+	<parameter name="generatedAt" class="java.lang.String"/>
+	<parameter name="reportTitle" class="java.lang.String"/>
+	<parameter name="reportType" class="java.lang.String"/>
+	<parameter name="totalProducts" class="java.lang.Long"/>
+	<parameter name="totalVariants" class="java.lang.Long"/>
+	<parameter name="totalStock" class="java.lang.Long"/>
+	<parameter name="totalInventoryValue" class="java.math.BigDecimal"/>
+	<parameter name="totalSold" class="java.lang.Long"/>
+	<parameter name="totalRevenue" class="java.math.BigDecimal"/>
+
+	<field name="productName" class="java.lang.String"/>
+	<field name="variantName" class="java.lang.String"/>
+	<field name="sku" class="java.lang.String"/>
+	<field name="categoryName" class="java.lang.String"/>
+	<field name="price" class="java.math.BigDecimal"/>
+	<field name="stockQuantity" class="java.lang.Long"/>
+	<field name="inventoryValue" class="java.math.BigDecimal"/>
+	<field name="soldQuantity" class="java.lang.Long"/>
+	<field name="revenue" class="java.math.BigDecimal"/>
+
+	<title>
+		<band height="125">
+			<!-- Company Name Header -->
+			<staticText>
+				<reportElement x="0" y="0" width="450" height="15" forecolor="#475569"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[HỆ THỐNG TỦ THÔNG MINH SMARTBOX · ĐỒ ÁN NHÓM 6]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="0" width="262" height="15" forecolor="#64748B"/>
+				<textElement textAlignment="Right">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Mẫu số: RPT-PO-PROD-01]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="18" width="762" height="1" forecolor="#CBD5E1"/>
+			</line>
+
+			<!-- Main Report Title -->
+			<textField>
+				<reportElement style="TitleStyle" x="0" y="25" width="762" height="24" forecolor="#0F172A"/>
+				<textElement textAlignment="Center">
+					<font size="15" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{reportTitle} != null ? $P{reportTitle} : "BÁO CÁO LOẠI HÀNG HÓA & ĐỊNH MỨC TỒN KHO PHÂN QUYỀN PO"]]></textFieldExpression>
+			</textField>
+
+			<!-- Manager Subtitle -->
+			<textField>
+				<reportElement x="0" y="52" width="762" height="18" forecolor="#1E293B"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Cán bộ quản lý phụ trách (PO): " + $P{managerName} + " (" + $P{managerEmail} + ") · " + $P{period}]]></textFieldExpression>
+			</textField>
+
+			<!-- Generation Timestamp -->
+			<textField>
+				<reportElement x="0" y="72" width="762" height="15" forecolor="#64748B"/>
+				<textElement textAlignment="Center">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Thời điểm trích xuất dữ liệu: " + $P{generatedAt}]]></textFieldExpression>
+			</textField>
+
+			<!-- Unit note -->
+			<staticText>
+				<reportElement x="0" y="98" width="450" height="16" forecolor="#64748B"/>
+				<textElement>
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[* Đơn vị tính: Chiếc / Việt Nam Đồng (VNĐ). Chỉ bao gồm các sản phẩm do PO được phân quyền trực tiếp quản lý.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="98" width="262" height="16" forecolor="#64748B"/>
+				<textElement textAlignment="Right">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Nguồn dữ liệu: Danh mục kho & Đơn hàng đã thanh toán]]></text>
+			</staticText>
+		</band>
+	</title>
+
+	<columnHeader>
+		<band height="28">
+			<!-- Header Box Background -->
+			<rectangle>
+				<reportElement x="0" y="0" width="762" height="28" backcolor="#F1F5F9">
+					<property name="net.sf.jasperreports.style.pen" value="none"/>
+				</reportElement>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#CBD5E1"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement style="HeaderStyle" x="6" y="6" width="30" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[STT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="42" y="6" width="180" height="16" forecolor="#1E293B"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tên sản phẩm]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="228" y="6" width="140" height="16" forecolor="#1E293B"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Biến thể / Size]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="374" y="6" width="105" height="16" forecolor="#1E293B"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mã SKU]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="485" y="6" width="85" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Đơn giá niêm yết]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="576" y="6" width="55" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tồn kho]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="637" y="6" width="45" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Đã bán]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="HeaderStyle" x="688" y="6" width="68" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Doanh thu]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+
+	<detail>
+		<band height="24">
+			<rectangle>
+				<reportElement x="0" y="0" width="762" height="24" forecolor="#E2E8F0" backcolor="#FFFFFF"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#E2E8F0"/>
+				</graphicElement>
+			</rectangle>
+			<!-- Row Index -->
+			<textField>
+				<reportElement style="DetailStyle" x="6" y="4" width="30" height="16" forecolor="#64748B"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+			</textField>
+			<!-- Product Name -->
+			<textField isStretchWithOverflow="true">
+				<reportElement style="DetailStyle" x="42" y="4" width="180" height="16" forecolor="#0F172A"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{productName}]]></textFieldExpression>
+			</textField>
+			<!-- Variant Name -->
+			<textField isStretchWithOverflow="true">
+				<reportElement style="DetailStyle" x="228" y="4" width="140" height="16" forecolor="#334155"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{variantName}]]></textFieldExpression>
+			</textField>
+			<!-- SKU -->
+			<textField>
+				<reportElement style="DetailStyle" x="374" y="4" width="105" height="16" forecolor="#0284C7"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sku}]]></textFieldExpression>
+			</textField>
+			<!-- Price -->
+			<textField pattern="#,##0 ₫">
+				<reportElement style="DetailStyle" x="485" y="4" width="85" height="16" forecolor="#0F172A"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{price}]]></textFieldExpression>
+			</textField>
+			<!-- Stock Quantity -->
+			<textField pattern="#,##0">
+				<reportElement style="DetailStyle" x="576" y="4" width="55" height="16" forecolor="#10B981"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{stockQuantity}]]></textFieldExpression>
+			</textField>
+			<!-- Sold Quantity -->
+			<textField pattern="#,##0">
+				<reportElement style="DetailStyle" x="637" y="4" width="45" height="16" forecolor="#F59E0B"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{soldQuantity}]]></textFieldExpression>
+			</textField>
+			<!-- Revenue -->
+			<textField pattern="#,##0 ₫">
+				<reportElement style="DetailStyle" x="688" y="4" width="68" height="16" forecolor="#0F172A"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{revenue}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+
+	<pageFooter>
+		<band height="30">
+			<line>
+				<reportElement x="0" y="6" width="762" height="1" forecolor="#E2E8F0"/>
+			</line>
+			<staticText>
+				<reportElement x="0" y="10" width="400" height="15" forecolor="#94A3B8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[SmartBox Management System · Tài liệu báo cáo phân quyền Product Manager (PO)]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="590" y="10" width="166" height="15" forecolor="#94A3B8"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Trang " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+
+	<summary>
+		<band height="140">
+			<!-- Total Table Row -->
+			<rectangle>
+				<reportElement x="0" y="0" width="762" height="28" backcolor="#F8FAFC">
+					<property name="net.sf.jasperreports.style.pen" value="none"/>
+				</reportElement>
+				<graphicElement>
+					<pen lineWidth="1.0" lineColor="#CBD5E1"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement style="SummaryStyle" x="6" y="6" width="470" height="16" forecolor="#0F172A"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TỔNG HỢP TOÀN BỘ NGÀNH HÀNG PHỤ TRÁCH]]></text>
+			</staticText>
+			<!-- Total Stock -->
+			<textField pattern="#,##0 chiếc">
+				<reportElement style="SummaryStyle" x="550" y="6" width="81" height="16" forecolor="#10B981"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{totalStock}]]></textFieldExpression>
+			</textField>
+			<!-- Total Sold -->
+			<textField pattern="#,##0 chiếc">
+				<reportElement style="SummaryStyle" x="637" y="6" width="45" height="16" forecolor="#F59E0B"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{totalSold}]]></textFieldExpression>
+			</textField>
+			<!-- Total Revenue -->
+			<textField pattern="#,##0 ₫">
+				<reportElement style="SummaryStyle" x="688" y="6" width="68" height="16" forecolor="#0284C7"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{totalRevenue}]]></textFieldExpression>
+			</textField>
+
+			<!-- Signature Blocks -->
+			<staticText>
+				<reportElement x="50" y="55" width="200" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NGƯỜI LẬP BÁO CÁO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="73" width="200" height="14" forecolor="#64748B"/>
+				<textElement textAlignment="Center">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(Ký, ghi rõ họ tên)]]></text>
+			</staticText>
+
+			<staticText>
+				<reportElement x="500" y="55" width="220" height="16" forecolor="#1E293B"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[XÁC NHẬN BAN GIÁM ĐỐC / ADMIN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="73" width="220" height="14" forecolor="#64748B"/>
+				<textElement textAlignment="Center">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(Ký, đóng dấu duyệt)]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

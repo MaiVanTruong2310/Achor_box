@@ -1,0 +1,398 @@
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useAuth } from './AuthContext';
+import { adminRequest } from '../services/adminRequest';
+import { toast } from './ToastContext';
+
+export interface AdminNotice {
+  id: string;
+  type: string;
+  title: string;
+  referenceId: string;
+  status: string;
+  occurredAt: string;
+  link: string;
+}
+
+function playNotificationSound(type: 'new_task' | 'reminder' | 'order') {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+
+    if (type === 'new_task' || type === 'order') {
+      // 2-tone bright pleasant chime: 587Hz (D5) -> 880Hz (A5)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, now);
+      gain1.gain.setValueAtTime(0.18, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.3);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880, now + 0.12);
+      gain2.gain.setValueAtTime(0.22, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.55);
+    } else if (type === 'reminder') {
+      // 3-tone alert chime: 523Hz (C5) -> 659Hz (E5) -> 784Hz (G5)
+      [523.25, 659.25, 783.99].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = now + idx * 0.14;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.005, t + 0.38);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.38);
+      });
+    }
+  } catch {
+    // AudioContext silently ignored if user has not interacted with document yet
+  }
+}
+
+interface Feed {
+  events: AdminNotice[];
+  observedAt: string;
+}
+
+interface AdminNotificationsContextValue {
+  events: AdminNotice[];
+  unread: number;
+  pendingOrdersCount: number;
+  error: string;
+  loading: boolean;
+  markRead: () => void;
+  markOneRead: (id: string) => void;
+  markOneUnread: (id: string) => void;
+  clearReadHistory: () => void;
+  isRead: (id: string) => boolean;
+  fresh: AdminNotice[];
+  refresh: () => void;
+}
+
+const Context = createContext<AdminNotificationsContextValue | null>(null);
+
+export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { profile } = useAuth();
+  const [events, setEvents] = useState<AdminNotice[]>([]);
+  const [error, setError] = useState('');
+  const [seen, setSeen] = useState<string[]>([]);
+  const [fresh, setFresh] = useState<AdminNotice[]>([]);
+  const known = useRef<Set<string> | null>(null);
+
+  const key = `smartbox_notice_read:${profile?.id}`;
+
+  useEffect(() => {
+    try {
+      const value = JSON.parse(localStorage.getItem(key) || '[]');
+      setSeen(Array.isArray(value) ? value.filter(v => typeof v === 'string').slice(-200) : []);
+    } catch {
+      setSeen([]);
+    }
+  }, [key]);
+
+  const loadRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    let active = true;
+    let loadingFetch = false;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+    // Polling phản hồi nhanh: 3 giây, tối đa 6 giây
+    const BASE_INTERVAL = 3000;
+    const MAX_INTERVAL = 6000;
+    let currentInterval = BASE_INTERVAL;
+
+    known.current = null;
+    setEvents([]);
+    setError('');
+    setFresh([]);
+
+    const scheduleNext = (delay: number) => {
+      if (!active) return;
+      if (timerId) clearTimeout(timerId);
+      timerId = setTimeout(() => {
+        void load();
+      }, delay);
+    };
+
+    const load = async (isManualOrVisible = false) => {
+      if (loadingFetch || !profile || (!isManualOrVisible && document.hidden)) {
+        scheduleNext(currentInterval);
+        return;
+      }
+      loadingFetch = true;
+      if (isManualOrVisible) setLoading(true);
+      try {
+        const feed = await adminRequest<Feed>('/admin/notifications');
+        if (active) {
+          if (known.current) {
+            const added = feed.events.filter((e) => !known.current!.has(e.id));
+            if (added.length) {
+              setFresh(added.slice(0, 3));
+              currentInterval = BASE_INTERVAL;
+
+              const isTech = profile?.role === 'technician';
+              const isPO = profile?.role === 'product_manager';
+
+              // 1. Kiểm tra đơn hàng mới hoặc đơn hàng thanh toán thành công
+              const orderEvents = added.filter(e => e.type === 'ORDER');
+              if (orderEvents.length > 0 && !isTech) {
+                const paidOrders = orderEvents.filter(e => e.status === 'paid' || e.status === 'confirmed');
+                const newOrders = orderEvents.filter(e => e.status === 'pending');
+
+                if (paidOrders.length > 0) {
+                  const p = paidOrders[0];
+                  toast.success(
+                    `🎉 Đơn hàng #${p.referenceId.slice(0, 8).toUpperCase()} vừa được khách hàng thanh toán thành công!`,
+                    'Thanh toán thành công'
+                  );
+                  playNotificationSound('order');
+                  window.dispatchEvent(new CustomEvent('smartbox:order_paid', { detail: paidOrders }));
+                  window.dispatchEvent(new CustomEvent('smartbox:new_order', { detail: orderEvents }));
+                } else if (newOrders.length > 0) {
+                  const latestOrder = newOrders[0];
+                  toast.info(
+                    `Có đơn hàng mới #${latestOrder.referenceId.slice(0, 8).toUpperCase()} vừa phát sinh!`,
+                    'Đơn hàng mới'
+                  );
+                  playNotificationSound('order');
+                  window.dispatchEvent(new CustomEvent('smartbox:new_order', { detail: newOrders }));
+                } else {
+                  window.dispatchEvent(new CustomEvent('smartbox:new_order', { detail: orderEvents }));
+                }
+              }
+
+              // 2. Kiểm tra phiếu thẩm định PO mới hoặc cập nhật trạng thái (Dành cho PO & Admin)
+              const poTickets = added.filter(e => e.type === 'PO');
+              if (poTickets.length > 0 && !isTech) {
+                const latestTicket = poTickets[0];
+                toast.info(
+                  `Phiếu PO #${latestTicket.referenceId.slice(0, 8).toUpperCase()} cập nhật trạng thái: ${noticeStatusLabel(latestTicket)}`,
+                  'Phê duyệt PO Ticket'
+                );
+                window.dispatchEvent(new CustomEvent('smartbox:new_ticket', { detail: poTickets }));
+              }
+
+              // 3. Kiểm tra công việc mới được phân công (CHỈ HIỂN THỊ CHO KỸ THUẬT VIÊN)
+              if (isTech) {
+                const newTasks = added.filter(
+                  e => e.type === 'TASK_ASSIGNED' || (e.type === 'DELIVERY' && e.status === 'ASSIGNED')
+                );
+                if (newTasks.length > 0) {
+                  const t = newTasks[0];
+                  toast.info(
+                    `🔔 Bạn có công việc mới được phân công! Đơn hàng #${t.referenceId.slice(0, 8).toUpperCase()}`,
+                    'Công việc mới'
+                  );
+                  playNotificationSound('new_task');
+                  window.dispatchEvent(new CustomEvent('smartbox:new_task', { detail: newTasks }));
+                }
+
+                // 4. Kiểm tra ca thi công / bảo hành sắp đến giờ hẹn (CHỈ HIỂN THỊ CHO KỸ THUẬT VIÊN)
+                const upcomingTasks = added.filter(e => e.type === 'TASK_UPCOMING');
+                if (upcomingTasks.length > 0) {
+                  const up = upcomingTasks[0];
+                  toast.warning(
+                    `⏰ SẮP ĐẾN GIỜ HẸN: Ca thi công đơn hàng #${up.referenceId.slice(0, 8).toUpperCase()} sắp bắt đầu. Vui lòng chuẩn bị di chuyển!`,
+                    'Nhắc nhở ca hẹn'
+                  );
+                  playNotificationSound('reminder');
+                  window.dispatchEvent(new CustomEvent('smartbox:upcoming_task', { detail: upcomingTasks }));
+                }
+              }
+            } else {
+              currentInterval = Math.min(MAX_INTERVAL, currentInterval + 1000);
+            }
+          }
+          known.current = new Set(feed.events.map((e) => e.id));
+
+          // Lọc danh sách thông báo theo đúng vai trò (PO không nhận việc giao lắp của KTV)
+          const filteredEvents = feed.events.filter(ev => {
+            if (profile?.role === 'product_manager') {
+              return ev.type !== 'DELIVERY' && ev.type !== 'TASK_ASSIGNED' && ev.type !== 'TASK_UPCOMING';
+            }
+            if (profile?.role === 'technician') {
+              return ev.type === 'DELIVERY' || ev.type === 'TASK_ASSIGNED' || ev.type === 'TASK_UPCOMING' || ev.type === 'WARRANTY';
+            }
+            return true;
+          });
+
+          const adjustedEvents = filteredEvents.map(ev => {
+            if (profile?.role === 'product_manager') {
+              if (ev.link === '/orders/approvals' || ev.link === '/orders') return { ...ev, link: '/po/approvals' };
+              if (ev.link === '/orders/delivery') return { ...ev, link: '/po/delivery' };
+            } else if (profile?.role === 'super_admin') {
+              if (ev.link === '/orders' || ev.link === '/orders/approvals') return { ...ev, link: '/admin/orders' };
+              if (ev.link === '/orders/delivery') return { ...ev, link: '/admin/orders' };
+              if (ev.link === '/warranties') return { ...ev, link: '/admin/warranties' };
+              if (ev.link === '/emails') return { ...ev, link: '/admin/emails' };
+            }
+            return ev;
+          });
+          setEvents(adjustedEvents);
+          setError('');
+        }
+      } catch (e) {
+        if (active) setError((e as Error).message);
+      } finally {
+        loadingFetch = false;
+        if (active) setLoading(false);
+        scheduleNext(currentInterval);
+      }
+    };
+
+    loadRef.current = () => load(true);
+    void load(true);
+
+    const onVisibilityChange = () => {
+      if (!document.hidden && active) {
+        currentInterval = BASE_INTERVAL;
+        void load(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      active = false;
+      if (timerId) clearTimeout(timerId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [profile?.id, profile?.role]);
+
+  useEffect(() => {
+    if (!fresh.length) return;
+    const timer = setTimeout(() => setFresh([]), 7000);
+    return () => clearTimeout(timer);
+  }, [fresh]);
+
+  const markRead = () => {
+    const next = Array.from(new Set([...seen, ...events.map(e => e.id)])).slice(-300);
+    setSeen(next);
+    localStorage.setItem(key, JSON.stringify(next));
+  };
+
+  const markOneRead = (id: string) => {
+    setSeen(prev => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id].slice(-300);
+      localStorage.setItem(key, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const markOneUnread = (id: string) => {
+    setSeen(prev => {
+      const next = prev.filter(item => item !== id);
+      localStorage.setItem(key, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const clearReadHistory = () => {
+    setSeen([]);
+    localStorage.removeItem(key);
+  };
+
+  const isRead = (id: string) => seen.includes(id);
+
+  const isPO = profile?.role === 'product_manager';
+  const pendingOrdersCount = isPO
+    ? events.filter(e => e.type === 'PO' && e.status === 'PENDING').length
+    : events.filter(
+        e => e.type === 'ORDER' && ['pending', 'awaiting_payment', 'paid'].includes(e.status.toLowerCase())
+      ).length;
+
+  return (
+    <Context.Provider
+      value={{
+        events,
+        unread: events.filter(e => !seen.includes(e.id)).length,
+        pendingOrdersCount,
+        error,
+        loading,
+        markRead,
+        markOneRead,
+        markOneUnread,
+        clearReadHistory,
+        isRead,
+        fresh,
+        refresh: () => void loadRef.current?.()
+      }}
+    >
+      {children}
+    </Context.Provider>
+  );
+};
+export const useAdminNotifications = () => {
+  const context = useContext(Context);
+  if (!context) throw new Error('Notification provider missing');
+  return context;
+};
+
+export const noticeStatusLabel = (notice: AdminNotice) => {
+  const map: Record<string, Record<string, string>> = {
+    ORDER: {
+      pending: 'Chờ xử lý',
+      awaiting_payment: 'Chờ thanh toán',
+      paid: 'Đã thanh toán',
+      confirmed: 'Đã duyệt',
+      completed: 'Hoàn tất',
+      cancelled: 'Đã hủy',
+      delivering: 'Đang giao hàng'
+    },
+    PO: {
+      PENDING: 'Chờ duyệt',
+      RETURNED: 'Chờ giải trình',
+      APPROVED: 'Đã duyệt',
+      REJECTED: 'Từ chối',
+      PARTIALLY_REJECTED: 'Từ chối 1 phần',
+      CANCELLED: 'Đã hủy'
+    },
+    DELIVERY: {
+      ASSIGNED: 'Đã phân công',
+      IN_PROGRESS: 'Đang thực hiện',
+      DELIVERED: 'Đã giao',
+      INSTALLED: 'Đã lắp đặt',
+      WAITING_PO_CONFIRMATION: 'Chờ PO xác nhận',
+      SUBMITTED: 'Đã nộp nghiệm thu',
+      COMPLETED: 'Đã nghiệm thu',
+      FAILED: 'Cần xử lý'
+    },
+    TASK_ASSIGNED: {
+      ASSIGNED: 'Đã phân công',
+      IN_PROGRESS: 'Đang thực hiện'
+    },
+    TASK_UPCOMING: {
+      ASSIGNED: 'Sắp tới giờ hẹn',
+      IN_PROGRESS: 'Sắp tới giờ hẹn'
+    },
+    WARRANTY: {
+      new: 'Yêu cầu mới',
+      assigned: 'Đã phân công',
+      in_progress: 'Đang xử lý',
+      resolved: 'Đã giải quyết',
+      rejected: 'Từ chối'
+    },
+    EMAIL: {
+      FAILED: 'Gửi thất bại',
+      PENDING: 'Đang chờ gửi',
+      SENT: 'Đã gửi'
+    }
+  };
+  return map[notice.type]?.[notice.status] || notice.status;
+};
