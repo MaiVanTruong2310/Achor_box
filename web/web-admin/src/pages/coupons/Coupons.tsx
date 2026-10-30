@@ -114,7 +114,17 @@ export const CouponsPage: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting || !code.trim()) return;
+    if (submitting) return;
+
+    const cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) {
+      setModalError('Vui lòng nhập mã ưu đãi / khuyến mãi.');
+      return;
+    }
+    if (cleanCode.length > 50) {
+      setModalError('Mã ưu đãi không được vượt quá 50 ký tự.');
+      return;
+    }
 
     if (!startDate || !endDate) {
       setModalError('Vui lòng chọn thời gian bắt đầu và kết thúc hiệu lực.');

@@ -591,8 +591,20 @@ export const TicketDetail: React.FC = () => {
     icon: <Clock size={13} />
   };
 
-  const isPaid = !!(ticket.order?.paid_at || ['paid', 'confirmed'].includes(ticket.order?.status || ''));
-  const paymentMethod = ticket.order?.payment_method?.toUpperCase() || 'VNPAY';
+  const isPaid = !!(
+    ticket.order?.paid_at ||
+    ['paid', 'confirmed'].includes(ticket.order?.status || '') ||
+    ticket.payments?.some((p) => p.status === 'success' || p.status === 'COMPLETED' || !!p.paid_at)
+  );
+  const rawMethod = (
+    ticket.order?.payment_method ||
+    (ticket as any).payment_method ||
+    ticket.payments?.[0]?.provider ||
+    'VNPAY'
+  ).toUpperCase();
+  const paymentMethod = rawMethod;
+  const isCod = rawMethod.includes('COD') || rawMethod.includes('TIỀN MẶT') || rawMethod.includes('CASH');
+  const canAssignTech = isPaid || isCod;
   const paymentTime = ticket.order?.paid_at ? formatDateTime(ticket.order.paid_at) : (ticket.order_created_at ? formatDateTime(ticket.order_created_at) : '07:30 20/10/2026');
 
   const photos = deliveryJob?.completionPhotos || [];
@@ -991,27 +1003,60 @@ export const TicketDetail: React.FC = () => {
           {/* Nút phân công Kỹ thuật viên (khi đã duyệt và chưa có Job) */}
           {ticket.status === 'APPROVED' && !deliveryJob && !loadingJob && (
             <div style={{ marginTop: 12 }}>
-              {!showDispatchSection ? (
-                <button
-                  type="button"
-                  className="btn-tkd-approve"
-                  onClick={() => setShowDispatchSection(true)}
-                  style={{ width: '100%', justifyContent: 'center', padding: '10px 16px' }}
-                >
-                  <Truck size={14} />
-                  <span>Phân công Kỹ thuật viên thi công</span>
-                </button>
+              {canAssignTech ? (
+                !showDispatchSection ? (
+                  <button
+                    type="button"
+                    className="btn-tkd-approve"
+                    onClick={() => setShowDispatchSection(true)}
+                    style={{ width: '100%', justifyContent: 'center', padding: '10px 16px' }}
+                  >
+                    <Truck size={14} />
+                    <span>Phân công Kỹ thuật viên thi công</span>
+                  </button>
+                ) : (
+                  <div style={{ marginTop: 10 }}>
+                    <PoDeliveryDispatch
+                      orderId={ticket.order_id}
+                      orderCode={seqInfo.shortOrderCode}
+                      onAssigned={(created) => {
+                        setDeliveryJob(created);
+                        setShowDispatchSection(false);
+                      }}
+                      onCancel={() => setShowDispatchSection(false)}
+                    />
+                  </div>
+                )
               ) : (
-                <div style={{ marginTop: 10 }}>
-                  <PoDeliveryDispatch
-                    orderId={ticket.order_id}
-                    orderCode={seqInfo.shortOrderCode}
-                    onAssigned={(created) => {
-                      setDeliveryJob(created);
-                      setShowDispatchSection(false);
-                    }}
-                    onCancel={() => setShowDispatchSection(false)}
-                  />
+                <div className="tkd-dispatch-locked-card">
+                  <div className="tkd-locked-card-body">
+                    <div className="tkd-locked-card-icon">
+                      <Clock size={16} />
+                    </div>
+                    <div className="tkd-locked-card-content">
+                      <div className="tkd-locked-card-title">
+                        Tạm khóa phân công KTV · Chờ thanh toán qua {paymentMethod}
+                      </div>
+                      <p className="tkd-locked-card-desc">
+                        Đơn hàng đã được duyệt PO nhưng khách hàng <strong>chưa thanh toán</strong>. Hệ thống tạm ẩn chức năng phân công Kỹ thuật viên nhằm bảo vệ lịch trình công tác của KTV (tránh phát sinh công việc nếu khách hàng không thanh toán hoặc hủy đơn).
+                      </p>
+                      <div className="tkd-locked-card-footer">
+                        <span className="tkd-locked-card-hint">
+                          💡 Chức năng sẽ tự động kích hoạt ngay sau khi khách hàng hoàn tất thanh toán.
+                        </span>
+                        <button
+                          type="button"
+                          className="tkd-btn-locked-refresh"
+                          onClick={() => void loadTicket()}
+                          disabled={busy}
+                          title="Kiểm tra lại trạng thái thanh toán từ VNPAY"
+                        >
+                          <RefreshCw size={12} className={busy ? 'spin' : ''} />
+                          <span>Kiểm tra thanh toán</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1064,6 +1109,8 @@ export const TicketDetail: React.FC = () => {
                       ? 'Đang thi công'
                       : deliveryJob?.status === 'ASSIGNED'
                       ? 'Đã phân công'
+                      : !canAssignTech
+                      ? 'Chờ thanh toán'
                       : 'Chờ điều phối'}
                   </span>
                 </div>
@@ -1074,6 +1121,8 @@ export const TicketDetail: React.FC = () => {
                     ? 'KTV đã nộp hồ sơ kèm ảnh minh chứng'
                     : deliveryJob?.technicianName || deliveryJob?.technician?.fullName
                     ? `KTV: ${deliveryJob.technicianName || deliveryJob.technician?.fullName}`
+                    : !canAssignTech
+                    ? `Chờ khách thanh toán qua ${paymentMethod}`
                     : 'Đơn hàng thẩm định'}
                 </div>
               </div>

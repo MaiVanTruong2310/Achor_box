@@ -5,14 +5,29 @@ import com.smartbox.backend.dto.request.auth.LoginRequest;
 import com.smartbox.backend.dto.request.auth.RefreshTokenRequest;
 import com.smartbox.backend.dto.response.auth.LoginResponse;
 import com.smartbox.backend.dto.response.auth.RefreshTokenResponse;
+import com.smartbox.backend.entity.Profile;
+import com.smartbox.backend.repository.ProfileRepository;
+import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.service.auth.AuthService;
+import com.smartbox.backend.service.warranty.ClaimImageStorage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,21 +36,20 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final com.smartbox.backend.repository.ProfileRepository profiles;
-    private final com.smartbox.backend.security.CurrentActor actors;
-    private final com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage;
+    private final ProfileRepository profiles;
+    private final CurrentActor actors;
+    private final ClaimImageStorage imageStorage;
 
     @GetMapping("/me")
     @Operation(summary = "Lấy thông tin hồ sơ của người dùng hiện tại", description = "Truy xuất thông tin profile của tài khoản đang đăng nhập từ cơ sở dữ liệu dựa trên JWT token")
-    public com.smartbox.backend.entity.Profile me() {
+    public Profile me() {
         return profiles.findById(actors.get().id()).orElseThrow();
     }
 
     @RequestMapping(value = "/me", method = {RequestMethod.PUT, RequestMethod.POST, RequestMethod.PATCH})
     @Operation(summary = "Cập nhật hồ sơ cá nhân của người dùng hiện tại", description = "Cập nhật các thông tin cơ bản của người dùng hiện tại như họ tên, số điện thoại, ảnh đại diện và địa chỉ mặc định")
-    public com.smartbox.backend.entity.Profile updateMe(
-            @RequestBody java.util.Map<String, Object> body) {
-        java.util.UUID userId = actors.get().id();
+    public Profile updateMe(@RequestBody Map<String, Object> body) {
+        UUID userId = actors.get().id();
         var profile = profiles.findById(userId).orElseThrow();
         if (body.containsKey("fullName") && body.get("fullName") != null) {
             String name = body.get("fullName").toString().trim();
@@ -57,8 +71,7 @@ public class AuthController {
 
     @PostMapping(value = "/avatar", consumes = "multipart/form-data")
     @Operation(summary = "Tải lên ảnh đại diện cá nhân lên Cloudinary", description = "Upload file ảnh đại diện của người dùng lên Cloudinary và cập nhật đường dẫn vào hồ sơ người dùng")
-    public java.util.Map<String, String> uploadAvatar(
-            @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+    public Map<String, String> uploadAvatar(@RequestPart("file") MultipartFile file) {
         var actor = actors.get();
         var stored = imageStorage.upload(file);
         String url = stored.secureUrl();
@@ -68,7 +81,7 @@ public class AuthController {
             profile.setAvatarUrl(url);
             profiles.save(profile);
         }
-        return java.util.Map.of("url", url);
+        return Map.of("url", url);
     }
 
     @PostMapping("/login")

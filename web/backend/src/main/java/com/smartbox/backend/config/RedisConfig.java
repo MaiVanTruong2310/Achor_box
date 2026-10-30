@@ -56,6 +56,9 @@ public class RedisConfig implements CachingConfigurer {
     @Value("${spring.data.redis.timeout:3000ms}")
     private Duration timeout;
 
+    @Value("${spring.data.redis.ssl.enabled:false}")
+    private boolean sslEnabled;
+
     @Bean
     @ConditionalOnMissingBean(RedisConnectionFactory.class)
     public LettuceConnectionFactory redisConnectionFactory() {
@@ -66,7 +69,7 @@ public class RedisConfig implements CachingConfigurer {
         }
 
         io.lettuce.core.SocketOptions socketOptions = io.lettuce.core.SocketOptions.builder()
-                .connectTimeout(Duration.ofMillis(300))
+                .connectTimeout(Duration.ofSeconds(3))
                 .build();
         io.lettuce.core.ClientOptions clientOptions = io.lettuce.core.ClientOptions.builder()
                 .socketOptions(socketOptions)
@@ -74,13 +77,16 @@ public class RedisConfig implements CachingConfigurer {
                 .autoReconnect(true)
                 .build();
 
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder = LettuceClientConfiguration.builder()
                 .clientOptions(clientOptions)
                 .commandTimeout(timeout)
-                .shutdownTimeout(Duration.ofMillis(200))
-                .build();
+                .shutdownTimeout(Duration.ofMillis(200));
 
-        return new LettuceConnectionFactory(serverConfig, clientConfig);
+        if (sslEnabled) {
+            clientConfigBuilder.useSsl();
+        }
+
+        return new LettuceConnectionFactory(serverConfig, clientConfigBuilder.build());
     }
 
     @Bean

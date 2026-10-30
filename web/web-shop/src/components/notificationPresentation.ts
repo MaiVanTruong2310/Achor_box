@@ -13,12 +13,30 @@ export function activityInfo(item:ActivityNotification){
  const href=category==='warranty'?'/account/warranty':category==='orders'?(orderId?`/account/orders/${orderId}`:'/account/orders'):category==='delivery'?'/account/orders':item.device_id?`/account/devices/${encodeURIComponent(item.device_id)}`:'/account/devices';
  return {category,important,urgent,action,reference,href};
 }
+export function formatRelativeTime(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+  if (isNaN(diffSec)) return '';
+  if (diffSec < 60) return 'Vừa xong';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)} phút trước`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} giờ trước`;
+  if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)} ngày trước`;
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
 export function groupActivities(items:ActivityNotification[]){
  const groups:{item:ActivityNotification;ids:string[];unreadIds:string[];info:ReturnType<typeof activityInfo>}[]=[];
  const seen=new Set<string>();
  for(const item of [...items].sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at))){
   if(seen.has(item.id))continue;seen.add(item.id);
-  const info=activityInfo(item);if(!info.important)continue;
+  const info=activityInfo(item);
   const duplicate=groups.find(g=>g.item.type===item.type&&g.item.title===item.title&&g.item.body===item.body&&g.item.device_id===item.device_id&&Math.abs(Date.parse(g.item.created_at)-Date.parse(item.created_at))<=300000);
   if(duplicate){duplicate.ids.push(item.id);if(!item.is_read)duplicate.unreadIds.push(item.id);}else groups.push({item,info,ids:[item.id],unreadIds:item.is_read?[]:[item.id]});
  }

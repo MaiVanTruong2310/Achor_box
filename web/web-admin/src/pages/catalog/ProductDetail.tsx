@@ -100,6 +100,12 @@ export const ProductDetail: React.FC = () => {
     e.preventDefault();
     if (!id || !product || adjustSubmitting) return;
 
+    const qty = Math.abs(adjustDelta);
+    if (!qty || isNaN(qty) || qty > 100000) {
+      toast.error('Số lượng điều chỉnh kho phải lớn hơn 0 và không vượt quá 100.000 sản phẩm.', 'Số lượng không hợp lệ');
+      return;
+    }
+
     setAdjustSubmitting(true);
     setAdjustMsg('');
 

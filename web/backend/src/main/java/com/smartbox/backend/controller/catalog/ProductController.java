@@ -1,17 +1,34 @@
 package com.smartbox.backend.controller.catalog;
 
 import com.smartbox.backend.common.AppConstants;
+import com.smartbox.backend.dto.request.catalog.ProductCategoryRequest;
 import com.smartbox.backend.dto.request.catalog.ProductRequest;
 import com.smartbox.backend.dto.request.catalog.StockAdjustRequest;
 import com.smartbox.backend.dto.response.catalog.ProductResponse;
+import com.smartbox.backend.dto.response.catalog.ProductVariantResponse;
 import com.smartbox.backend.entity.ProductCategory;
+import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.service.catalog.ProductService;
+import com.smartbox.backend.service.catalog.VariantInventoryService;
+import com.smartbox.backend.service.warranty.ClaimImageStorage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -24,9 +41,10 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
-    private final com.smartbox.backend.service.catalog.VariantInventoryService variantInventory;
-    private final com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage;
-    private final com.smartbox.backend.security.CurrentActor actors;
+    private final VariantInventoryService variantInventory;
+    private final ClaimImageStorage imageStorage;
+    private final CurrentActor actors;
+
     @GetMapping("/inventory-movements")
     @Operation(summary = "Lấy lịch sử biến động kho hàng tổng thể", description = "Truy xuất danh sách các lần nhập, xuất, điều chỉnh tồn kho của các biến thể sản phẩm trong toàn hệ thống")
     public Object movements(
@@ -39,13 +57,16 @@ public class ProductController {
         return variantInventory.movements();
     }
 
-    @PostMapping(value="/images",consumes="multipart/form-data")
+    @PostMapping(value = "/images", consumes = "multipart/form-data")
     @Operation(summary = "Tải ảnh sản phẩm lên Cloudinary", description = "Upload hình ảnh sản phẩm hoặc biến thể lên Cloudinary dành cho Super Admin và Product Manager")
-    public Map<String,String> upload(@RequestPart("file") org.springframework.web.multipart.MultipartFile file){actors.get().requireRoles("super_admin","product_manager");return Map.of("url",imageStorage.upload(file).secureUrl());}
+    public Map<String, String> upload(@RequestPart("file") MultipartFile file) {
+        actors.get().requireRoles("super_admin", "product_manager");
+        return Map.of("url", imageStorage.upload(file).secureUrl());
+    }
 
     @PatchMapping("/{id}/variants/{variantId}/stock")
     @Operation(summary = "Điều chỉnh số lượng tồn kho của biến thể sản phẩm", description = "Tăng hoặc giảm số lượng tồn kho thực tế của một biến thể cụ thể kèm theo lý do điều chỉnh")
-    public Map<String,Object> adjustVariant(@PathVariable UUID id, @PathVariable UUID variantId, @RequestBody StockAdjustRequest request) {
+    public Map<String, Object> adjustVariant(@PathVariable UUID id, @PathVariable UUID variantId, @RequestBody StockAdjustRequest request) {
         return variantInventory.adjust(id, variantId, request.getDelta(), request.getReason());
     }
 
@@ -102,7 +123,7 @@ public class ProductController {
     @PostMapping("/categories")
     @Operation(summary = "Tạo mới loại sản phẩm (Admin / Product Manager)", description = "Khởi tạo một danh mục sản phẩm mới với tên, mã code và mô tả")
     public ResponseEntity<ProductCategory> createCategory(
-            @jakarta.validation.Valid @RequestBody com.smartbox.backend.dto.request.catalog.ProductCategoryRequest request) {
+            @Valid @RequestBody ProductCategoryRequest request) {
         return ResponseEntity.ok(productService.createCategory(request));
     }
 
@@ -110,7 +131,7 @@ public class ProductController {
     @Operation(summary = "Cập nhật loại sản phẩm (Admin / Product Manager)", description = "Chỉnh sửa thông tin tên hoặc mô tả của danh mục sản phẩm theo ID")
     public ResponseEntity<ProductCategory> updateCategory(
             @PathVariable UUID id,
-            @jakarta.validation.Valid @RequestBody com.smartbox.backend.dto.request.catalog.ProductCategoryRequest request) {
+            @Valid @RequestBody ProductCategoryRequest request) {
         return ResponseEntity.ok(productService.updateCategory(id, request));
     }
 
@@ -152,7 +173,7 @@ public class ProductController {
 
     @GetMapping("/{id}/variants")
     @Operation(summary = "Lấy danh sách các biến thể kích cỡ (Size S/M/L) của sản phẩm", description = "Truy xuất danh sách tất cả các biến thể kích thước, màu sắc, giá bán và tồn kho của sản phẩm")
-    public ResponseEntity<List<com.smartbox.backend.dto.response.catalog.ProductVariantResponse>> getProductVariants(@PathVariable UUID id) {
+    public ResponseEntity<List<ProductVariantResponse>> getProductVariants(@PathVariable UUID id) {
         return ResponseEntity.ok(productService.getVariantsByProductId(id));
     }
 }

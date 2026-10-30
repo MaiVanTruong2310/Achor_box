@@ -25,6 +25,9 @@ public class CustomerAuthService {
     private final CurrentActor actors;
     private final CustomerAccountService accounts;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.smartbox.backend.service.admin.EmailService emailService;
+
     @Value("${smartbox.shop-url:http://localhost:5174}")
     private String shopUrl;
 
@@ -50,12 +53,16 @@ public class CustomerAuthService {
 
     public Map<String, Object> register(CustomerRequests.Register request) {
         provider.register(request.email().trim().toLowerCase(Locale.ROOT), request.password(), request.fullName().trim(), request.phone(), redirect("/login"));
-        return Map.of("message", "Nếu email đủ điều kiện đăng ký, hãy kiểm tra email xác nhận rồi đăng nhập. Nếu đã có tài khoản, hãy đăng nhập hoặc đặt lại mật khẩu.", "requiresLogin", true);
+        return Map.of("message", "Đăng ký tài khoản AnchorBox thành công! Đang chuyển sang màn hình đăng nhập...", "requiresLogin", true);
     }
 
     public Map<String, Object> forgot(CustomerRequests.ForgotPassword request) {
-        provider.recovery(request.email().trim().toLowerCase(Locale.ROOT), redirect("/reset-password"));
-        return Map.of("message", "Nếu tài khoản tồn tại, bạn sẽ nhận email hướng dẫn đặt lại mật khẩu.");
+        String cleanEmail = request.email().trim().toLowerCase(Locale.ROOT);
+        var recoveryInfo = provider.recovery(cleanEmail, redirect("/reset-password"));
+        if (recoveryInfo != null && recoveryInfo.otp() != null && !recoveryInfo.otp().isBlank() && emailService != null) {
+            emailService.sendResetPasswordOtpEmail(cleanEmail, "Quý khách", recoveryInfo.otp());
+        }
+        return Map.of("message", "Nếu tài khoản tồn tại, bạn sẽ nhận được mã OTP xác thực qua email để đặt lại mật khẩu.");
     }
 
     public Map<String, Object> change(CustomerRequests.ChangePassword request) {
@@ -77,7 +84,14 @@ public class CustomerAuthService {
     }
 
     public Map<String, Object> reset(CustomerRequests.ResetPassword request) {
-        var session = provider.verifyRecovery(request.tokenHash());
+        Map<String, Object> session;
+        if (request.otp() != null && !request.otp().isBlank() && request.email() != null && !request.email().isBlank()) {
+            session = provider.verifyRecoveryOtp(request.email(), request.otp());
+        } else if (request.tokenHash() != null && !request.tokenHash().isBlank()) {
+            session = provider.verifyRecovery(request.tokenHash());
+        } else {
+            throw new UnauthorizedException("Vui lòng nhập mã OTP hoặc sử dụng đường dẫn khôi phục được gửi tới email.");
+        }
         if (session == null || session.get("access_token") == null) {
             throw new UnauthorizedException("RECOVERY_LINK_INVALID_OR_EXPIRED");
         }
@@ -87,6 +101,6 @@ public class CustomerAuthService {
         } finally {
             revoke(token);
         }
-        return Map.of("message", "Đã đặt lại mật khẩu. Vui lòng đăng nhập lại.");
+        return Map.of("message", "Đã đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.");
     }
 }

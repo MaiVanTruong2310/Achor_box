@@ -1,5 +1,5 @@
 /* Customer commerce workspace: scoped to orders, checkout, invoices and warranty. */
-.commerce-workspace{--commerce-ink:#142338;--commerce-muted:#56677d;--commerce-line:#dfe6ee;--commerce-accent:var(--brand-blue);max-width:1240px;padding-top:32px;padding-bottom:64px;color:var(--commerce-ink)}
+.commerce-workspace{--commerce-ink:#142338;--commerce-muted:#56677d;--commerce-line:#dfe6ee;--commerce-accent:var(--brand-blue);width:min(1200px,calc(100% - 32px));max-width:1200px;margin-inline:auto;box-sizing:border-box;padding-top:24px;padding-bottom:48px;color:var(--commerce-ink)}
 .commerce-workspace h1{font-size:clamp(27px,3vw,38px);line-height:1.2;letter-spacing:-.035em;margin:8px 0 12px;font-weight:750}
 .commerce-workspace h2{font-size:19px;line-height:1.4;letter-spacing:-.02em;margin:0 0 14px}
 .commerce-workspace h3{font-size:16px;line-height:1.5;margin:8px 0}

@@ -70,7 +70,7 @@ export function HeroBannerSlider({ fallback }: { fallback: ReactNode }) {
   }
 
   if (!slides.length) return <>{fallback}</>;
-  return <section className={`hero-banner container${slides[active]?.layout === 'image' ? ' hero-banner-artwork' : ''}`} aria-label="Bộ sưu tập và thông tin nổi bật" aria-roledescription="carousel" role="region" tabIndex={0}
+  return <section className={`hero-banner${slides[active]?.layout === 'image' ? ' hero-banner-artwork hero-banner-full' : ' container'}`} aria-label="Bộ sưu tập và thông tin nổi bật" aria-roledescription="carousel" role="region" tabIndex={0}
     onPointerEnter={e => { if (e.pointerType === 'mouse') setHovered(true); }} onPointerLeave={() => setHovered(false)}
     onFocusCapture={() => setFocused(true)} onBlurCapture={e => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
     onPointerDown={begin} onPointerUp={end} onPointerCancel={() => { pointer.current = null; }}
@@ -86,7 +86,7 @@ export function HeroBannerSlider({ fallback }: { fallback: ReactNode }) {
         <Link className="hero-banner-link" to={banner.targetUrl} tabIndex={i === active ? 0 : -1} draggable={false} aria-label={`${banner.title.replace(/\n/g, ' ')} — ${banner.ctaLabel || 'Xem sản phẩm'}`}>
           <div className="hero-banner-art" aria-hidden="true">
             {banner.layout === 'product' && <div className="hero-banner-orbit"/>}
-            <img src={asset(banner.imageUrl)} alt="" width={640} height={600} loading={i === 0 ? 'eager' : 'lazy'} fetchPriority={i === 0 ? 'high' : 'low'} decoding="async" draggable={false}
+            <img src={asset(banner.imageUrl)} alt={banner.imageAlt || banner.title} width={banner.layout === 'image' ? 2000 : 640} height={banner.layout === 'image' ? 800 : 600} loading={i === 0 ? 'eager' : 'lazy'} fetchPriority={i === 0 ? 'high' : 'low'} decoding="async" draggable={false}
               onError={() => setFailed(previous => previous.includes(banner.id) ? previous : [...previous, banner.id])}/>
             {banner.layout === 'product' && <span className="hero-banner-image-note">Hình minh họa sản phẩm</span>}
           </div>

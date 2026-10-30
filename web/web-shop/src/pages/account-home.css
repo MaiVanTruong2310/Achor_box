@@ -1,0 +1,967 @@
+/* ==========================================================================
+   ANCHORBOX ACCOUNT PORTAL - APPLE ID SETTINGS CARD DESIGN SYSTEM
+   - Layout: Apple Settings 2-Column (Sidebar + Grouped Settings Content)
+   - Avatar: Monogram Squircle/Circle with Apple gradient & camera badge
+   - Colors: #1d1d1f, #86868b, #0071e3, #30d158, #f5f5f7
+   - Cards: 24px Squircle with subtle border & soft shadow
+   - Mobile: Smooth horizontal scrolling Segmented Pill Bar
+   ========================================================================== */
+
+.account-hub-workspace {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
+  color: #1d1d1f;
+  box-sizing: border-box;
+}
+
+/* Page Super Header */
+.account-super-header {
+  margin-bottom: 28px;
+}
+
+.account-super-eyebrow {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0071e3;
+  margin: 0 0 6px 0;
+}
+
+.account-super-title {
+  font-size: clamp(26px, 3.5vw, 34px);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: #1d1d1f;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.account-super-subtitle {
+  font-size: 14px;
+  color: #6e6e73;
+  margin: 0;
+}
+
+/* Master 2-Column Split Layout */
+.apple-settings-layout {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ==========================================================================
+   LEFT SIDEBAR: APPLE ID PROFILE & SETTINGS MENU
+   ========================================================================== */
+
+.apple-settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 72px;
+}
+
+/* Profile Card with Monogram Avatar */
+.apple-sidebar-profile-card {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  padding: 26px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+/* Monogram Avatar */
+.apple-avatar-wrap {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
+.apple-monogram-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0071e3 0%, #5e5ce6 100%);
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 18px rgba(0, 113, 227, 0.28);
+  user-select: none;
+  overflow: hidden;
+  border: 3px solid #ffffff;
+}
+
+.apple-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.apple-avatar-cam-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1d1d1f;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-avatar-wrap:hover .apple-avatar-cam-badge {
+  transform: scale(1.1);
+  background: #0071e3;
+}
+
+.apple-profile-name {
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+  margin: 0 0 4px 0;
+  line-height: 1.25;
+}
+
+.apple-profile-email {
+  font-size: 13px;
+  color: #6e6e73;
+  margin: 0 0 12px 0;
+  word-break: break-all;
+}
+
+.apple-id-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgba(48, 209, 88, 0.1);
+  color: #1a7f37;
+  border: 1px solid rgba(48, 209, 88, 0.25);
+}
+
+/* Apple Settings Sidebar Navigation Links */
+.apple-sidebar-nav-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.apple-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 550;
+  color: #1d1d1f;
+  text-decoration: none;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-nav-item:hover {
+  background: #f5f5f7;
+}
+
+.apple-nav-item.is-active {
+  background: #0071e3;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(0, 113, 227, 0.28);
+}
+
+.apple-nav-item-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.apple-nav-item-left svg {
+  color: #6e6e73;
+  transition: color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.apple-nav-item.is-active .apple-nav-item-left svg {
+  color: #ffffff;
+}
+
+.apple-nav-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #f0f0f4;
+  color: #6e6e73;
+}
+
+.apple-nav-item.is-active .apple-nav-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Sidebar Quick Support Card */
+.apple-sidebar-support-card {
+  background: #f5f5f7;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: #6e6e73;
+}
+
+.apple-sidebar-support-card h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.apple-sidebar-support-card .support-phone {
+  font-size: 15px;
+  font-weight: 750;
+  color: #0071e3;
+  text-decoration: none;
+}
+
+.apple-sidebar-support-card a.support-track-link {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0071e3;
+  text-decoration: none;
+  margin-top: 4px;
+}
+
+.apple-sidebar-support-card a.support-track-link:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   RIGHT CONTENT COLUMN (APPLE SETTINGS CONTENT CARDS)
+   ========================================================================== */
+
+.apple-settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Generic Apple Squircle Card */
+.apple-card {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  padding: 28px 32px;
+  box-sizing: border-box;
+}
+
+.apple-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.apple-card-header-left h2 {
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  color: #1d1d1f;
+  margin: 0 0 4px 0;
+  line-height: 1.25;
+}
+
+.apple-card-header-left p {
+  font-size: 13.5px;
+  color: #6e6e73;
+  margin: 0;
+}
+
+/* ==========================================================================
+   TAB: PROFILE (APPLE GROUPED SETTINGS ROWS)
+   ========================================================================== */
+
+.apple-grouped-settings {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  margin-bottom: 24px;
+}
+
+.apple-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background 0.15s ease;
+}
+
+.apple-settings-row:last-child {
+  border-bottom: none;
+}
+
+.apple-settings-row:hover {
+  background: #fafafc;
+}
+
+.apple-row-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.apple-row-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #86868b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.apple-row-value {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.apple-row-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #f5f5f7;
+  color: #0071e3;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.apple-row-action-btn:hover {
+  background: #0071e3;
+  color: #ffffff;
+  border-color: #0071e3;
+}
+
+/* 4 Quick Metrics Grid (Apple squircle cards) */
+.apple-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.apple-metric-card {
+  background: #f5f5f7;
+  border-radius: 18px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-metric-card:hover {
+  transform: translateY(-2px);
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 113, 227, 0.2);
+}
+
+.apple-metric-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: grid;
+  place-items: center;
+  color: #0071e3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.apple-metric-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1d1d1f;
+  line-height: 1;
+}
+
+.apple-metric-label {
+  font-size: 12.5px;
+  color: #6e6e73;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   TAB: ORDERS (TOOLBAR, TABLE & STATUS PILLS)
+   ========================================================================== */
+
+.apple-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.apple-search-box {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+}
+
+.apple-search-box svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #86868b;
+  pointer-events: none;
+}
+
+.apple-search-box input {
+  width: 100%;
+  height: 40px;
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 0 14px 0 40px;
+  font-size: 13.5px;
+  color: #1d1d1f;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.apple-search-box input:focus {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.14);
+}
+
+.apple-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.apple-select-wrap svg {
+  position: absolute;
+  left: 12px;
+  color: #86868b;
+  pointer-events: none;
+}
+
+.apple-select-wrap select {
+  height: 40px;
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 0 14px 0 36px;
+  font-size: 13px;
+  font-weight: 550;
+  color: #1d1d1f;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.apple-select-wrap select:focus {
+  background: #ffffff;
+  border-color: #0071e3;
+}
+
+/* Apple Orders Table */
+.apple-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.apple-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.apple-table th {
+  background: #f5f5f7;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #6e6e73;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  white-space: nowrap;
+}
+
+.apple-table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  vertical-align: middle;
+}
+
+.apple-table tr:last-child td {
+  border-bottom: none;
+}
+
+.apple-table tr:hover td {
+  background: #fafafc;
+}
+
+.apple-code-badge {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0071e3;
+  background: rgba(0, 113, 227, 0.08);
+  padding: 3px 8px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.apple-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.apple-status-pill.status-completed,
+.apple-status-pill.status-paid {
+  background: rgba(48, 209, 88, 0.1);
+  color: #1a7f37;
+  border: 1px solid rgba(48, 209, 88, 0.25);
+}
+
+.apple-status-pill.status-pending,
+.apple-status-pill.status-awaiting_payment {
+  background: rgba(255, 159, 10, 0.12);
+  color: #b26b00;
+  border: 1px solid rgba(255, 159, 10, 0.3);
+}
+
+.apple-status-pill.status-shipping {
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+  border: 1px solid rgba(0, 113, 227, 0.25);
+}
+
+.apple-status-pill.status-cancelled {
+  background: rgba(255, 69, 58, 0.1);
+  color: #c92a2a;
+  border: 1px solid rgba(255, 69, 58, 0.25);
+}
+
+/* ==========================================================================
+   TAB: DEVICES (APPLE HOME TILE WIDGETS)
+   ========================================================================== */
+
+.apple-devices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.apple-device-tile {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.apple-device-tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 113, 227, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.apple-device-tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.apple-device-tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f5f5f7, #ebebf0);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: grid;
+  place-items: center;
+  color: #0071e3;
+}
+
+.apple-device-tile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1a7f37;
+  background: rgba(48, 209, 88, 0.1);
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.apple-device-tile-status .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #30d158;
+}
+
+.apple-device-tile-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0 0 4px 0;
+}
+
+.apple-device-tile-serial {
+  font-size: 12.5px;
+  color: #86868b;
+  font-family: "SF Mono", Menlo, monospace;
+}
+
+.apple-device-tile-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: auto;
+}
+
+/* ==========================================================================
+   TAB: ADDRESSES (APPLE SQUIRCLE ADDRESS CARDS)
+   ========================================================================== */
+
+.apple-addresses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.apple-address-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.apple-address-card:hover {
+  border-color: rgba(0, 113, 227, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.apple-address-card.is-default {
+  border-color: rgba(0, 113, 227, 0.35);
+  background: #fbfdff;
+}
+
+.apple-address-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.apple-address-label {
+  font-size: 13px;
+  font-weight: 750;
+  color: #1d1d1f;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.apple-address-default-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  background: #0071e3;
+  color: #ffffff;
+}
+
+.apple-address-body {
+  font-size: 13.5px;
+  color: #48484a;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.apple-address-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Apple Pill Action Buttons */
+.apple-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.apple-pill-btn.primary {
+  background: #0071e3;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(0, 113, 227, 0.25);
+}
+
+.apple-pill-btn.primary:hover {
+  background: #0077ed;
+  transform: scale(1.02);
+}
+
+.apple-pill-btn.secondary {
+  background: #f5f5f7;
+  color: #1d1d1f;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.apple-pill-btn.secondary:hover {
+  background: #e8e8ed;
+}
+
+.apple-pill-btn.danger {
+  background: rgba(255, 69, 58, 0.08);
+  color: #ff453a;
+  border-color: rgba(255, 69, 58, 0.2);
+}
+
+.apple-pill-btn.danger:hover {
+  background: #ff453a;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   APPLE SHEET MODALS (SQUIRCLE 28px & BACKDROP BLUR)
+   ========================================================================== */
+
+.apple-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 10000;
+  animation: appleModalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes appleModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.apple-modal-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.15), 0 4px 24px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 32px 36px;
+  box-sizing: border-box;
+  animation: appleModalScaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes appleModalScaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.apple-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.apple-modal-header h3 {
+  font-size: 20px;
+  font-weight: 750;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.apple-modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f5f5f7;
+  border: none;
+  display: grid;
+  place-items: center;
+  color: #6e6e73;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.apple-modal-close-btn:hover {
+  background: #e8e8ed;
+  color: #1d1d1f;
+}
+
+/* ==========================================================================
+   RESPONSIVE (TABLET & MOBILE <= 992px)
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .apple-settings-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .apple-settings-sidebar {
+    position: static;
+  }
+
+  .apple-sidebar-profile-card {
+    flex-direction: row;
+    text-align: left;
+    gap: 16px;
+    padding: 18px 20px;
+  }
+
+  .apple-avatar-wrap {
+    margin-bottom: 0;
+    width: 60px;
+    height: 60px;
+  }
+
+  .apple-monogram-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 20px;
+  }
+
+  .apple-sidebar-nav-card {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 6px;
+    border-radius: 9999px;
+    scrollbar-width: none;
+  }
+
+  .apple-sidebar-nav-card::-webkit-scrollbar {
+    display: none;
+  }
+
+  .apple-nav-item {
+    border-radius: 9999px;
+    white-space: nowrap;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .apple-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .account-hub-workspace {
+    padding: 20px 14px 60px;
+  }
+
+  .apple-card {
+    padding: 20px 18px;
+    border-radius: 20px;
+  }
+
+  .apple-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .apple-modal-card {
+    padding: 24px 20px;
+    border-radius: 22px;
+  }
+}

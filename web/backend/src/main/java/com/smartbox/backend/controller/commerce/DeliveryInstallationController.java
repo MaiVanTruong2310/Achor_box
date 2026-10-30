@@ -11,6 +11,16 @@ import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Po
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Reassignment;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.RejectionRequest;
 import com.smartbox.backend.dto.request.commerce.DeliveryInstallationRequests.Serial;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.DailyTasks;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.DeviceCommandExecutionResponse;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.EligibleOrder;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.InstallationChecks;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.JobDetail;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.JobSummary;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.PagedResult;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.ProofUploadResponse;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.TechnicianAvailability;
+import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.TechnicianSummary;
 import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.service.commerce.DeliveryInstallationService;
 import com.smartbox.backend.service.warranty.ClaimImageStorage;
@@ -32,7 +42,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -46,196 +55,200 @@ public class DeliveryInstallationController {
 
     @GetMapping("/api/delivery-installations/availability")
     @Operation(summary = "Kiểm tra lịch rảnh của các kỹ thuật viên", description = "Kiểm tra khung giờ khả dụng của đội ngũ kỹ thuật viên trong khoảng thời gian chỉ định để lên lịch giao lắp")
-    public List<Map<String, Object>> availability(
+    public List<TechnicianAvailability> availability(
             @RequestParam OffsetDateTime start,
             @RequestParam(required = false) OffsetDateTime end) {
-        return jobs.checkAvailability(start, end);
+        return jobs.checkAvailability(start, end).stream()
+                .map(TechnicianAvailability::from)
+                .toList();
     }
 
     @PostMapping(value = "/api/delivery-installations/upload-proof", consumes = "multipart/form-data")
     @Operation(summary = "Tải ảnh minh chứng nghiệm thu", description = "Tải lên tệp hình ảnh biên bản nghiệm thu hoặc ảnh hiện trường lắp đặt lên dịch vụ lưu trữ đám mây")
-    public Map<String, String> uploadProof(@RequestPart("file") MultipartFile file) {
+    public ProofUploadResponse uploadProof(@RequestPart("file") MultipartFile file) {
         actors.get().requireRoles("technician", "product_manager", "super_admin");
-        return Map.of("url", imageStorage.upload(file).secureUrl());
+        return new ProofUploadResponse(imageStorage.upload(file).secureUrl());
     }
 
     @PostMapping("/api/delivery-installations/{id}/submit-completion")
     @Operation(summary = "Kỹ thuật viên nộp báo cáo hoàn thành kèm ảnh minh chứng", description = "Kỹ thuật viên gửi hồ sơ hoàn tất công việc giao lắp bao gồm ghi chú và ảnh minh chứng để chờ PO thẩm định")
-    public Map<String, Object> submitCompletion(
+    public JobDetail submitCompletion(
             @PathVariable UUID id,
             @Valid @RequestBody CompletionSubmission request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.submitCompletion(id, request, version, key);
+        return JobDetail.from(jobs.submitCompletion(id, request, version, key));
     }
 
     @PostMapping("/api/delivery-installations/{id}/approve-completion")
     @Operation(summary = "PO duyệt nghiệm thu và hoàn tất đơn hàng", description = "Quản lý đơn hàng (PO) phê duyệt biên bản hoàn thành công việc giao lắp và cập nhật trạng thái đơn sang hoàn tất")
-    public Map<String, Object> approveCompletion(
+    public JobDetail approveCompletion(
             @PathVariable UUID id,
             @Valid @RequestBody(required = false) PoApprovalRequest request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.approveCompletion(id, request, version, key);
+        return JobDetail.from(jobs.approveCompletion(id, request, version, key));
     }
 
     @PostMapping("/api/delivery-installations/{id}/reject-completion")
     @Operation(summary = "PO yêu cầu kỹ thuật viên xử lý lại", description = "Quản lý đơn hàng từ chối kết quả nghiệm thu và yêu cầu kỹ thuật viên kiểm tra hoặc hoàn thiện lại")
-    public Map<String, Object> rejectCompletion(
+    public JobDetail rejectCompletion(
             @PathVariable UUID id,
             @Valid @RequestBody RejectionRequest request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.rejectCompletion(id, request, version, key);
+        return JobDetail.from(jobs.rejectCompletion(id, request, version, key));
     }
 
     @GetMapping("/api/technician/daily-tasks")
     @Operation(summary = "Lấy danh sách công việc trong ngày của kỹ thuật viên (hỗ trợ thời khóa biểu)", description = "Truy vấn danh sách lịch trình công việc giao lắp trong ngày của kỹ thuật viên phục vụ phân bổ thời khóa biểu")
-    public Map<String, Object> dailyTasks(
+    public DailyTasks dailyTasks(
             @RequestParam(required = false) String date,
             @RequestParam(required = false) UUID technicianId) {
-        return jobs.dailyTasks(date, technicianId);
+        return DailyTasks.from(jobs.dailyTasks(date, technicianId));
     }
 
     @PostMapping("/api/orders/{id}/delivery-installation")
     @Operation(summary = "Phân công kỹ thuật viên giao và lắp đặt cho đơn hàng", description = "Điều phối và chỉ định kỹ thuật viên chịu trách nhiệm thực hiện giao hàng và lắp đặt cho đơn hàng")
-    public ResponseEntity<Map<String, Object>> assign(
+    public ResponseEntity<JobDetail> assign(
             @PathVariable UUID id,
             @Valid @RequestBody Assignment request,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(jobs.assign(id, request, key));
+        return ResponseEntity.status(HttpStatus.CREATED).body(JobDetail.from(jobs.assign(id, request, key)));
     }
 
     @GetMapping("/api/orders/{id}/delivery-installation")
     @Operation(summary = "Lấy thông tin công việc giao lắp của đơn hàng", description = "Truy vấn tiến độ và thông tin chi tiết nhiệm vụ giao lắp được gán cho một đơn hàng cụ thể")
-    public ResponseEntity<?> forOrder(@PathVariable UUID id) {
+    public ResponseEntity<JobDetail> forOrder(@PathVariable UUID id) {
         var job = jobs.forOrder(id);
         if (job == null) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(job);
+        return ResponseEntity.ok(JobDetail.from(job));
     }
 
     @GetMapping("/api/delivery-installations/eligible-orders")
     @Operation(summary = "Lấy danh sách đơn hàng đủ điều kiện phân công giao lắp", description = "Truy vấn danh sách các đơn hàng đã duyệt và đủ điều kiện để phân công kỹ thuật viên giao lắp")
-    public Map<String, Object> eligible(
+    public PagedResult<EligibleOrder> eligible(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return jobs.eligible(page, size);
+        return PagedResult.from(jobs.eligible(page, size), EligibleOrder::from);
     }
 
     @GetMapping("/api/delivery-installations/technicians")
     @Operation(summary = "Lấy danh sách kỹ thuật viên khả dụng", description = "Truy vấn danh sách nhân viên kỹ thuật đang hoạt động trong hệ thống để thực hiện điều phối nhiệm vụ")
-    public List<Map<String, Object>> technicians() {
-        return jobs.technicians();
+    public List<TechnicianSummary> technicians() {
+        return jobs.technicians().stream()
+                .map(TechnicianSummary::from)
+                .toList();
     }
 
     @GetMapping("/api/delivery-installations/my-jobs")
     @Operation(summary = "Lấy danh sách công việc giao lắp của kỹ thuật viên hiện tại", description = "Truy vấn danh sách nhiệm vụ giao lắp được phân công cho tài khoản kỹ thuật viên đang đăng nhập")
-    public Map<String, Object> mine(
+    public PagedResult<JobSummary> mine(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status) {
-        return jobs.list(true, page, size, status);
+        return PagedResult.from(jobs.list(true, page, size, status), JobSummary::from);
     }
 
     @GetMapping("/api/delivery-installations")
     @Operation(summary = "Lấy toàn bộ công việc giao lắp trong hệ thống", description = "Truy vấn danh sách tất cả các công việc giao lắp thiết bị theo trạng thái và phân trang cho người quản lý")
-    public Map<String, Object> all(
+    public PagedResult<JobSummary> all(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status) {
-        return jobs.list(false, page, size, status);
+        return PagedResult.from(jobs.list(false, page, size, status), JobSummary::from);
     }
 
     @GetMapping("/api/delivery-installations/{id}")
     @Operation(summary = "Lấy chi tiết công việc giao lắp", description = "Xem chi tiết công việc giao lắp bao gồm thông tin đơn hàng, kỹ thuật viên, địa chỉ và lịch sử cập nhật")
-    public Map<String, Object> detail(@PathVariable UUID id) {
-        return jobs.detail(id);
+    public JobDetail detail(@PathVariable UUID id) {
+        return JobDetail.from(jobs.detail(id));
     }
 
     @GetMapping("/api/delivery-installations/{id}/checks")
     @Operation(summary = "Lấy danh sách kiểm tra lắp đặt", description = "Truy vấn checklist tiêu chuẩn các hạng mục kiểm tra chất lượng lắp đặt kỹ thuật cho đơn hàng")
-    public Map<String, Object> checks(@PathVariable UUID id) {
-        return jobs.checks(id);
+    public InstallationChecks checks(@PathVariable UUID id) {
+        return InstallationChecks.from(jobs.checks(id));
     }
 
     @PostMapping("/api/delivery-installations/{id}/start")
     @Operation(summary = "Bắt đầu thực hiện công việc giao lắp", description = "Kỹ thuật viên cập nhật trạng thái bắt đầu di chuyển hoặc tiến hành nhiệm vụ giao lắp")
-    public Map<String, Object> start(
+    public JobDetail start(
             @PathVariable UUID id,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.progress(id, "START", new Note(null), version, key);
+        return JobDetail.from(jobs.progress(id, "START", new Note(null), version, key));
     }
 
     @PostMapping("/api/delivery-installations/{id}/confirm-delivery")
     @Operation(summary = "Xác nhận đã giao hàng tới địa chỉ khách hàng", description = "Cập nhật mốc giao thiết bị thành công tới địa chỉ nhận của khách hàng trước khi tiến hành lắp đặt")
-    public Map<String, Object> delivery(
+    public JobDetail delivery(
             @PathVariable UUID id,
             @Valid @RequestBody Note request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.progress(id, "DELIVER", request, version, key);
+        return JobDetail.from(jobs.progress(id, "DELIVER", request, version, key));
     }
 
     @PostMapping("/api/delivery-installations/{id}/devices")
     @Operation(summary = "Quét số serial thiết bị lắp đặt thực tế", description = "Ghi nhận và đối soát số serial/IMEI của thiết bị được lắp đặt thực tế tại địa điểm của khách hàng")
-    public Map<String, Object> serial(
+    public JobDetail serial(
             @PathVariable UUID id,
             @Valid @RequestBody Serial request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.serial(id, request, version, key);
+        return JobDetail.from(jobs.serial(id, request, version, key));
     }
 
     @PostMapping("/api/delivery-installations/{id}/checks/commands")
     @Operation(summary = "Kiểm thử lệnh thiết bị khi lắp đặt", description = "Gửi lệnh kiểm tra vận hành thử nghiệm thiết bị SmartBox trực tiếp tại hiện trường lắp đặt")
-    public ResponseEntity<Map<String, Object>> command(
+    public ResponseEntity<DeviceCommandExecutionResponse> command(
             @PathVariable UUID id,
             @Valid @RequestBody Command request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return ResponseEntity.accepted().body(jobs.command(id, request, version, key));
+        return ResponseEntity.accepted().body(DeviceCommandExecutionResponse.from(jobs.command(id, request, version, key)));
     }
 
     @PostMapping("/api/delivery-installations/{id}/confirm-installation")
     @Operation(summary = "Xác nhận hoàn tất lắp đặt vật lý", description = "Ghi nhận hoàn thành công đoạn lắp đặt phần cứng và kết nối vật lý của thiết bị")
-    public Map<String, Object> installation(
+    public JobDetail installation(
             @PathVariable UUID id,
             @Valid @RequestBody Installation request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.progress(id, "INSTALL", request, version, key);
+        return JobDetail.from(jobs.progress(id, "INSTALL", request, version, key));
     }
 
     @PostMapping("/api/delivery-installations/{id}/acceptance")
     @Operation(summary = "Ký biên bản nghiệm thu và kích hoạt gói bảo hành cho khách", description = "Xác nhận nghiệm thu cuối cùng từ khách hàng, kích hoạt bảo hành điện tử chính thức")
-    public Map<String, Object> acceptance(
+    public JobDetail acceptance(
             @PathVariable UUID id,
             @Valid @RequestBody Acceptance request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.progress(id, "ACCEPT", request, version, key);
+        return JobDetail.from(jobs.progress(id, "ACCEPT", request, version, key));
     }
 
     @PostMapping("/api/delivery-installations/{id}/fail")
     @Operation(summary = "Báo cáo sự cố hoặc không thể hoàn thành giao lắp", description = "Ghi nhận lý do thất bại hoặc sự cố phát sinh tại hiện trường khiến không thể hoàn thành giao lắp")
-    public Map<String, Object> fail(
+    public JobDetail fail(
             @PathVariable UUID id,
             @Valid @RequestBody Failure request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.progress(id, "FAIL", request, version, key);
+        return JobDetail.from(jobs.progress(id, "FAIL", request, version, key));
     }
 
     @PostMapping("/api/delivery-installations/{id}/reassign")
     @Operation(summary = "Chuyển giao việc cho kỹ thuật viên khác", description = "Chuyển giao nhiệm vụ giao lắp sang cho kỹ thuật viên khác xử lý thay kèm lý do điều chuyển")
-    public Map<String, Object> reassign(
+    public JobDetail reassign(
             @PathVariable UUID id,
             @Valid @RequestBody Reassignment request,
             @RequestHeader(value = "If-Match", required = false) String version,
             @RequestHeader(value = "Idempotency-Key", required = false) UUID key) {
-        return jobs.progress(id, "REASSIGN", request, version, key);
+        return JobDetail.from(jobs.progress(id, "REASSIGN", request, version, key));
     }
 }

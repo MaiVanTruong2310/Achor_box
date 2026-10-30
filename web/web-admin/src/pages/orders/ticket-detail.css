@@ -660,6 +660,113 @@
   background: rgba(239, 68, 68, 0.15);
 }
 
+/* Dispatch Locked Card (when online payment is pending) */
+.tkd-dispatch-locked-card {
+  margin-top: 12px;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 12px;
+  padding: 14px 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+[data-theme="dark"] .tkd-dispatch-locked-card {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.24);
+}
+
+.tkd-locked-card-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tkd-locked-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.tkd-locked-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tkd-locked-card-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #b45309;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+[data-theme="dark"] .tkd-locked-card-title {
+  color: #fbbf24;
+}
+
+.tkd-locked-card-desc {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--tkd-text-secondary);
+  margin: 0 0 10px 0;
+}
+
+.tkd-locked-card-desc strong {
+  color: #b45309;
+}
+
+[data-theme="dark"] .tkd-locked-card-desc strong {
+  color: #fbbf24;
+}
+
+.tkd-locked-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(245, 158, 11, 0.2);
+}
+
+.tkd-locked-card-hint {
+  font-size: 0.78rem;
+  color: var(--tkd-text-muted);
+}
+
+.tkd-btn-locked-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #b45309;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .tkd-btn-locked-refresh {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.tkd-btn-locked-refresh:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.22);
+}
+
 /* Reason Input Box */
 .tkd-reason-dropdown {
   margin-top: 12px;

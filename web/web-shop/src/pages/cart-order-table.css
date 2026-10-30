@@ -1,0 +1,1501 @@
+/* ==========================================================================
+   CART ORDER TABLE & PRODUCT PICKER (GIỐNG B1 TẠO ĐƠN)
+   ========================================================================== */
+
+.cart-order-creator-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+}
+
+.cart-creator-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 18px 0;
+  letter-spacing: -0.01em;
+}
+
+/* Header row: Title + Badge + Button to open Picker Modal */
+.cart-creator-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.cart-creator-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cart-creator-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.cart-creator-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #eff6ff;
+  color: #0866e8;
+  border: 1px solid #bfdbfe;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.cart-creator-desc {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+/* Button to open Picker Modal */
+.btn-open-picker-modal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #0866e8;
+  border: 1.5px solid #0866e8;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-open-picker-modal:hover {
+  background: #eff6ff;
+  border-color: #0652ba;
+  color: #0652ba;
+  transform: translateY(-1px);
+}
+
+.badge-picker-count {
+  background: #0866e8;
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+/* Full-width Inputs row: Sản phẩm (flex 1) + Số lượng (110px) + Thêm dòng */
+.cart-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.input-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-field-group.field-product {
+  flex: 1 1 320px;
+}
+
+.input-field-group.field-qty {
+  flex: 0 0 110px;
+}
+
+.input-field-group.field-btn {
+  flex: 0 0 auto;
+}
+
+.input-field-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.cart-select-product {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.cart-select-product:focus {
+  border-color: #0866e8;
+  box-shadow: 0 0 0 3px rgba(8, 102, 232, 0.15);
+}
+
+.cart-input-qty {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: center;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.cart-input-qty:focus {
+  border-color: #0866e8;
+  box-shadow: 0 0 0 3px rgba(8, 102, 232, 0.15);
+}
+
+.btn-add-row {
+  height: 42px;
+  padding: 0 22px;
+  background: #0866e8;
+  color: #ffffff;
+  border: 1.5px solid #0866e8;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.15s ease;
+}
+
+.btn-add-row:hover:not(:disabled) {
+  background: #0652ba;
+  border-color: #0652ba;
+  transform: translateY(-1px);
+}
+
+.btn-add-row:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Quick Chips Shelf (Gợi ý chọn nhanh) */
+.cart-quick-chips-shelf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.quick-chips-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.quick-chips-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-chip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.quick-chip-item:hover {
+  border-color: #0866e8;
+  background: #eff6ff;
+  color: #0866e8;
+}
+
+.quick-chip-item.is-active {
+  border-color: #0866e8;
+  background: #0866e8;
+  color: #ffffff;
+}
+
+.chip-price {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* Feedback message */
+.cart-creator-feedback {
+  margin-bottom: 16px;
+  font-size: 0.8125rem;
+  padding: 8px 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeInDown 0.2s ease;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cart-creator-feedback.error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.cart-creator-feedback.success {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+/* ==========================================================================
+   ORDER TABLE (BẢNG SẢN PHẨM)
+   ========================================================================== */
+
+.cart-table-wrapper {
+  overflow-x: auto;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  margin-bottom: 16px;
+}
+
+.cart-order-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.cart-order-table thead tr {
+  background: #f1f5f9;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.cart-order-table th {
+  padding: 12px 16px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.cart-order-table td {
+  padding: 14px 16px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.cart-order-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cart-order-table tbody tr:hover {
+  background-color: #fafbfd;
+}
+
+/* Column Widths & Alignments */
+.cart-order-table .col-product {
+  min-width: 220px;
+}
+
+.cart-order-table .col-price {
+  width: 140px;
+  white-space: nowrap;
+}
+
+.cart-order-table .col-qty {
+  width: 130px;
+  text-align: center;
+}
+
+.cart-order-table .col-total {
+  width: 150px;
+  white-space: nowrap;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cart-order-table .col-action {
+  width: 60px;
+  text-align: center;
+}
+
+.table-product-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.table-product-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: block;
+}
+
+/* Stepper inside table cell */
+.table-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.table-step-btn {
+  background: none;
+  border: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: all 0.1s ease;
+}
+
+.table-step-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.table-step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.table-step-input {
+  width: 36px;
+  height: 28px;
+  border: none;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+
+.table-step-input::-webkit-outer-spin-button,
+.table-step-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Delete cross button */
+.table-delete-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  font-weight: 700;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.table-delete-btn:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Empty cart state inside table */
+.cart-empty-table-row {
+  text-align: center;
+  padding: 32px 16px !important;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Table Footer / Subtotal Note */
+.cart-table-subtotal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #fafbfd;
+  border-top: 1.5px solid #e2e8f0;
+}
+
+.subtotal-note {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.subtotal-amount-box {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.subtotal-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.subtotal-amount {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+/* ==========================================================================
+   EMPTY CART STATE INSIDE TABLE
+   ========================================================================== */
+.cart-empty-table-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 44px 20px;
+  text-align: center;
+}
+
+.empty-cart-icon-wrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  border: 1px solid #dbeafe;
+}
+
+.cart-empty-table-state h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+}
+
+.cart-empty-table-state p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 20px 0;
+  max-width: 460px;
+  line-height: 1.5;
+}
+
+.empty-cart-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-empty-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-empty-action.primary {
+  background: #0866e8;
+  color: #ffffff;
+  border: 1.5px solid #0866e8;
+}
+
+.btn-empty-action.primary:hover {
+  background: #0652ba;
+  border-color: #0652ba;
+  transform: translateY(-1px);
+}
+
+.btn-empty-action.secondary {
+  background: #ffffff;
+  color: #334155;
+  border: 1.5px solid #cbd5e1;
+}
+
+.btn-empty-action.secondary:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   PRODUCT PICKER MODAL (CHỌN THEO DANH SÁCH)
+   ========================================================================== */
+.cart-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cart-modal-window {
+  background: #ffffff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.2);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  animation: modalSlideUp 0.22s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cart-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fafbfd;
+}
+
+.cart-modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.cart-modal-header p {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.cart-modal-close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cart-modal-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.cart-modal-toolbar {
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  flex-wrap: wrap;
+}
+
+.modal-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  flex: 1 1 240px;
+}
+
+.modal-search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.84rem;
+  width: 100%;
+  color: #0f172a;
+}
+
+.modal-search-box button {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+.modal-category-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-cat-tab {
+  background: none;
+  border: 1px solid transparent;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-cat-tab:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.modal-cat-tab.active {
+  background: #0866e8;
+  color: #ffffff;
+}
+
+.cart-modal-body {
+  padding: 16px 24px;
+  overflow-y: auto;
+  max-height: calc(88vh - 220px);
+  background: #f8fafc;
+}
+
+.modal-products-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-product-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.15s ease;
+}
+
+.modal-product-card:hover {
+  border-color: #0866e8;
+  box-shadow: 0 4px 12px -2px rgba(8, 102, 232, 0.08);
+}
+
+.modal-product-card.is-disabled {
+  opacity: 0.55;
+  background: #f8fafc;
+}
+
+.modal-prod-img-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+}
+
+.modal-prod-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-prod-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modal-prod-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modal-prod-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.modal-stock-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.modal-stock-badge.in-stock {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.modal-stock-badge.out-of-stock {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.modal-prod-variant {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.modal-prod-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.modal-prod-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0866e8;
+}
+
+.modal-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  color: #0866e8;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 5px 14px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-btn-add:hover:not(:disabled) {
+  background: #0866e8;
+  color: #ffffff;
+  border-color: #0866e8;
+}
+
+.modal-btn-add.is-added {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.modal-btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cart-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #fafbfd;
+  flex-wrap: wrap;
+}
+
+.modal-cart-summary {
+  font-size: 0.84rem;
+  color: #475569;
+}
+
+.modal-cart-summary strong {
+  color: #0f172a;
+}
+
+.btn-modal-done {
+  background: #0866e8;
+  color: #ffffff;
+  border: 1.5px solid #0866e8;
+  border-radius: 10px;
+  padding: 9px 22px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-modal-done:hover {
+  background: #0652ba;
+  border-color: #0652ba;
+}
+
+/* ==========================================================================
+   APPLE DESIGN SYSTEM: CART, CHECKOUT & ORDER SUMMARY
+   ========================================================================== */
+
+.apple-commerce-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 32px;
+  align-items: start;
+  margin-top: 24px;
+}
+
+.apple-commerce-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Step Card (Apple Squircle Card) */
+.apple-step-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 30px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.2s ease;
+}
+
+.apple-step-card:hover {
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.05);
+}
+
+.apple-step-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f2f2f7;
+  flex-wrap: wrap;
+}
+
+.apple-step-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.apple-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f7ff;
+  color: #0071e3;
+  padding: 4px 12px;
+  border-radius: 980px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.apple-step-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.apple-step-desc {
+  font-size: 0.875rem;
+  color: #86868b;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* Apple Radio Cards for Addresses */
+.apple-radio-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.apple-radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #fafafc;
+  border: 1.5px solid #e5e5ea;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
+}
+
+.apple-radio-card:hover {
+  background: #ffffff;
+  border-color: #c7c7cc;
+  transform: translateY(-1px);
+}
+
+.apple-radio-card.is-selected {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 1px #0071e3, 0 6px 20px -2px rgba(0, 113, 227, 0.12);
+}
+
+.apple-radio-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #c7c7cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+}
+
+.apple-radio-card.is-selected .apple-radio-indicator,
+.apple-payment-pill.is-selected .apple-radio-indicator {
+  border-color: #0071e3;
+  background: #0071e3;
+}
+
+.apple-radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s ease;
+}
+
+.apple-radio-card.is-selected .apple-radio-dot,
+.apple-payment-pill.is-selected .apple-radio-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.apple-radio-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.apple-radio-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.apple-radio-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.apple-radio-head strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.apple-badge-default {
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 980px;
+}
+
+.apple-radio-recipient {
+  font-size: 0.85rem;
+  color: #1d1d1f;
+  font-weight: 500;
+}
+
+.apple-radio-line {
+  font-size: 0.82rem;
+  color: #6e6e73;
+  line-height: 1.4;
+}
+
+.apple-radio-note {
+  font-size: 0.78rem;
+  color: #0071e3;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Custom Address Form Rows */
+.apple-address-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed #e5e5ea;
+}
+
+.apple-input-full {
+  grid-column: 1 / -1;
+}
+
+.apple-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.apple-form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.01em;
+}
+
+.apple-form-control {
+  width: 100%;
+  padding: 12px 16px;
+  background: #fbfbfd;
+  border: 1px solid #d2d2d7;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  color: #1d1d1f;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.apple-form-control:focus {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+.apple-form-control::placeholder {
+  color: #86868b;
+}
+
+textarea.apple-form-control {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Apple Radio Pills for Payment Method */
+.apple-payment-pills-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.apple-payment-pill {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: #fafafc;
+  border: 1.5px solid #e5e5ea;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
+}
+
+.apple-payment-pill:hover {
+  background: #ffffff;
+  border-color: #c7c7cc;
+  transform: translateY(-1px);
+}
+
+.apple-payment-pill.is-selected {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 1px #0071e3, 0 8px 24px -4px rgba(0, 113, 227, 0.14);
+}
+
+.apple-payment-pill-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.apple-payment-pill-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.apple-payment-pill-title strong {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.apple-pill-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 980px;
+  letter-spacing: -0.01em;
+}
+
+.apple-pill-tag.tag-blue {
+  background: #e8f2ff;
+  color: #0071e3;
+}
+
+.apple-pill-tag.tag-gray {
+  background: #f2f2f7;
+  color: #636366;
+}
+
+.apple-payment-pill-info p {
+  font-size: 0.8125rem;
+  color: #86868b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   APPLE FROSTED GLASS ORDER SUMMARY (STICKY SIDEBAR)
+   ========================================================================== */
+
+.apple-glass-summary {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 28px;
+  padding: 28px;
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02);
+  position: sticky;
+  top: 88px;
+}
+
+.apple-summary-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0 0 20px 0;
+  letter-spacing: -0.02em;
+}
+
+.apple-coupon-pill-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.apple-coupon-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: #f2f2f7;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  color: #1d1d1f;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.apple-coupon-input:focus {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.15);
+}
+
+.apple-coupon-btn {
+  padding: 10px 16px;
+  background: #1d1d1f;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.apple-coupon-btn:hover:not(:disabled) {
+  background: #333336;
+}
+
+.apple-coupon-btn.btn-remove {
+  background: #f2f2f7;
+  color: #d12435;
+}
+
+.apple-coupon-btn.btn-remove:hover {
+  background: #ffebee;
+}
+
+.apple-summary-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.apple-summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.92rem;
+  color: #515154;
+}
+
+.apple-summary-line span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.apple-summary-line strong {
+  color: #1d1d1f;
+  font-weight: 600;
+}
+
+.apple-discount-badge {
+  color: #00875a;
+  font-weight: 700;
+}
+
+.apple-free-badge {
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 980px;
+}
+
+.apple-summary-divider {
+  height: 1px;
+  background: #e5e5ea;
+  margin: 18px 0;
+}
+
+.apple-summary-total-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.apple-total-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.apple-total-amount {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #0071e3;
+  letter-spacing: -0.02em;
+}
+
+.apple-primary-cta-btn {
+  width: 100%;
+  padding: 16px 24px;
+  background: #0071e3;
+  color: #ffffff;
+  border: none;
+  border-radius: 980px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 113, 227, 0.25);
+}
+
+.apple-primary-cta-btn:hover:not(:disabled) {
+  background: #0077ed;
+  transform: scale(1.015);
+  box-shadow: 0 6px 22px rgba(0, 113, 227, 0.35);
+}
+
+.apple-primary-cta-btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.apple-primary-cta-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.apple-trust-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid #f2f2f7;
+}
+
+.apple-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8125rem;
+  color: #6e6e73;
+}
+
+.apple-trust-item svg {
+  color: #0071e3;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   CHECKOUT PAGE (CHECKOUT SNAPSHOT & PAYMENT PANEL)
+   ========================================================================== */
+
+.apple-checkout-panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 28px;
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.05);
+}
+
+.apple-terms-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fbfbfd;
+  border: 1px solid #e5e5ea;
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin: 18px 0;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #1d1d1f;
+  user-select: none;
+}
+
+.apple-terms-pill input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0071e3;
+  cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .apple-commerce-layout {
+    grid-template-columns: 1fr;
+  }
+  .apple-glass-summary {
+    position: static;
+    margin-top: 24px;
+  }
+  .apple-payment-pills-grid {
+    grid-template-columns: 1fr;
+  }
+  .apple-address-inputs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

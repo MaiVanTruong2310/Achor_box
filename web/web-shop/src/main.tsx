@@ -9,6 +9,7 @@ import './commerce-ui.css';
 import './contact.css';
 import './components/store-header.css';
 import './store-theme.css';
+import './apple-home.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>
     <AppErrorBoundary><ConnectionNotice /><BrowserRouter>
       <App />

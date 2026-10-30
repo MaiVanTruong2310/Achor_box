@@ -1,5 +1,5 @@
 import { request, type OrderView } from './shop';
-export interface Profile { id: string; fullName: string; email: string; phone: string | null; createdAt: string }
+export interface Profile { id: string; fullName: string; email: string; phone: string | null; avatarUrl?: string | null; defaultAddress?: string | null; createdAt: string }
 export interface AddressInput { label: string; recipientName: string; phone: string; addressLine: string; installationNote: string; isDefault: boolean }
 export interface Address extends AddressInput { id: string }
 export interface Page<T> { content: T[]; page: number; size: number; totalElements: number; totalPages: number }
@@ -10,14 +10,26 @@ export interface CustomerOrder extends OrderView { payment: PaymentSummary | nul
 export interface WarrantyRecord { id: string; deviceId: string; serialNumber: string; orderId: string; startDate: string; endDate: string; status: string; durationMonths: number; acceptedAt: string }
 export interface WarrantyClaim { id: string; warrantyId: string; serialNumber: string; description: string; status: string; images: string[]; createdAt: string; resolvedAt?: string }
 const pathId = (value: string) => encodeURIComponent(value);
+export function getUserAvatar(userId?: string): string | null {
+  if (!userId) return null;
+  return localStorage.getItem(`anchorbox_avatar_${userId}`) || null;
+}
+export function setUserAvatar(userId: string, url: string): void {
+  localStorage.setItem(`anchorbox_avatar_${userId}`, url);
+  window.dispatchEvent(new CustomEvent('anchorbox:avatar_changed', { detail: { userId, url } }));
+}
 export function claimPage(value: { content: WarrantyClaim[]; currentPage: number; pageSize: number; totalElements: number; totalPages: number }): Page<WarrantyClaim> { return { content: value.content, page: value.currentPage, size: value.pageSize, totalElements: value.totalElements, totalPages: value.totalPages }; }
 export const customer = {
   register: (data: { email: string; password: string; fullName: string; phone?: string }) => request<{ message: string; requiresLogin: boolean }>('/auth/register', { method: 'POST', body: JSON.stringify(data) }, false),
   forgot: (email: string) => request<{ message: string }>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }, false),
-  reset: (tokenHash: string, newPassword: string) => request<{ message: string }>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ tokenHash, newPassword }) }, false),
+  reset: (data: { tokenHash?: string; email?: string; otp?: string; newPassword: string } | string, newPassword?: string) => {
+    const payload = typeof data === 'string' ? { tokenHash: data, newPassword } : data;
+    return request<{ message: string }>('/auth/reset-password', { method: 'POST', body: JSON.stringify(payload) }, false);
+  },
   changePassword: (currentPassword: string, newPassword: string) => request<{ message: string }>('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
   profile: (signal?: AbortSignal) => request<Profile>('/customer/profile', { signal }),
-  updateProfile: (fullName: string, phone: string) => request<Profile>('/customer/profile', { method: 'PUT', body: JSON.stringify({ fullName, phone }) }),
+  updateProfile: (fullName: string, phone: string, avatarUrl?: string | null) => request<Profile>('/customer/profile', { method: 'PUT', body: JSON.stringify({ fullName, phone, ...(avatarUrl !== undefined ? { avatarUrl } : {}) }) }),
+  uploadAvatar: (file: File) => { const body = new FormData(); body.append('file', file); return request<{ url: string }>('/customer/avatar', { method: 'POST', body, timeoutMs: 45000 }); },
   addresses: (signal?: AbortSignal) => request<Address[]>('/customer/addresses', { signal }),
   saveAddress: (data: AddressInput, id?: string) => request<Address>(`/customer/addresses${id ? `/${pathId(id)}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(data) }),
   deleteAddress: (id: string) => request<void>(`/customer/addresses/${pathId(id)}`, { method: 'DELETE' }),

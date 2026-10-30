@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -47,12 +48,12 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final com.smartbox.backend.repository.CommerceRepository commerce;
+    private final CommerceRepository commerce;
     private final ProductCategoryRepository categoryRepository;
     private final VariantSpecificationService specifications;
     private final AcceptanceWarrantyService warranties;
-    private final com.smartbox.backend.security.CurrentActor actors;
-    private final com.smartbox.backend.repository.ProductVariantRepository variantRepository;
+    private final CurrentActor actors;
+    private final ProductVariantRepository variantRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional(readOnly = true)
@@ -189,7 +190,7 @@ public class ProductService {
 
         var existingSlug = categoryRepository.findBySlug(slug);
         if (existingSlug.isPresent() && !existingSlug.get().getId().equals(id)) {
-            throw new com.smartbox.backend.exception.ConflictException("SLUG_ALREADY_EXISTS: Đường dẫn slug '" + slug + "' đã thuộc loại sản phẩm khác");
+            throw new ConflictException("SLUG_ALREADY_EXISTS: Đường dẫn slug '" + slug + "' đã thuộc loại sản phẩm khác");
         }
 
         category.setName(name);
@@ -213,7 +214,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Loại sản phẩm", "id", id));
 
         if (!productRepository.findByCategoryIdOrderByCreatedAtDesc(id).isEmpty()) {
-            throw new com.smartbox.backend.exception.ConflictException("CATEGORY_IN_USE: Loại sản phẩm đang có sản phẩm thuộc danh mục, không thể xóa");
+            throw new ConflictException("CATEGORY_IN_USE: Loại sản phẩm đang có sản phẩm thuộc danh mục, không thể xóa");
         }
 
         categoryRepository.delete(category);
@@ -234,7 +235,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
-        actors.get().requireRoles("super_admin","product_manager");
+        actors.get().requireRoles("super_admin", "product_manager");
         String imagesJson = "[]";
         if (request.getImages() != null && !request.getImages().isEmpty()) {
             try {
@@ -244,9 +245,12 @@ public class ProductService {
             }
         }
 
-        if(request.getPrice()==null || request.getPrice().signum()<0 || request.getStockQuantity()!=null && request.getStockQuantity()<0)
-            throw new com.smartbox.backend.exception.BadRequestException("INVALID_PRODUCT_PRICE_OR_STOCK");
-        if(request.getVariants()!=null) request.getVariants().forEach(this::validateVariant);
+        if (request.getPrice() == null || request.getPrice().signum() < 0 || (request.getStockQuantity() != null && request.getStockQuantity() < 0)) {
+            throw new BadRequestException("INVALID_PRODUCT_PRICE_OR_STOCK");
+        }
+        if (request.getVariants() != null) {
+            request.getVariants().forEach(this::validateVariant);
+        }
         UUID resolvedManagerId = request.getManagerId();
         if (request.getCategoryId() != null) {
             var catOpt = categoryRepository.findById(request.getCategoryId());
@@ -290,7 +294,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse updateProduct(UUID id, ProductRequest request) {
-        actors.get().requireRoles("super_admin","product_manager");
+        actors.get().requireRoles("super_admin", "product_manager");
         Product product = productRepository.findLockedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", "id", id));
 
@@ -303,16 +307,30 @@ public class ProductService {
         } else if (request.getManagerId() != null) {
             product.setManagerId(request.getManagerId());
         }
-        if (request.getSku() != null) product.setSku(request.getSku());
-        if (request.getName() != null) product.setName(request.getName());
-        if (request.getDescription() != null) product.setDescription(request.getDescription());
-        if(request.getPrice()!=null && request.getPrice().signum()<0 || request.getStockQuantity()!=null && request.getStockQuantity()<0)
-            throw new com.smartbox.backend.exception.BadRequestException("INVALID_PRODUCT_PRICE_OR_STOCK");
-        if (request.getPrice() != null) product.setPrice(request.getPrice());
-        if (request.getStockQuantity() != null && !java.util.Objects.equals(request.getStockQuantity(),product.getStockQuantity()))
-            throw new com.smartbox.backend.exception.ConflictException("USE_STOCK_ADJUSTMENT: Tồn kho phải thay đổi qua thao tác điều chỉnh kho");
-        if (request.getIsActive() != null) product.setIsActive(request.getIsActive());
-        if (request.getHasWeightSensor() != null) product.setHasWeightSensor(request.getHasWeightSensor());
+        if (request.getSku() != null) {
+            product.setSku(request.getSku());
+        }
+        if (request.getName() != null) {
+            product.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            product.setDescription(request.getDescription());
+        }
+        if ((request.getPrice() != null && request.getPrice().signum() < 0) || (request.getStockQuantity() != null && request.getStockQuantity() < 0)) {
+            throw new BadRequestException("INVALID_PRODUCT_PRICE_OR_STOCK");
+        }
+        if (request.getPrice() != null) {
+            product.setPrice(request.getPrice());
+        }
+        if (request.getStockQuantity() != null && !Objects.equals(request.getStockQuantity(), product.getStockQuantity())) {
+            throw new ConflictException("USE_STOCK_ADJUSTMENT: Tồn kho phải thay đổi qua thao tác điều chỉnh kho");
+        }
+        if (request.getIsActive() != null) {
+            product.setIsActive(request.getIsActive());
+        }
+        if (request.getHasWeightSensor() != null) {
+            product.setHasWeightSensor(request.getHasWeightSensor());
+        }
 
         if (request.getImages() != null) {
             try {
