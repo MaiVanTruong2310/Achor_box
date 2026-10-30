@@ -1,0 +1,2622 @@
+/* ==========================================================================
+   ANCHORBOX APPLE HOME DESIGN SYSTEM & UTILITIES
+   Inspired by Apple Home (apple.com/home-app)
+   ========================================================================== */
+
+:root {
+  /* Apple Typography Stack */
+  --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "Inter", -apple-system, sans-serif;
+  --apple-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Apple Dark Mode Palette */
+  --apple-black: #000000;
+  --apple-dark-bg: #000000;
+  --apple-dark-card: #161617;
+  --apple-dark-surface: #1d1d1f;
+  --apple-dark-border: rgba(255, 255, 255, 0.12);
+  --apple-dark-border-subtle: rgba(255, 255, 255, 0.06);
+  --apple-dark-text-primary: #f5f5f7;
+  --apple-dark-text-secondary: #a1a1a6;
+  --apple-dark-text-tertiary: #6e6e73;
+
+  /* Apple Light Mode Palette */
+  --apple-light-bg: #f5f5f7;
+  --apple-light-surface: #ffffff;
+  --apple-light-card: #ffffff;
+  --apple-light-border: rgba(0, 0, 0, 0.08);
+  --apple-light-border-subtle: rgba(0, 0, 0, 0.04);
+  --apple-light-text-primary: #1d1d1f;
+  --apple-light-text-secondary: #6e6e73;
+  --apple-light-text-tertiary: #86868b;
+
+  /* Apple Home Accent Colors */
+  --apple-blue: #0071e3;
+  --apple-blue-hover: #0077ed;
+  --apple-blue-glow: #2997ff;
+  --apple-green: #30d158;
+  --apple-amber: #ff9f0a;
+  --apple-purple: #bf5af2;
+  --apple-red: #ff453a;
+
+  /* Squircles & Radius */
+  --apple-radius-xs: 8px;
+  --apple-radius-sm: 12px;
+  --apple-radius-md: 20px;
+  --apple-radius-lg: 28px;
+  --apple-radius-xl: 36px;
+  --apple-radius-pill: 9999px;
+
+  /* Apple Glass & Backdrop Blur */
+  --apple-glass-blur: saturate(180%) blur(20px);
+  --apple-glass-nav-bg: rgba(255, 255, 255, 0.82);
+  --apple-glass-dark-bg: rgba(22, 22, 23, 0.8);
+}
+
+/* Global Font Enforcement */
+body, button, input, select, textarea {
+  font-family: var(--apple-font) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   1. GLASSMORPHISM UTILITY CLASSES
+   ========================================================================== */
+
+.apple-glass {
+  background: var(--apple-glass-nav-bg);
+  backdrop-filter: var(--apple-glass-blur);
+  -webkit-backdrop-filter: var(--apple-glass-blur);
+  border: 1px solid var(--apple-light-border);
+}
+
+.apple-glass-dark {
+  background: var(--apple-glass-dark-bg);
+  backdrop-filter: var(--apple-glass-blur);
+  -webkit-backdrop-filter: var(--apple-glass-blur);
+  border: 1px solid var(--apple-dark-border);
+  color: var(--apple-dark-text-primary);
+}
+
+.apple-glass-light {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: var(--apple-glass-blur);
+  -webkit-backdrop-filter: var(--apple-glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* ==========================================================================
+   2. SQUIRCLE CARD UTILITY CLASSES
+   ========================================================================== */
+
+.apple-squircle {
+  border-radius: var(--apple-radius-md);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.apple-card {
+  border-radius: var(--apple-radius-lg);
+  padding: 32px;
+  background: var(--apple-light-card);
+  border: 1px solid var(--apple-light-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-card-dark {
+  background: var(--apple-dark-card);
+  border: 1px solid var(--apple-dark-border);
+  color: var(--apple-dark-text-primary);
+  border-radius: var(--apple-radius-lg);
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.apple-card-light {
+  background: #ffffff;
+  border: 1px solid var(--apple-light-border);
+  color: var(--apple-light-text-primary);
+  border-radius: var(--apple-radius-lg);
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.apple-card-interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.09);
+  border-color: rgba(0, 113, 227, 0.3);
+}
+
+/* ==========================================================================
+   3. STATUS CHIPS & PILLS UTILITY CLASSES
+   ========================================================================== */
+
+.apple-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: var(--apple-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+
+.apple-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.apple-chip-green {
+  background: rgba(48, 209, 88, 0.12);
+  color: #248a3d;
+  border: 1px solid rgba(48, 209, 88, 0.25);
+}
+.apple-chip-green .apple-chip-dot { background: var(--apple-green); box-shadow: 0 0 6px var(--apple-green); }
+
+.apple-chip-blue {
+  background: rgba(41, 151, 255, 0.12);
+  color: #0071e3;
+  border: 1px solid rgba(41, 151, 255, 0.25);
+}
+.apple-chip-blue .apple-chip-dot { background: var(--apple-blue-glow); box-shadow: 0 0 6px var(--apple-blue-glow); }
+
+.apple-chip-amber {
+  background: rgba(255, 159, 10, 0.12);
+  color: #b26b00;
+  border: 1px solid rgba(255, 159, 10, 0.25);
+}
+.apple-chip-amber .apple-chip-dot { background: var(--apple-amber); box-shadow: 0 0 6px var(--apple-amber); }
+
+.apple-chip-purple {
+  background: rgba(191, 90, 242, 0.12);
+  color: #893cb6;
+  border: 1px solid rgba(191, 90, 242, 0.25);
+}
+.apple-chip-purple .apple-chip-dot { background: var(--apple-purple); box-shadow: 0 0 6px var(--apple-purple); }
+
+.apple-chip-red {
+  background: rgba(255, 69, 58, 0.12);
+  color: #c92a2a;
+  border: 1px solid rgba(255, 69, 58, 0.25);
+}
+.apple-chip-red .apple-chip-dot { background: var(--apple-red); box-shadow: 0 0 6px var(--apple-red); }
+
+/* ==========================================================================
+   4. APPLE GRADIENTS & LIGHTING EFFECTS
+   ========================================================================== */
+
+.apple-text-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.75) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.apple-text-gradient-blue {
+  background: linear-gradient(135deg, #2997ff 0%, #0071e3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.apple-glow-ambient {
+  position: absolute;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(41, 151, 255, 0.15) 0%, rgba(191, 90, 242, 0.08) 50%, transparent 70%);
+}
+
+.apple-glow-blue {
+  box-shadow: 0 0 30px rgba(41, 151, 255, 0.25);
+}
+
+/* ==========================================================================
+   5. BENTO GRID RULES
+   ========================================================================== */
+
+.apple-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+.bento-col-12 { grid-column: span 12; }
+.bento-col-8  { grid-column: span 8; }
+.bento-col-7  { grid-column: span 7; }
+.bento-col-6  { grid-column: span 6; }
+.bento-col-5  { grid-column: span 5; }
+.bento-col-4  { grid-column: span 4; }
+.bento-col-3  { grid-column: span 3; }
+
+.bento-row-span-2 { grid-row: span 2; }
+
+@media (max-width: 960px) {
+  .bento-col-8, .bento-col-7, .bento-col-6, .bento-col-5, .bento-col-4, .bento-col-3 {
+    grid-column: span 12;
+  }
+}
+
+/* ==========================================================================
+   6. APPLE GLOBAL NAVIGATION (EXACT 48px FIXED HEIGHT)
+   ========================================================================== */
+
+.apple-global-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100001;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: var(--apple-glass-blur);
+  -webkit-backdrop-filter: var(--apple-glass-blur);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  transition: background 0.2s ease, border-color 0.2s ease;
+  user-select: none;
+}
+
+.apple-nav-container {
+  max-width: 1180px;
+  height: 48px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Apple Brand Logo */
+.apple-nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+
+.apple-nav-brand:hover {
+  opacity: 0.75;
+}
+
+.apple-brand-symbol {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #1d1d1f;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: -0.02em;
+}
+
+.apple-brand-name {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  color: #1d1d1f;
+}
+
+/* Apple Navigation Center Links */
+.apple-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex: 1;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.apple-nav-link {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #1d1d1f;
+  opacity: 0.8;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.apple-nav-link:hover {
+  opacity: 1;
+  color: #000000;
+}
+
+.apple-nav-link.is-active {
+  opacity: 1;
+  font-weight: 650;
+  color: var(--apple-blue);
+}
+
+/* Apple Action Icons Group */
+.apple-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.apple-nav-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #1d1d1f;
+  opacity: 0.85;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  padding: 0;
+}
+
+.apple-nav-action-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Cart Badge */
+.apple-cart-count {
+  position: absolute;
+  top: 1px;
+  right: -2px;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: #1d1d1f;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+/* ==========================================================================
+/* ==========================================================================
+   7. APPLE GLOBAL SEARCH SUBBAR DRAWER (BELOW HEADER, 0 LAYOUT SHIFT)
+   ========================================================================== */
+
+/* Active State for Search Trigger Button in Header Actions */
+.apple-nav-action-btn.apple-nav-search-trigger.is-active,
+.apple-nav-search-trigger.is-active {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: #0071e3 !important;
+}
+
+/* Dedicated Search Icon Trigger Button */
+.apple-nav-search-trigger {
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  outline: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Search Drawer Subbar Sliding Down Directly Below 48px Header */
+.apple-search-subbar-drawer {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.12);
+  z-index: 100000 !important;
+  animation: appleSubbarSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+@keyframes appleSubbarSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Search Header with Centered Input Pill */
+.apple-search-subbar-header {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 20px 8px;
+  box-sizing: border-box;
+}
+
+.apple-search-subbar-pill {
+  width: 100%;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 9999px;
+  padding: 0 10px 0 14px;
+  box-sizing: border-box;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.apple-search-subbar-pill:focus-within {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.26);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* Search Icon inside Pill */
+.apple-search-subbar-icon {
+  color: #86868b;
+  flex-shrink: 0;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form Container */
+.apple-search-subbar-form {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* Perfectly Optical-Centered Search Input */
+.apple-search-subbar-input {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  line-height: normal !important;
+  color: #1d1d1f !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.apple-search-subbar-input::-webkit-search-decoration,
+.apple-search-subbar-input::-webkit-search-cancel-button,
+.apple-search-subbar-input::-webkit-search-results-button,
+.apple-search-subbar-input::-webkit-search-results-decoration {
+  -webkit-appearance: none !important;
+  display: none !important;
+}
+
+.apple-search-subbar-input::placeholder {
+  color: #86868b !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  opacity: 1 !important;
+  line-height: normal !important;
+}
+
+/* Clear Query Button (X) */
+.apple-search-subbar-clear-btn {
+  width: 20px !important;
+  height: 20px !important;
+  min-height: 0 !important;
+  border-radius: 50% !important;
+  border: none !important;
+  outline: none !important;
+  background: #d2d2d7 !important;
+  color: #1d1d1f !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 4px !important;
+  flex-shrink: 0 !important;
+  box-shadow: none !important;
+  transition: background 0.15s ease !important;
+}
+
+.apple-search-subbar-clear-btn:hover {
+  background: #b0b0b8 !important;
+}
+
+/* Cancel / Close Search Button */
+.apple-search-subbar-close-btn {
+  height: 26px !important;
+  line-height: 26px !important;
+  padding: 0 12px !important;
+  margin: 0 0 0 6px !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  color: #1d1d1f !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.apple-search-subbar-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1) !important;
+  color: #000000 !important;
+}
+
+/* Drawer Body (Keywords or Results) */
+.apple-search-subbar-body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4px 20px 20px;
+  box-sizing: border-box;
+}
+
+/* Actual Store Product Keywords Panel */
+.apple-search-quick-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.apple-search-quick-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #86868b;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.apple-search-quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+/* Actual Store Product Chips */
+.apple-search-product-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 9999px;
+  color: #1d1d1f;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.16s ease;
+}
+
+.apple-search-product-chip:hover {
+  background: #0071e3;
+  border-color: #0071e3;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+}
+
+.apple-chip-icon {
+  color: #86868b;
+  flex-shrink: 0;
+  transition: color 0.16s ease;
+}
+
+.apple-search-product-chip:hover .apple-chip-icon {
+  color: #ffffff;
+}
+
+.apple-chip-text {
+  font-weight: 550;
+}
+
+.apple-chip-badge {
+  font-size: 11.5px;
+  font-weight: 400;
+  opacity: 0.65;
+  transition: opacity 0.16s ease;
+}
+
+.apple-search-product-chip:hover .apple-chip-badge {
+  opacity: 0.9;
+}
+
+/* Realtime Catalog Matching Results List */
+.apple-search-subbar-body .commerce-search-dropdown-list {
+  padding: 4px 0 6px;
+  max-height: 440px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.apple-search-results-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #86868b;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 6px;
+}
+
+.apple-search-subbar-body .search-result-item {
+  border-radius: 10px;
+  border-bottom: none;
+  padding: 10px 12px;
+  margin-bottom: 3px;
+  transition: background 0.15s ease;
+}
+
+.apple-search-subbar-body .search-result-item:hover,
+.apple-search-subbar-body .search-result-item.is-selected {
+  background: #f5f5f7;
+}
+
+.apple-search-subbar-body .search-result-thumb {
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+}
+
+.apple-search-subbar-body .search-result-title {
+  color: #1d1d1f;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.apple-search-subbar-body .search-result-price {
+  color: #1d1d1f;
+  font-weight: 700;
+}
+
+.apple-search-subbar-body .commerce-search-dropdown-footer {
+  background: transparent;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 12px 0 4px;
+}
+
+.apple-search-subbar-body .search-view-all-link {
+  color: #0071e3;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   8. MOBILE RESPONSIVE NAV
+   ========================================================================== */
+
+.apple-mobile-menu-btn {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #1d1d1f;
+  cursor: pointer;
+  padding: 0;
+  place-items: center;
+}
+
+.apple-mobile-drawer {
+  display: none;
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  padding: 16px 20px 48px;
+  flex-direction: column;
+  gap: 0;
+  z-index: 100000 !important;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: appleDrawerIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.apple-mobile-drawer.is-open {
+  display: flex !important;
+}
+
+@keyframes appleDrawerIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.apple-mobile-drawer .apple-nav-link {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d1d1f;
+  text-decoration: none;
+  padding: 13px 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 1;
+  transition: color 0.15s ease, padding-left 0.15s ease;
+}
+
+.apple-mobile-drawer .apple-nav-link:hover,
+.apple-mobile-drawer .apple-nav-link.is-active {
+  color: #0071e3;
+  padding-left: 6px;
+}
+
+.apple-drawer-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 12px 0 6px;
+}
+
+@media (max-width: 900px) {
+  .apple-nav-menu {
+    display: none !important;
+  }
+
+  .apple-mobile-menu-btn {
+    display: grid !important;
+  }
+
+  .apple-mobile-drawer.is-open {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .apple-nav-action-btn[title="So sánh sản phẩm"] {
+    display: none !important;
+  }
+
+  .apple-nav-container {
+    padding: 0 12px;
+    gap: 6px;
+  }
+
+  .apple-nav-actions {
+    gap: 4px;
+  }
+}
+
+/* ==========================================================================
+   9. APPLE HOME HERO SECTION (SPACE BLACK SHOWCASE)
+   ========================================================================== */
+
+.apple-home-hero {
+  position: relative;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 64px 20px 80px;
+  overflow: hidden;
+  transition: background 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-home-hero::before {
+  content: "";
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 550px;
+  background: radial-gradient(circle at 50% 30%, rgba(41, 151, 255, 0.16) 0%, rgba(191, 90, 242, 0.08) 45%, transparent 75%);
+  pointer-events: none;
+  filter: blur(40px);
+  z-index: 0;
+  transition: all 0.6s ease;
+}
+
+/* Dynamic Ambient Hero Glow based on Active Category */
+.apple-home-hero.glow-parcels::before {
+  background: radial-gradient(circle at 50% 30%, rgba(48, 209, 88, 0.22) 0%, rgba(41, 151, 255, 0.08) 45%, transparent 75%);
+}
+
+.apple-home-hero.glow-security::before {
+  background: radial-gradient(circle at 50% 30%, rgba(255, 159, 10, 0.22) 0%, rgba(255, 69, 58, 0.08) 45%, transparent 75%);
+}
+
+.apple-home-hero.glow-climate::before {
+  background: radial-gradient(circle at 50% 30%, rgba(191, 90, 242, 0.22) 0%, rgba(41, 151, 255, 0.1) 45%, transparent 75%);
+}
+
+.apple-home-hero.glow-camera::before {
+  background: radial-gradient(circle at 50% 30%, rgba(41, 151, 255, 0.25) 0%, rgba(0, 113, 227, 0.12) 45%, transparent 75%);
+}
+
+.apple-home-hero.glow-solar::before {
+  background: radial-gradient(circle at 50% 30%, rgba(255, 159, 10, 0.2) 0%, rgba(48, 209, 88, 0.12) 45%, transparent 75%);
+}
+
+.apple-hero-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1140px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.apple-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: var(--apple-radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 13px;
+  font-weight: 500;
+  color: #f5f5f7;
+  letter-spacing: -0.01em;
+  margin-bottom: 24px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.apple-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.apple-pill-dot.blue { background: #2997ff; box-shadow: 0 0 8px #2997ff; }
+.apple-pill-dot.green { background: #30d158; box-shadow: 0 0 8px #30d158; }
+.apple-pill-dot.amber { background: #ff9f0a; box-shadow: 0 0 8px #ff9f0a; }
+.apple-pill-dot.purple { background: #bf5af2; box-shadow: 0 0 8px #bf5af2; }
+
+.apple-hero-headline {
+  font-size: 56px;
+  line-height: 1.08;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  margin: 0 0 18px;
+  background: linear-gradient(180deg, #ffffff 15%, rgba(255, 255, 255, 0.72) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  max-width: 860px;
+}
+
+@media (max-width: 768px) {
+  .apple-hero-headline {
+    font-size: 36px;
+    letter-spacing: -0.025em;
+  }
+}
+
+.apple-hero-sub {
+  font-size: 18px;
+  line-height: 1.55;
+  color: #a1a1a6;
+  max-width: 680px;
+  margin: 0 0 32px;
+  font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .apple-hero-sub {
+    font-size: 15.5px;
+  }
+}
+
+.apple-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.apple-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 26px;
+  border-radius: var(--apple-radius-pill);
+  background: var(--apple-blue);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 113, 227, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-btn-primary:hover {
+  background: var(--apple-blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 113, 227, 0.5);
+  color: #ffffff;
+}
+
+.apple-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.apple-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 24px;
+  border-radius: var(--apple-radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f5f5f7;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+
+.apple-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   10. INTERACTIVE APPLE CATEGORY PILLS BAR
+   ========================================================================== */
+
+.apple-categories-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.apple-category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: var(--apple-radius-pill);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a1a1a6;
+  font-size: 13.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.apple-category-pill:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.apple-category-pill.is-active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.apple-category-pill.is-active.pill-parcels {
+  background: rgba(48, 209, 88, 0.14);
+  border-color: rgba(48, 209, 88, 0.45);
+  box-shadow: 0 0 18px rgba(48, 209, 88, 0.2);
+}
+
+.apple-category-pill.is-active.pill-security {
+  background: rgba(255, 159, 10, 0.14);
+  border-color: rgba(255, 159, 10, 0.45);
+  box-shadow: 0 0 18px rgba(255, 159, 10, 0.2);
+}
+
+.apple-category-pill.is-active.pill-climate {
+  background: rgba(191, 90, 242, 0.14);
+  border-color: rgba(191, 90, 242, 0.45);
+  box-shadow: 0 0 18px rgba(191, 90, 242, 0.2);
+}
+
+.apple-category-pill.is-active.pill-camera {
+  background: rgba(41, 151, 255, 0.14);
+  border-color: rgba(41, 151, 255, 0.45);
+  box-shadow: 0 0 18px rgba(41, 151, 255, 0.2);
+}
+
+.apple-category-pill.is-active.pill-solar {
+  background: rgba(48, 209, 88, 0.14);
+  border-color: rgba(48, 209, 88, 0.45);
+  box-shadow: 0 0 18px rgba(48, 209, 88, 0.2);
+}
+
+/* ==========================================================================
+   11. APPLE STAGE SHOWCASE (INTERACTIVE TELEMETRY & DEVICE VISUAL)
+   ========================================================================== */
+
+.apple-stage-card {
+  width: 100%;
+  border-radius: var(--apple-radius-lg);
+  background: #121214;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 28px;
+  align-items: stretch;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.4s ease;
+}
+
+@media (max-width: 992px) {
+  .apple-stage-card {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+}
+
+.apple-stage-visual {
+  position: relative;
+  min-height: 380px;
+  border-radius: var(--apple-radius-md);
+  background: radial-gradient(circle at 50% 50%, #1c1c1f 0%, #0d0d0f 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.apple-stage-device-frame {
+  max-width: 82%;
+  height: auto;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-stage-device-frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.8));
+}
+
+/* Interactive Telemetry HUD on Stage */
+.apple-stage-telemetry-hud {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 3;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: rgba(18, 18, 20, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: left;
+  max-width: 320px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  animation: appleHudFade 0.3s ease;
+}
+
+@keyframes appleHudFade {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.apple-telemetry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.apple-telemetry-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #a1a1a6;
+}
+
+.apple-telemetry-value {
+  font-size: 14.5px;
+  font-weight: 650;
+  color: #ffffff;
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+
+.apple-telemetry-desc {
+  font-size: 12px;
+  color: #86868b;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Stage Tiles Column */
+.apple-stage-tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+}
+
+.apple-tile-widget {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--apple-radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
+}
+
+.apple-tile-widget:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.apple-tile-widget.is-active {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(41, 151, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.apple-tile-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.apple-tile-widget:hover .apple-tile-icon-wrap {
+  transform: scale(1.05);
+}
+
+.apple-tile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.apple-tile-info strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.apple-tile-info span {
+  display: block;
+  font-size: 12px;
+  color: #86868b;
+  margin-bottom: 5px;
+}
+
+.apple-tile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   12. APPLE BENTO GRID SECTION (FEATURE CARDS)
+   ========================================================================== */
+
+.apple-bento-section {
+  background-color: #000000;
+  color: #ffffff;
+  padding: 96px 20px;
+  position: relative;
+}
+
+.apple-bento-section .apple-section-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 56px;
+}
+
+.apple-bento-section .apple-section-header .eyebrow {
+  color: #2997ff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.apple-bento-section .apple-section-header h2 {
+  font-size: 44px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  margin: 0 0 16px;
+  background: linear-gradient(180deg, #ffffff 10%, rgba(255, 255, 255, 0.75) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .apple-bento-section .apple-section-header h2 {
+    font-size: 32px;
+  }
+}
+
+.apple-bento-section .apple-section-header p {
+  font-size: 17px;
+  color: #a1a1a6;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.apple-bento-card {
+  background: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--apple-radius-lg);
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+}
+
+.apple-bento-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.apple-bento-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2997ff;
+  margin-bottom: 12px;
+}
+
+.apple-bento-card h3 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0 0 12px;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.apple-bento-card p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: #a1a1a6;
+  margin: 0 0 24px;
+}
+
+/* Flowchart Timeline for Smart Delivery Automation (Col 8 Thẻ lớn) */
+.smart-delivery-timeline {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+@media (max-width: 900px) {
+  .smart-delivery-timeline {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+.smart-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.smart-step-item.is-highlighted {
+  background: rgba(41, 151, 255, 0.12);
+  border-color: rgba(41, 151, 255, 0.4);
+}
+
+.smart-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #a1a1a6;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+}
+
+.smart-step-item.is-highlighted .smart-step-num {
+  background: #2997ff;
+  color: #ffffff;
+}
+
+.smart-step-icon {
+  margin-bottom: 6px;
+  color: #2997ff;
+}
+
+.smart-step-label {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: #ffffff;
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+
+.smart-step-sub {
+  font-size: 10px;
+  color: #86868b;
+  line-height: 1.25;
+}
+
+/* Weight Scale Graphic (Col 4 Thẻ vừa 1) */
+.weight-sensor-graphic {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weight-display-dial {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 0;
+  background: rgba(48, 209, 88, 0.08);
+  border: 1px solid rgba(48, 209, 88, 0.25);
+  border-radius: 14px;
+}
+
+.weight-digits {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #30d158;
+}
+
+.weight-unit {
+  font-size: 16px;
+  font-weight: 600;
+  color: #a1a1a6;
+}
+
+.weight-packages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weight-package-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #f5f5f7;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+
+/* Bank Solenoid Lock Graphic (Col 4 Thẻ vừa 2) */
+.bank-lock-graphic {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.lock-dual-layer {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 10px;
+}
+
+.lock-badge-chip {
+  flex: 1;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.lock-badge-chip strong {
+  font-size: 12.5px;
+  color: #ffffff;
+}
+
+.lock-badge-chip small {
+  font-size: 10.5px;
+  color: #86868b;
+}
+
+/* Matter Thread Graphic (Col 8 Thẻ nhỏ) */
+.connectivity-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 18px 24px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.protocol-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--apple-radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5f5f7;
+}
+
+/* ==========================================================================
+   13. APPLE ACCESSORIES STORE CATALOG SECTION (#f5f5f7)
+   ========================================================================== */
+
+.apple-store-section {
+  background-color: #f5f5f7;
+  color: #1d1d1f;
+  padding: 100px 20px 110px;
+  position: relative;
+}
+
+.apple-store-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 56px;
+}
+
+.apple-store-header .eyebrow {
+  color: #6e6e73;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.apple-store-header h2 {
+  font-size: 44px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: #1d1d1f;
+  margin: 0 0 16px;
+}
+
+@media (max-width: 768px) {
+  .apple-store-header h2 {
+    font-size: 32px;
+  }
+}
+
+.apple-store-header p {
+  font-size: 17px;
+  color: #6e6e73;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.apple-products-grid {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+@media (max-width: 960px) {
+  .apple-products-grid {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+  }
+}
+
+.apple-product-card {
+  background: #ffffff;
+  border-radius: var(--apple-radius-lg);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-decoration: none;
+  color: #1d1d1f;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  position: relative;
+}
+
+.apple-product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 113, 227, 0.2);
+}
+
+.apple-card-badge {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #bf4800;
+  background: rgba(255, 149, 0, 0.12);
+  padding: 4px 10px;
+  border-radius: var(--apple-radius-pill);
+}
+
+.apple-card-media {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.apple-card-media img {
+  max-height: 190px;
+  max-width: 100%;
+  object-fit: contain;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-product-card:hover .apple-card-media img {
+  transform: scale(1.05);
+}
+
+/* Color finish swatches */
+.apple-card-swatches {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.apple-swatch-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.apple-card-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b26b00;
+  display: block;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.apple-card-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.apple-card-desc {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #6e6e73;
+  text-align: center;
+  margin: 0 0 16px;
+  min-height: 40px;
+}
+
+.apple-card-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+}
+
+.apple-card-spec-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #1d1d1f;
+}
+
+.apple-card-spec-item svg {
+  color: #0071e3;
+  flex-shrink: 0;
+}
+
+.apple-card-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.apple-card-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.01em;
+}
+
+.apple-card-price small {
+  font-size: 12px;
+  font-weight: 500;
+  color: #86868b;
+  margin-right: 4px;
+}
+
+/* Round Apple Actions: "Mua ngay" & "Tìm hiểu thêm" */
+.apple-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.apple-btn-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: var(--apple-radius-pill);
+  background: var(--apple-blue);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+  white-space: nowrap;
+}
+
+.apple-btn-buy:hover {
+  background: var(--apple-blue-hover);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.4);
+}
+
+.apple-btn-buy:active {
+  transform: scale(0.98);
+}
+
+.apple-btn-learn-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: var(--apple-radius-pill);
+  background: #f5f5f7;
+  color: #0071e3;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.apple-btn-learn-more:hover {
+  background: #e8e8ed;
+  color: #0077ed;
+  border-color: rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   14. APPLE LUXURY 3D VIEWER STAGE & INTERACTIVE HOTSPOTS
+   ========================================================================== */
+
+.apple-viewer-card-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.apple-3d-pedestal-stage {
+  position: relative;
+  width: 100%;
+  min-height: 520px;
+  height: 520px;
+  background: radial-gradient(circle at 50% 38%, #ffffff 0%, #f4f4f7 60%, #e5e5ea 100%);
+  border-radius: var(--apple-radius-lg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 768px) {
+  .apple-3d-pedestal-stage {
+    min-height: 420px;
+    height: 420px;
+  }
+}
+
+/* Luxury Frosted Glass Pedestal & Floor Reflection */
+.apple-pedestal-reflection {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 440px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0) 70%);
+  filter: blur(12px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.apple-pedestal-ellipse {
+  position: absolute;
+  bottom: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 380px;
+  height: 105px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(215, 222, 235, 0.45) 60%, rgba(0, 0, 0, 0.04) 100%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), inset 0 2px 10px rgba(255, 255, 255, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.apple-pedestal-rim-glow {
+  position: absolute;
+  bottom: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  height: 25px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(41, 151, 255, 0.2) 0%, transparent 70%);
+  filter: blur(8px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.apple-viewer-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+
+/* Hotspots Overlay Container */
+.apple-hotspots-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.apple-hotspot-pin {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  outline: none;
+}
+
+.apple-hotspot-pin:hover,
+.apple-hotspot-pin.is-active {
+  transform: translate(-50%, -50%) scale(1.12);
+  z-index: 6;
+}
+
+.apple-hotspot-pulse {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #0071e3;
+  animation: appleHotspotPing 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes appleHotspotPing {
+  0% { transform: translate(-50%, -50%) scale(0.7); opacity: 0.9; }
+  75%, 100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+}
+
+.apple-hotspot-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+.apple-hotspot-label-pill {
+  padding: 4px 10px;
+  border-radius: var(--apple-radius-pill);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+  font-weight: 650;
+  color: #1d1d1f;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .apple-hotspot-label-pill {
+    display: none;
+  }
+}
+
+/* Glassmorphism Hotspot Popover Card */
+.apple-hotspot-popover {
+  position: absolute;
+  bottom: 24px;
+  left: 20px;
+  right: 20px;
+  max-width: 440px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 20px 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.16);
+  z-index: 15;
+  animation: applePopoverIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+}
+
+@keyframes applePopoverIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.apple-hotspot-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.apple-hotspot-chip {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--apple-radius-pill);
+  border: 1px solid currentColor;
+}
+
+.apple-popover-close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #6e6e73;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.apple-popover-close-btn:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: #1d1d1f;
+}
+
+.apple-hotspot-popover-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.015em;
+  margin: 0 0 6px;
+}
+
+.apple-hotspot-popover-desc {
+  font-size: 13px;
+  color: #515154;
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+.apple-hotspot-popover-specs {
+  font-size: 11.5px;
+  color: #6e6e73;
+  line-height: 1.4;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+.apple-hotspot-popover-specs strong {
+  display: block;
+  color: #1d1d1f;
+  margin-bottom: 2px;
+}
+
+.apple-viewer-hint-badge {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 6px 14px;
+  border-radius: var(--apple-radius-pill);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 11.5px;
+  font-weight: 550;
+  color: #6e6e73;
+  pointer-events: none;
+  z-index: 3;
+  white-space: nowrap;
+}
+
+/* 3D Controls Bar (Presets & Actions) */
+.apple-viewer-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.apple-viewer-view-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.apple-view-pill {
+  padding: 7px 14px;
+  border-radius: var(--apple-radius-pill);
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 12.5px;
+  font-weight: 550;
+  color: #515154;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.apple-view-pill:hover {
+  background: #ebebee;
+  color: #1d1d1f;
+}
+
+.apple-view-pill.is-active {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #0071e3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  font-weight: 650;
+}
+
+.apple-viewer-action-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.apple-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--apple-radius-pill);
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 12.5px;
+  font-weight: 550;
+  color: #515154;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.apple-action-pill:hover {
+  background: #ebebee;
+  color: #1d1d1f;
+}
+
+.apple-action-pill.is-active {
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+  border-color: rgba(0, 113, 227, 0.25);
+}
+
+/* ==========================================================================
+   15. APPLE PRODUCT DETAIL STUDIO & CONFIGURATION PILLS
+   ========================================================================== */
+
+.apple-product-detail-root {
+  background-color: #ffffff;
+  min-height: 100vh;
+  color: #1d1d1f;
+  padding-bottom: 96px;
+}
+
+.apple-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Apple Studio Frameless Gallery Showcase */
+.apple-gallery-showcase {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 540px;
+  border-radius: var(--apple-radius-lg);
+  background: radial-gradient(circle at 50% 40%, #ffffff 0%, #f6f6f9 70%, #ececf1 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+}
+
+.apple-gallery-img {
+  max-width: 82%;
+  max-height: 82%;
+  object-fit: contain;
+  filter: drop-shadow(0 25px 35px rgba(0, 0, 0, 0.12));
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-gallery-showcase:hover .apple-gallery-img {
+  transform: scale(1.03);
+}
+
+/* View Mode Switcher: 📸 Ảnh Studio vs 🔄 3D 360° */
+.apple-gallery-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--apple-radius-pill);
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 14px;
+}
+
+.apple-mode-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--apple-radius-pill);
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 550;
+  color: #6e6e73;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-mode-switch-btn:hover {
+  color: #1d1d1f;
+}
+
+.apple-mode-switch-btn.is-active {
+  background: #ffffff;
+  color: #0071e3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-weight: 650;
+}
+
+/* Floating Thumbnail Capsules */
+.apple-gallery-thumb-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.apple-gallery-thumb-pill {
+  width: 68px;
+  height: 68px;
+  border-radius: 14px;
+  background: #f5f5f7;
+  border: 1.5px solid transparent;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.apple-gallery-thumb-pill:hover {
+  background: #ebebee;
+  transform: translateY(-2px);
+}
+
+.apple-gallery-thumb-pill.is-active {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+.apple-gallery-thumb-pill img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Configuration Selector Pills with Micro-Animations */
+.apple-config-group {
+  margin-bottom: 26px;
+}
+
+.apple-config-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.apple-config-title {
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+}
+
+.apple-config-value-badge {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0071e3;
+}
+
+.apple-config-pills-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Micro-Animation Pill */
+.apple-config-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--apple-radius-pill);
+  background: #f5f5f7;
+  border: 1.5px solid transparent;
+  color: #1d1d1f;
+  font-size: 13.5px;
+  font-weight: 550;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.apple-config-pill:hover {
+  background: #ebebee;
+  transform: translateY(-1px);
+}
+
+.apple-config-pill:active {
+  transform: scale(0.97);
+}
+
+.apple-config-pill.is-active {
+  background: #ffffff;
+  border-color: #0071e3;
+  color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15), 0 4px 14px rgba(0, 0, 0, 0.05);
+  font-weight: 650;
+}
+
+.apple-color-swatch-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   16. APPLE MINIMALIST FLAT ACCORDION SPECIFICATIONS
+   ========================================================================== */
+
+.apple-specs-accordion-section {
+  max-width: 900px;
+  margin: 72px auto 0;
+  padding: 0 20px;
+}
+
+.apple-accordion-head {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.apple-accordion-head .eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6e6e73;
+  margin-bottom: 8px;
+}
+
+.apple-accordion-head h2 {
+  font-size: 36px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.apple-flat-accordion {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.apple-accordion-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.apple-accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease;
+}
+
+.apple-accordion-trigger:hover .apple-accordion-title {
+  color: #0071e3;
+}
+
+.apple-accordion-title {
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: #1d1d1f;
+  transition: color 0.2s ease;
+}
+
+.apple-accordion-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f5f5f7;
+  display: grid;
+  place-items: center;
+  color: #1d1d1f;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.apple-accordion-item.is-open .apple-accordion-icon {
+  transform: rotate(180deg);
+  background: #0071e3;
+  color: #ffffff;
+}
+
+.apple-accordion-body {
+  padding: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: appleAccordionSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes appleAccordionSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.apple-spec-row {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+  padding: 8px 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 640px) {
+  .apple-spec-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+.apple-spec-key {
+  color: #6e6e73;
+  font-weight: 500;
+}
+
+.apple-spec-val {
+  color: #1d1d1f;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   17. APPLE GLOBAL NAV MEGA-DROPDOWN MENU & BACKDROP BLUR
+   ========================================================================== */
+
+/* Full-width Glassmorphic Dropdown Panel */
+.apple-nav-dropdown-overlay {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
+  z-index: 98;
+  overflow: hidden;
+  animation: appleDropdownSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes appleDropdownSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.apple-dropdown-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 22px 28px 28px;
+  display: grid;
+  grid-template-columns: 1.55fr 1.2fr 1.25fr;
+  gap: 32px;
+  text-align: left;
+}
+
+@media (max-width: 900px) {
+  .apple-nav-dropdown-overlay {
+    display: none !important;
+  }
+}
+
+.apple-dropdown-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.apple-dropdown-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  color: #86868b;
+  margin-bottom: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Primary Navigation Links (Column 1) - Sleek, neat Apple typography */
+.apple-dropdown-primary-links {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.apple-dropdown-primary-link {
+  font-size: 14.5px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+  text-decoration: none;
+  transition: color 0.15s ease, transform 0.15s ease;
+  display: inline-block;
+  padding: 3px 0;
+}
+
+.apple-dropdown-primary-link:hover {
+  color: #0071e3;
+  transform: translateX(2px);
+}
+
+/* Secondary & Special Columns Links (Columns 2 & 3) */
+.apple-dropdown-secondary-links {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.apple-dropdown-secondary-link {
+  font-size: 12.5px;
+  line-height: 1.38;
+  font-weight: 400;
+  color: #515154;
+  text-decoration: none;
+  transition: color 0.15s ease, transform 0.15s ease;
+  display: inline-block;
+  padding: 2.5px 0;
+}
+
+.apple-dropdown-secondary-link:hover {
+  color: #0071e3;
+  transform: translateX(2px);
+}
+
+/* Dimmed Blurred Backdrop behind Mega-Menu */
+.apple-nav-backdrop-dim {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 99990 !important;
+  animation: appleBackdropFadeIn 0.25s ease;
+}
+
+@keyframes appleBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+
+

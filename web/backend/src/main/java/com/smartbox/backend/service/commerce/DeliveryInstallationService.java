@@ -38,6 +38,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -68,81 +69,171 @@ public class DeliveryInstallationService {
     @Value("${smartbox.installation.weight-min-delta-kg:0.05}") private double weightDelta;
     @Value("${smartbox.installation.tare-tolerance-kg:0.05}") private double tareTolerance;
 
-    private boolean manager(){return Set.of("super_admin","product_manager").contains(actors.get().role());}
-    private void manage(){actors.get().requireRoles("super_admin","product_manager");}
-    private void poOnly(){actors.get().requireRoles("super_admin","product_manager");}
-    private void assigned(Map<String,Object> job){
-        actors.get().requireRoles("technician");
-        if(!actors.get().id().equals(uuid(job.get("assigned_to"))))throw new ForbiddenException("JOB_NOT_ASSIGNED");
+    private boolean manager() {
+        return Set.of("super_admin", "product_manager").contains(actors.get().role());
     }
-    private void read(Map<String,Object> job){
-        if(manager())return;
-        if("customer".equals(actors.get().role())){actors.get().requireOwner(uuid(db.order(uuid(job.get("order_id")),false).get("user_id")));return;}
+
+    private void manage() {
+        actors.get().requireRoles("super_admin", "product_manager");
+    }
+
+    private void poOnly() {
+        actors.get().requireRoles("super_admin", "product_manager");
+    }
+
+    private void assigned(Map<String, Object> job) {
+        actors.get().requireRoles("technician");
+        if (!actors.get().id().equals(uuid(job.get("assigned_to")))) {
+            throw new ForbiddenException("JOB_NOT_ASSIGNED");
+        }
+    }
+
+    private void read(Map<String, Object> job) {
+        if (manager()) {
+            return;
+        }
+        if ("customer".equals(actors.get().role())) {
+            actors.get().requireOwner(uuid(db.order(uuid(job.get("order_id")), false).get("user_id")));
+            return;
+        }
         assigned(job);
     }
-    private Map<String,Object> locked(UUID id){
-        UUID order=uuid(db.one("SELECT order_id FROM public.delivery_installations WHERE id=?",id).get("order_id"));
-        db.order(order,true); // Global lock order: order -> job -> devices -> commands.
-        return db.one("SELECT * FROM public.delivery_installations WHERE id=? FOR UPDATE",id);
+
+    private Map<String, Object> locked(UUID id) {
+        UUID order = uuid(db.one("SELECT order_id FROM public.delivery_installations WHERE id=?", id).get("order_id"));
+        db.order(order, true); // Global lock order: order -> job -> devices -> commands.
+        return db.one("SELECT * FROM public.delivery_installations WHERE id=? FOR UPDATE", id);
     }
-    private void confirmed(Map<String,Object> job){
-        var order=db.order(uuid(job.get("order_id")),false);orders.requireNewWorkflow(order);
-        if(!"confirmed".equals(order.get("status")))throw new ConflictException("ORDER_NOT_CONFIRMED");
+
+    private void confirmed(Map<String, Object> job) {
+        var order = db.order(uuid(job.get("order_id")), false);
+        orders.requireNewWorkflow(order);
+        if (!"confirmed".equals(order.get("status"))) {
+            throw new ConflictException("ORDER_NOT_CONFIRMED");
+        }
     }
-    private void technician(UUID id){
-        var profile=db.one("SELECT role,is_locked FROM public.profiles WHERE id=?",id);
-        if(!"technician".equals(Objects.toString(profile.get("role")))||Boolean.TRUE.equals(profile.get("is_locked")))throw new BadRequestException("INVALID_TECHNICIAN");
+
+    private void technician(UUID id) {
+        var profile = db.one("SELECT role, is_locked FROM public.profiles WHERE id=?", id);
+        if (!"technician".equals(Objects.toString(profile.get("role"))) || Boolean.TRUE.equals(profile.get("is_locked"))) {
+            throw new BadRequestException("INVALID_TECHNICIAN");
+        }
     }
-    private void schedule(OffsetDateTime date){if(date==null||!date.isAfter(now().minusMinutes(15)))throw new BadRequestException("INVALID_INSTALLATION_SCHEDULE");}
-    private String text(String value,boolean required){
-        if(value!=null&&value.length()>2000||required&&(value==null||value.isBlank()))throw new BadRequestException("INSTALLATION_REASON_OR_NOTE_REQUIRED");
-        return value==null?null:value.trim();
+
+    private void schedule(OffsetDateTime date) {
+        if (date == null || !date.isAfter(now().minusMinutes(15))) {
+            throw new BadRequestException("INVALID_INSTALLATION_SCHEDULE");
+        }
     }
-    private long version(String header){
-        if(header==null||header.isBlank())throw new BadRequestException("IF_MATCH_REQUIRED");
-        try{String v=header.replaceAll("^\"|\"$","");if(!v.matches("[0-9]+"))throw new NumberFormatException();return Long.parseLong(v);}
-        catch(NumberFormatException ex){throw new BadRequestException("INVALID_JOB_VERSION");}
+
+    private String text(String value, boolean required) {
+        if ((value != null && value.length() > 2000) || (required && (value == null || value.isBlank()))) {
+            throw new BadRequestException("INSTALLATION_REASON_OR_NOTE_REQUIRED");
+        }
+        return value == null ? null : value.trim();
     }
-    private void current(Map<String,Object> job,long version){if(((Number)job.get("version")).longValue()!=version)throw new ConflictException("STALE_JOB_VERSION");}
-    private void stage(Map<String,Object> job,String...allowed){if(!Set.of(allowed).contains(job.get("status")))throw new ConflictException("INVALID_JOB_TRANSITION");}
-    private String fingerprint(UUID target,String action,Object request,Object version){
-        try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json.writeValueAsBytes(Arrays.asList(target,action,request,version))));}
-        catch(Exception ex){throw new IllegalStateException("INSTALLATION_REQUEST_SERIALIZATION_FAILED",ex);}
+
+    private long version(String header) {
+        if (header == null || header.isBlank()) {
+            throw new BadRequestException("IF_MATCH_REQUIRED");
+        }
+        try {
+            String v = header.replaceAll("^\"|\"$", "");
+            if (!v.matches("[0-9]+")) {
+                throw new NumberFormatException();
+            }
+            return Long.parseLong(v);
+        } catch (NumberFormatException ex) {
+            throw new BadRequestException("INVALID_JOB_VERSION");
+        }
     }
-    private Map<String,Object> cached(UUID key,String hash){
-        if(key==null)throw new BadRequestException("IDEMPOTENCY_KEY_REQUIRED");
-        var rows=db.list("SELECT fingerprint,response FROM public.delivery_installation_requests WHERE actor_id=? AND request_key=?",actors.get().id(),key);
-        if(rows.isEmpty())return null;
-        if(!hash.equals(rows.getFirst().get("fingerprint")))throw new ConflictException("IDEMPOTENCY_KEY_REUSED");
-        try{return json.readValue(rows.getFirst().get("response").toString(),new TypeReference<>(){});}
-        catch(Exception ex){throw new IllegalStateException("INSTALLATION_RESPONSE_SERIALIZATION_FAILED",ex);}
+
+    private void current(Map<String, Object> job, long version) {
+        if (((Number) job.get("version")).longValue() != version) {
+            throw new ConflictException("STALE_JOB_VERSION");
+        }
     }
-    private Map<String,Object> remember(UUID key,String hash,UUID job,Map<String,Object> result){
-        try{db.update("INSERT INTO public.delivery_installation_requests(actor_id,request_key,job_id,fingerprint,response,created_at) VALUES(?,?,?,?,?,?)",actors.get().id(),key,job,hash,json.writeValueAsString(result),now());}
-        catch(com.fasterxml.jackson.core.JsonProcessingException ex){throw new IllegalStateException("INSTALLATION_RESPONSE_SERIALIZATION_FAILED",ex);}
+
+    private void stage(Map<String, Object> job, String... allowed) {
+        if (!Set.of(allowed).contains(job.get("status"))) {
+            throw new ConflictException("INVALID_JOB_TRANSITION");
+        }
+    }
+
+    private String fingerprint(UUID target, String action, Object request, Object version) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(json.writeValueAsBytes(Arrays.asList(target, action, request, version))));
+        } catch (Exception ex) {
+            throw new IllegalStateException("INSTALLATION_REQUEST_SERIALIZATION_FAILED", ex);
+        }
+    }
+
+    private Map<String, Object> cached(UUID key, String hash) {
+        if (key == null) {
+            throw new BadRequestException("IDEMPOTENCY_KEY_REQUIRED");
+        }
+        var rows = db.list("SELECT fingerprint, response FROM public.delivery_installation_requests WHERE actor_id=? AND request_key=?",
+                actors.get().id(), key);
+        if (rows.isEmpty()) {
+            return null;
+        }
+        if (!hash.equals(rows.getFirst().get("fingerprint"))) {
+            throw new ConflictException("IDEMPOTENCY_KEY_REUSED");
+        }
+        try {
+            return json.readValue(rows.getFirst().get("response").toString(), new TypeReference<>() {});
+        } catch (Exception ex) {
+            throw new IllegalStateException("INSTALLATION_RESPONSE_SERIALIZATION_FAILED", ex);
+        }
+    }
+
+    private Map<String, Object> remember(UUID key, String hash, UUID job, Map<String, Object> result) {
+        try {
+            db.update("INSERT INTO public.delivery_installation_requests(actor_id, request_key, job_id, fingerprint, response, created_at) VALUES(?, ?, ?, ?, ?, ?)",
+                    actors.get().id(), key, job, hash, json.writeValueAsString(result), now());
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            throw new IllegalStateException("INSTALLATION_RESPONSE_SERIALIZATION_FAILED", ex);
+        }
         return result;
     }
-    private void history(Map<String,Object> job,String action,String from,String reason){
-        UUID id=uuid(job.get("id"));
-        db.update("INSERT INTO public.delivery_installation_history VALUES(?,?,?,?,?,?,?,?,?,?)",UUID.randomUUID(),id,actors.get().id(),action,from,job.get("status"),reason,job.get("attempt"),job.get("version"),now());
-        db.audit(actors.get().id(),"INSTALLATION_"+action,"delivery_installations",id,reason);
+
+    private void history(Map<String, Object> job, String action, String from, String reason) {
+        UUID id = uuid(job.get("id"));
+        db.update("INSERT INTO public.delivery_installation_history VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                UUID.randomUUID(), id, actors.get().id(), action, from, job.get("status"), reason, job.get("attempt"), job.get("version"), now());
+        db.audit(actors.get().id(), "INSTALLATION_" + action, "delivery_installations", id, reason);
     }
-    private Map<String,Object> bump(Map<String,Object> job,String action,String reason){
-        db.update("UPDATE public.delivery_installations SET version=version+1,updated_at=? WHERE id=?",now(),job.get("id"));
-        var updated=db.one("SELECT * FROM public.delivery_installations WHERE id=?",job.get("id"));
-        history(updated,action,job.get("status").toString(),reason);return updated;
+
+    private Map<String, Object> bump(Map<String, Object> job, String action, String reason) {
+        db.update("UPDATE public.delivery_installations SET version=version+1, updated_at=? WHERE id=?", now(), job.get("id"));
+        var updated = db.one("SELECT * FROM public.delivery_installations WHERE id=?", job.get("id"));
+        history(updated, action, job.get("status").toString(), reason);
+        return updated;
     }
 
     @Transactional
-    public Map<String,Object> assign(UUID orderId,Assignment request,UUID key){
-        manage();var order=db.order(orderId,true);String hash=fingerprint(orderId,"ASSIGN",request,null);var replay=cached(key,hash);if(replay!=null)return replay;
+    public Map<String, Object> assign(UUID orderId, Assignment request, UUID key) {
+        manage();
+        var order = db.order(orderId, true);
+        String hash = fingerprint(orderId, "ASSIGN", request, null);
+        var replay = cached(key, hash);
+        if (replay != null) {
+            return replay;
+        }
         orders.requireNewWorkflow(order);
-        if(!"confirmed".equals(order.get("status"))||db.list("SELECT id FROM public.approval_tickets WHERE order_id=? AND status='APPROVED'",orderId).isEmpty())throw new ConflictException("ORDER_NOT_CONFIRMED");
-        if(!db.list("SELECT id FROM public.delivery_installations WHERE order_id=?",orderId).isEmpty())throw new ConflictException("JOB_ALREADY_EXISTS");
+        if (!"confirmed".equals(order.get("status")) || db.list("SELECT id FROM public.approval_tickets WHERE order_id=? AND status='APPROVED'", orderId).isEmpty()) {
+            throw new ConflictException("ORDER_NOT_CONFIRMED");
+        }
+        if (!db.list("SELECT id FROM public.delivery_installations WHERE order_id=?", orderId).isEmpty()) {
+            throw new ConflictException("JOB_ALREADY_EXISTS");
+        }
         technician(request.assignedTo());
         OffsetDateTime scheduledAt = request.scheduledAt();
         OffsetDateTime estimatedEndTime = request.estimatedEndTime() != null ? request.estimatedEndTime() : scheduledAt.plusHours(2);
-        if (!estimatedEndTime.isAfter(scheduledAt)) throw new BadRequestException("INVALID_TIME_RANGE");
+        if (!estimatedEndTime.isAfter(scheduledAt)) {
+            throw new BadRequestException("INVALID_TIME_RANGE");
+        }
         schedule(scheduledAt);
         text(request.installationNote(),false);
 
@@ -224,55 +315,90 @@ public class DeliveryInstallationService {
                 }
             }
         }
-        var job=locked(id);
-        if("REASSIGN".equals(action))manage();else if(!("FAIL".equals(action)&&manager()))assigned(job);
-        long expected=version(header);String hash=fingerprint(id,action,request,expected);var replay=cached(key,hash);if(replay!=null)return replay;
-        current(job,expected);confirmed(job);UUID orderId=uuid(job.get("order_id"));String reason=null;
-        switch(action){
+        var job = locked(id);
+        if ("REASSIGN".equals(action)) {
+            manage();
+        } else if (!("FAIL".equals(action) && manager())) {
+            assigned(job);
+        }
+
+        long expected = version(header);
+        String hash = fingerprint(id, action, request, expected);
+        var replay = cached(key, hash);
+        if (replay != null) {
+            return replay;
+        }
+
+        current(job, expected);
+        confirmed(job);
+        UUID orderId = uuid(job.get("order_id"));
+        String reason = null;
+
+        switch (action) {
             case "START" -> {
-                stage(job,"ASSIGNED");
-                db.update("UPDATE public.delivery_installations SET status='IN_PROGRESS',started_at=? WHERE id=?",now(),id);
-                if(db.update("UPDATE public.shipments SET status='SHIPPED' WHERE order_id=? AND status='PREPARING'",orderId)==1)shipmentHistory(orderId,"SHIPPED");
+                stage(job, "ASSIGNED");
+                db.update("UPDATE public.delivery_installations SET status='IN_PROGRESS', started_at=? WHERE id=?", now(), id);
+                if (db.update("UPDATE public.shipments SET status='SHIPPED' WHERE order_id=? AND status='PREPARING'", orderId) == 1) {
+                    shipmentHistory(orderId, "SHIPPED");
+                }
             }
             case "DELIVER" -> {
-                stage(job,"IN_PROGRESS");reason=text(((Note)request).note(),false);
-                db.update("UPDATE public.delivery_installations SET status='DELIVERED',delivered_at=COALESCE(delivered_at,?) WHERE id=?",now(),id);
-                if(db.update("UPDATE public.shipments SET status='DELIVERED',delivered_at=COALESCE(delivered_at,?) WHERE order_id=? AND status<>'DELIVERED'",now(),orderId)==1)shipmentHistory(orderId,"DELIVERED");
+                stage(job, "IN_PROGRESS");
+                reason = text(((Note) request).note(), false);
+                db.update("UPDATE public.delivery_installations SET status='DELIVERED', delivered_at=COALESCE(delivered_at, ?) WHERE id=?", now(), id);
+                if (db.update("UPDATE public.shipments SET status='DELIVERED', delivered_at=COALESCE(delivered_at, ?) WHERE order_id=? AND status<>'DELIVERED'", now(), orderId) == 1) {
+                    shipmentHistory(orderId, "DELIVERED");
+                }
                 linkOwners(job);
-                outbox.enqueue("DEVICE_DELIVERED",orderId,"installation-delivered:"+id+":"+job.get("attempt"),"Đã giao thiết bị; đang thực hiện lắp đặt và kiểm tra");
+                outbox.enqueue("DEVICE_DELIVERED", orderId, "installation-delivered:" + id + ":" + job.get("attempt"), "Đã giao thiết bị; đang thực hiện lắp đặt và kiểm tra");
             }
             case "INSTALL" -> {
-                stage(job,"DELIVERED");reason=text(((Installation)request).installationNote(),true);
-                if(!serialComplete(job))throw new ConflictException("DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE");
+                stage(job, "DELIVERED");
+                reason = text(((Installation) request).installationNote(), true);
+                if (!serialComplete(job)) {
+                    throw new ConflictException("DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE");
+                }
                 linkOwners(job);
-                db.update("UPDATE public.delivery_installations SET status='INSTALLED',installed_at=COALESCE(installed_at,?),installation_note=? WHERE id=?",now(),reason,id);
+                db.update("UPDATE public.delivery_installations SET status='INSTALLED', installed_at=COALESCE(installed_at, ?), installation_note=? WHERE id=?", now(), reason, id);
             }
             case "ACCEPT" -> {
-                stage(job,"INSTALLED","WAITING_PO_CONFIRMATION");var acceptance=(Acceptance)request;reason=text(acceptance.note(),false);
-                if(!Boolean.TRUE.equals(acceptance.customerAccepted()))throw new ConflictException("CUSTOMER_ACCEPTANCE_REQUIRED");
+                stage(job, "INSTALLED", "WAITING_PO_CONFIRMATION");
+                var acceptance = (Acceptance) request;
+                reason = text(acceptance.note(), false);
+                if (!Boolean.TRUE.equals(acceptance.customerAccepted())) {
+                    throw new ConflictException("CUSTOMER_ACCEPTANCE_REQUIRED");
+                }
                 // Device locks prevent telemetry/sale/owner changes between validation and commit.
-                var result=check(job,true);
-                if(!Boolean.TRUE.equals(result.get("ready")))throw new ConflictException("ACCEPTANCE_CHECKS_FAILED: "+String.join(", ",((List<?>)result.get("failedChecks")).stream().map(String::valueOf).toList()));
-                var evidence=new LinkedHashMap<>(result);evidence.put("validatedVersion",job.get("version"));evidence.put("version",expected+1);
-                var accepted=now();
-                db.update("UPDATE public.delivery_installations SET status='COMPLETED',completed_at=?,customer_accepted=true,acceptance_evidence=? WHERE id=?",accepted,serialize(evidence),id);
-                warranties.issue(id,accepted);
-                orders.transition(db.order(orderId,false),"completed",actors.get().id().toString(),"INSTALLATION_ACCEPTED");
-                outbox.enqueue("INSTALLATION_COMPLETED",orderId,"installation-completed:"+id,"Thiết bị đã được giao, lắp đặt và nghiệm thu");
+                var result = check(job, true);
+                if (!Boolean.TRUE.equals(result.get("ready"))) {
+                    throw new ConflictException("ACCEPTANCE_CHECKS_FAILED: " + String.join(", ", ((List<?>) result.get("failedChecks")).stream().map(String::valueOf).toList()));
+                }
+                var evidence = new LinkedHashMap<>(result);
+                evidence.put("validatedVersion", job.get("version"));
+                evidence.put("version", expected + 1);
+                var accepted = now();
+                db.update("UPDATE public.delivery_installations SET status='COMPLETED', completed_at=?, customer_accepted=true, acceptance_evidence=? WHERE id=?", accepted, serialize(evidence), id);
+                warranties.issue(id, accepted);
+                orders.transition(db.order(orderId, false), "completed", actors.get().id().toString(), "INSTALLATION_ACCEPTED");
+                outbox.enqueue("INSTALLATION_COMPLETED", orderId, "installation-completed:" + id, "Thiết bị đã được giao, lắp đặt và nghiệm thu");
             }
             case "FAIL" -> {
-                stage(job,"ASSIGNED","IN_PROGRESS","DELIVERED","INSTALLED","WAITING_PO_CONFIRMATION");reason=text(((Failure)request).failureReason(),true);
-                db.update("UPDATE public.delivery_installations SET status='FAILED',failure_reason=? WHERE id=?",reason,id);
-                outbox.enqueue("INSTALLATION_DELAYED",orderId,"installation-failed:"+id+":"+job.get("attempt"),"Lịch giao/lắp cần điều chỉnh. Bộ phận hỗ trợ sẽ liên hệ.");
+                stage(job, "ASSIGNED", "IN_PROGRESS", "DELIVERED", "INSTALLED", "WAITING_PO_CONFIRMATION");
+                reason = text(((Failure) request).failureReason(), true);
+                db.update("UPDATE public.delivery_installations SET status='FAILED', failure_reason=? WHERE id=?", reason, id);
+                outbox.enqueue("INSTALLATION_DELAYED", orderId, "installation-failed:" + id + ":" + job.get("attempt"), "Lịch giao/lắp cần điều chỉnh. Bộ phận hỗ trợ sẽ liên hệ.");
             }
             case "REASSIGN" -> {
-                stage(job,"ASSIGNED","FAILED","WAITING_PO_CONFIRMATION");var r=(Reassignment)request;reason=text(r.reason(),true);technician(r.assignedTo());
+                stage(job, "ASSIGNED", "FAILED", "WAITING_PO_CONFIRMATION");
+                var r = (Reassignment) request;
+                reason = text(r.reason(), true);
+                technician(r.assignedTo());
                 OffsetDateTime reScheduledAt = r.scheduledAt();
                 OffsetDateTime reEstimatedEndTime = r.estimatedEndTime() != null ? r.estimatedEndTime() : reScheduledAt.plusHours(2);
                 schedule(reScheduledAt);
                 // Preserve physical handover/install timestamps and history; invalidate technical evidence through attempt/start.
-                db.update("UPDATE public.delivery_installations SET assigned_to=?,scheduled_at=?,estimated_end_time=?,status='ASSIGNED',attempt=attempt+1,started_at=NULL,failure_reason=NULL,customer_accepted=false,rework_notes=NULL WHERE id=?",
-                    r.assignedTo(),reScheduledAt,reEstimatedEndTime,id);
+                db.update("UPDATE public.delivery_installations SET assigned_to=?, scheduled_at=?, estimated_end_time=?, status='ASSIGNED', attempt=attempt+1, started_at=NULL, failure_reason=NULL, customer_accepted=false, rework_notes=NULL WHERE id=?",
+                        r.assignedTo(), reScheduledAt, reEstimatedEndTime, id);
                 outbox.enqueue("INSTALLATION_SCHEDULED",orderId,"installation-rescheduled:"+id+":"+(((Number)job.get("attempt")).intValue()+1),"Lịch giao và lắp đặt mới: "+reScheduledAt);
                 UUID reNotifId = UUID.randomUUID();
                 String orderCode = orderId.toString().substring(0, 8).toUpperCase();
@@ -897,6 +1023,44 @@ public class DeliveryInstallationService {
         int waitingCount = 0;
         int completedCount = 0;
 
+        List<UUID> allOrderIds = jobRows.stream()
+                .map(r -> uuid(r.get("order_id")))
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        List<UUID> allJobIds = jobRows.stream()
+                .map(r -> uuid(r.get("id")))
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<UUID, List<Map<String, Object>>> itemsByOrderId = new LinkedHashMap<>();
+        if (!allOrderIds.isEmpty()) {
+            String placeholders = String.join(",", Collections.nCopies(allOrderIds.size(), "?"));
+            var allItems = db.list(
+                    "SELECT id, order_id, quantity, product_name_snapshot AS \"productName\", variant_name_snapshot AS \"variantName\", sku_snapshot AS sku FROM public.order_items WHERE order_id IN (" + placeholders + ") ORDER BY id",
+                    allOrderIds.toArray()
+            );
+            for (var it : allItems) {
+                UUID oid = uuid(it.get("order_id"));
+                itemsByOrderId.computeIfAbsent(oid, k -> new ArrayList<>()).add(it);
+            }
+        }
+
+        Map<UUID, List<Map<String, Object>>> devicesByJobId = new LinkedHashMap<>();
+        if (!allJobIds.isEmpty()) {
+            String placeholders = String.join(",", Collections.nCopies(allJobIds.size(), "?"));
+            var allDevs = db.list(
+                    "SELECT d.*, b.job_id, b.order_item_id, b.has_weight_sensor, b.linked_at, i.product_id AS sale_product_id, i.variant_id AS sale_variant_id FROM public.delivery_installation_devices b JOIN public.devices d ON d.id=b.device_id JOIN public.order_items i ON i.id=b.order_item_id WHERE b.job_id IN (" + placeholders + ") ORDER BY d.id",
+                    allJobIds.toArray()
+            );
+            for (var d : allDevs) {
+                UUID jid = uuid(d.get("job_id"));
+                devicesByJobId.computeIfAbsent(jid, k -> new ArrayList<>()).add(d);
+            }
+        }
+
         for (int i = 0; i < jobRows.size(); i++) {
             var j = jobRows.get(i);
             UUID jobId = uuid(j.get("id"));
@@ -928,9 +1092,9 @@ public class DeliveryInstallationService {
                 }
             }
 
-            var items = db.list("SELECT id, quantity, product_name_snapshot AS \"productName\", variant_name_snapshot AS \"variantName\", sku_snapshot AS sku FROM public.order_items WHERE order_id=? ORDER BY id", orderId);
+            var items = itemsByOrderId.getOrDefault(orderId, Collections.emptyList());
 
-            var devs = devices(j, false).stream().map(d -> {
+            var devs = devicesByJobId.getOrDefault(jobId, Collections.emptyList()).stream().map(d -> {
                 var m = new LinkedHashMap<String, Object>();
                 m.put("deviceId", d.get("id").toString());
                 m.put("serialNumber", Objects.toString(d.get("serial_number"), "N/A"));

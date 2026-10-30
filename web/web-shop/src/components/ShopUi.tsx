@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { ApiError, statuses } from '../api/shop';
 import { useShop } from '../ShopContext';
 export function useResource<T>(loader: (signal: AbortSignal) => Promise<T>, key: string) {
@@ -39,4 +39,4 @@ export function Planned({ title, children }: {
     title: string;
     children?: ReactNode;
 }) { return <section className="container section"><p className="eyebrow">Đang chuẩn bị</p><h1>{title}</h1><div className="notice">{children || 'Chức năng này sẽ được mở khi dịch vụ hỗ trợ sẵn sàng.'}</div><Link className="button secondary" to="/products">Khám phá sản phẩm</Link></section>; }
-export function AccountNav() { return <nav className="account-nav" aria-label="Tài khoản"><NavLink end to="/account">Tổng quan</NavLink><NavLink to="/account/orders">Đơn hàng</NavLink><NavLink to="/account/devices">Thiết bị</NavLink><NavLink to="/account/profile">Hồ sơ</NavLink><NavLink to="/account/addresses">Địa chỉ</NavLink><NavLink to="/account/warranty">Bảo hành</NavLink></nav>; }
+export function AccountNav() { return null; }

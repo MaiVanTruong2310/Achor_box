@@ -55,14 +55,20 @@ export const Login: React.FC = () => {
     setLocalError(null);
     setForgotNotice(false);
 
-    if (!email.trim() || !password) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
       setLocalError('Vui lòng nhập đầy đủ email và mật khẩu của bạn.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setLocalError('Địa chỉ email đăng nhập không đúng định dạng.');
       return;
     }
 
     setSubmitting(true);
     try {
-      const result = await login(email.trim(), password);
+      const result = await login(cleanEmail, password);
       if (result.success) {
         navigate(result.role ? getRoleDefaultPath(result.role) : '/403', { replace: true });
       } else {

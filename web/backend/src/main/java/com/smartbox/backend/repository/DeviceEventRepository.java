@@ -1,6 +1,7 @@
 package com.smartbox.backend.repository;
 
 import com.smartbox.backend.entity.DeviceEvent;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,7 +10,10 @@ import java.util.UUID;
 
 @Repository
 public interface DeviceEventRepository extends JpaRepository<DeviceEvent, UUID> {
+
+    @EntityGraph(attributePaths = {"device"})
     List<DeviceEvent> findTop50ByOrderByCreatedAtDesc();
+
+    @EntityGraph(attributePaths = {"device"})
     List<DeviceEvent> findByDeviceIdOrderByCreatedAtDesc(UUID deviceId);
 }
-

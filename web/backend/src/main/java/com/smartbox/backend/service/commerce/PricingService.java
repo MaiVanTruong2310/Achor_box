@@ -15,10 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static com.smartbox.backend.service.commerce.OrderWorkflowService.money;
+import static com.smartbox.backend.service.commerce.OrderWorkflowService.uuid;
 
 /**
  * Service tính toán giá đơn hàng, chiết khấu voucher tập trung tại Backend (Single Source of Truth).
@@ -49,6 +54,27 @@ public class PricingService {
         BigDecimal subtotal = BigDecimal.ZERO;
         List<CalculatePricingResponse.PricingItemDetail> details = new ArrayList<>();
 
+        List<UUID> variantIds = request.getItems().stream()
+                .map(CalculatePricingRequest.PricingItem::getVariantId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<UUID, Map<String, Object>> variantMap = new LinkedHashMap<>();
+        if (!variantIds.isEmpty()) {
+            String placeholders = String.join(",", Collections.nCopies(variantIds.size(), "?"));
+            var allVariants = db.list(
+                    "SELECT v.*, p.name AS product_name, p.price AS base_price, p.is_active AS product_active " +
+                            "FROM public.product_variants v " +
+                            "JOIN public.products p ON p.id = v.product_id " +
+                            "WHERE v.id IN (" + placeholders + ")",
+                    variantIds.toArray()
+            );
+            for (var v : allVariants) {
+                variantMap.put(uuid(v.get("id")), v);
+            }
+        }
+
         for (var itemReq : request.getItems()) {
             UUID variantId = itemReq.getVariantId();
             int qty = itemReq.getQuantity();
@@ -57,17 +83,10 @@ public class PricingService {
                 throw new BadRequestException("Số lượng cho mỗi sản phẩm phải từ 1 đến 99");
             }
 
-            var rows = db.list(
-                    "SELECT v.*, p.name AS product_name, p.price AS base_price, p.is_active AS product_active " +
-                            "FROM public.product_variants v " +
-                            "JOIN public.products p ON p.id = v.product_id " +
-                            "WHERE v.id = ?", variantId);
-
-            if (rows.isEmpty()) {
+            var variant = variantMap.get(variantId);
+            if (variant == null) {
                 throw new ResourceNotFoundException("Biến thể sản phẩm", "variantId", variantId);
             }
-
-            var variant = rows.getFirst();
             boolean active = Boolean.TRUE.equals(variant.get("is_active"))
                     && Boolean.TRUE.equals(variant.get("product_active"));
 

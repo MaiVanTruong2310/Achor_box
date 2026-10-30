@@ -192,6 +192,38 @@ export const VariantSpecificationsPage: React.FC = () => {
       return;
     }
 
+    // Validate physical dimensions & weight (> 0 and <= 100000)
+    const physicalFields = [
+      { name: 'Chiều rộng', val: form.widthCm },
+      { name: 'Chiều cao', val: form.heightCm },
+      { name: 'Chiều sâu', val: form.depthCm },
+      { name: 'Trọng lượng', val: form.weightKg },
+      { name: 'Tải trọng tối đa', val: form.maxLoadKg },
+    ];
+    for (const item of physicalFields) {
+      if (item.val) {
+        const n = Number(item.val);
+        if (isNaN(n) || n <= 0 || n > 100000) {
+          setModalError(`${item.name} phải là số dương lớn hơn 0 và không vượt quá 100.000.`);
+          return;
+        }
+      }
+    }
+    if (form.capacityLiter) {
+      const cap = Number(form.capacityLiter);
+      if (isNaN(cap) || cap <= 0 || cap > 10000) {
+        setModalError('Dung tích chứa phải là số dương lớn hơn 0 và không vượt quá 10.000L.');
+        return;
+      }
+    }
+    if (form.warrantyMonths) {
+      const wm = Number(form.warrantyMonths);
+      if (isNaN(wm) || wm < 1 || wm > 120) {
+        setModalError('Thời hạn bảo hành phải từ 1 đến 120 tháng.');
+        return;
+      }
+    }
+
     setSubmitting(true);
     setModalError('');
     try {

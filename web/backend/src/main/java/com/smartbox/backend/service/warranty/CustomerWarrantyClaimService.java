@@ -19,8 +19,10 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -136,7 +138,43 @@ public class CustomerWarrantyClaimService {
         AdminSearch.page(page, size);
         UUID owner = actors.get().id();
         long count = ((Number) db.one("SELECT count(*) AS n FROM public.warranty_claims WHERE customer_id=?", owner).get("n")).longValue();
-        var rows = db.list("SELECT id FROM public.warranty_claims WHERE customer_id=? ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?", owner, size, (long) page * size);
-        return PaginationUtil.toMap(rows.stream().map(r -> detail(UUID.fromString(r.get("id").toString()))).toList(), page, size, count);
+        if (count == 0) {
+            return PaginationUtil.toMap(Collections.emptyList(), page, size, 0L);
+        }
+
+        var rows = db.list(
+                "SELECT c.id, c.warranty_id AS \"warrantyId\", c.description, c.status, c.created_at AS \"createdAt\", c.resolved_at AS \"resolvedAt\", d.serial_number AS \"serialNumber\" " +
+                "FROM public.warranty_claims c " +
+                "JOIN public.warranties w ON w.id = c.warranty_id " +
+                "JOIN public.devices d ON d.id = w.device_id " +
+                "WHERE c.customer_id = ? " +
+                "ORDER BY c.created_at DESC, c.id DESC " +
+                "LIMIT ? OFFSET ?",
+                owner, size, (long) page * size
+        );
+
+        List<UUID> claimIds = rows.stream()
+                .map(r -> r.get("id") instanceof UUID u ? u : UUID.fromString(r.get("id").toString()))
+                .toList();
+
+        Map<UUID, List<Object>> imagesByClaimId = new LinkedHashMap<>();
+        if (!claimIds.isEmpty()) {
+            String placeholders = String.join(",", Collections.nCopies(claimIds.size(), "?"));
+            var imageRows = db.list(
+                    "SELECT claim_id, secure_url FROM public.warranty_claim_images WHERE claim_id IN (" + placeholders + ") ORDER BY id",
+                    claimIds.toArray()
+            );
+            for (var img : imageRows) {
+                UUID cid = img.get("claim_id") instanceof UUID u ? u : UUID.fromString(img.get("claim_id").toString());
+                imagesByClaimId.computeIfAbsent(cid, k -> new ArrayList<>()).add(img.get("secure_url"));
+            }
+        }
+
+        for (var row : rows) {
+            UUID cid = row.get("id") instanceof UUID u ? u : UUID.fromString(row.get("id").toString());
+            row.put("images", imagesByClaimId.getOrDefault(cid, Collections.emptyList()));
+        }
+
+        return PaginationUtil.toMap(rows, page, size, count);
     }
 }

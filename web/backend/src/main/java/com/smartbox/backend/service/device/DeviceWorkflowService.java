@@ -1,5 +1,7 @@
 package com.smartbox.backend.service.device;
 
+import com.smartbox.backend.dto.response.device.DeviceWorkflowResponses.DeviceBatchRegistrationResponse;
+import com.smartbox.backend.dto.response.device.DeviceWorkflowResponses.DeviceRegistrationResponse;
 import com.smartbox.backend.exception.AppException;
 import com.smartbox.backend.exception.BadRequestException;
 import com.smartbox.backend.exception.ConflictException;
@@ -49,26 +51,26 @@ public class DeviceWorkflowService {
     public record CommandCreated(UUID id) {}
 
     @Transactional
-    public Map<String, Object> register(Registration request) {
+    public DeviceRegistrationResponse register(Registration request) {
         actors.get().requireRoles("super_admin");
         var variant = db.one("SELECT * FROM public.product_variants WHERE id=? FOR UPDATE", request.variantId());
         UUID id = UUID.randomUUID();
         db.update("INSERT INTO public.devices(id,product_id,product_variant_id,serial_number,name,mqtt_topic_id) VALUES(?,?,?,?,?,?)",
                 id, variant.get("product_id"), request.variantId(), request.serialNumber(), request.name(), request.mqttTopicId());
-        return Map.of("deviceId", id, "serialNumber", request.serialNumber());
+        return new DeviceRegistrationResponse(id, request.serialNumber());
     }
 
     @Transactional
-    public Map<String, Object> registerBatch(List<Registration> requests) {
+    public DeviceBatchRegistrationResponse registerBatch(List<Registration> requests) {
         actors.get().requireRoles("super_admin");
         if (requests == null || requests.isEmpty()) {
             throw new BadRequestException("Danh sách serial thiết bị không được để trống");
         }
-        List<Map<String, Object>> registered = new ArrayList<>();
+        List<DeviceRegistrationResponse> registered = new ArrayList<>();
         for (var req : requests) {
             registered.add(register(req));
         }
-        return Map.of("count", registered.size(), "devices", registered);
+        return new DeviceBatchRegistrationResponse(registered.size(), registered);
     }
 
     @Transactional

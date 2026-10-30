@@ -70,8 +70,10 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
         return search(search, pattern, status, payment, false, null, pageable);
     }
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"customer"})
     List<Order> findAllByOrderByCreatedAtDesc();
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"customer"})
     List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
     long countByStatus(String status);

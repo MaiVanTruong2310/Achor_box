@@ -2,7 +2,6 @@ package com.smartbox.backend.controller.device;
 
 import com.smartbox.backend.common.AppConstants;
 import com.smartbox.backend.dto.request.device.DeviceStatusUpdateRequest;
-import com.smartbox.backend.dto.response.device.DeviceEventResponse;
 import com.smartbox.backend.dto.response.device.DeviceResponse;
 import com.smartbox.backend.service.device.DeviceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,7 +9,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;

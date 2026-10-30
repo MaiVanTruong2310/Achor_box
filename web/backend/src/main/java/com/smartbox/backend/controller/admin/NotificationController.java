@@ -2,12 +2,27 @@ package com.smartbox.backend.controller.admin;
 
 import com.smartbox.backend.service.admin.PushNotificationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-import java.util.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,12 +32,24 @@ public class NotificationController {
 
     private final PushNotificationService push;
 
-    public record Token(@NotBlank @Size(max=4096) String token){}
-    public record Preference(@NotNull Boolean enabled){}
+    @Schema(description = "Yêu cầu đăng ký token FCM")
+    public record Token(
+            @NotBlank
+            @Size(max = 4096)
+            @Schema(description = "Mã registration token nhận từ Firebase Cloud Messaging")
+            String token
+    ) {}
+
+    @Schema(description = "Cấu hình tùy chọn nhận thông báo")
+    public record Preference(
+            @NotNull
+            @Schema(description = "Trạng thái kích hoạt nhận thông báo (true/false)")
+            Boolean enabled
+    ) {}
 
     @PostMapping("/tokens")
     @Operation(summary = "Đăng ký thiết bị nhận thông báo đẩy (FCM Token)", description = "Lưu trữ device token của ứng dụng di động hoặc trình duyệt web để gửi thông báo push trực tiếp")
-    public Map<String,Object> register(@Valid @RequestBody Token request) {
+    public Map<String, Object> register(@Valid @RequestBody Token request) {
         return push.register(request.token());
     }
 
@@ -34,7 +61,9 @@ public class NotificationController {
 
     @GetMapping
     @Operation(summary = "Lấy danh sách thông báo của người dùng", description = "Truy xuất danh sách thông báo cá nhân có phân trang, sắp xếp theo thời gian mới nhất")
-    public List<Map<String,Object>> list(@RequestParam(defaultValue="0") int page, @RequestParam(defaultValue="20") int size) {
+    public List<Map<String, Object>> list(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         return push.list(page, size);
     }
 

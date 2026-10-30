@@ -34,10 +34,10 @@ export function AppEcosystem() {
     <section className="container section app-ecosystem-section" id="mobile-app">
       <div className="store-section-head">
         <div>
-          <p className="eyebrow">HỆ SINH THÁI KẾT NỐI IOT</p>
-          <h2>Hộp thông minh tại nhà.<br/>Kiểm soát toàn diện qua Mobile App.</h2>
+          <p className="eyebrow">ỨNG DỤNG ĐIỀU KHIỂN TRÊN SMARTPHONE</p>
+          <h2>Hộp nhận hàng tại nhà.<br/>Kiểm soát toàn diện trong lòng bàn tay.</h2>
           <p className="lead">
-            Website là nơi bạn đặt mua và theo dõi đơn hàng. Khi hộp được giao và lắp đặt, thiết bị sẽ tự động liên kết với <strong>Ứng dụng di động AnchorBox</strong> trên smartphone để mở khóa, nhận thông báo và quản lý bưu kiện 24/7.
+            Đặt mua hộp trên website, sau khi kỹ thuật viên lắp đặt xong, bạn kết nối ngay với <strong>Ứng dụng di động AnchorBox</strong> trên smartphone để mở khóa từ xa, tạo mã OTP cho shipper và nhận thông báo bưu kiện 24/7.
           </p>
         </div>
         <Link className="text-link" to="/app">

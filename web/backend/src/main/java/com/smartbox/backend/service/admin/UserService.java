@@ -49,6 +49,7 @@ public class UserService {
     private final com.smartbox.backend.security.SupabaseAuthGateway authProvider;
     private final com.smartbox.backend.security.CurrentActor actors;
     private final com.smartbox.backend.repository.CommerceRepository commerce;
+    private final com.smartbox.backend.service.auth.RedisAuthService redisAuth;
 
     @Transactional(readOnly = true)
     public List<UserProfileResponse> getAllUsers() {
@@ -114,6 +115,12 @@ public class UserService {
 
         commerce.audit(actors.get().id(),Boolean.TRUE.equals(isLocked)?"LOCK_USER":"UNLOCK_USER","profiles",id,reason);
 
+        // Khi khóa tài khoản, thu hồi toàn bộ token và phiên đăng nhập hiện tại
+        if (Boolean.TRUE.equals(isLocked) && redisAuth != null) {
+            redisAuth.blacklistUserTokens(id, "ACCOUNT_LOCKED");
+            log.info("Đã đưa toàn bộ token của người dùng {} vào blacklist do khóa tài khoản", id);
+        }
+
         return mapToResponse(saved);
     }
 
@@ -126,7 +133,15 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Người dùng", "id", id));
         profile.setRole(role);
         commerce.audit(actors.get().id(),"CHANGE_USER_ROLE","profiles",id,role);
-        return mapToResponse(profileRepository.save(profile));
+        Profile saved = profileRepository.save(profile);
+
+        // Đưa toàn bộ token hiện tại vào blacklist và yêu cầu đăng nhập lại để nhận quyền mới
+        if (redisAuth != null) {
+            redisAuth.blacklistUserTokens(id, "ROLE_CHANGED_TO_" + role);
+            log.info("Đã đưa toàn bộ token hiện tại của người dùng {} vào blacklist do thay đổi vai trò sang {}", id, role);
+        }
+
+        return mapToResponse(saved);
     }
 
     @Transactional
@@ -176,6 +191,11 @@ public class UserService {
 
         authProvider.updateUserPassword(id, newPassword.trim());
         commerce.audit(actors.get().id(), "RESET_STAFF_PASSWORD", "profiles", id, "Admin đặt lại mật khẩu cho " + profile.getEmail());
+
+        if (redisAuth != null) {
+            redisAuth.blacklistUserTokens(id, "STAFF_PASSWORD_RESET");
+            log.info("Đã đưa toàn bộ token của nhân viên {} vào blacklist do đặt lại mật khẩu", id);
+        }
 
         return Map.of(
             "success", true,

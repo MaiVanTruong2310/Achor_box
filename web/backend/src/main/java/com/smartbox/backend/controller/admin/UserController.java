@@ -1,14 +1,15 @@
 package com.smartbox.backend.controller.admin;
 
 import com.smartbox.backend.common.AppConstants;
+import com.smartbox.backend.dto.request.admin.AdminResetPasswordRequest;
 import com.smartbox.backend.dto.request.admin.CreateStaffRequest;
-import com.smartbox.backend.dto.request.device.LockUpdateRequest;
 import com.smartbox.backend.dto.request.admin.RoleUpdateRequest;
 import com.smartbox.backend.dto.request.auth.VerifyResetPasswordRequest;
-import com.smartbox.backend.dto.response.customer.Customer360Response;
+import com.smartbox.backend.dto.request.device.LockUpdateRequest;
 import com.smartbox.backend.dto.response.auth.ResetPasswordResponse;
 import com.smartbox.backend.dto.response.auth.SendOtpResponse;
 import com.smartbox.backend.dto.response.auth.UserProfileResponse;
+import com.smartbox.backend.dto.response.customer.Customer360Response;
 import com.smartbox.backend.service.admin.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,7 +17,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
@@ -41,8 +49,10 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getUsersPaged(
             @Parameter(description = "Chỉ số trang (0-based)") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
             @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
-            @RequestParam(required=false) String search,@RequestParam(required=false) String role,@RequestParam(required=false) Boolean locked) {
-        return ResponseEntity.ok(userService.getUsersPaged(page, size,search,role,locked));
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Boolean locked) {
+        return ResponseEntity.ok(userService.getUsersPaged(page, size, search, role, locked));
     }
 
     @GetMapping("/{id}/details")
@@ -68,8 +78,10 @@ public class UserController {
     }
 
     @PostMapping("/staff")
-    @Operation(summary = "Cấp tài khoản nhân viên mới theo vai trò (Dành cho Super Admin)", 
-               description = "Khởi tạo tài khoản nội bộ và phân quyền: product_manager (PO), technician (kỹ thuật viên), super_admin...")
+    @Operation(
+            summary = "Cấp tài khoản nhân viên mới theo vai trò (Dành cho Super Admin)",
+            description = "Khởi tạo tài khoản nội bộ và phân quyền: product_manager (PO), technician (kỹ thuật viên), super_admin..."
+    )
     public ResponseEntity<UserProfileResponse> createStaffUser(@RequestBody @Valid CreateStaffRequest request) {
         return ResponseEntity.ok(userService.createStaffUser(request));
     }
@@ -92,7 +104,7 @@ public class UserController {
     @Operation(summary = "Admin đặt lại mật khẩu cho nhân sự nội bộ", description = "Cho phép Super Admin đặt lại mật khẩu mới trực tiếp cho tài khoản nhân viên (super_admin, product_manager, technician)")
     public ResponseEntity<Map<String, Object>> resetStaffPassword(
             @PathVariable UUID id,
-            @RequestBody @Valid com.smartbox.backend.dto.request.admin.AdminResetPasswordRequest request) {
+            @RequestBody @Valid AdminResetPasswordRequest request) {
         return ResponseEntity.ok(userService.resetStaffPassword(id, request.getNewPassword()));
     }
 }
