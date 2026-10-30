@@ -1,22 +1,13 @@
 package com.smartbox.backend.dto.response.admin;
 
-import com.smartbox.backend.dto.request.admin.*;
-import com.smartbox.backend.dto.request.auth.*;
-import com.smartbox.backend.dto.request.catalog.*;
-import com.smartbox.backend.dto.request.commerce.*;
-import com.smartbox.backend.dto.request.customer.*;
-import com.smartbox.backend.dto.request.device.*;
-import com.smartbox.backend.dto.request.warranty.*;
-import com.smartbox.backend.dto.response.admin.*;
-import com.smartbox.backend.dto.response.auth.*;
-import com.smartbox.backend.dto.response.catalog.*;
-import com.smartbox.backend.dto.response.commerce.*;
-import com.smartbox.backend.dto.response.customer.*;
-import com.smartbox.backend.dto.response.device.*;
-import com.smartbox.backend.dto.response.warranty.*;
 
+import com.smartbox.backend.dto.response.commerce.OrderResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.List;

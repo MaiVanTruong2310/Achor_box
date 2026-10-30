@@ -45,7 +45,7 @@ public class VnpayGateway {
     @Value("${smartbox.vnpay.url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
     private String url;
 
-    @Value("${smartbox.vnpay.return-url:http://localhost:5173/payments/vnpay/return}")
+    @Value("${smartbox.vnpay.return-url:http://localhost:5174/payments/vnpay/return}")
     private String returnUrl;
 
     @Value("${smartbox.vnpay.environment:sandbox}")

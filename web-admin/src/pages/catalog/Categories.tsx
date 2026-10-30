@@ -117,15 +117,29 @@ export const Categories: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting || !name.trim()) return;
+    if (submitting) return;
+
+    const cleanName = name.trim();
+    if (!cleanName) {
+      setModalError('Vui lòng nhập tên loại sản phẩm.');
+      return;
+    }
+    if (cleanName.length > 100) {
+      setModalError('Tên loại sản phẩm không được vượt quá 100 ký tự.');
+      return;
+    }
+    const finalSlug = slug.trim() || autoGenerateSlug(cleanName);
+    if (finalSlug.length > 100) {
+      setModalError('Đường dẫn định danh (Slug) không được vượt quá 100 ký tự.');
+      return;
+    }
 
     setSubmitting(true);
     setModalError('');
     try {
-      const finalSlug = slug.trim() || autoGenerateSlug(name);
       if (modalMode === 'create') {
         await productsService.createCategory({
-          name: name.trim(),
+          name: cleanName,
           slug: finalSlug,
           description: description.trim() || undefined,
           managerId: managerId || null

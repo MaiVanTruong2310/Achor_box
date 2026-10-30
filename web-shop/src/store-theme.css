@@ -1,31 +1,101 @@
-/* Shared storefront palette, matched to the blue and white campaign artwork. */
+/* Apple Home Storefront Palette */
 :root {
-  --brand-blue:#0866e8;
-  --brand-blue-hover:#0051c7;
-  --brand-blue-bright:#0874df;
-  --brand-blue-soft:#edf6ff;
-  --brand-blue-border:#c8e0fb;
-  --brand-blue-ink:#143a76;
+  --brand-blue:#0071e3;
+  --brand-blue-hover:#0077ed;
+  --brand-blue-bright:#2997ff;
+  --brand-blue-soft:#f5f5f7;
+  --brand-blue-border:rgba(0, 0, 0, 0.08);
+  --brand-blue-ink:#1d1d1f;
   --accent:var(--brand-blue);
   --accent-hover:var(--brand-blue-hover);
   --accent-soft:var(--brand-blue-soft);
   --accent-border:var(--brand-blue-border);
-  --ink:#112b50;
-  --muted:#506682;
-  --surface:#fff;
-  --border:#dce8f5;
-  background:#fff;
+  --ink:#1d1d1f;
+  --muted:#86868b;
+  --surface:#ffffff;
+  --border:rgba(0, 0, 0, 0.08);
+  --store-header-height: 104px;
+  background:#f5f5f7;
   color:var(--ink);
-  scroll-padding-top:calc(var(--store-header-height, 170px) + 20px);
+  scroll-padding-top:calc(var(--store-header-height, 104px) + 16px);
+}
+html, body {
+  max-width: 100%;
+  overflow-x: clip;
+  box-sizing: border-box;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+.container {
+  width: min(1200px, calc(100% - 32px));
+  max-width: 1200px;
+  margin-inline: auto;
+  box-sizing: border-box;
 }
 body { background:#fff; color:var(--ink); }
 ::selection { background:#d9ecff; color:#12346a; }
-.store-topbar { background:#edf6ff; color:#375b87; border-bottom:1px solid #dceafb; }
+.store-topbar { background:#edf6ff; color:#375b87; border-bottom:1px solid #dceafb; overflow-anchor: none; }
 .store-topbar a { color:#315b91; }
 .store-topbar a:hover { color:var(--brand-blue-hover); }
 
-/* Keep both rows visible on scroll; the top information strip scrolls normally. */
-.commerce-header { position:sticky; top:0; z-index:70; background:#fff; color:var(--ink); border-bottom-color:#d5e6f8; box-shadow:0 4px 20px #163c7010; }
+/* Clean Native Sticky Header with Zero Jitter */
+.commerce-header {
+  position: sticky;
+  top: 0;
+  z-index: 70;
+  background: #ffffff;
+  color: var(--ink);
+  border-bottom: 1px solid #d5e6f8;
+  box-shadow: 0 2px 12px #163c700e;
+  overflow-anchor: none;
+  transition: box-shadow 0.2s ease, background 0.2s ease;
+}
+.commerce-header.is-compact {
+  box-shadow: 0 4px 20px rgba(16, 40, 75, 0.1);
+  background: #fffffffa;
+  backdrop-filter: blur(8px);
+}
+.commerce-header-main {
+  overflow-anchor: none;
+}
+.commerce-header.is-compact .commerce-header-main { padding-block:6px; }
+.commerce-header.is-compact .commerce-search { height:36px; }
+.commerce-header-bottom {
+  transition: max-height 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, border-color 0.2s ease;
+  overflow: visible;
+  overflow-anchor: none;
+}
+.commerce-header.is-compact .commerce-header-bottom { max-height:0; opacity:0; overflow:hidden; border-top-color:transparent; pointer-events:none; }
+/* Cart Button styling in normal and compact mode */
+.commerce-icon-action { outline: none !important; }
+.commerce-cart:focus-visible { outline: 2px solid var(--brand-blue) !important; outline-offset: 3px; border-radius: 6px; }
+.commerce-bag { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.commerce-bag small {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  background: var(--brand-blue, #0866e8);
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 9.5px;
+  font-weight: 750;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(8, 102, 232, 0.25);
+}
+.commerce-header.is-compact .commerce-cart {
+  color: var(--brand-blue, #0866e8);
+}
+.commerce-header.is-compact .commerce-cart:hover {
+  color: var(--brand-blue-hover, #0051c7);
+}
+
 .commerce-header .brand { color:#103775; }
 .commerce-header .brand-icon { background:linear-gradient(135deg,#0874df,#0051c7); color:#fff; }
 .commerce-header .brand-dot { color:var(--brand-blue); }

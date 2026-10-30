@@ -1,40 +1,74 @@
 package com.smartbox.backend.config;
 
-import com.smartbox.backend.exception.*;
+import com.smartbox.backend.entity.Profile;
+import com.smartbox.backend.exception.AppException;
+import com.smartbox.backend.exception.ForbiddenException;
+import com.smartbox.backend.exception.UnauthorizedException;
 import com.smartbox.backend.repository.ProfileRepository;
 import com.smartbox.backend.security.SupabaseAuthGateway;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import com.smartbox.backend.service.auth.CustomerIdentityService;
+import com.smartbox.backend.service.auth.RedisAuthService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
-import java.io.IOException;
-import java.util.*;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Filter chặn mọi HTTP request để kiểm tra token JWT, giải mã thông tin phiên làm việc,
+ * xác thực vai trò phân quyền (Role-Based Access Control) và gán Context người dùng hiện tại.
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final SupabaseAuthGateway provider;
     private final ProfileRepository profiles;
     private final HandlerExceptionResolver errors;
-    private final com.smartbox.backend.service.auth.CustomerIdentityService identities;
+    private final CustomerIdentityService identities;
     private final JwtProvider jwtProvider;
-    private final com.smartbox.backend.service.auth.RedisAuthService redisAuth;
+    private final RedisAuthService redisAuth;
 
-    public JwtAuthenticationFilter(SupabaseAuthGateway provider, ProfileRepository profiles, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors, com.smartbox.backend.service.auth.CustomerIdentityService identities) {
+    public JwtAuthenticationFilter(
+            SupabaseAuthGateway provider,
+            ProfileRepository profiles,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors,
+            CustomerIdentityService identities
+    ) {
         this(provider, profiles, errors, identities, null, null);
     }
 
-    public JwtAuthenticationFilter(SupabaseAuthGateway provider, ProfileRepository profiles, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors, com.smartbox.backend.service.auth.CustomerIdentityService identities, JwtProvider jwtProvider) {
+    public JwtAuthenticationFilter(
+            SupabaseAuthGateway provider,
+            ProfileRepository profiles,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors,
+            CustomerIdentityService identities,
+            JwtProvider jwtProvider
+    ) {
         this(provider, profiles, errors, identities, jwtProvider, null);
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
-    public JwtAuthenticationFilter(SupabaseAuthGateway provider, ProfileRepository profiles, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors, com.smartbox.backend.service.auth.CustomerIdentityService identities, @org.springframework.beans.factory.annotation.Autowired(required = false) JwtProvider jwtProvider, @org.springframework.beans.factory.annotation.Autowired(required = false) com.smartbox.backend.service.auth.RedisAuthService redisAuth) {
+    @Autowired
+    public JwtAuthenticationFilter(
+            SupabaseAuthGateway provider,
+            ProfileRepository profiles,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors,
+            CustomerIdentityService identities,
+            @Autowired(required = false) JwtProvider jwtProvider,
+            @Autowired(required = false) RedisAuthService redisAuth
+    ) {
         this.provider = provider;
         this.profiles = profiles;
         this.errors = errors;
@@ -51,10 +85,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || Set.of("/error", "/favicon.ico").contains(path)) {
             return true;
         }
-        if ("POST".equals(request.getMethod()) && (Set.of("/api/auth/login", "/api/auth/refresh-token", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/payments/callback", "/api/pricing/calculate").contains(path))) {
+        if ("POST".equals(request.getMethod()) && (Set.of(
+                "/api/auth/login",
+                "/api/auth/refresh-token",
+                "/api/auth/register",
+                "/api/auth/forgot-password",
+                "/api/auth/reset-password",
+                "/api/payments/callback",
+                "/api/pricing/calculate",
+                "/api/orders/lookup"
+        ).contains(path))) {
             return true;
         }
-        return "GET".equals(request.getMethod()) && (path.equals("/api/payments/vnpay/ipn") || path.equals("/api/payments/vnpay/return") || path.equals("/api/payments/mode") || path.equals("/api/products") || path.equals("/api/products/categories") || path.matches("/api/products/[0-9a-fA-F-]{36}/variants") || path.startsWith("/api/products"));
+        return "GET".equals(request.getMethod()) && (
+                path.equals("/api/payments/vnpay/ipn") ||
+                path.equals("/api/payments/vnpay/return") ||
+                path.equals("/api/payments/mode") ||
+                path.equals("/api/products") ||
+                path.equals("/api/products/categories") ||
+                path.matches("/api/products/[0-9a-fA-F-]{36}/variants") ||
+                path.startsWith("/api/products") ||
+                path.startsWith("/api/orders/lookup")
+        );
     }
 
     @Override
@@ -63,6 +115,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
             return;
         }
+
         try {
             String header = request.getHeader("Authorization");
             if (header == null || !header.startsWith("Bearer ")) {
@@ -70,12 +123,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             String token = header.substring(7);
             if (redisAuth != null && redisAuth.isTokenBlacklisted(token)) {
-                throw new UnauthorizedException("Phiên đăng nhập đã bị thu hồi hoặc đăng xuất");
+                throw new UnauthorizedException("Phiên đăng nhập đã bị thu hồi hoặc đã hết hiệu lực do thay đổi quyền hạn. Vui lòng đăng nhập lại.");
             }
+
             UUID id = null;
             String role = null;
             String email = null;
-            com.smartbox.backend.entity.Profile profile = null;
+            Profile profile = null;
 
             var cached = redisAuth != null ? redisAuth.getCachedAuthSession(token) : null;
             if (cached != null) {
@@ -83,9 +137,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     throw new UnauthorizedException("ACCOUNT_LOCKED");
                 }
                 id = cached.userId();
+                if (redisAuth != null && redisAuth.isUserRevoked(id)) {
+                    throw new UnauthorizedException("Quyền hạn của tài khoản đã thay đổi. Vui lòng đăng nhập lại để sử dụng các chức năng đã phân quyền.");
+                }
                 role = cached.role();
                 email = cached.email();
-                profile = com.smartbox.backend.entity.Profile.builder()
+                profile = Profile.builder()
                         .id(id)
                         .email(email)
                         .fullName(cached.fullName())
@@ -99,10 +156,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             id = jwtProvider.extractUserId(token);
                         }
                     } catch (Exception ignored) {
+                        // fallback to Supabase verification
                     }
                 }
                 if (id == null) {
                     id = provider.identity(token);
+                }
+                if (redisAuth != null && id != null && redisAuth.isUserRevoked(id)) {
+                    throw new UnauthorizedException("Quyền hạn của tài khoản đã thay đổi. Vui lòng đăng nhập lại để sử dụng các chức năng đã phân quyền.");
                 }
                 UUID finalId = id;
                 profile = profiles.findById(id).orElseGet(() -> {
@@ -126,12 +187,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (!Set.of("super_admin", "product_manager", "technician", "customer").contains(role)) {
                 throw new ForbiddenException("INVALID_ROLE");
             }
+
             authorize(request, role);
             request.setAttribute("CURRENT_USER_ID", id);
             request.setAttribute("CURRENT_USER_ROLE", role);
             request.setAttribute("CURRENT_USER_EMAIL", email);
             request.setAttribute("CURRENT_USER_PROFILE", profile);
-            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(id, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))));
+
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(id, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)))
+            );
         } catch (AppException ex) {
             if (publicPath(request)) {
                 chain.doFilter(request, response);
@@ -147,44 +212,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             errors.resolveException(request, response, null, new UnauthorizedException("INVALID_ACCESS_TOKEN"));
             return;
         }
+
         chain.doFilter(request, response);
     }
 
     private void authorize(HttpServletRequest req, String role) {
         String path = req.getRequestURI();
         boolean read = "GET".equals(req.getMethod());
+
         if (publicPath(req) || path.startsWith("/api/auth/")) {
             return;
         }
+
         Set<String> allowed;
         if (path.startsWith("/api/users") && (path.endsWith("/role") || path.equals("/api/users/staff"))) {
-            allowed = Set.of("super_admin"); 
-        }else if (path.startsWith("/api/users")) {
-            allowed = Set.of("super_admin"); 
-        }else if (path.startsWith("/api/audit-logs")) {
-            allowed = read ? Set.of("super_admin", "product_manager") : Set.of("super_admin"); 
-        }else if (path.startsWith("/api/settings")) {
-            allowed = read || path.endsWith("/test-send") ? Set.of("super_admin", "product_manager") : Set.of("super_admin"); 
-        }else if (path.startsWith("/api/products")) {
-            allowed = read ? Set.of("super_admin", "product_manager") : Set.of("super_admin", "product_manager"); 
-        }else if (path.startsWith("/api/promotions")) {
-            allowed = read ? Set.of("super_admin", "product_manager") : Set.of("super_admin", "product_manager"); 
-        }else if (path.startsWith("/api/content")) {
-            allowed = Set.of("super_admin", "product_manager"); 
-        }else if (path.startsWith("/api/warranties")) {
-            allowed = Set.of("super_admin", "product_manager", "technician"); 
-        }else if ((path.equals("/api/orders") && read) || path.equals("/api/orders/paged")) {
-            allowed = Set.of("super_admin", "product_manager", "technician"); 
-        }else if (path.matches("/api/orders/[^/]+/(status|tracking)")) {
-            allowed = Set.of("super_admin", "product_manager", "technician"); 
-        }else if (path.startsWith("/api/dashboard") || path.startsWith("/api/reports") || path.equals("/api/admin/dashboard")) {
-            allowed = Set.of("super_admin", "product_manager"); 
-        }else if (path.equals("/api/devices") || path.equals("/api/devices/paged") || path.equals("/api/devices/events") || path.matches("/api/devices/[^/]+/status")) {
-            allowed = Set.of("super_admin", "technician"); 
-        }else {
+            allowed = Set.of("super_admin");
+        } else if (path.startsWith("/api/users")) {
+            allowed = Set.of("super_admin");
+        } else if (path.startsWith("/api/audit-logs")) {
+            allowed = read ? Set.of("super_admin", "product_manager") : Set.of("super_admin");
+        } else if (path.startsWith("/api/settings")) {
+            allowed = read || path.endsWith("/test-send") ? Set.of("super_admin", "product_manager") : Set.of("super_admin");
+        } else if (path.startsWith("/api/products")) {
+            allowed = Set.of("super_admin", "product_manager");
+        } else if (path.startsWith("/api/promotions")) {
+            allowed = Set.of("super_admin", "product_manager");
+        } else if (path.startsWith("/api/warranties")) {
+            allowed = Set.of("super_admin", "product_manager", "technician");
+        } else if ((path.equals("/api/orders") && read) || path.equals("/api/orders/paged")) {
+            allowed = Set.of("super_admin", "product_manager", "technician");
+        } else if (path.matches("/api/orders/[^/]+/(status|tracking)")) {
+            allowed = Set.of("super_admin", "product_manager", "technician");
+        } else if (path.startsWith("/api/dashboard") || path.startsWith("/api/reports") || path.equals("/api/admin/dashboard")) {
+            allowed = Set.of("super_admin", "product_manager");
+        } else if (path.equals("/api/devices") || path.equals("/api/devices/paged") || path.equals("/api/devices/events") || path.matches("/api/devices/[^/]+/status")) {
+            allowed = Set.of("super_admin", "technician");
+        } else {
             return; // Customer-facing services enforce ownership and action-specific roles.
+        }
 
-                }if (!allowed.contains(role)) {
+        if (!allowed.contains(role)) {
             throw new ForbiddenException("Vai trò không có quyền truy cập chức năng này");
         }
     }

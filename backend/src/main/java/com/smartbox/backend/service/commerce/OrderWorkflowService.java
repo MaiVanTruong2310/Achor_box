@@ -292,11 +292,35 @@ public class OrderWorkflowService {
     }
 
     public void recalculate(UUID id) {
-        try {
-            db.update("UPDATE public.orders SET subtotal=(SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?), total=GREATEST(0, (SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?) - COALESCE(discount_amount,0)), updated_at=? WHERE id=?", id, id, now(), id);
-        } catch (Exception ex) {
-            db.update("UPDATE public.orders SET total=(SELECT COALESCE(sum(unit_price*quantity),0) FROM public.order_items WHERE order_id=?), updated_at=? WHERE id=?", id, now(), id);
+        var order = db.one("SELECT voucher_code, discount_amount FROM public.orders WHERE id=?", id);
+        BigDecimal subtotal = money(db.one("SELECT COALESCE(sum(unit_price * quantity), 0) AS subtotal FROM public.order_items WHERE order_id=?", id).get("subtotal"));
+        BigDecimal discount = BigDecimal.ZERO;
+        String voucherCode = order.get("voucher_code") != null ? order.get("voucher_code").toString() : null;
+
+        if (voucherCode != null && !voucherCode.isBlank() && promotions != null) {
+            var couponRes = promotions.validateCoupon(voucherCode, subtotal);
+            if (couponRes.isValid()) {
+                discount = couponRes.getDiscountAmount();
+                db.update("UPDATE public.orders SET discount_amount=? WHERE id=?", discount, id);
+            } else {
+                // Voucher no longer qualifies for the updated subtotal
+                db.update("UPDATE public.orders SET voucher_code=NULL, promotion_id=NULL, discount_amount=0 WHERE id=?", id);
+                discount = BigDecimal.ZERO;
+            }
+        } else if (order.get("discount_amount") != null) {
+            discount = money(order.get("discount_amount"));
+            if (discount.compareTo(subtotal) > 0) {
+                discount = subtotal;
+                db.update("UPDATE public.orders SET discount_amount=? WHERE id=?", discount, id);
+            }
         }
+
+        BigDecimal total = subtotal.subtract(discount);
+        if (total.signum() < 0) {
+            total = BigDecimal.ZERO;
+        }
+
+        db.update("UPDATE public.orders SET subtotal=?, total=?, updated_at=? WHERE id=?", subtotal, total, now(), id);
     }
 
     @Transactional

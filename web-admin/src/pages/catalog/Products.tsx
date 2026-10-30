@@ -501,8 +501,8 @@ export const Products: React.FC = () => {
   // Submit Stock Adjustment with anti-duplicate locking
   const handleSaveStockAdjustment = async () => {
     if (!adjustProduct || adjustSubmitting) return;
-    if (adjustQuantity <= 0) {
-      setAdjustError('Vui lòng nhập số lượng hợp lệ lớn hơn 0');
+    if (adjustQuantity <= 0 || adjustQuantity > 100000) {
+      setAdjustError('Số lượng điều chỉnh kho phải lớn hơn 0 và không vượt quá 100.000 sản phẩm');
       return;
     }
     setAdjustError('');
@@ -551,9 +551,37 @@ export const Products: React.FC = () => {
       setModalError('Vui lòng nhập tên sản phẩm.');
       return;
     }
+    if (formData.name.trim().length > 200) {
+      setModalError('Tên sản phẩm không được vượt quá 200 ký tự.');
+      return;
+    }
     if (!formData.sku.trim()) {
       setModalError('Vui lòng nhập mã SKU sản phẩm.');
       return;
+    }
+    if (formData.sku.trim().length > 50) {
+      setModalError('Mã SKU không được vượt quá 50 ký tự.');
+      return;
+    }
+    const numPrice = Number(formData.price);
+    if (isNaN(numPrice) || numPrice < 0) {
+      setModalError('Giá niêm yết của sản phẩm phải là số không âm.');
+      return;
+    }
+    for (let idx = 0; idx < formData.variants.length; idx++) {
+      const v = formData.variants[idx];
+      if (!v.variant_name || !v.variant_name.trim()) {
+        setModalError(`Biến thể #${idx + 1}: Vui lòng nhập tên biến thể.`);
+        return;
+      }
+      if (!v.sku || !v.sku.trim()) {
+        setModalError(`Biến thể #${idx + 1}: Vui lòng nhập mã SKU.`);
+        return;
+      }
+      if (Number(v.stock_quantity) < 0) {
+        setModalError(`Biến thể #${idx + 1}: Tồn kho không được là số âm.`);
+        return;
+      }
     }
     setModalError('');
     setFormSubmitting(true);

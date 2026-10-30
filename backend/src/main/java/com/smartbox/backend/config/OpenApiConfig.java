@@ -63,7 +63,6 @@ public class OpenApiConfig {
                         new Tag().name("Delivery & Installation API").description("Quản lý điều phối giao hàng, lắp đặt và nghiệm thu kích hoạt bảo hành"),
                         new Tag().name("Warranty API").description("Quản lý bảo hành điện tử, tra cứu Serial/QR, tiếp nhận khiếu nại và kỹ thuật viên"),
                         new Tag().name("Notification API").description("Quản lý thông báo hệ thống và push notification dành cho người dùng và quản trị viên"),
-                        new Tag().name("Content & Marketing API").description("Quản lý nội dung CMS: Bài viết blog, Banner trang chủ, Đánh giá sản phẩm và FAQ"),
                         new Tag().name("Settings API").description("Cấu hình hệ thống, mẫu tin nhắn email/SMS, phương thức vận chuyển và thanh toán"),
                         new Tag().name("Audit Log API").description("Truy vết nhật ký thao tác và hành động của nhân viên quản trị")
                 ));

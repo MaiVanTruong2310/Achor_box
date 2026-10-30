@@ -136,7 +136,7 @@ class CommerceIntegrationTests {
     @Autowired DeviceWorkflowService devices;
     @Test void deliveryLinksSerialOwnerAndCommandTimesOutWithoutBroker(){
         UUID id=order(1);payments.callback(callback(id,"K","SUCCESS"));actors.staff();
-        UUID device=UUID.fromString(devices.register(new DeviceWorkflowService.Registration("TEST-DELIVERY",variant,"delivery_box/delivery","Thiết bị kiểm thử")).get("deviceId").toString());
+        UUID device = devices.register(new DeviceWorkflowService.Registration("TEST-DELIVERY", variant, "delivery_box/delivery", "Thiết bị kiểm thử")).deviceId();
         UUID item=jdbc.queryForObject("SELECT id FROM public.order_items WHERE order_id=?",UUID.class,id);
         assertThrows(ConflictException.class,()->fulfillment.ship(id,new CommerceRequests.Shipment("Đơn vị kiểm thử","TEST-TRACKING")));
         assertThrows(ConflictException.class,()->fulfillment.delivered(id));

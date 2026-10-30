@@ -23,7 +23,6 @@ import {
   User,
   Ticket,
   Edit3,
-  Globe,
   Truck,
   FolderTree
 } from 'lucide-react';
@@ -48,8 +47,7 @@ const icons = {
   permissions: KeyRound,
   email: Mail,
   reports: FileBarChart,
-  settings: Settings,
-  content: Globe
+  settings: Settings
 };
 
 export const WorkspaceTabs: React.FC<{ group: string }> = ({ group }) => {

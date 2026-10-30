@@ -84,7 +84,7 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
     OffsetDateTime now(){return OrderWorkflowService.now();}
     String version(UUID id){return jobs.detail(id).get("version").toString();}
     void step(UUID id,String action,Object body){jobs.progress(id,action,body,version(id),UUID.randomUUID());}
-    UUID device(boolean pro){jdbc.update("UPDATE public.products SET has_weight_sensor=? WHERE id=?",pro,product);actors.staff();return UUID.fromString(devices.register(new DeviceWorkflowService.Registration("INSTALL-"+UUID.randomUUID(),variant,"delivery_box/test-"+UUID.randomUUID(),"Thiết bị kiểm thử")).get("deviceId").toString());}
+    UUID device(boolean pro){jdbc.update("UPDATE public.products SET has_weight_sensor=? WHERE id=?",pro,product);actors.staff();return devices.register(new DeviceWorkflowService.Registration("INSTALL-"+UUID.randomUUID(),variant,"delivery_box/test-"+UUID.randomUUID(),"Thiết bị kiểm thử")).deviceId();}
     UUID delivered(UUID job,UUID order,boolean pro){
         UUID device=device(pro);tech();step(job,"START",new Note(null));
         UUID item=jdbc.queryForObject("SELECT id FROM public.order_items WHERE order_id=?",UUID.class,order);

@@ -42,6 +42,8 @@ public class RedisAuthService {
     private final Map<String, Integer> memoryAttempts = new ConcurrentHashMap<>();
     private final Map<String, Instant> memoryLockouts = new ConcurrentHashMap<>();
     private final Map<String, Instant> memoryBlacklist = new ConcurrentHashMap<>();
+    private final Map<UUID, java.util.Set<String>> memoryUserTokens = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> memoryUserRevoked = new ConcurrentHashMap<>();
 
     // L1 In-Memory Auth Cache để tăng tốc xác thực mọi HTTP request (<0.01ms)
     private final Map<String, CachedUserSession> memoryAuthCache = new ConcurrentHashMap<>();
@@ -186,14 +188,27 @@ public class RedisAuthService {
     public void saveSession(UUID userId, String token, long expiresInSeconds, String email, String role) {
         if (!enabled || userId == null || token == null) return;
 
+        // Xóa cờ thu hồi phiên trước đó (nếu có) khi người dùng đăng nhập lại thành công
+        clearUserRevocation(userId);
+
+        String tokenHash = hashToken(token);
+        long ttl = expiresInSeconds > 0 ? expiresInSeconds : 86400;
+
+        // Lưu vào in-memory set token của user
+        memoryUserTokens.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet()).add(tokenHash);
+
         try {
             if (redis != null) {
                 String sessionKey = "auth:session:" + userId;
-                String tokenHash = hashToken(token);
                 String val = String.format("{\"tokenHash\":\"%s\",\"email\":\"%s\",\"role\":\"%s\",\"loginTime\":\"%s\"}",
                         tokenHash, email != null ? email : "", role != null ? role : "", Instant.now());
-                long ttl = expiresInSeconds > 0 ? expiresInSeconds : 86400;
                 redis.opsForValue().set(sessionKey, val, ttl, TimeUnit.SECONDS);
+
+                // Lưu vào set token của user trong Redis
+                String userTokensKey = "auth:user_tokens:" + userId;
+                redis.opsForSet().add(userTokensKey, tokenHash);
+                redis.expire(userTokensKey, ttl, TimeUnit.SECONDS);
+
                 log.info("Đã lưu phiên đăng nhập Redis cho User ID: {} (TTL: {}s)", userId, ttl);
             }
         } catch (Exception ex) {
@@ -214,6 +229,7 @@ public class RedisAuthService {
 
         // L1: In-Memory
         memoryAuthCache.put(tokenHash, session);
+        memoryUserTokens.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet()).add(tokenHash);
 
         // L2: Redis
         try {
@@ -228,6 +244,10 @@ public class RedisAuthService {
                 );
                 String val = objectMapper.writeValueAsString(data);
                 redis.opsForValue().set(tokenKey, val, ttl, TimeUnit.SECONDS);
+
+                String userTokensKey = "auth:user_tokens:" + userId;
+                redis.opsForSet().add(userTokensKey, tokenHash);
+                redis.expire(userTokensKey, ttl, TimeUnit.SECONDS);
             }
         } catch (Exception ex) {
             log.debug("Không thể ghi token cache vào Redis: {}", ex.getMessage());
@@ -347,21 +367,136 @@ public class RedisAuthService {
     }
 
     /**
+     * Xóa đánh dấu thu hồi phiên người dùng khi họ đăng nhập lại thành công.
+     */
+    public void clearUserRevocation(UUID userId) {
+        if (userId == null) return;
+        memoryUserRevoked.remove(userId);
+        try {
+            if (redis != null) {
+                redis.delete("auth:user_revoked:" + userId);
+            }
+        } catch (Exception ex) {
+            log.debug("Không thể xóa user revoked trên Redis: {}", ex.getMessage());
+        }
+    }
+
+    /**
+     * Kiểm tra xem toàn bộ phiên làm việc của user có đang bị thu hồi (đổi role/khóa tài khoản) hay không.
+     */
+    public boolean isUserRevoked(UUID userId) {
+        if (!enabled || userId == null) return false;
+        if (memoryUserRevoked.containsKey(userId)) {
+            return true;
+        }
+        try {
+            if (redis != null) {
+                Boolean hasKey = redis.hasKey("auth:user_revoked:" + userId);
+                return Boolean.TRUE.equals(hasKey);
+            }
+        } catch (Exception ex) {
+            log.debug("Không thể kiểm tra user revoked trên Redis: {}", ex.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Thu hồi toàn bộ phiên đăng nhập của người dùng và đưa tất cả token hiện tại vào Blacklist.
+     * Áp dụng khi: Đổi vai trò / quyền hạn (Role changed), Khóa tài khoản (Account locked), Đổi mật khẩu.
+     */
+    public void blacklistUserTokens(UUID userId, String reason) {
+        if (!enabled || userId == null) return;
+        log.info("[AUTH] Đang thu hồi và blacklist toàn bộ token của User ID: {} do: {}", userId, reason);
+
+        long ttl = 86400; // 24 giờ
+        String revokeReason = (reason != null && !reason.isBlank()) ? reason : "REVOKED";
+        java.util.Set<String> tokenHashes = new java.util.HashSet<>();
+
+        // 1. Quét từ In-Memory User Tokens
+        java.util.Set<String> memTokens = memoryUserTokens.remove(userId);
+        if (memTokens != null) {
+            tokenHashes.addAll(memTokens);
+        }
+
+        // 2. Quét từ In-Memory Auth Cache
+        for (Map.Entry<String, CachedUserSession> entry : memoryAuthCache.entrySet()) {
+            if (entry.getValue() != null && userId.equals(entry.getValue().userId())) {
+                tokenHashes.add(entry.getKey());
+            }
+        }
+
+        // 3. Đọc từ Redis Set: auth:user_tokens:{userId}
+        try {
+            if (redis != null) {
+                String userTokensKey = "auth:user_tokens:" + userId;
+                java.util.Set<String> redisTokens = redis.opsForSet().members(userTokensKey);
+                if (redisTokens != null) {
+                    tokenHashes.addAll(redisTokens);
+                }
+                redis.delete(userTokensKey);
+            }
+        } catch (Exception ex) {
+            log.debug("Lỗi khi đọc user_tokens từ Redis: {}", ex.getMessage());
+        }
+
+        // 4. Đọc từ Redis session key: auth:session:{userId}
+        try {
+            if (redis != null) {
+                String sessionKey = "auth:session:" + userId;
+                String sessionVal = redis.opsForValue().get(sessionKey);
+                if (sessionVal != null && !sessionVal.isBlank()) {
+                    try {
+                        Map<?, ?> map = objectMapper.readValue(sessionVal, Map.class);
+                        Object hashObj = map.get("tokenHash");
+                        if (hashObj != null) {
+                            tokenHashes.add(hashObj.toString());
+                        }
+                    } catch (Exception e) {
+                        log.debug("Không thể parse session JSON: {}", e.getMessage());
+                    }
+                }
+                redis.delete(sessionKey);
+            }
+        } catch (Exception ex) {
+            log.debug("Lỗi khi đọc session từ Redis: {}", ex.getMessage());
+        }
+
+        // 5. Đưa tất cả tokenHash tìm được vào Blacklist (cả Redis và Memory) & xóa cache
+        for (String th : tokenHashes) {
+            if (th == null || th.isBlank()) continue;
+            memoryAuthCache.remove(th);
+            memoryBlacklist.put(th, Instant.now().plusSeconds(ttl));
+
+            try {
+                if (redis != null) {
+                    redis.delete("auth:token:" + th);
+                    redis.opsForValue().set("auth:blacklist:" + th, "REVOKED_" + revokeReason, ttl, TimeUnit.SECONDS);
+                }
+            } catch (Exception ex) {
+                log.debug("Lỗi khi đưa tokenHash {} vào Redis blacklist: {}", th, ex.getMessage());
+            }
+        }
+
+        // 6. Đánh dấu user-level revoked để chặn bất kỳ token hợp lệ nào chưa kịp vào danh sách hash
+        memoryUserRevoked.put(userId, System.currentTimeMillis());
+        try {
+            if (redis != null) {
+                redis.opsForValue().set("auth:user_revoked:" + userId, String.valueOf(System.currentTimeMillis()), ttl, TimeUnit.SECONDS);
+            }
+        } catch (Exception ex) {
+            log.debug("Lỗi khi lưu user_revoked vào Redis: {}", ex.getMessage());
+        }
+
+        log.info("[AUTH] Đã blacklist {} token cho User ID: {}. Người dùng cần đăng nhập lại để nhận quyền mới.",
+                tokenHashes.size(), userId);
+    }
+
+    /**
      * Hủy phiên làm việc của người dùng (khi đổi mật khẩu hoặc đăng xuất toàn bộ thiết bị).
      */
     public void revokeUserSession(UUID userId) {
         if (!enabled || userId == null) return;
-
-        memoryAuthCache.values().removeIf(s -> userId.equals(s.userId()));
-
-        try {
-            if (redis != null) {
-                redis.delete("auth:session:" + userId);
-                log.info("Đã hủy phiên làm việc Redis cho User ID: {}", userId);
-            }
-        } catch (Exception ex) {
-            log.debug("Không thể xóa phiên làm việc Redis: {}", ex.getMessage());
-        }
+        blacklistUserTokens(userId, "SESSION_REVOKED");
     }
 
     private String normalize(String str) {

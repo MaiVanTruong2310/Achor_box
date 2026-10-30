@@ -199,12 +199,48 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBusy('create');
     setCreateStaffError('');
+
+    if (!staffForm.fullName.trim()) {
+      setCreateStaffError('Vui lòng nhập họ và tên nhân viên.');
+      return;
+    }
+    if (staffForm.fullName.trim().length > 200) {
+      setCreateStaffError('Họ và tên nhân viên không được vượt quá 200 ký tự.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!staffForm.email.trim() || !emailRegex.test(staffForm.email.trim()) || staffForm.email.trim().length > 254) {
+      setCreateStaffError('Email công vụ không đúng định dạng hoặc vượt quá 254 ký tự.');
+      return;
+    }
+    if (staffForm.phone.trim()) {
+      const phoneRegex = /^\+?[0-9 ()-]{8,30}$/;
+      if (!phoneRegex.test(staffForm.phone.trim())) {
+        setCreateStaffError('Số điện thoại không hợp lệ (từ 8 đến 30 chữ số/ký tự).');
+        return;
+      }
+    }
+    if (!staffRolesList.includes(staffForm.role)) {
+      setCreateStaffError('Vai trò nhân sự không hợp lệ.');
+      return;
+    }
+    if (staffForm.initialPassword.length < 12 || staffForm.initialPassword.length > 128) {
+      setCreateStaffError('Mật khẩu khởi tạo ban đầu phải có từ 12 đến 128 ký tự.');
+      return;
+    }
+
+    setBusy('create');
     try {
       await adminRequest('/users/staff', {
         method: 'POST',
-        body: JSON.stringify(staffForm),
+        body: JSON.stringify({
+          fullName: staffForm.fullName.trim(),
+          email: staffForm.email.trim().toLowerCase(),
+          phone: staffForm.phone.trim() || undefined,
+          role: staffForm.role,
+          initialPassword: staffForm.initialPassword
+        }),
       });
       setStaffForm(emptyStaffForm);
       setOpenCreateStaff(false);
@@ -240,8 +276,13 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
 
   const handleConfirmResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetTarget || !resetPassword.trim()) return;
-    if (resetPassword.trim().length < 8) {
+    if (!resetTarget) return;
+    const cleanPwd = resetPassword.trim();
+    if (!cleanPwd) {
+      setResetError('Vui lòng nhập mật khẩu mới.');
+      return;
+    }
+    if (cleanPwd.length < 8 || cleanPwd.length > 72) {
       setResetError('Mật khẩu mới phải dài từ 8 đến 72 ký tự.');
       return;
     }
@@ -253,7 +294,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
         `/users/${resetTarget.id}/reset-password`,
         {
           method: 'POST',
-          body: JSON.stringify({ newPassword: resetPassword.trim() })
+          body: JSON.stringify({ newPassword: cleanPwd })
         }
       );
       setResetSuccess(res.message || 'Đã đặt lại mật khẩu thành công!');
