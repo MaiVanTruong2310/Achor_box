@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ZoomIn,
@@ -33,7 +33,8 @@ import { AppleProductViewer } from '../components/AppleProductViewer';
 import '../apple-home.css';
 import './product-detail.css';
 
-// Fallback high-quality AnchorBox catalog definitions (resilient when backend is offline or for named slugs)
+
+// High-quality showcase definitions (graceful fallback when backend is offline or for showcase slugs)
 const FALLBACK_PRODUCTS: Record<string, CatalogProduct> = {
   'anchorbox-base': {
     id: 'anchorbox-base',
@@ -80,19 +81,7 @@ const FALLBACK_PRODUCTS: Record<string, CatalogProduct> = {
   }
 };
 
-interface AccessoryItem {
-  id: string;
-  productId: string;
-  sku: string;
-  name: string;
-  variantName: string;
-  image: string;
-  price: number;
-  originalPrice: number;
-  description: string;
-}
-
-const ACCESSORY_RECOMMENDATIONS: AccessoryItem[] = [
+const FALLBACK_ACCESSORIES: AccessoryItem[] = [
   {
     id: 'acc-mount',
     productId: 'prod-acc-mount',
@@ -127,6 +116,19 @@ const ACCESSORY_RECOMMENDATIONS: AccessoryItem[] = [
     description: 'Tự động chụp ảnh bưu kiện khi nắp mở, lưu trữ đám mây bảo mật.',
   },
 ];
+
+interface AccessoryItem {
+  id: string;
+  productId: string;
+  sku: string;
+  name: string;
+  variantName: string;
+  image: string;
+  price: number;
+  originalPrice: number;
+  description: string;
+}
+
 
 export function ProductDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -168,13 +170,10 @@ export function ProductDetailPage() {
     setOpenAccordions(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Interactive Gallery & Zoom State
+  // Interactive Gallery & Lightbox State
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [isZooming, setIsZooming] = useState(false);
-  const [zoomCoords, setZoomCoords] = useState({ x: 50, y: 50 });
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxScale, setLightboxScale] = useState(1);
-  const zoomContainerRef = useRef<HTMLDivElement>(null);
 
   // Recommendations / Frequently bought together
   const [checkedAccessories, setCheckedAccessories] = useState<Record<string, boolean>>({
@@ -182,6 +181,7 @@ export function ProductDetailPage() {
     'acc-keypad': false,
     'acc-camera': false,
   });
+  const [bundleMessage, setBundleMessage] = useState('');
 
   // Reset when ID changes
   useEffect(() => {
@@ -194,16 +194,17 @@ export function ProductDetailPage() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [id]);
 
-  // Load product resource with fallback resilience
+  // Load product resource from API, with graceful fallback for showcase slugs or when backend is offline
   const resource = useResource(async signal => {
     try {
-      const p = await shop.product(id, signal);
+      const matched = catalog.data?.find(p => p.id === id || p.sku?.toLowerCase() === id.toLowerCase());
+      const targetId = matched?.id || id;
+      const p = await shop.product(targetId, signal);
       if (p && p.isActive) return [p];
     } catch {
-      // Fallback below
+      // Backend offline or slug lookup - use showcase fallback
     }
 
-    // Match fallback product by slug or default to AnchorBox Pro
     const fallback = FALLBACK_PRODUCTS[id] || (id.includes('base') ? FALLBACK_PRODUCTS['anchorbox-base'] : id.includes('solar') ? FALLBACK_PRODUCTS['anchorbox-solar'] : FALLBACK_PRODUCTS['anchorbox-pro']);
     return [fallback];
   }, `product-detail-${id}`);
@@ -246,6 +247,81 @@ export function ProductDetailPage() {
     return base + selectedSensorPack.addPrice;
   }, [variant?.finalPrice, product?.price, selectedSensorPack.addPrice]);
 
+  // Real accessory recommendations from live catalog with resilient fallback
+  const accessoryRecommendations: AccessoryItem[] = useMemo(() => {
+    const liveAccs = catalog.data
+      ?.filter(p => p.id !== product?.id && (p.categorySlug === 'phu-kien-tien-ich' || p.categorySlug === 'linh-kien-thay-the'))
+      .map(p => ({
+        id: p.id,
+        productId: p.id,
+        sku: p.sku || p.id,
+        name: p.name,
+        variantName: p.variants?.[0]?.variantName || 'Phụ kiện chính hãng',
+        image: p.images?.[0] || '/products/accessory-mount.svg',
+        price: p.variants?.[0]?.finalPrice || p.price,
+        originalPrice: Math.round((p.variants?.[0]?.finalPrice || p.price) * 1.15),
+        description: p.description
+      }));
+    if (liveAccs && liveAccs.length > 0) return liveAccs;
+    return FALLBACK_ACCESSORIES;
+  }, [catalog.data, product?.id]);
+
+  const selectedAccessoriesList = useMemo(() => {
+    return accessoryRecommendations.filter(acc => checkedAccessories[acc.id]);
+  }, [accessoryRecommendations, checkedAccessories]);
+
+  const bundleTotalOriginal = useMemo(() => {
+    const mainOrig = Math.round(configuredPrice * 1.15);
+    const accOrig = selectedAccessoriesList.reduce((sum, acc) => sum + acc.originalPrice, 0);
+    return mainOrig + accOrig;
+  }, [configuredPrice, selectedAccessoriesList]);
+
+  const bundleTotalFinal = useMemo(() => {
+    const accFinal = selectedAccessoriesList.reduce((sum, acc) => sum + acc.price, 0);
+    return configuredPrice + accFinal;
+  }, [configuredPrice, selectedAccessoriesList]);
+
+  const bundleSaving = Math.max(0, bundleTotalOriginal - bundleTotalFinal);
+  const bundleItemCount = 1 + selectedAccessoriesList.length;
+
+  const handleAddBundleToCart = () => {
+    if (!product) return;
+    // 1. Add main product
+    const customVariant: Variant = {
+      id: variant?.id || `v-${product.id}-${selectedCapacity}`,
+      productId: product.id,
+      sku: variant?.sku || `${product.sku}-${selectedCapacity}L`,
+      variantName: `${product.name} ${selectedCapacity}L - ${selectedColor.name} (${selectedSensorPack.name})`,
+      size: `${selectedCapacity}L`,
+      capacityLiter: selectedCapacity,
+      finalPrice: configuredPrice,
+      stockQuantity: variant?.stockQuantity || 20,
+      isActive: true,
+      warrantyMonths: variant?.warrantyMonths || 24
+    };
+    add(customVariant, product.name, 1);
+
+    // 2. Add checked accessories
+    selectedAccessoriesList.forEach(acc => {
+      const accVariant: Variant = {
+        id: acc.id,
+        productId: acc.productId,
+        sku: acc.sku,
+        variantName: acc.name,
+        size: null,
+        capacityLiter: null,
+        finalPrice: acc.price,
+        stockQuantity: 50,
+        isActive: true,
+        warrantyMonths: 12
+      };
+      add(accVariant, acc.name, 1);
+    });
+
+    setBundleMessage(`Đã thêm trọn bộ ${bundleItemCount} sản phẩm combo vào giỏ hàng thành công!`);
+    setTimeout(() => setBundleMessage(''), 4500);
+  };
+
   // Similar products from catalog
   const similarProducts = useMemo(() => {
     if (!catalog.data) return [];
@@ -253,15 +329,6 @@ export function ProductDetailPage() {
       .filter(p => p.id !== product?.id && p.isActive)
       .slice(0, 3);
   }, [catalog.data, product?.id]);
-
-  // Handle Zoom lens movement
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!zoomContainerRef.current) return;
-    const rect = zoomContainerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-    setZoomCoords({ x, y });
-  };
 
   // Keyboard navigation for Lightbox
   useEffect(() => {
@@ -347,158 +414,147 @@ export function ProductDetailPage() {
             {/* ====================================================
                 1. TOP PRODUCT SHOWCASE & CONFIGURATOR GRID
                 ==================================================== */}
-            <div className="detail-hero-grid" style={{ alignItems: 'start', marginTop: '24px' }}>
+            <div className="detail-hero-grid" style={{ alignItems: 'start', marginTop: '12px' }}>
               
               {/* LEFT COLUMN: Frameless Edge-to-Edge Studio Gallery & 3D Stage */}
               <div className="detail-gallery-column">
-                
-                {/* Switcher: 📸 Ảnh Studio vs 🔄 Trình diễn 3D 360° & Hotspots */}
-                <div className="apple-gallery-mode-switch">
-                  <button
-                    type="button"
-                    className={`apple-mode-switch-btn ${displayMode === 'studio' ? 'is-active' : ''}`}
-                    onClick={() => setDisplayMode('studio')}
-                  >
-                    <Eye size={15} />
-                    <span>Ảnh chụp Studio</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`apple-mode-switch-btn ${displayMode === '3d' ? 'is-active' : ''}`}
-                    onClick={() => setDisplayMode('3d')}
-                  >
-                    <Layers size={15} />
-                    <span>Trình diễn 3D 360° & Điểm chạm</span>
-                  </button>
-                </div>
-
-                {displayMode === 'studio' ? (
-                  <div className="gallery-sticky-wrapper">
-                    {/* Edge-to-Edge Frameless Studio Lighting Showcase */}
-                    <div
-                      ref={zoomContainerRef}
-                      className={`apple-gallery-showcase ${isZooming ? 'is-zooming' : ''}`}
-                      onMouseEnter={() => setIsZooming(true)}
-                      onMouseLeave={() => setIsZooming(false)}
-                      onMouseMove={handleMouseMove}
-                      onClick={() => setIsLightboxOpen(true)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Click để xem ảnh toàn màn hình"
+                <div className="gallery-sticky-sidebar">
+                  {/* Switcher: 📸 Ảnh Studio vs 🔄 Trình diễn 3D 360° & Hotspots */}
+                  <div className="apple-gallery-mode-switch">
+                    <button
+                      type="button"
+                      className={`apple-mode-switch-btn ${displayMode === 'studio' ? 'is-active' : ''}`}
+                      onClick={() => setDisplayMode('studio')}
                     >
-                      <img
-                        src={currentImage.src}
-                        alt={product.name}
-                        className="apple-gallery-img"
-                        style={{
-                          transformOrigin: `${zoomCoords.x}% ${zoomCoords.y}%`,
-                          transform: isZooming ? 'scale(2.1)' : 'scale(1)',
-                        }}
-                        loading="eager"
-                        onError={e => {
-                          (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
-                        }}
-                      />
+                      <Eye size={15} />
+                      <span>Ảnh chụp Studio</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`apple-mode-switch-btn ${displayMode === '3d' ? 'is-active' : ''}`}
+                      onClick={() => setDisplayMode('3d')}
+                    >
+                      <Layers size={15} />
+                      <span>Trình diễn 3D 360° & Điểm chạm</span>
+                    </button>
+                  </div>
 
-                      {/* Floating Apple Badges on Image */}
-                      <div className="gallery-floating-tags">
-                        <span className="tag-brand">ANCHORBOX CHÍNH HÃNG</span>
-                        <span className="tag-sensor">ÁNH SÁNG STUDIO CHUẨN XÁC</span>
+                  {displayMode === 'studio' ? (
+                    <div className="gallery-studio-display">
+                      {/* Edge-to-Edge Frameless Studio Lighting Showcase */}
+                      <div
+                        className="apple-gallery-showcase"
+                        onClick={() => setIsLightboxOpen(true)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Click để xem ảnh toàn màn hình"
+                      >
+                        <img
+                          src={currentImage.src}
+                          alt={product.name}
+                          className="apple-gallery-img"
+                          loading="eager"
+                          onError={e => {
+                            (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
+                          }}
+                        />
+
+                        {/* Floating Apple Badges on Image */}
+                        <div className="gallery-floating-tags">
+                          <span className="tag-brand">ANCHORBOX CHÍNH HÃNG</span>
+                          <span className="tag-sensor">ÁNH SÁNG STUDIO CHUẨN XÁC</span>
+                        </div>
+
+                        {/* Fullscreen Button */}
+                        <button
+                          type="button"
+                          className="gallery-zoom-button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setIsLightboxOpen(true);
+                          }}
+                          title="Xem toàn màn hình"
+                          aria-label="Phóng to ảnh"
+                        >
+                          <Maximize2 size={16} />
+                          <span>Toàn màn hình</span>
+                        </button>
+
+                        <div className="gallery-zoom-cue">
+                          <Maximize2 size={13} />
+                          <span>Click để phóng to chi tiết</span>
+                        </div>
                       </div>
 
-                      {/* Fullscreen Button */}
-                      <button
-                        type="button"
-                        className="gallery-zoom-button"
-                        onClick={e => {
-                          e.stopPropagation();
-                          setIsLightboxOpen(true);
-                        }}
-                        title="Xem toàn màn hình"
-                        aria-label="Phóng to ảnh"
-                      >
-                        <Maximize2 size={16} />
-                        <span>Phóng to</span>
-                      </button>
-
-                      {!isZooming && (
-                        <div className="gallery-zoom-cue">
-                          <ZoomIn size={14} />
-                          <span>Di chuột để soi chi tiết</span>
+                      {/* Floating Thumbnail Capsules */}
+                      {galleryImages.length > 1 && (
+                        <div className="apple-gallery-thumb-bar" role="tablist" aria-label="Góc chụp ảnh">
+                          {galleryImages.map((img, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              role="tab"
+                              aria-selected={activeImageIndex === idx}
+                              className={`apple-gallery-thumb-pill ${activeImageIndex === idx ? 'is-active' : ''}`}
+                              onClick={() => {
+                                setActiveImageIndex(idx);
+                              }}
+                            >
+                              <img
+                                src={img.src}
+                                alt={img.label}
+                                onError={e => {
+                                  (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
+                                }}
+                              />
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
+                  ) : (
+                    /* 3D 360° Luxury Pedestal Showcase with Interactive Hotspots */
+                    <AppleProductViewer
+                      model={product.id.includes('solar') ? 'solar' : product.id.includes('base') ? 'base' : 'pro'}
+                      capacity={selectedCapacity}
+                      showHotspots={true}
+                    />
+                  )}
 
-                    {/* Floating Thumbnail Capsules */}
-                    {galleryImages.length > 1 && (
-                      <div className="apple-gallery-thumb-bar" role="tablist" aria-label="Góc chụp ảnh">
-                        {galleryImages.map((img, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            role="tab"
-                            aria-selected={activeImageIndex === idx}
-                            className={`apple-gallery-thumb-pill ${activeImageIndex === idx ? 'is-active' : ''}`}
-                            onClick={() => {
-                              setActiveImageIndex(idx);
-                              setIsZooming(false);
-                            }}
-                          >
-                            <img
-                              src={img.src}
-                              alt={img.label}
-                              onError={e => {
-                                (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
-                              }}
-                            />
-                          </button>
-                        ))}
+                  {/* Assurance Trust Grid beneath Image (INSIDE the sticky sidebar to avoid overlap) */}
+                  <div className="gallery-compact-desc-card">
+                    <div className="compact-assurance-grid">
+                      <div className="assurance-item">
+                        <Truck size={17} className="item-icon" />
+                        <div>
+                          <strong>Giao & Khảo sát tận nơi</strong>
+                          <p>Kỹ thuật viên chuyên nghiệp lắp đặt an toàn</p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  /* 3D 360° Luxury Pedestal Showcase with Interactive Hotspots */
-                  <AppleProductViewer
-                    model={product.id.includes('solar') ? 'solar' : product.id.includes('base') ? 'base' : 'pro'}
-                    capacity={selectedCapacity}
-                    showHotspots={true}
-                  />
-                )}
-
-                {/* Assurance Trust Grid beneath Image */}
-                <div className="gallery-compact-desc-card" style={{ marginTop: '20px' }}>
-                  <div className="compact-assurance-grid">
-                    <div className="assurance-item">
-                      <Truck size={17} className="item-icon" />
-                      <div>
-                        <strong>Giao & Khảo sát tận nơi</strong>
-                        <p>Kỹ thuật viên chuyên nghiệp lắp đặt an toàn</p>
+                      <div className="assurance-item">
+                        <ShieldCheck size={17} className="item-icon" />
+                        <div>
+                          <strong>Bảo hành 24 tháng</strong>
+                          <p>Đổi mới linh kiện chính hãng tại nhà</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="assurance-item">
-                      <ShieldCheck size={17} className="item-icon" />
-                      <div>
-                        <strong>Bảo hành 24 tháng</strong>
-                        <p>Đổi mới linh kiện chính hãng tại nhà</p>
+                      <div className="assurance-item">
+                        <RotateCcw size={17} className="item-icon" />
+                        <div>
+                          <strong>30 ngày đổi trả</strong>
+                          <p>Nếu có lỗi kỹ thuật từ nhà sản xuất</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="assurance-item">
-                      <RotateCcw size={17} className="item-icon" />
-                      <div>
-                        <strong>30 ngày đổi trả</strong>
-                        <p>Nếu có lỗi kỹ thuật từ nhà sản xuất</p>
-                      </div>
-                    </div>
-                    <div className="assurance-item">
-                      <CheckCircle2 size={17} className="item-icon" />
-                      <div>
-                        <strong>Đồng kiểm bưu kiện</strong>
-                        <p>Thử nghiệm khóa mở nắp trước khi thanh toán</p>
+                      <div className="assurance-item">
+                        <CheckCircle2 size={17} className="item-icon" />
+                        <div>
+                          <strong>Đồng kiểm bưu kiện</strong>
+                          <p>Thử nghiệm khóa mở nắp trước khi thanh toán</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-
               </div>
 
               {/* RIGHT COLUMN: Apple Style Configurator & Purchase Actions */}
@@ -524,7 +580,7 @@ export function ProductDetailPage() {
                   </p>
 
                   {/* Configured Price Display */}
-                  <div className="product-price-section" style={{ marginBottom: '28px' }}>
+                  <div className="product-price-section">
                     <div className="price-main-row">
                       <span className="current-price">{money(configuredPrice)}</span>
                       <span className="reference-price">{money(Math.round(configuredPrice * 1.15))}</span>
@@ -628,7 +684,7 @@ export function ProductDetailPage() {
                   </div>
 
                   {/* Stock Status Bar */}
-                  <div className="stock-status-bar" style={{ margin: '20px 0' }}>
+                  <div className="stock-status-bar">
                     <div className="in-stock-alert">
                       <span className="stock-dot pulse" />
                       <span>
@@ -639,7 +695,7 @@ export function ProductDetailPage() {
 
                   {/* Quantity & Apple Purchase Actions */}
                   <div className="purchase-action-container">
-                    <div className="quantity-selection-row" style={{ marginBottom: '16px' }}>
+                    <div className="quantity-selection-row">
                       <span className="qty-label">Số lượng:</span>
                       <div className="custom-stepper">
                         <button
@@ -676,12 +732,12 @@ export function ProductDetailPage() {
                     </div>
 
                     {/* Apple Style Action Buttons */}
-                    <div className="action-button-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="action-button-row">
                       <button
                         type="button"
                         id="product-buy"
                         className="apple-btn-buy"
-                        style={{ padding: '14px 20px', fontSize: '15px' }}
+                        style={{ padding: '10px 18px', fontSize: '13.5px' }}
                         onClick={handleAddToCart}
                       >
                         <ShoppingCart size={17} />
@@ -691,7 +747,7 @@ export function ProductDetailPage() {
                       <button
                         type="button"
                         className="apple-btn-primary"
-                        style={{ justifyContent: 'center', padding: '14px 20px', fontSize: '15px' }}
+                        style={{ justifyContent: 'center', padding: '10px 18px', fontSize: '13.5px' }}
                         onClick={handleBuyNow}
                       >
                         <Zap size={17} />
@@ -713,7 +769,7 @@ export function ProductDetailPage() {
                   </div>
 
                   {/* Security Trust Micro Bar */}
-                  <div className="detail-security-bar" style={{ marginTop: '20px' }}>
+                  <div className="detail-security-bar">
                     <div className="sec-item">
                       <Lock size={15} />
                       <span>Thanh toán mã hóa bảo mật</span>
@@ -943,10 +999,11 @@ export function ProductDetailPage() {
             {/* ====================================================
                 3. FREQUENTLY BOUGHT TOGETHER COMBO RECOMMENDATIONS
                 ==================================================== */}
-            <section className="recommendation-bundle-section" style={{ marginTop: '72px' }}>
+            {accessoryRecommendations.length > 0 && (
+        <section className="recommendation-bundle-section" style={{ marginTop: '48px' }}>
               <div className="bundle-heading">
                 <div className="bundle-badge">
-                  <Zap size={16} />
+                  <Zap size={14} />
                   <span>COMBO TIẾT KIỆM CHÍNH HÃNG</span>
                 </div>
                 <h2>Thường được mua cùng</h2>
@@ -956,6 +1013,7 @@ export function ProductDetailPage() {
               </div>
 
               <div className="bundle-card-container">
+                {/* Left: Products Grid (Main + 3 Accessories) */}
                 <div className="bundle-items-flow">
                   {/* Main Product */}
                   <div className="bundle-item-card is-main">
@@ -964,7 +1022,7 @@ export function ProductDetailPage() {
                     </div>
                     <div className="bundle-img-wrap">
                       <img
-                        src={currentImage.src}
+                        src={product.images?.[0] || '/products/smartbox-std-front.svg'}
                         alt={product.name}
                         onError={e => {
                           (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
@@ -974,48 +1032,102 @@ export function ProductDetailPage() {
                     <div className="bundle-info">
                       <span className="bundle-badge-main">Thiết bị chính</span>
                       <h4>{product.name} ({selectedCapacity}L)</h4>
-                      <span className="bundle-price">{money(configuredPrice)}</span>
+                      <span className="bundle-variant-tag">{selectedColor.name}</span>
+                      <div className="bundle-prices-row">
+                        <span className="bundle-price">{money(configuredPrice)}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <span className="bundle-plus-sign" aria-hidden="true">+</span>
-
                   {/* Recommended Accessories */}
-                  {ACCESSORY_RECOMMENDATIONS.map(acc => (
-                    <div
-                      key={acc.id}
-                      className={`bundle-item-card ${checkedAccessories[acc.id] ? 'is-checked' : ''}`}
-                      onClick={() =>
-                        setCheckedAccessories(prev => ({
-                          ...prev,
-                          [acc.id]: !prev[acc.id]
-                        }))
-                      }
-                    >
-                      <div className="bundle-item-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={!!checkedAccessories[acc.id]}
-                          onChange={() => {}}
-                          aria-label={acc.name}
-                        />
-                      </div>
-                      <div className="bundle-img-wrap">
-                        <img src={acc.image} alt={acc.name} />
-                      </div>
-                      <div className="bundle-info">
-                        <h4>{acc.name}</h4>
-                        <span className="bundle-variant-tag">{acc.variantName}</span>
-                        <div className="bundle-prices-row">
-                          <span className="bundle-price">{money(acc.price)}</span>
-                          <span className="bundle-orig-price">{money(acc.originalPrice)}</span>
+                  {accessoryRecommendations.map(acc => {
+                    const isChecked = !!checkedAccessories[acc.id];
+                    return (
+                      <div
+                        key={acc.id}
+                        className={`bundle-item-card ${isChecked ? 'is-checked' : ''}`}
+                        onClick={() =>
+                          setCheckedAccessories(prev => ({
+                            ...prev,
+                            [acc.id]: !prev[acc.id]
+                          }))
+                        }
+                      >
+                        <div className="bundle-item-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {}}
+                            aria-label={acc.name}
+                          />
+                        </div>
+                        <div className="bundle-img-wrap">
+                          <img src={acc.image} alt={acc.name} />
+                        </div>
+                        <div className="bundle-info">
+                          <span className="bundle-badge-accessory">Phụ kiện gợi ý</span>
+                          <h4>{acc.name}</h4>
+                          <span className="bundle-variant-tag">{acc.variantName}</span>
+                          <div className="bundle-prices-row">
+                            <span className="bundle-price">{money(acc.price)}</span>
+                            <span className="bundle-orig-price">{money(acc.originalPrice)}</span>
+                          </div>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+
+                {/* Right: Checkout Calculation Card */}
+                <div className="bundle-checkout-card">
+                  <div className="bundle-calc-header">
+                    <h4>Tổng thanh toán combo</h4>
+                    <span className="item-count">Đã chọn {bundleItemCount} sản phẩm ({bundleItemCount === 1 ? '1 thiết bị chính' : `1 thiết bị chính + ${selectedAccessoriesList.length} phụ kiện`})</span>
+                  </div>
+
+                  <div className="bundle-calc-rows">
+                    <div className="calc-row">
+                      <span>Giá niêm yết:</span>
+                      <strong>{money(bundleTotalOriginal)}</strong>
                     </div>
-                  ))}
+
+                    {bundleSaving > 0 && (
+                      <div className="calc-row saving-highlight">
+                        <span>Tiết kiệm combo:</span>
+                        <strong className="saving-amount">-{money(bundleSaving)}</strong>
+                      </div>
+                    )}
+
+                    <div className="calc-divider" />
+
+                    <div className="calc-row total-row">
+                      <span>Giá trọn gói:</span>
+                      <strong className="final-total">{money(bundleTotalFinal)}</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-add-bundle"
+                    onClick={handleAddBundleToCart}
+                  >
+                    <ShoppingCart size={16} />
+                    <span>Thêm cả {bundleItemCount} sản phẩm vào giỏ</span>
+                  </button>
+
+                  {bundleMessage && (
+                    <div className="bundle-added-toast" role="status">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <CheckCircle2 size={16} />
+                        <strong>{bundleMessage}</strong>
+                      </div>
+                      <Link to="/cart">Đi tới giỏ hàng & thanh toán →</Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
+            )}
 
             {/* ====================================================
                 4. SIMILAR PRODUCTS SECTION

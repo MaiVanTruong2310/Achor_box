@@ -313,7 +313,7 @@ export function StoreHeader() {
 
   return (
     <>
-      <header className="apple-global-nav" ref={headerRoot} role="banner">
+      <header className={`apple-global-nav ${location.pathname === '/' || location.pathname === '/technology' ? 'apple-nav-dark' : ''}`} ref={headerRoot} role="banner">
         <div className="apple-nav-container" onMouseLeave={handleNavMouseLeave}>
           
           {/* 1. Logo AnchorBox thanh mảnh tinh xảo */}

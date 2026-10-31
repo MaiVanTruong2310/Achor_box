@@ -3,6 +3,11 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 $taskEnvironmentFile = Join-Path $PSScriptRoot '.env'
+$taskEnvironmentExample = Join-Path $PSScriptRoot '.env.example'
+if (-not (Test-Path -LiteralPath $taskEnvironmentFile) -and (Test-Path -LiteralPath $taskEnvironmentExample)) {
+    Write-Host "[SmartBox] File .env chua ton tai. Tu dong sao chep tu .env.example..." -ForegroundColor Cyan
+    Copy-Item -LiteralPath $taskEnvironmentExample -Destination $taskEnvironmentFile
+}
 if (Test-Path -LiteralPath $taskEnvironmentFile) {
     foreach ($taskEnvironmentLine in Get-Content -LiteralPath $taskEnvironmentFile -Encoding UTF8) {
         if ($taskEnvironmentLine.Trim().StartsWith('#') -or [string]::IsNullOrWhiteSpace($taskEnvironmentLine)) { continue }

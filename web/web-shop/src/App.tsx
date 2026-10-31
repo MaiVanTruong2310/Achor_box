@@ -28,8 +28,41 @@ function Shell() {
   const prevPathRef = useRef(location.pathname);
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname === '/reset-password';
   useEffect(() => {
-    const titles: Record<string, string> = { '/products': 'Sản phẩm', '/cart': 'Giỏ hàng', '/login': 'Đăng nhập', '/register': 'Đăng ký tài khoản', '/account': 'Tài khoản của tôi', '/account/orders': 'Đơn hàng của tôi', '/account/profile': 'Hồ sơ', '/account/addresses': 'Sổ địa chỉ', '/account/warranty': 'Bảo hành', '/warranty': 'Trung tâm bảo hành & Chăm sóc khách hàng', '/about': 'Về AnchorBox — Bản trình chiếu công nghệ', '/contact': 'Hỗ trợ', '/compare': 'So sánh sản phẩm', '/order-tracking': 'Tra cứu đơn hàng' };
-    document.title = titles[location.pathname] ? titles[location.pathname] + ' | AnchorBox' : 'AnchorBox — Một nơi an tâm cho mỗi bưu kiện';
+    const titles: Record<string, string> = {
+      '/': 'Tủ Nhận Hàng Thông Minh Chống Trộm Tự Động 24/7',
+      '/products': 'Danh Mục Sản Phẩm Tủ Nhận Hàng & Phụ Kiện',
+      '/cart': 'Giỏ Hàng Của Bạn',
+      '/checkout': 'Thanh Toán Đơn Hàng An Toàn',
+      '/login': 'Đăng Nhập Tài Khoản Khách Hàng',
+      '/register': 'Đăng Ký Tài Khoản Mới',
+      '/forgot-password': 'Khôi Phục Mật Khẩu',
+      '/reset-password': 'Đặt Lại Mật Khẩu Mới',
+      '/account': 'Trung Tâm Quản Lý Thiết Bị & Tài Khoản',
+      '/account/devices': 'Quản Lý Thiết Bị AnchorBox (Apple Home)',
+      '/account/orders': 'Lịch Sử Đơn Hàng Của Tôi',
+      '/account/profile': 'Hồ Sơ Cá Nhân',
+      '/account/addresses': 'Sổ Địa Chỉ Giao Hàng',
+      '/account/warranty': 'Bảo Hành Thiết Bị Của Tôi',
+      '/warranty': 'Trung Tâm Bảo Hành & Chăm Sóc Khách Hàng',
+      '/about': 'Về AnchorBox — Bản Trình Chiếu Công Nghệ',
+      '/contact': 'Tư Vấn Khảo Sát & Hỗ Trợ Kỹ Thuật',
+      '/compare': 'So Sánh Thông Số 3 Dòng Tủ AnchorBox Base, Pro & Solar',
+      '/order-tracking': 'Tra Cứu Tiến Độ Đơn Hàng Trực Tuyến',
+      '/technology': 'Công Nghệ Phần Cứng & Giao Thức IoT Kháng Nước IP65',
+      '/app': 'Ứng Dụng Di Động AnchorBox Home — iOS & Android',
+    };
+
+    if (location.pathname.startsWith('/products/')) {
+      const slug = location.pathname.replace('/products/', '');
+      const slugTitles: Record<string, string> = {
+        'anchorbox-base': 'AnchorBox Base — Tủ Nhận Bưu Kiện Thông Minh Tiêu Chuẩn 45L/75L',
+        'anchorbox-pro': 'AnchorBox Pro — Flagship Camera AI 1080p & Cân Chống Tráo Hàng',
+        'anchorbox-solar': 'AnchorBox Solar Max — Năng Lượng Mặt Trời Độc Lập 45 Ngày',
+      };
+      document.title = (slugTitles[slug] || 'Chi Tiết Sản Phẩm') + ' | AnchorBox';
+    } else {
+      document.title = titles[location.pathname] ? `${titles[location.pathname]} | AnchorBox` : 'AnchorBox — Tủ Nhận Hàng Thông Minh Tự Động 24/7';
+    }
     const isAuthToggle =
       (prevPathRef.current === '/login' && location.pathname === '/register') ||
       (prevPathRef.current === '/register' && location.pathname === '/login');

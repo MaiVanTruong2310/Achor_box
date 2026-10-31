@@ -49,29 +49,6 @@ interface Device {
   acceptedAt: string | null;
 }
 
-// Sample fallback device for interactive preview if user has no seeded devices yet
-const DEMO_DEVICE: Device = {
-  id: 'demo-anchorbox-01',
-  serialNumber: 'AB-2026-X8842',
-  productName: 'AnchorBox Pro',
-  variantName: 'Bản 85L • Cảm biến kép • Khóa Solenoid',
-  name: 'AnchorBox Cổng Chính',
-  locationLabel: 'Trước cổng nhà',
-  status: 'online',
-  batteryLevel: 96,
-  firmwareVersion: 'v2.4.1-esp32',
-  lastSeenAt: new Date().toISOString(),
-  doorStatus: 'closed',
-  lockStatus: 'locked',
-  weightKg: 2.45,
-  packageDetected: true,
-  orderId: 'demo-order-101',
-  warrantyId: 'demo-war-202',
-  startDate: '2026-01-15T00:00:00Z',
-  endDate: '2028-01-15T00:00:00Z',
-  warrantyStatus: 'ACTIVE',
-  acceptedAt: '2026-01-15T00:00:00Z',
-};
 
 interface DeviceCardProps {
   device: Device;
@@ -323,8 +300,8 @@ export function CustomerDevices() {
     `${user?.userId}:${id || ''}:${page}`
   );
 
-  // Combine real devices with demo preview device if list is empty
-  const rawDevices = resource.data && resource.data.length > 0 ? resource.data : [DEMO_DEVICE];
+  // Use real user devices from API
+  const rawDevices = resource.data || [];
 
   // Handle remote lock/unlock action simulation
   const handleLockToggle = (deviceId: string, currentLock: string) => {

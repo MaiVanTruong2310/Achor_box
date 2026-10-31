@@ -26,61 +26,6 @@ import { EventTimeline, CommerceStatus, EmptyState } from '../components/Commerc
 import { consultationPhone } from '../contact';
 import './warranty-portal.css';
 
-interface DemoCert {
-  serial: string;
-  model: string;
-  capacity: string;
-  hardware: string;
-  status: 'active' | 'expired';
-  statusText: string;
-  startDate: string;
-  endDate: string;
-  remainingDays: number;
-  coverage: string;
-}
-
-const SAMPLE_CERTS: Record<string, DemoCert> = {
-  'AB-PRO-8842': {
-    serial: 'AB-PRO-8842',
-    model: 'AnchorBox Pro Smart Locker',
-    capacity: 'Dung tích 85 L (Size M)',
-    hardware: 'Khóa Solenoid + Cảm biến cân tải trọng Loadcell HX711',
-    status: 'active',
-    statusText: 'Đang hiệu lực — Bảo hành chính hãng',
-    startDate: '15/10/2025',
-    endDate: '15/10/2027',
-    remainingDays: 355,
-    coverage: 'Toàn bộ linh kiện bo mạch IoT, khóa từ solenoid, cảm biến trọng lượng và hỗ trợ kỹ thuật tại nhà.'
-  },
-  'AB-BASE-1205': {
-    serial: 'AB-BASE-1205',
-    model: 'AnchorBox Base Standard',
-    capacity: 'Dung tích 45 L (Size S)',
-    hardware: 'Khóa Solenoid xung điện + MCU ESP32 Wi-Fi/Bluetooth',
-    status: 'active',
-    statusText: 'Đang hiệu lực — Bảo hành chính hãng',
-    startDate: '01/01/2026',
-    endDate: '01/01/2027',
-    remainingDays: 251,
-    coverage: 'Bo mạch điều khiển IoT, khóa điện từ, bộ nguồn dự phòng và hỗ trợ chẩn đoán từ xa.'
-  },
-  'AB-L-9901': {
-    serial: 'AB-L-9901',
-    model: 'AnchorBox Grand Estate',
-    capacity: 'Dung tích 150 L (Size L)',
-    hardware: 'Khóa Solenoid kép + Cảm biến cân tải trọng',
-    status: 'expired',
-    statusText: 'Đã hết hạn bảo hành',
-    startDate: '10/01/2024',
-    endDate: '10/01/2025',
-    remainingDays: 0,
-    coverage: 'Hết hạn bảo hành miễn phí. Khách hàng vẫn được hỗ trợ sửa chữa linh kiện chính hãng tính phí ưu đãi.'
-  }
-};
-
-function isDemoCert(val: DemoCert | WarrantyRecord): val is DemoCert {
-  return 'model' in val && 'remainingDays' in val;
-}
 
 const ISSUE_CATEGORIES = [
   'Khóa điện tử / Cửa tủ',
@@ -94,7 +39,7 @@ export function Warranty({ claim = false }: { claim?: boolean }) {
   const { user } = useShop();
   const [params] = useSearchParams();
   const [searchSerial, setSearchSerial] = useState('');
-  const [lookupResult, setLookupResult] = useState<DemoCert | WarrantyRecord | null>(null);
+  const [lookupResult, setLookupResult] = useState<WarrantyRecord | null>(null);
   const [lookupError, setLookupError] = useState('');
   const [claimModalOpen, setClaimModalOpen] = useState(claim);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
@@ -154,30 +99,8 @@ export function Warranty({ claim = false }: { claim?: boolean }) {
       return;
     }
 
-    // Check sample certs
-    if (SAMPLE_CERTS[query]) {
-      setLookupResult(SAMPLE_CERTS[query]);
-      return;
-    }
-
-    // Simulated check for standard syntax or fallback
-    if (query.startsWith('AB-') || query.length >= 6) {
-      setLookupResult({
-        serial: query,
-        model: 'AnchorBox Smart Locker',
-        capacity: 'Phiên bản tiêu chuẩn gia đình',
-        hardware: 'Hệ thống khóa điện tử thông minh kết nối Cloud',
-        status: 'active',
-        statusText: 'Đang hiệu lực — Bảo hành chính hãng',
-        startDate: '10/05/2025',
-        endDate: '10/05/2027',
-        remainingDays: 560,
-        coverage: 'Bảo hành đầy đủ các module điện tử, khóa solenoid, cập nhật phần mềm trọn đời.'
-      });
-    } else {
-      setLookupError(`Không tìm thấy thông tin bảo hành cho mã "${query}". Vui lòng kiểm tra lại tem dán bên hông hộp.`);
-      setLookupResult(null);
-    }
+    setLookupError(`Không tìm thấy thông tin bảo hành cho mã "${query}". Vui lòng kiểm tra lại tem dán bên hông hộp.`);
+    setLookupResult(null);
   }
 
   // Upload claim photos
@@ -356,69 +279,39 @@ export function Warranty({ claim = false }: { claim?: boolean }) {
           {lookupResult && (
             <div className="warranty-cert-card">
               <div className="warranty-cert-top">
-                {isDemoCert(lookupResult) ? (
-                  <>
-                    <div className="warranty-cert-title-group">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <ShieldCheck size={20} color="#0866e8" />
-                        <span className="order-caption" style={{ color: '#0866e8', fontWeight: 700 }}>
-                          CHỨNG NHẬN BẢO HÀNH ĐIỆN TỬ
-                        </span>
-                      </div>
-                      <h3>{lookupResult.model}</h3>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                        <span className="warranty-cert-serial">{lookupResult.serial}</span>
-                      </div>
-                    </div>
+                <div className="warranty-cert-title-group">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <ShieldCheck size={20} color="#0866e8" />
+                    <span className="order-caption" style={{ color: '#0866e8', fontWeight: 700 }}>
+                      CHỨNG NHẬN BẢO HÀNH ĐIỆN TỬ
+                    </span>
+                  </div>
+                  <h3>AnchorBox Device (Mã đơn: {lookupResult.orderId || 'Chính hãng'})</h3>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <span className="warranty-cert-serial">{lookupResult.serialNumber}</span>
+                  </div>
+                </div>
 
-                    <div>
-                      <span className={`warranty-status-pill ${lookupResult.status === 'active' ? 'is-active' : 'is-expired'}`}>
-                        <CheckCircle2 size={15} />
-                        {lookupResult.statusText}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="warranty-cert-title-group">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <ShieldCheck size={20} color="#0866e8" />
-                        <span className="order-caption" style={{ color: '#0866e8', fontWeight: 700 }}>
-                          CHỨNG NHẬN BẢO HÀNH ĐIỆN TỬ
-                        </span>
-                      </div>
-                      <h3>AnchorBox Device (Mã đơn: {lookupResult.orderId || 'Chính hãng'})</h3>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                        <span className="warranty-cert-serial">{lookupResult.serialNumber}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className={`warranty-status-pill ${warrantyEligible(lookupResult) ? 'is-active' : 'is-expired'}`}>
-                        <CheckCircle2 size={15} />
-                        {warrantyState(lookupResult, today)}
-                      </span>
-                    </div>
-                  </>
-                )}
+                <div>
+                  <span className={`warranty-status-pill ${warrantyEligible(lookupResult) ? 'is-active' : 'is-expired'}`}>
+                    <CheckCircle2 size={15} />
+                    {warrantyState(lookupResult, today)}
+                  </span>
+                </div>
               </div>
 
               <div className="warranty-cert-grid">
                 <div className="warranty-cert-item">
                   <dt>Ngày kích hoạt</dt>
-                  <dd>{isDemoCert(lookupResult) ? lookupResult.startDate : date(lookupResult.startDate, true)}</dd>
+                  <dd>{date(lookupResult.startDate, true)}</dd>
                 </div>
                 <div className="warranty-cert-item">
                   <dt>Hạn bảo hành</dt>
-                  <dd>{isDemoCert(lookupResult) ? lookupResult.endDate : date(lookupResult.endDate, true)}</dd>
+                  <dd>{date(lookupResult.endDate, true)}</dd>
                 </div>
                 <div className="warranty-cert-item">
                   <dt>Thời hạn bảo hành</dt>
-                  <dd>
-                    {isDemoCert(lookupResult)
-                      ? `${lookupResult.remainingDays} ngày còn lại`
-                      : `${lookupResult.durationMonths} tháng chính hãng`}
-                  </dd>
+                  <dd>{lookupResult.durationMonths} tháng chính hãng</dd>
                 </div>
                 <div className="warranty-cert-item">
                   <dt>Hình thức dịch vụ</dt>
@@ -428,9 +321,7 @@ export function Warranty({ claim = false }: { claim?: boolean }) {
 
               <div className="warranty-cert-coverage">
                 <strong>Phạm vi bảo hành:</strong>
-                {isDemoCert(lookupResult)
-                  ? lookupResult.coverage
-                  : 'Bảo hành đầy đủ bo mạch vi điều khiển IoT ESP32, khóa điện từ Solenoid, cảm biến tải trọng Loadcell, pin dự phòng và hỗ trợ kỹ thuật tận nơi.'}
+                Bảo hành đầy đủ bo mạch vi điều khiển IoT ESP32, khóa điện từ Solenoid, cảm biến tải trọng Loadcell, pin dự phòng và hỗ trợ kỹ thuật tận nơi.
               </div>
 
               <div className="warranty-cert-actions">

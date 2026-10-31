@@ -15,6 +15,52 @@ import { shop, money, type CatalogProduct } from '../api/shop';
 import { useResource, ResourceState, ErrorNotice } from '../components/ShopUi';
 import './product-catalog.css';
 
+const SHOWCASE_PRODUCTS: CatalogProduct[] = [
+  {
+    id: 'anchorbox-base',
+    name: 'AnchorBox Base',
+    sku: 'ABX-BASE-STD',
+    price: 2490000,
+    categoryName: 'Hộp nhận bưu kiện thông minh',
+    description: 'Thiết kế nhỏ gọn tối giản cho căn hộ và nhà phố. Tích hợp khóa chốt điện tử Solenoid mã hóa AES-256, tạo mã OTP 1 lần cho shipper và điều khiển từ xa qua ứng dụng di động.',
+    images: ['/products/smartbox-compact-front.svg', '/products/smartbox-std-inside.svg', '/products/smartbox-std-diagram.svg'],
+    isActive: true,
+    variants: [
+      { id: 'v-base-45', productId: 'anchorbox-base', sku: 'ABX-BASE-45L', variantName: 'AnchorBox Base 45L', size: 'S', capacityLiter: 45, finalPrice: 2490000, stockQuantity: 28, isActive: true, widthCm: 45, heightCm: 85, depthCm: 38, weightKg: 16.5, maxLoadKg: 40, hasWeightSensor: false, warrantyMonths: 24 },
+      { id: 'v-base-75', productId: 'anchorbox-base', sku: 'ABX-BASE-75L', variantName: 'AnchorBox Base 75L', size: 'M', capacityLiter: 75, finalPrice: 3290000, stockQuantity: 15, isActive: true, widthCm: 50, heightCm: 98, depthCm: 45, weightKg: 19.5, maxLoadKg: 50, hasWeightSensor: false, warrantyMonths: 24 }
+    ]
+  },
+  {
+    id: 'anchorbox-pro',
+    name: 'AnchorBox Pro',
+    sku: 'ABX-PRO-AI',
+    price: 3890000,
+    categoryName: 'Hộp nhận bưu kiện thông minh AI',
+    description: 'Phiên bản Flagship đột phá tích hợp Camera AI góc siêu rộng 155°, cảm biến cân nặng đa điểm chống tráo hàng và hệ thống đèn LED UV-C tự động khử khuẩn bề mặt bưu phẩm.',
+    images: ['/products/smartbox-std-front.svg', '/products/smartbox-std-inside.svg', '/products/smartbox-std-diagram.svg'],
+    isActive: true,
+    variants: [
+      { id: 'v-pro-45', productId: 'anchorbox-pro', sku: 'ABX-PRO-45L', variantName: 'AnchorBox Pro 45L', size: 'S', capacityLiter: 45, finalPrice: 3890000, stockQuantity: 19, isActive: true, widthCm: 45, heightCm: 85, depthCm: 38, weightKg: 17.5, maxLoadKg: 40, hasWeightSensor: true, warrantyMonths: 24 },
+      { id: 'v-pro-75', productId: 'anchorbox-pro', sku: 'ABX-PRO-75L', variantName: 'AnchorBox Pro 75L', size: 'M', capacityLiter: 75, finalPrice: 4690000, stockQuantity: 34, isActive: true, widthCm: 50, heightCm: 98, depthCm: 45, weightKg: 21.0, maxLoadKg: 60, hasWeightSensor: true, warrantyMonths: 24 },
+      { id: 'v-pro-110', productId: 'anchorbox-pro', sku: 'ABX-PRO-110L', variantName: 'AnchorBox Pro 110L Max', size: 'L', capacityLiter: 110, finalPrice: 5490000, stockQuantity: 11, isActive: true, widthCm: 58, heightCm: 112, depthCm: 50, weightKg: 25.5, maxLoadKg: 80, hasWeightSensor: true, warrantyMonths: 24 }
+    ]
+  },
+  {
+    id: 'anchorbox-solar',
+    name: 'AnchorBox Solar Max',
+    sku: 'ABX-SOLAR-MAX',
+    price: 4990000,
+    categoryName: 'Hộp nhận bưu kiện năng lượng mặt trời',
+    description: 'Trang bị tấm pin năng lượng mặt trời Monocrystalline trên nóc mái, tự nạp năng lượng ngoài trời liên tục 45 ngày không cần cắm điện. Tương thích chuẩn Matter và Apple HomeKit.',
+    images: ['/products/smartbox-promax-front.svg', '/products/smartbox-std-inside.svg', '/products/smartbox-std-diagram.svg'],
+    isActive: true,
+    variants: [
+      { id: 'v-solar-75', productId: 'anchorbox-solar', sku: 'ABX-SOLAR-75L', variantName: 'AnchorBox Solar 75L', size: 'M', capacityLiter: 75, finalPrice: 4990000, stockQuantity: 18, isActive: true, widthCm: 50, heightCm: 98, depthCm: 45, weightKg: 23.0, maxLoadKg: 60, hasWeightSensor: true, warrantyMonths: 36 },
+      { id: 'v-solar-110', productId: 'anchorbox-solar', sku: 'ABX-SOLAR-110L', variantName: 'AnchorBox Solar 110L Extreme', size: 'L', capacityLiter: 110, finalPrice: 5790000, stockQuantity: 8, isActive: true, widthCm: 58, heightCm: 112, depthCm: 50, weightKg: 27.5, maxLoadKg: 80, hasWeightSensor: true, warrantyMonths: 36 }
+    ]
+  }
+];
+
 const FILTER_STORAGE_KEY = 'anchorbox_catalog_filter_v2';
 
 const PRICE_PRESETS = [
@@ -185,7 +231,7 @@ export function ProductCatalogPage() {
 
   // Filter & Sort calculation
   const filteredProducts = useMemo(() => {
-    const items = resource.data || [];
+    const items = (resource.data && resource.data.length > 0) ? resource.data : SHOWCASE_PRODUCTS;
     const q = query.trim().toLocaleLowerCase('vi');
 
     return items

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /account/
+Disallow: /cart
+Disallow: /checkout
+
+Sitemap: https://anchorbox.vn/sitemap.xml
+

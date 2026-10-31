@@ -8,4 +8,7 @@ export default defineConfig({
     port: 5174,
     host: true,
   },
+  build: {
+    chunkSizeWarningLimit: 800,
+  },
 });
