@@ -34,3 +34,6 @@ device/firmware/recovery_backup_*/
 # --- Altium auto-generated history and previews ---
 device/pcb/History/
 **/__Previews/
+
+# --- Moi truong AI
+CLAUDE.md
