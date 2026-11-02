@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.MessageDigest;
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -137,6 +136,10 @@ public class CustomerWarrantyClaimService {
             return detail(UUID.fromString(existing.getFirst().get("id").toString()));
         }
         eligible(warranty(request.warrantyId(), actor.id(), true));
+        long open = ((Number) db.one("SELECT count(*) AS n FROM public.warranty_claims WHERE warranty_id=? AND CAST(status AS text) IN ('new','assigned','in_progress')", request.warrantyId()).get("n")).longValue();
+        if (open > 0) {
+            throw new ConflictException("CLAIM_ALREADY_OPEN");
+        }
         var urls = new ArrayList<String>();
         for (UUID image : request.imageIds().stream().sorted().toList()) {
             var row = db.one("SELECT secure_url,claim_id,created_at FROM public.warranty_claim_images WHERE id=? AND owner_id=? AND warranty_id=? AND created_at >= ? FOR UPDATE", image, actor.id(), request.warrantyId(), now().minusHours(ORPHAN_IMAGE_TTL_HOURS - 1));
@@ -165,7 +168,15 @@ public class CustomerWarrantyClaimService {
     public Map<String, Object> detail(UUID id) {
         var actor = actors.get();
         actor.requireRoles("customer");
-        var row = db.one("SELECT c.id,c.warranty_id AS \"warrantyId\",c.description,c.status,c.created_at AS \"createdAt\",c.resolved_at AS \"resolvedAt\",d.serial_number AS \"serialNumber\" FROM public.warranty_claims c JOIN public.warranties w ON w.id=c.warranty_id JOIN public.devices d ON d.id=w.device_id WHERE c.id=? AND c.customer_id=?", id, actor.id());
+        var row = db.one("SELECT c.id,c.warranty_id AS \"warrantyId\",c.description,c.status,c.internal_notes,c.created_at AS \"createdAt\",c.resolved_at AS \"resolvedAt\",d.serial_number AS \"serialNumber\" FROM public.warranty_claims c JOIN public.warranties w ON w.id=c.warranty_id JOIN public.devices d ON d.id=w.device_id WHERE c.id=? AND c.customer_id=?", id, actor.id());
+        Object rawNotes = row.remove("internal_notes");
+        String rejectionReason = WarrantyService.extractRejectionReason(
+                Objects.toString(row.get("status"), null),
+                rawNotes == null ? null : rawNotes.toString()
+        );
+        if (rejectionReason != null) {
+            row.put("rejectionReason", rejectionReason);
+        }
         row.put("images", db.list("SELECT secure_url FROM public.warranty_claim_images WHERE claim_id=? ORDER BY id", id).stream().map(r -> r.get("secure_url")).toList());
         return row;
     }
@@ -181,7 +192,7 @@ public class CustomerWarrantyClaimService {
         }
 
         var rows = db.list(
-                "SELECT c.id, c.warranty_id AS \"warrantyId\", c.description, c.status, c.created_at AS \"createdAt\", c.resolved_at AS \"resolvedAt\", d.serial_number AS \"serialNumber\" " +
+                "SELECT c.id, c.warranty_id AS \"warrantyId\", c.description, c.status, c.internal_notes, c.created_at AS \"createdAt\", c.resolved_at AS \"resolvedAt\", d.serial_number AS \"serialNumber\" " +
                 "FROM public.warranty_claims c " +
                 "JOIN public.warranties w ON w.id = c.warranty_id " +
                 "JOIN public.devices d ON d.id = w.device_id " +
@@ -209,6 +220,14 @@ public class CustomerWarrantyClaimService {
         }
 
         for (var row : rows) {
+            Object rawNotes = row.remove("internal_notes");
+            String rejectionReason = WarrantyService.extractRejectionReason(
+                    Objects.toString(row.get("status"), null),
+                    rawNotes == null ? null : rawNotes.toString()
+            );
+            if (rejectionReason != null) {
+                row.put("rejectionReason", rejectionReason);
+            }
             UUID cid = row.get("id") instanceof UUID u ? u : UUID.fromString(row.get("id").toString());
             row.put("images", imagesByClaimId.getOrDefault(cid, Collections.emptyList()));
         }

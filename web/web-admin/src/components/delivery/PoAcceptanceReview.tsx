@@ -99,9 +99,9 @@ export const PoAcceptanceReview: React.FC<PoAcceptanceReviewProps> = ({
             borderRadius: 999,
             fontSize: '0.82rem',
             fontWeight: 700,
-            background: isCompleted ? 'rgba(16, 185, 129, 0.12)' : 'rgba(234, 88, 12, 0.12)',
-            color: isCompleted ? '#059669' : '#ea580c',
-            border: isCompleted ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(234, 88, 12, 0.3)'
+            background: isCompleted ? 'rgba(16, 185, 129, 0.12)' : 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+            color: isCompleted ? '#059669' : 'var(--accent-primary)',
+            border: isCompleted ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent)'
           }}
         >
           {isCompleted ? '✓ Đã nghiệm thu & Hoàn thành' : '⏳ Chờ PO duyệt nghiệm thu'}

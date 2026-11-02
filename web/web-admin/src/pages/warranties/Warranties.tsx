@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminRequest } from '../../services/adminRequest';
 import { useAuth } from '../../contexts/AuthContext';
@@ -6,7 +6,6 @@ import './warranties.css';
 import {
   Wrench,
   Search,
-  Filter,
   RefreshCw,
   User,
   Phone,
@@ -16,7 +15,6 @@ import {
   Clock3,
   XCircle,
   Eye,
-  ExternalLink,
   QrCode,
   X,
   Copy,
@@ -37,6 +35,8 @@ interface Claim {
   assignedTo: string | null;
   assigneeName: string | null;
   internalNotes: string | null;
+  rejectionReason?: string | null;
+  faultCategory?: string | null;
   serialNumber: string;
   customerName: string | null;
   customerPhone: string | null;
@@ -49,6 +49,15 @@ interface Technician {
   phone: string | null;
 }
 
+interface ClaimCounts {
+  all: number;
+  new: number;
+  assigned: number;
+  in_progress: number;
+  resolved: number;
+  rejected: number;
+}
+
 const statusMeta: Record<string, { label: string; badgeClass: string; icon: React.ReactNode }> = {
   new: { label: 'Mới tiếp nhận', badgeClass: 'fpt-badge-info', icon: <AlertCircle size={13} /> },
   assigned: { label: 'Đã phân công', badgeClass: 'fpt-badge-manager', icon: <User size={13} /> },
@@ -56,6 +65,28 @@ const statusMeta: Record<string, { label: string; badgeClass: string; icon: Reac
   resolved: { label: 'Đã hoàn tất', badgeClass: 'fpt-badge-success', icon: <CheckCircle2 size={13} /> },
   rejected: { label: 'Đã từ chối', badgeClass: 'fpt-badge-danger', icon: <XCircle size={13} /> }
 };
+
+const faultCategoryLabels: Record<string, string> = {
+  mechanical_jam: 'Khóa / cửa hộp',
+  scale_deviation: 'Cảm biến cân',
+  power_supply: 'Nguồn điện',
+  connectivity: 'Wi-Fi & ứng dụng',
+  keypad_display: 'Bàn phím / màn hình',
+  sensor_fault: 'Cảm biến',
+  other: 'Khác'
+};
+
+const stripCategoryPrefix = (desc: string | null | undefined) => {
+  if (!desc) return '';
+  return desc.replace(/^\[[^\]]+\]\s*/, '');
+};
+
+/** Mirrors WarrantyService transitions; assignment itself moves a claim to "assigned". */
+const CLAIM_NEXT: Record<'manager' | 'technician', Record<string, string[]>> = {
+  manager: { new: ['rejected'], assigned: ['in_progress', 'rejected'], in_progress: ['resolved', 'rejected'], resolved: [], rejected: [] },
+  technician: { new: [], assigned: ['in_progress'], in_progress: ['resolved'], resolved: [], rejected: [] },
+};
+const isClosedClaim = (status: string) => status === 'resolved' || status === 'rejected';
 
 export const Warranties: React.FC = () => {
   const { profile } = useAuth();
@@ -65,6 +96,14 @@ export const Warranties: React.FC = () => {
   const [pages, setPages] = useState(0);
   const [total, setTotal] = useState(0);
   const [rows, setRows] = useState<Claim[]>([]);
+  const [counts, setCounts] = useState<ClaimCounts>({
+    all: 0,
+    new: 0,
+    assigned: 0,
+    in_progress: 0,
+    resolved: 0,
+    rejected: 0
+  });
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -78,7 +117,12 @@ export const Warranties: React.FC = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
+      setDebouncedSearchTerm(prev => {
+        if (prev !== searchTerm) {
+          setPage(0);
+        }
+        return searchTerm;
+      });
     }, 350);
     return () => clearTimeout(timer);
   }, [searchTerm]);
@@ -89,6 +133,7 @@ export const Warranties: React.FC = () => {
   const [assignee, setAssignee] = useState('');
   const [status, setStatus] = useState('new');
   const [notes, setNotes] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [editError, setEditError] = useState('');
 
@@ -100,12 +145,22 @@ export const Warranties: React.FC = () => {
     let alive = true;
     setLoading(true);
     setError('');
-    adminRequest<{ content: Claim[]; totalPages: number; totalElements: number }>(`/warranties/claims/paged?page=${page}&size=24`)
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('size', '24');
+    if (selectedStatus && selectedStatus !== 'all') {
+      params.set('status', selectedStatus);
+    }
+    const cleanSearch = debouncedSearchTerm.trim();
+    if (cleanSearch) {
+      params.set('search', cleanSearch);
+    }
+    adminRequest<{ content: Claim[]; totalPages: number; totalElements: number }>(`/warranties/claims/paged?${params.toString()}`)
       .then(data => {
         if (alive) {
-          setRows(data.content);
-          setPages(data.totalPages);
-          setTotal(data.totalElements);
+          setRows(data.content || []);
+          setPages(data.totalPages || 0);
+          setTotal(data.totalElements || 0);
         }
       })
       .catch(e => {
@@ -118,7 +173,28 @@ export const Warranties: React.FC = () => {
         if (alive) setLoading(false);
       });
     return () => { alive = false; };
-  }, [page, revision]);
+  }, [page, selectedStatus, debouncedSearchTerm, revision]);
+
+  useEffect(() => {
+    let alive = true;
+    adminRequest<Partial<ClaimCounts>>('/warranties/claims/counts')
+      .then(data => {
+        if (alive && data) {
+          setCounts({
+            all: Number(data.all ?? 0),
+            new: Number(data.new ?? 0),
+            assigned: Number(data.assigned ?? 0),
+            in_progress: Number(data.in_progress ?? 0),
+            resolved: Number(data.resolved ?? 0),
+            rejected: Number(data.rejected ?? 0),
+          });
+        }
+      })
+      .catch(() => {
+        // Ignore count errors if main list already handles error display
+      });
+    return () => { alive = false; };
+  }, [revision]);
 
   useEffect(() => {
     if (!manager) return;
@@ -140,6 +216,7 @@ export const Warranties: React.FC = () => {
     setAssignee(claim.assignedTo || '');
     setStatus(claim.status);
     setNotes(claim.internalNotes || '');
+    setRejectionReason(claim.rejectionReason || '');
     setEditError('');
   };
 
@@ -149,6 +226,11 @@ export const Warranties: React.FC = () => {
     setBusy(true);
     setEditError('');
     try {
+      const afterAssignPreview = (manager && assignee !== (selected.assignedTo || '') && assignee) ? 'assigned' : selected.status;
+      if (status === 'rejected' && status !== afterAssignPreview && !rejectionReason.trim()) {
+        throw new Error('Vui lòng nhập lý do từ chối bảo hành để thông báo cho khách hàng.');
+      }
+
       let assigned = false;
       if (manager && assignee !== (selected.assignedTo || '')) {
         if (!assignee) throw new Error('Vui lòng chọn kỹ thuật viên để phân công.');
@@ -164,10 +246,15 @@ export const Warranties: React.FC = () => {
           body: JSON.stringify({ notes })
         });
       }
-      if (status !== selected.status && !(assigned && status === 'new')) {
+      const afterAssign = assigned ? 'assigned' : selected.status;
+      if (status !== afterAssign) {
+        const body: { status: string; reason?: string } = { status };
+        if (status === 'rejected') {
+          body.reason = rejectionReason.trim();
+        }
         await adminRequest(`/warranties/claims/${selected.id}/status`, {
           method: 'PATCH',
-          body: JSON.stringify({ status })
+          body: JSON.stringify(body)
         });
       }
       setSelected(null);
@@ -179,26 +266,12 @@ export const Warranties: React.FC = () => {
     }
   };
 
-  // Filtered rows
-  const filteredClaims = useMemo(() => {
-    return rows.filter(claim => {
-      const matchStatus = selectedStatus === 'all' || claim.status === selectedStatus;
-      const term = debouncedSearchTerm.toLowerCase().trim();
-      const matchSearch = !term ||
-        (claim.serialNumber && claim.serialNumber.toLowerCase().includes(term)) ||
-        (claim.customerName && claim.customerName.toLowerCase().includes(term)) ||
-        (claim.customerPhone && claim.customerPhone.includes(term)) ||
-        (claim.description && claim.description.toLowerCase().includes(term));
-      return matchStatus && matchSearch;
-    });
-  }, [rows, selectedStatus, debouncedSearchTerm]);
-
-  // Quick KPI counts
-  const countNew = useMemo(() => rows.filter(r => r.status === 'new').length, [rows]);
-  const countAssigned = useMemo(() => rows.filter(r => r.status === 'assigned').length, [rows]);
-  const countInProgress = useMemo(() => rows.filter(r => r.status === 'in_progress').length, [rows]);
-  const countResolved = useMemo(() => rows.filter(r => r.status === 'resolved').length, [rows]);
-  const countRejected = useMemo(() => rows.filter(r => r.status === 'rejected').length, [rows]);
+  const countAll = counts.all;
+  const countNew = counts.new;
+  const countAssigned = counts.assigned;
+  const countInProgress = counts.in_progress;
+  const countResolved = counts.resolved;
+  const countRejected = counts.rejected;
   const lookupPath = profile?.role === 'product_manager' ? '/po/warranties/lookup' : '/admin/warranties/lookup';
 
   return (
@@ -207,7 +280,7 @@ export const Warranties: React.FC = () => {
       <div className="warranty-header">
         <div className="warranty-title-wrap">
           <h2>
-            <Wrench size={18} color="#ea580c" />
+            <Wrench size={18} color="var(--accent-primary)" />
             <span>Quản Lý Yêu Cầu Bảo Hành</span>
           </h2>
           <p className="warranty-subtitle">
@@ -243,7 +316,7 @@ export const Warranties: React.FC = () => {
           </div>
           <div className="warranty-kpi-body">
             <span className="warranty-kpi-label">Tổng yêu cầu</span>
-            <span className="warranty-kpi-value">{total || rows.length}</span>
+            <span className="warranty-kpi-value">{countAll}</span>
           </div>
         </div>
 
@@ -295,7 +368,7 @@ export const Warranties: React.FC = () => {
         {/* Status Pill Tabs with Counts */}
         <div className="warranty-filter-tabs">
           {[
-            { key: 'all', label: 'Tất cả', count: rows.length },
+            { key: 'all', label: 'Tất cả', count: countAll },
             { key: 'new', label: 'Mới tiếp nhận', count: countNew },
             { key: 'assigned', label: 'Đã phân công', count: countAssigned },
             { key: 'in_progress', label: 'Đang xử lý', count: countInProgress },
@@ -308,7 +381,10 @@ export const Warranties: React.FC = () => {
                 key={tab.key}
                 type="button"
                 className={`warranty-tab-btn ${isActive ? 'active' : ''}`}
-                onClick={() => setSelectedStatus(tab.key)}
+                onClick={() => {
+                  setSelectedStatus(tab.key);
+                  setPage(0);
+                }}
               >
                 <span>{tab.label}</span>
                 <span className="warranty-tab-count">{tab.count}</span>
@@ -356,8 +432,8 @@ export const Warranties: React.FC = () => {
           gap: 6,
           padding: '4px 10px',
           borderRadius: 4,
-          background: 'rgba(249, 115, 22, 0.1)',
-          border: '1px solid rgba(249, 115, 22, 0.25)',
+          background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
           color: 'var(--fpt-orange)',
           fontSize: '12px',
           fontWeight: 600
@@ -373,7 +449,7 @@ export const Warranties: React.FC = () => {
           <RefreshCw size={22} className="spin" style={{ margin: '0 auto 8px' }} />
           <p style={{ margin: 0, fontSize: '0.825rem' }}>Đang tải danh sách yêu cầu bảo hành…</p>
         </div>
-      ) : filteredClaims.length === 0 ? (
+      ) : rows.length === 0 ? (
         <div className="card" style={{ padding: '36px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
           <Wrench size={28} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
           <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>Không có yêu cầu bảo hành phù hợp</h3>
@@ -396,8 +472,10 @@ export const Warranties: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredClaims.map(claim => {
+                {rows.map(claim => {
                   const meta = statusMeta[claim.status] || { label: claim.status, badgeClass: 'fpt-badge-customer', icon: null };
+                  const catLabel = faultCategoryLabels[claim.faultCategory || 'other'] || 'Khác';
+                  const cleanDesc = stripCategoryPrefix(claim.description);
                   return (
                     <tr key={claim.id}>
                       {/* Serial */}
@@ -434,8 +512,26 @@ export const Warranties: React.FC = () => {
                       {/* Description */}
                       <td className="warranty-desc-cell">
                         <div className="warranty-desc-text" title={claim.description}>
-                          {claim.description}
+                          <span style={{
+                            display: 'inline-block',
+                            fontSize: '0.675rem',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'var(--bg-shell)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-secondary)',
+                            marginRight: '6px'
+                          }}>
+                            {catLabel}
+                          </span>
+                          {cleanDesc || claim.description}
                         </div>
+                        {claim.status === 'rejected' && claim.rejectionReason && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--fpt-rose)', marginTop: '3px' }}>
+                            <strong>Lý do từ chối:</strong> {claim.rejectionReason}
+                          </div>
+                        )}
                       </td>
 
                       {/* Technician */}
@@ -509,8 +605,10 @@ export const Warranties: React.FC = () => {
             pointerEvents: loading && rows.length > 0 ? 'none' : 'auto'
           }}
         >
-          {filteredClaims.map(claim => {
+          {rows.map(claim => {
             const meta = statusMeta[claim.status] || { label: claim.status, badgeClass: 'fpt-badge-customer', icon: null };
+            const catLabel = faultCategoryLabels[claim.faultCategory || 'other'] || 'Khác';
+            const cleanDesc = stripCategoryPrefix(claim.description);
             return (
               <div className="warranty-compact-card" key={claim.id}>
                 {/* Header */}
@@ -553,8 +651,18 @@ export const Warranties: React.FC = () => {
 
                   {/* Description Box */}
                   <div className="warranty-compact-issue-box">
-                    <p style={{ margin: 0 }}>{claim.description}</p>
+                    <div style={{ fontSize: '0.675rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                      Nhóm lỗi: {catLabel}
+                    </div>
+                    <p style={{ margin: 0 }}>{cleanDesc || claim.description}</p>
                   </div>
+
+                  {/* Rejection Reason if rejected */}
+                  {claim.status === 'rejected' && claim.rejectionReason && (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--fpt-rose)', background: 'var(--fpt-rose-soft)', padding: '5px 8px', borderRadius: '5px', border: '1px solid var(--fpt-rose)' }}>
+                      <strong>Lý do từ chối:</strong> {claim.rejectionReason}
+                    </div>
+                  )}
 
                   {/* Incident Images */}
                   {claim.images && claim.images.length > 0 && (
@@ -684,6 +792,8 @@ export const Warranties: React.FC = () => {
       {/* Modal Chi tiết Yêu Cầu Bảo Hành */}
       {detailClaim && (() => {
         const dMeta = statusMeta[detailClaim.status] || { label: detailClaim.status, badgeClass: 'fpt-badge-customer', icon: null };
+        const dCatLabel = faultCategoryLabels[detailClaim.faultCategory || 'other'] || 'Khác';
+        const dCleanDesc = stripCategoryPrefix(detailClaim.description);
         return (
           <div className="fpt-modal-overlay" onClick={() => setDetailClaim(null)}>
             <div className="fpt-modal-box warranty-detail-modal-box" onClick={e => e.stopPropagation()}>
@@ -779,12 +889,24 @@ export const Warranties: React.FC = () => {
                 {/* Mô tả sự cố */}
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                    Nội dung mô tả sự cố:
+                    Nội dung mô tả sự cố ({dCatLabel}):
                   </label>
                   <div className="warranty-detail-issue-box">
-                    {detailClaim.description || 'Không có mô tả chi tiết.'}
+                    {dCleanDesc || detailClaim.description || 'Không có mô tả chi tiết.'}
                   </div>
                 </div>
+
+                {/* Lý do từ chối hiển thị cho khách */}
+                {detailClaim.status === 'rejected' && detailClaim.rejectionReason && (
+                  <div style={{ background: 'var(--fpt-rose-soft)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--fpt-rose)' }}>
+                    <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--fpt-rose)', display: 'block', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      Lý do từ chối (hiển thị cho khách hàng):
+                    </label>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--fpt-rose)', whiteSpace: 'pre-wrap', fontWeight: 600 }}>
+                      {detailClaim.rejectionReason}
+                    </div>
+                  </div>
+                )}
 
                 {/* Danh sách ảnh đính kèm */}
                 {detailClaim.images && detailClaim.images.length > 0 ? (
@@ -906,7 +1028,9 @@ export const Warranties: React.FC = () => {
                 {/* Khách hàng tóm tắt */}
                 <div style={{ background: 'var(--bg-surface)', padding: '10px 12px', borderRadius: '8px', fontSize: '0.775rem' }}>
                   <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selected.customerName || 'Khách hàng'} {selected.customerPhone ? `· ${selected.customerPhone}` : ''}</div>
-                  <div style={{ color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>{selected.description}</div>
+                  <div style={{ color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>
+                    <strong>[{faultCategoryLabels[selected.faultCategory || 'other'] || 'Khác'}]</strong> {stripCategoryPrefix(selected.description) || selected.description}
+                  </div>
                 </div>
 
                 {/* Ảnh sự cố & Ảnh minh chứng của KTV */}
@@ -964,8 +1088,12 @@ export const Warranties: React.FC = () => {
                     <label>Phân công kỹ thuật viên phụ trách</label>
                     <select
                       value={assignee}
-                      onChange={e => setAssignee(e.target.value)}
-                      disabled={busy}
+                      onChange={e => {
+                        const next = e.target.value;
+                        setAssignee(next);
+                        setStatus(next && next !== (selected.assignedTo || '') ? 'assigned' : selected.status);
+                      }}
+                      disabled={busy || isClosedClaim(selected.status)}
                     >
                       <option value="">-- Chưa phân công --</option>
                       {technicians.map(t => (
@@ -985,19 +1113,38 @@ export const Warranties: React.FC = () => {
                     onChange={e => setStatus(e.target.value)}
                     disabled={busy}
                   >
-                    {Object.entries(statusMeta).map(([val, item]) => (
-                      <option key={val} value={val}>{item.label}</option>
-                    ))}
+                    {(() => {
+                      // A newly chosen technician moves the claim to "assigned" before any status change.
+                      const base = manager && assignee && assignee !== (selected.assignedTo || '') ? 'assigned' : selected.status;
+                      const options = [base, ...CLAIM_NEXT[manager ? 'manager' : 'technician'][base] || []];
+                      return options.map(val => <option key={val} value={val}>{statusMeta[val]?.label || val}</option>);
+                    })()}
                   </select>
                 </div>
 
+                {/* Lý do từ chối hiển thị cho khách */}
+                {status === 'rejected' && (
+                  <div className="warranty-form-group">
+                    <label style={{ color: 'var(--fpt-rose)' }}>Lý do từ chối bảo hành (hiển thị cho khách hàng) *</label>
+                    <textarea
+                      rows={2}
+                      maxLength={2000}
+                      required={selected.status !== 'rejected'}
+                      placeholder="Nhập lý do từ chối rõ ràng để khách hàng nắm thông tin (VD: Hư hỏng do va đập vật lý ngoài phạm vi bảo hành)..."
+                      value={rejectionReason}
+                      onChange={e => setRejectionReason(e.target.value)}
+                      disabled={busy || selected.status === 'rejected'}
+                    />
+                  </div>
+                )}
+
                 {/* Ghi chú nội bộ */}
                 <div className="warranty-form-group">
-                  <label>Ghi chú kỹ thuật nội bộ</label>
+                  <label>Ghi chú kỹ thuật nội bộ (chỉ nhân sự xem)</label>
                   <textarea
                     rows={3}
                     maxLength={10000}
-                    placeholder="Nhập chi tiết linh kiện thay thế, nguyên nhân sự cố hoặc ghi chú bảo hành..."
+                    placeholder="Nhập chi tiết linh kiện thay thế, nguyên nhân sự cố hoặc ghi chú bảo hành nội bộ..."
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
                     disabled={busy}

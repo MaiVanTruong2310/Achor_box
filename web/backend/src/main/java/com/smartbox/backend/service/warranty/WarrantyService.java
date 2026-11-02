@@ -10,6 +10,7 @@ import com.smartbox.backend.entity.Device;
 import com.smartbox.backend.entity.Warranty;
 import com.smartbox.backend.entity.WarrantyClaim;
 import com.smartbox.backend.exception.BadRequestException;
+import com.smartbox.backend.exception.ConflictException;
 import com.smartbox.backend.exception.ForbiddenException;
 import com.smartbox.backend.exception.ResourceNotFoundException;
 import com.smartbox.backend.repository.CommerceRepository;
@@ -21,7 +22,8 @@ import com.smartbox.backend.security.CurrentActor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +32,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -49,6 +53,29 @@ public class WarrantyService {
     private final CurrentActor actors;
     private final CommerceRepository db;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public static final String REJECTION_REASON_PREFIX = "[Lý do từ chối]";
+    private static final Set<String> VALID_CLAIM_STATUSES = Set.of("new", "assigned", "in_progress", "resolved", "rejected");
+
+    /** Allowed next statuses per role. Assignment (new/assigned/in_progress -> assigned) goes through assignTechnician. */
+    private static final Map<String, Set<String>> MANAGER_NEXT = Map.of(
+            "new", Set.of("rejected"),
+            "assigned", Set.of("in_progress", "rejected"),
+            "in_progress", Set.of("resolved", "rejected"),
+            "resolved", Set.of(),
+            "rejected", Set.of());
+    private static final Map<String, Set<String>> TECHNICIAN_NEXT = Map.of(
+            "new", Set.of(),
+            "assigned", Set.of("in_progress"),
+            "in_progress", Set.of("resolved"),
+            "resolved", Set.of(),
+            "rejected", Set.of());
+    private static final Set<String> CLOSED = Set.of("resolved", "rejected");
+    private static final Map<String, String> CUSTOMER_STATUS_TEXT = Map.of(
+            "assigned", "đã được phân công kỹ thuật viên",
+            "in_progress", "đang được kỹ thuật viên xử lý",
+            "resolved", "đã xử lý xong",
+            "rejected", "không được chấp nhận bảo hành");
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> technicians() {
@@ -74,20 +101,71 @@ public class WarrantyService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getClaimsPaged(int page, int size) {
+        return getClaimsPaged(page, size, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getClaimsPaged(int page, int size, String status, String search) {
         var actor = actors.get();
         actor.requireRoles("super_admin", "product_manager", "technician");
 
-        Pageable pageable = AdminSearch.page(page, size);
-        Page<WarrantyClaim> pageClaims = "technician".equals(actor.role())
-                ? claimRepository.findByAssignedTo(actor.id(), pageable)
-                : claimRepository.findAll(pageable);
+        AdminSearch.page(page, size);
+        String filter = status == null ? "" : status.trim().toLowerCase(Locale.ROOT);
+        if ("all".equals(filter)) {
+            filter = "";
+        }
+        if (!filter.isEmpty() && !VALID_CLAIM_STATUSES.contains(filter)) {
+            throw new BadRequestException("INVALID_CLAIM_STATUS");
+        }
+        String term = AdminSearch.term(search);
+        boolean isTech = "technician".equals(actor.role());
+        UUID techId = isTech ? actor.id() : new UUID(0L, 0L);
+
+        Page<WarrantyClaim> pageClaims = claimRepository.search(
+                term,
+                AdminSearch.like(term),
+                filter,
+                isTech,
+                techId,
+                PageRequest.of(page, size)
+        );
 
         List<ClaimResponse> responses = mapClaimsToResponses(pageClaims.getContent());
-        Page<ClaimResponse> pageResult = new org.springframework.data.domain.PageImpl<>(
+        Page<ClaimResponse> pageResult = new PageImpl<>(
                 responses, pageClaims.getPageable(), pageClaims.getTotalElements()
         );
 
         return PaginationUtil.toMap(pageResult);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Long> getClaimCounts() {
+        var actor = actors.get();
+        actor.requireRoles("super_admin", "product_manager", "technician");
+
+        Map<String, Long> counts = new LinkedHashMap<>();
+        counts.put("all", 0L);
+        counts.put("new", 0L);
+        counts.put("assigned", 0L);
+        counts.put("in_progress", 0L);
+        counts.put("resolved", 0L);
+        counts.put("rejected", 0L);
+
+        List<Object[]> rows = "technician".equals(actor.role())
+                ? claimRepository.countGroupByStatusForAssignee(actor.id())
+                : claimRepository.countGroupByStatus();
+
+        long total = 0L;
+        for (Object[] r : rows) {
+            if (r != null && r.length >= 2 && r[0] != null && r[1] != null) {
+                String st = r[0].toString();
+                long cnt = ((Number) r[1]).longValue();
+                counts.put(st, cnt);
+                total += cnt;
+            }
+        }
+        counts.put("all", total);
+        return counts;
     }
 
     @Transactional(readOnly = true)
@@ -115,9 +193,14 @@ public class WarrantyService {
 
         WarrantyClaim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
+        if (CLOSED.contains(claim.getStatus())) {
+            throw new ConflictException("CLAIM_CLOSED");
+        }
 
         claim.setAssignedTo(technicianId);
-        claim.setStatus("in_progress");
+        claim.setStatus("assigned");
+        claim.setResolvedAt(null);
+        notifyCustomer(claim, "assigned");
         db.audit(actors.get().id(), "WARRANTY_CLAIM_ASSIGNED", "warranty_claims", claimId, technicianId.toString());
 
         UUID notifId = UUID.randomUUID();
@@ -139,7 +222,12 @@ public class WarrantyService {
 
     @Transactional
     public ClaimResponse updateClaimStatus(UUID claimId, String status) {
-        if (status == null || !Set.of("new", "assigned", "in_progress", "resolved", "rejected").contains(status)) {
+        return updateClaimStatus(claimId, status, null);
+    }
+
+    @Transactional
+    public ClaimResponse updateClaimStatus(UUID claimId, String status, String reason) {
+        if (status == null || !VALID_CLAIM_STATUSES.contains(status)) {
             throw new BadRequestException("INVALID_CLAIM_STATUS");
         }
 
@@ -147,15 +235,83 @@ public class WarrantyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
 
         authorizeClaim(claim);
-        claim.setStatus(status);
-        db.audit(actors.get().id(), "WARRANTY_CLAIM_STATUS_CHANGED", "warranty_claims", claimId, status);
-
-        claim.setResolvedAt(null);
-        if ("resolved".equalsIgnoreCase(status) || "rejected".equalsIgnoreCase(status)) {
-            claim.setResolvedAt(OffsetDateTime.now());
+        String current = claim.getStatus();
+        if (status.equals(current)) {
+            return mapToResponse(claim);
         }
+        var allowed = ("technician".equals(actors.get().role()) ? TECHNICIAN_NEXT : MANAGER_NEXT).getOrDefault(current, Set.of());
+        if (!allowed.contains(status)) {
+            throw new ConflictException("INVALID_CLAIM_TRANSITION: " + current + " -> " + status);
+        }
+        if (Set.of("in_progress", "resolved").contains(status) && claim.getAssignedTo() == null) {
+            throw new ConflictException("CLAIM_NOT_ASSIGNED");
+        }
+        if ("rejected".equals(status)) {
+            String cleanReason = reason == null ? "" : reason.replaceAll("[\\r\\n]+", " ").trim();
+            if (cleanReason.isEmpty()) {
+                String existingReason = extractRejectionReason("rejected", claim.getInternalNotes());
+                if (existingReason == null || existingReason.isBlank()) {
+                    throw new BadRequestException("REJECTION_REASON_REQUIRED");
+                }
+            } else {
+                if (cleanReason.length() > 2000) {
+                    throw new BadRequestException("INVALID_REJECTION_REASON");
+                }
+                String stamp = REJECTION_REASON_PREFIX + " " + cleanReason;
+                String existing = claim.getInternalNotes();
+                String merged = existing == null || existing.isBlank() ? stamp : existing + System.lineSeparator() + stamp;
+                if (merged.length() > 10000) {
+                    throw new BadRequestException("INVALID_CLAIM_NOTES");
+                }
+                claim.setInternalNotes(merged);
+            }
+        }
+        claim.setStatus(status);
+        db.audit(actors.get().id(), "WARRANTY_CLAIM_STATUS_CHANGED", "warranty_claims", claimId, current + " -> " + status);
+        claim.setResolvedAt(CLOSED.contains(status) ? OffsetDateTime.now() : null);
+        notifyCustomer(claim, status);
 
         return mapToResponse(claimRepository.save(claim));
+    }
+
+    /**
+     * Technician finishes a warranty task card: must be the assignee (or a manager), the claim must be in progress,
+     * the completion note is appended to internal notes and proof photos are kept with the claim images.
+     */
+    @Transactional
+    public ClaimResponse completeFromTask(UUID claimId, String note, List<String> proofPhotos) {
+        WarrantyClaim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Khiếu nại bảo hành", "id", claimId));
+        authorizeClaim(claim);
+        if (proofPhotos == null || proofPhotos.stream().noneMatch(p -> p != null && !p.isBlank())) {
+            throw new BadRequestException("COMPLETION_PROOF_REQUIRED");
+        }
+        String cleanNote = note == null ? "" : note.trim();
+        if (!cleanNote.isEmpty()) {
+            String stamp = "[Hoàn tất " + LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")) + "] " + cleanNote;
+            String existing = claim.getInternalNotes();
+            String merged = existing == null || existing.isBlank() ? stamp : existing + System.lineSeparator() + stamp;
+            if (merged.length() > 10000) {
+                throw new BadRequestException("INVALID_CLAIM_NOTES");
+            }
+            claim.setInternalNotes(merged);
+        }
+        List<String> images = new java.util.ArrayList<>();
+        if (claim.getImages() != null && !claim.getImages().isBlank()) {
+            try {
+                images.addAll(objectMapper.readValue(claim.getImages(), new TypeReference<List<String>>() {}));
+            } catch (Exception ignored) {
+                // keep only the new proof photos when legacy data is not a JSON array
+            }
+        }
+        proofPhotos.stream().filter(p -> p != null && !p.isBlank()).map(String::trim).filter(p -> !images.contains(p)).forEach(images::add);
+        try {
+            claim.setImages(objectMapper.writeValueAsString(images));
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+        claimRepository.save(claim);
+        return updateClaimStatus(claimId, "resolved");
     }
 
     @Transactional
@@ -169,7 +325,17 @@ public class WarrantyService {
             throw new BadRequestException("INVALID_CLAIM_NOTES");
         }
 
-        claim.setInternalNotes(notes);
+        String existingReason = extractRejectionReason(claim.getStatus(), claim.getInternalNotes());
+        String updatedNotes = notes;
+        if (existingReason != null && extractRejectionReason("rejected", notes) == null) {
+            String stamp = REJECTION_REASON_PREFIX + " " + existingReason;
+            updatedNotes = notes.isBlank() ? stamp : notes + System.lineSeparator() + stamp;
+            if (updatedNotes.length() > 10000) {
+                throw new BadRequestException("INVALID_CLAIM_NOTES");
+            }
+        }
+
+        claim.setInternalNotes(updatedNotes);
         db.audit(actors.get().id(), "WARRANTY_CLAIM_NOTE_CHANGED", "warranty_claims", claimId, "Internal note updated");
 
         return mapToResponse(claimRepository.save(claim));
@@ -241,14 +407,8 @@ public class WarrantyService {
         String assigneeName = c.getAssignee() != null ? c.getAssignee().getFullName() : null;
         String assigneePhone = c.getAssignee() != null ? c.getAssignee().getPhone() : null;
 
-        String faultCat = "sensor_fault";
-        if (c.getDescription() != null) {
-            if (c.getDescription().contains("Servo") || c.getDescription().contains("kẹt") || c.getDescription().contains("chốt")) {
-                faultCat = "mechanical_jam";
-            } else if (c.getDescription().contains("cân") || c.getDescription().contains("HX711") || c.getDescription().contains("lệch")) {
-                faultCat = "scale_deviation";
-            }
-        }
+        String faultCat = classifyFaultCategory(c.getDescription());
+        String rejectionReason = extractRejectionReason(c.getStatus(), c.getInternalNotes());
 
         return ClaimResponse.builder()
                 .id(c.getId())
@@ -260,6 +420,7 @@ public class WarrantyService {
                 .assigneeName(assigneeName)
                 .assigneePhone(assigneePhone)
                 .internalNotes(c.getInternalNotes())
+                .rejectionReason(rejectionReason)
                 .createdAt(c.getCreatedAt())
                 .resolvedAt(c.getResolvedAt())
                 .serialNumber(serialNumber)
@@ -271,6 +432,101 @@ public class WarrantyService {
                 .warrantyStartDate(warranty != null ? warranty.getStartDate() : null)
                 .warrantyEndDate(warranty != null ? warranty.getEndDate() : null)
                 .build();
+    }
+
+    public static String extractRejectionReason(String status, String internalNotes) {
+        if (!"rejected".equalsIgnoreCase(status) || internalNotes == null || internalNotes.isBlank()) {
+            return null;
+        }
+        String found = null;
+        for (String line : internalNotes.split("\\r?\\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith(REJECTION_REASON_PREFIX)) {
+                String candidate = trimmed.substring(REJECTION_REASON_PREFIX.length()).trim();
+                if (!candidate.isEmpty()) {
+                    found = candidate;
+                }
+            }
+        }
+        return found;
+    }
+
+    public static String classifyFaultCategory(String description) {
+        if (description == null || description.isBlank()) {
+            return "other";
+        }
+        String trimmed = description.trim();
+        if (trimmed.startsWith("[")) {
+            int closeIdx = trimmed.indexOf(']');
+            if (closeIdx > 1) {
+                String tag = trimmed.substring(1, closeIdx).trim().toLowerCase(Locale.ROOT);
+                switch (tag) {
+                    case "khóa / cửa hộp":
+                    case "khoa / cua hop":
+                    case "mechanical_jam":
+                        return "mechanical_jam";
+                    case "cảm biến cân":
+                    case "cam bien can":
+                    case "scale_deviation":
+                        return "scale_deviation";
+                    case "nguồn điện":
+                    case "nguon dien":
+                    case "power_supply":
+                        return "power_supply";
+                    case "wi-fi & ứng dụng":
+                    case "wifi & ứng dụng":
+                    case "connectivity":
+                        return "connectivity";
+                    case "bàn phím / màn hình":
+                    case "ban phim / man hinh":
+                    case "keypad_display":
+                        return "keypad_display";
+                    case "khác":
+                    case "khac":
+                    case "other":
+                        return "other";
+                    default:
+                        break;
+                }
+            }
+        }
+        String lower = trimmed.toLowerCase(Locale.ROOT);
+        if (lower.contains("servo") || lower.contains("kẹt") || lower.contains("chốt") || lower.contains("khóa") || lower.contains("cửa hộp")) {
+            return "mechanical_jam";
+        }
+        if (lower.contains("cảm biến cân") || lower.contains("hx711") || lower.contains("lệch cân") || lower.contains("loadcell") || lower.contains("sai số cân")) {
+            return "scale_deviation";
+        }
+        if (lower.contains("nguồn điện") || lower.contains("mất nguồn") || lower.contains("adapter") || lower.contains("sạc")) {
+            return "power_supply";
+        }
+        if (lower.contains("wi-fi") || lower.contains("wifi") || lower.contains("kết nối") || lower.contains("ứng dụng") || lower.contains("mqtt")) {
+            return "connectivity";
+        }
+        if (lower.contains("bàn phím") || lower.contains("màn hình") || lower.contains("oled") || lower.contains("nút bấm")) {
+            return "keypad_display";
+        }
+        return "other";
+    }
+
+    /** Tells the customer their claim moved; uses the app's stable 'system' notification type. */
+    private void notifyCustomer(WarrantyClaim claim, String status) {
+        String text = CUSTOMER_STATUS_TEXT.get(status);
+        if (claim.getCustomerId() == null || text == null) {
+            return;
+        }
+        String code = claim.getId().toString().substring(0, 8).toUpperCase();
+        String body = "Yêu cầu bảo hành #" + code + " " + text + ".";
+        if ("rejected".equals(status)) {
+            String reason = extractRejectionReason("rejected", claim.getInternalNotes());
+            if (reason != null && !reason.isBlank()) {
+                body += " Lý do: " + reason;
+            }
+        }
+        db.update(
+                "INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?, ?, 'system', ?, ?, false, NOW())",
+                UUID.randomUUID(), claim.getCustomerId(), "Cập nhật yêu cầu bảo hành",
+                body);
     }
 
     private void authorizeClaim(WarrantyClaim claim) {

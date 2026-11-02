@@ -116,7 +116,10 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
     UUID installed(UUID job,UUID order){UUID device=delivered(job,order,false);lockTest(job,device);step(job,"INSTALL",new Installation("Lắp đặt tại vị trí đã thống nhất"));return device;}
 
     @Test void assignmentRequiresApprovalActiveTechnicianAndOneJob(){
-        UUID order=confirmedOrder();Assignment request=new Assignment(TECH,now().plusDays(1),null);UUID key=UUID.randomUUID();var original=jobs.assign(order,request,key);
+        UUID order=confirmedOrder();
+        assertThrows(BadRequestException.class,()->jobs.assign(order,new Assignment(TECH,now().minusMinutes(5),null),UUID.randomUUID()));
+        assertThrows(BadRequestException.class,()->jobs.checkAvailability(now().minusMinutes(5),now().plusHours(1)));
+        Assignment request=new Assignment(TECH,now().plusDays(1),null);UUID key=UUID.randomUUID();var original=jobs.assign(order,request,key);
         assertEquals(original.get("id"),jobs.assign(order,request,key).get("id"));assertEquals(1,count("delivery_installations"));
         assertThrows(ConflictException.class,()->jobs.assign(order,request,UUID.randomUUID()));
         assertThrows(ConflictException.class,()->jobs.assign(order,new Assignment(TECH2,request.scheduledAt(),null),key));

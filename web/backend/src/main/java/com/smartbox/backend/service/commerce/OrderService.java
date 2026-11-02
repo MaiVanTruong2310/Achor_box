@@ -55,18 +55,25 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getOrdersPaged(int page, int size) {
-        return getOrdersPaged(page, size, null, null, null);
+        return getOrdersPaged(page, size, null, null, null, null);
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Map<String, Object> getOrdersPaged(int page, int size, String search, String status, String payment) {
+        return getOrdersPaged(page, size, search, status, payment, null);
+    }
+
+    private static final Set<String> ORDER_SORTS = Set.of("created_at_desc", "created_at_asc", "total_asc", "total_desc", "customer_asc", "customer_desc", "status_asc", "status_desc");
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Map<String, Object> getOrdersPaged(int page, int size, String search, String status, String payment, String sort) {
         var actor = actors.get();
         actor.requireRoles("super_admin", "product_manager", "technician");
         AdminSearch.page(page, size);
         String term = AdminSearch.term(search);
         String filter = status == null || status.isBlank() ? "" : OrderStatus.fromString(status).getValue();
         String paymentFilter = payment == null ? "" : payment.trim().toLowerCase(Locale.ROOT);
-        if (!paymentFilter.isEmpty() && !Set.of("pending", "paid", "failed", "expired", "mock", "vnpay", "cod", "momo").contains(paymentFilter)) {
+        if (!paymentFilter.isEmpty() && !Set.of("pending", "paid", "refunded", "failed", "expired", "mock", "vnpay", "cod", "momo").contains(paymentFilter)) {
             throw new BadRequestException("INVALID_PAYMENT_FILTER");
         }
         if ("paid".equals(paymentFilter)) {
@@ -74,6 +81,10 @@ public class OrderService {
         }
         boolean isPo = "product_manager".equals(actor.role());
         UUID poId = isPo ? actor.id() : null;
+        String sortKey = sort == null ? "" : sort.trim().toLowerCase(Locale.ROOT);
+        if (!sortKey.isEmpty() && !ORDER_SORTS.contains(sortKey)) {
+            throw new BadRequestException("INVALID_ORDER_SORT");
+        }
 
         Page<Order> orderPage = orderRepository.search(
                 term,
@@ -82,6 +93,7 @@ public class OrderService {
                 paymentFilter,
                 isPo,
                 poId,
+                sortKey,
                 PageRequest.of(page, size)
         );
 
@@ -115,6 +127,34 @@ public class OrderService {
             }
         }
         return map;
+    }
+
+    /** Order KPIs for the whole system (or the PO's own scope), independent of list pagination. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getOrderSummary() {
+        var actor = actors.get();
+        actor.requireRoles("super_admin", "product_manager", "technician");
+        List<Object[]> rows = "product_manager".equals(actor.role())
+                ? orderRepository.summarizeForPo(actor.id())
+                : orderRepository.summarize();
+        Object[] r = rows.isEmpty() ? new Object[6] : rows.get(0);
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("total", asLong(r[0]));
+        map.put("completed", asLong(r[1]));
+        map.put("paidCount", asLong(r[2]));
+        map.put("paidRevenue", asDecimal(r[3]));
+        map.put("awaitingPaymentCount", asLong(r[4]));
+        map.put("awaitingPaymentRevenue", asDecimal(r[5]));
+        return map;
+    }
+
+    private static long asLong(Object value) {
+        return value instanceof Number n ? n.longValue() : 0L;
+    }
+
+    private static BigDecimal asDecimal(Object value) {
+        if (value instanceof BigDecimal d) return d;
+        return value instanceof Number n ? new BigDecimal(n.toString()) : BigDecimal.ZERO;
     }
 
     @Transactional(readOnly = true)

@@ -26,9 +26,9 @@
   background: rgba(15, 23, 42, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
-  color: #f8fafc;
+  color: var(--text-primary);
   font-family: var(--font-main, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   overflow: hidden;
   animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -97,11 +97,11 @@
 }
 
 .toast-item.info {
-  border-color: rgba(37, 99, 235, 0.35);
+  border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
 .toast-item.info .toast-icon-wrap {
-  background: rgba(37, 99, 235, 0.15);
-  color: #3b82f6;
+  background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+  color: var(--accent-primary);
 }
 
 .toast-content {
@@ -119,7 +119,7 @@
 
 .toast-message {
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.4;
   word-break: break-word;
@@ -128,7 +128,7 @@
 .toast-close-btn {
   background: transparent;
   border: none;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 6px;
@@ -158,7 +158,7 @@
 .toast-item.success .toast-progress-bar { background: #10b981; }
 .toast-item.error .toast-progress-bar { background: #f43f5e; }
 .toast-item.warning .toast-progress-bar { background: #f59e0b; }
-.toast-item.info .toast-progress-bar { background: #3b82f6; }
+.toast-item.info .toast-progress-bar { background: var(--accent-primary); }
 
 @keyframes toastProgress {
   from { width: 100%; }

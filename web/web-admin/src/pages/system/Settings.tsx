@@ -228,7 +228,7 @@ export const SettingsPage: React.FC = () => {
                     <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                       Cổng VNPAY QR Gateway
                     </h3>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Mã TMNC: SmartBox Merchant</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Mã TMNC: Anchor Box Merchant</span>
                   </div>
                 </div>
                 <span

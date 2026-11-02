@@ -175,7 +175,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
   // Reset to default
   const handleResetDefault = async () => {
     if (!editingTemplate) return;
-    if (!window.confirm(`Bạn có chắc muốn khôi phục mẫu [${editingTemplate.code}] về nguyên bản của hệ thống SmartBox?`)) {
+    if (!window.confirm(`Bạn có chắc muốn khôi phục mẫu [${editingTemplate.code}] về nguyên bản của hệ thống Anchor Box?`)) {
       return;
     }
 
@@ -287,7 +287,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
       shipping_carrier: 'GHTK Express',
       tracking_number: 'GHTK-HCM-2026-882',
       estimated_delivery: '15/09/2026',
-      device_name: 'SmartBox Resident Pro',
+      device_name: 'Anchor Box Resident Pro',
       serial_number: 'BOX-2026-001',
       weight_kg: '2.45',
       pickup_pin: '849201',
@@ -873,7 +873,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                       >
                         {/* Email Client Header */}
                         <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '10px 14px', fontSize: '0.75rem' }}>
-                          <div><strong>Người gửi:</strong> SmartBox &lt;support@smartbox.vn&gt;</div>
+                          <div><strong>Người gửi:</strong> Anchor Box &lt;support@smartbox.vn&gt;</div>
                           <div style={{ marginTop: '2px' }}><strong>Người nhận:</strong> Nguyễn Văn An &lt;khachhang@smartbox.vn&gt;</div>
                           <div style={{ marginTop: '2px', color: '#0284c7', fontWeight: 600 }}><strong>Tiêu đề:</strong> {mockSubject}</div>
                         </div>
@@ -897,7 +897,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
 
                         {/* Email Footer */}
                         <div style={{ background: '#f8fafc', padding: '12px 16px', borderTop: '1px solid #e2e8f0', textAlign: 'center', fontSize: '11px', color: '#64748b' }}>
-                          © 2026 SmartBox Vietnam Co., Ltd. Hotline: <strong>1900 8888</strong>
+                          © 2026 Anchor Box Vietnam Co., Ltd. Hotline: <strong>1900 8888</strong>
                         </div>
                       </div>
                     );

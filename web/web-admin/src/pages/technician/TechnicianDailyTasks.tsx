@@ -139,7 +139,7 @@ const TimetableCard: React.FC<{
   const isLive = isTaskCurrentlyLive(task);
   const firstItem = task.items?.[0];
   const itemTitle = firstItem
-    ? `${firstItem.productName || 'Thiết bị SmartBox'}${firstItem.variantName ? ` (${firstItem.variantName})` : ''}`
+    ? `${firstItem.productName || 'Thiết bị Anchor Box'}${firstItem.variantName ? ` (${firstItem.variantName})` : ''}`
     : task.typeLabel;
 
   return (
@@ -518,7 +518,7 @@ export const TechnicianDailyTasks: React.FC = () => {
   // Shifts definition for daily timetable
   const shifts = [
     { id: 'morning' as const, title: 'Ca Sáng', range: '08:00 – 12:00', icon: '🌅', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.08)' },
-    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: '#ea580c', bg: 'rgba(234, 88, 12, 0.08)' },
+    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)' },
     { id: 'evening' as const, title: 'Ca Tối / Tăng ca', range: '18:00 – 21:00', icon: '🌙', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.08)' },
   ];
 
@@ -732,11 +732,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Chờ PO duyệt</span>
-            <div className="tech-metric-count" style={{ color: '#ea580c' }}>
+            <div className="tech-metric-count" style={{ color: 'var(--accent-primary)' }}>
               {data?.summary.waitingConfirmation || 0}
             </div>
           </div>
-          <Camera size={22} color="#ea580c" />
+          <Camera size={22} color="var(--accent-primary)" />
         </div>
 
         <div
@@ -1110,7 +1110,7 @@ export const TechnicianDailyTasks: React.FC = () => {
 
               {/* Status Banner for Waiting Confirmation (Only Delivery) */}
               {selectedTask.type !== 'WARRANTY_MAINTENANCE' && selectedTask.status === 'WAITING_PO_CONFIRMATION' && (
-                <div style={{ background: 'rgba(234, 88, 12, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(234, 88, 12, 0.3)', color: '#c2410c' }}>
+                <div style={{ background: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)', padding: '16px', borderRadius: '12px', border: '1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent)', color: 'var(--accent-hover)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '0.95rem' }}>
                     <Clock size={18} />
                     <span>Đang chờ PO duyệt nghiệm thu</span>
@@ -1167,7 +1167,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                       <span>{uploading ? 'Đang tải ảnh...' : 'Chụp ảnh / Tải ảnh lên'}</span>
                     </label>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                      Chụp thực tế tại nhà khách hàng (hộp SmartBox đã lắp, tem bảo hành...)
+                      Chụp thực tế tại nhà khách hàng (hộp Anchor Box đã lắp, tem bảo hành...)
                     </span>
                   </div>
                 )}

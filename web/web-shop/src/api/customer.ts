@@ -9,7 +9,7 @@ export interface PaymentSummary { id: string; provider: string; status: string; 
 export interface CustomerOrder extends OrderView { payment: PaymentSummary | null; deliveryInstallation: Installation | null; timeline: TimelineEvent[] }
 export interface WarrantyRecord { id: string; deviceId: string; serialNumber: string; orderId: string; startDate: string; endDate: string; status: string; durationMonths: number; acceptedAt: string }
 export interface PublicWarranty { serialNumber: string; productName?: string | null; valid: boolean; startDate?: string | null; endDate?: string | null; remainingDays?: number | null }
-export interface WarrantyClaim { id: string; warrantyId: string; serialNumber: string; description: string; status: string; images: string[]; createdAt: string; resolvedAt?: string }
+export interface WarrantyClaim { id: string; warrantyId: string; serialNumber: string; description: string; status: string; images: string[]; createdAt: string; resolvedAt?: string; rejectionReason?: string | null }
 const pathId = (value: string) => encodeURIComponent(value);
 const avatarKey = (userId: string) => `anchorbox_avatar_${userId}`;
 export function getUserAvatar(userId?: string): string | null {

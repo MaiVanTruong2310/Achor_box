@@ -145,9 +145,9 @@ export async function adminRequest<T>(path: string, options: RequestInit = {}): 
 
   if (isGet) {
     inFlightGetRequests.set(path, executionPromise);
-    executionPromise.finally(() => {
-      inFlightGetRequests.delete(path);
-    });
+    // Cleanup branch must not re-raise: callers handle the rejection on executionPromise itself.
+    const release = () => { inFlightGetRequests.delete(path); };
+    executionPromise.then(release, release);
   }
 
   return executionPromise;

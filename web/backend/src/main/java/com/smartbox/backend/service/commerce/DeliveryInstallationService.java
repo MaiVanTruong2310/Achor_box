@@ -69,6 +69,7 @@ public class DeliveryInstallationService {
     private final ObjectMapper json;
     private final ApplicationEventPublisher events;
     private final ImageStorage storage;
+    private final org.springframework.beans.factory.ObjectProvider<com.smartbox.backend.service.warranty.WarrantyService> warrantyClaims;
     @Value("${smartbox.mqtt.enabled:false}") private boolean mqttEnabled;
     @Value("${smartbox.installation.freshness-seconds:90}") private int freshnessSeconds;
     @Value("${smartbox.installation.weight-min-delta-kg:0.05}") private double weightDelta;
@@ -126,7 +127,7 @@ public class DeliveryInstallationService {
     }
 
     private void schedule(OffsetDateTime date) {
-        if (date == null || !date.isAfter(now().minusMinutes(15))) {
+        if (date == null || !date.isAfter(now())) {
             throw new BadRequestException("INVALID_INSTALLATION_SCHEDULE");
         }
     }
@@ -312,10 +313,9 @@ public class DeliveryInstallationService {
         if (jobList.isEmpty()) {
             var claimList = db.list("SELECT * FROM public.warranty_claims WHERE id=?", id);
             if (!claimList.isEmpty()) {
-                actors.get().requireRoles("technician", "product_manager", "super_admin");
                 if ("START".equalsIgnoreCase(action)) {
-                    db.update("UPDATE public.warranty_claims SET status=CAST('in_progress' AS public.claim_status) WHERE id=?", id);
-                    db.audit(actors.get().id(), "WARRANTY_CLAIM_STARTED", "warranty_claims", id, "Technician started maintenance");
+                    // Same rules as the claims screen: only the assignee (or a manager) moves assigned -> in_progress.
+                    warrantyClaims.getObject().updateClaimStatus(id, "in_progress");
                     return Map.of("id", id.toString(), "status", "IN_PROGRESS", "statusLabel", "Đang thực hiện");
                 }
             }
@@ -751,39 +751,17 @@ public class DeliveryInstallationService {
     public Map<String, Object> submitCompletion(UUID id, CompletionSubmission request, String header, UUID key) {
         var jobList = db.list("SELECT * FROM public.delivery_installations WHERE id=?", id);
         if (jobList.isEmpty()) {
-            var claimList = db.list("SELECT * FROM public.warranty_claims WHERE id=?", id);
+            var claimList = db.list("SELECT id FROM public.warranty_claims WHERE id=?", id);
             if (!claimList.isEmpty()) {
-                var claim = claimList.getFirst();
-                actors.get().requireRoles("technician", "product_manager", "super_admin");
-                String note = (request != null && request.completionNote() != null) ? request.completionNote().trim() : null;
-                if (note != null && !note.isBlank()) {
-                    db.update("UPDATE public.warranty_claims SET internal_notes=? WHERE id=?", note, id);
-                }
-                List<String> current = new ArrayList<>();
-                if (claim.get("images") != null && !claim.get("images").toString().isBlank()) {
-                    try {
-                        current.addAll(json.readValue(claim.get("images").toString(), new TypeReference<List<String>>(){}));
-                    } catch (Exception ignored) {}
-                }
-                if (request != null && request.proofPhotos() != null) {
-                    for (String photo : request.proofPhotos()) {
-                        if (photo != null && !photo.isBlank() && !current.contains(photo.trim())) {
-                            current.add(photo.trim());
-                        }
-                    }
-                }
-                if (!current.isEmpty()) {
-                    try {
-                        db.update("UPDATE public.warranty_claims SET images=?::jsonb WHERE id=?", json.writeValueAsString(current), id);
-                    } catch (Exception ignored) {}
-                }
-                db.update("UPDATE public.warranty_claims SET status=CAST('resolved' AS public.claim_status), resolved_at=? WHERE id=?", now(), id);
-                db.audit(actors.get().id(), "WARRANTY_CLAIM_RESOLVED", "warranty_claims", id, "Technician resolved claim via daily task");
+                // Warranty task cards reuse this endpoint; the claim workflow owns authorization and transitions.
+                var resolved = warrantyClaims.getObject().completeFromTask(id,
+                        request == null ? null : request.completionNote(),
+                        request == null ? null : request.proofPhotos());
                 var res = new LinkedHashMap<String, Object>();
                 res.put("id", id.toString());
                 res.put("status", "RESOLVED");
                 res.put("statusLabel", "Đã hoàn thành");
-                res.put("resolvedAt", now().toString());
+                res.put("resolvedAt", String.valueOf(resolved.getResolvedAt()));
                 return res;
             }
         }
@@ -897,6 +875,7 @@ public class DeliveryInstallationService {
     public List<Map<String, Object>> checkAvailability(OffsetDateTime start, OffsetDateTime end) {
         manage();
         if (start == null) throw new BadRequestException("START_TIME_REQUIRED");
+        schedule(start);
         OffsetDateTime windowEnd = end != null ? end : start.plusHours(2);
         if (!windowEnd.isAfter(start)) throw new BadRequestException("INVALID_TIME_RANGE");
 

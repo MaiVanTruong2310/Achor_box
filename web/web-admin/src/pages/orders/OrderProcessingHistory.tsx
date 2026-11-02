@@ -46,7 +46,7 @@ interface Timeline {
 const sourceConfigs: Record<string, { label: string; color: string; bg: string }> = {
   ORDER: { label: 'Đơn hàng', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
   PO_TICKET: { label: 'Phê duyệt PO', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.1)' },
-  DELIVERY_INSTALLATION: { label: 'Giao & Lắp đặt', color: '#f97316', bg: 'rgba(249, 115, 22, 0.1)' }
+  DELIVERY_INSTALLATION: { label: 'Giao & Lắp đặt', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)' }
 };
 
 const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
@@ -404,7 +404,7 @@ export const OrderProcessingHistory: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ width: 110, color: 'var(--text-muted)' }}>Họ và tên:</span>
                     <strong style={{ color: 'var(--text-primary)' }}>
-                      {selectedOrder?.customer?.full_name || 'Khách hàng SmartBox'}
+                      {selectedOrder?.customer?.full_name || 'Khách hàng Anchor Box'}
                     </strong>
                   </div>
 
@@ -449,7 +449,7 @@ export const OrderProcessingHistory: React.FC = () => {
                 </h4>
 
                 <div style={{ background: 'var(--bg-surface)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-subtle)', fontSize: '13px', color: 'var(--text-primary)' }}>
-                  {selectedOrder?.items_summary || 'Các thiết bị SmartBox, phiên bản và phụ kiện đi kèm theo hợp đồng giao dịch.'}
+                  {selectedOrder?.items_summary || 'Các thiết bị Anchor Box, phiên bản và phụ kiện đi kèm theo hợp đồng giao dịch.'}
                 </div>
               </div>
             </div>

@@ -148,14 +148,14 @@ export const VariantSpecificationsPage: React.FC = () => {
 
   // Quick Seed Handler
   const handleSeedStandardProducts = async () => {
-    if (!window.confirm('Khởi tạo 3 dòng tủ SmartBox tiêu chuẩn (Standard, Pro, Mini) với đầy đủ thông số kích thước, tải trọng và thời hạn bảo hành?')) {
+    if (!window.confirm('Khởi tạo 3 dòng tủ Anchor Box tiêu chuẩn (Standard, Pro, Mini) với đầy đủ thông số kích thước, tải trọng và thời hạn bảo hành?')) {
       return;
     }
     setSeeding(true);
     setError('');
     try {
       await productsService.seedStandardProducts();
-      showToast('Khởi tạo dữ liệu SmartBox tiêu chuẩn thành công!');
+      showToast('Khởi tạo dữ liệu Anchor Box tiêu chuẩn thành công!');
       await loadData();
     } catch (err: any) {
       setError('Khởi tạo thất bại: ' + (err?.message || 'Lỗi hệ thống'));
@@ -340,7 +340,7 @@ export const VariantSpecificationsPage: React.FC = () => {
               onClick={handleSeedStandardProducts}
             >
               <Sparkles size={16} />
-              <span>{seeding ? 'Đang khởi tạo…' : 'Khởi tạo dòng SmartBox chuẩn'}</span>
+              <span>{seeding ? 'Đang khởi tạo…' : 'Khởi tạo dòng Anchor Box chuẩn'}</span>
             </button>
           )}
         </div>
@@ -474,8 +474,8 @@ export const VariantSpecificationsPage: React.FC = () => {
           gap: 8,
           padding: '6px 14px',
           borderRadius: 6,
-          background: 'rgba(249, 115, 22, 0.1)',
-          border: '1px solid rgba(249, 115, 22, 0.25)',
+          background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
           color: 'var(--fpt-orange)',
           fontSize: '12.5px',
           fontWeight: 600,
@@ -531,7 +531,7 @@ export const VariantSpecificationsPage: React.FC = () => {
                     </p>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       {products.length === 0
-                        ? 'Dữ liệu sản phẩm vừa được làm mới. Bạn có thể khởi tạo nhanh các dòng tủ SmartBox tiêu chuẩn với đầy đủ kích thước, tải trọng và cảm biến cân điện tử để kiểm thử ngay.'
+                        ? 'Dữ liệu sản phẩm vừa được làm mới. Bạn có thể khởi tạo nhanh các dòng tủ Anchor Box tiêu chuẩn với đầy đủ kích thước, tải trọng và cảm biến cân điện tử để kiểm thử ngay.'
                         : 'Thử tìm với từ khóa khác hoặc bỏ chọn bộ lọc để xem toàn bộ danh sách.'}
                     </span>
 
@@ -544,7 +544,7 @@ export const VariantSpecificationsPage: React.FC = () => {
                           onClick={handleSeedStandardProducts}
                         >
                           <Sparkles size={16} />
-                          <span>{seeding ? 'Đang khởi tạo…' : 'Khởi tạo dòng SmartBox tiêu chuẩn'}</span>
+                          <span>{seeding ? 'Đang khởi tạo…' : 'Khởi tạo dòng Anchor Box tiêu chuẩn'}</span>
                         </button>
                         <button
                           type="button"

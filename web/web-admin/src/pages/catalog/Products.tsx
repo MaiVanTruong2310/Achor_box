@@ -36,6 +36,8 @@ import { ProductCategory } from '../../types/database';
 import { productsService, ExtendedProduct } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import './products.css';
+import { assetUrl } from '../../services/assetUrl';
+import { LOW_STOCK_THRESHOLD, productStockLevel, productTotalStock, stockAlerts, stockLevelLabel } from '../../services/stock';
 
 export const Products: React.FC = () => {
   const navigate = useNavigate();
@@ -315,15 +317,7 @@ export const Products: React.FC = () => {
       });
     }
     if (stockFilter === 'all') return list;
-    return list.filter((p) => {
-      const totalStock = p.variants?.length
-        ? p.variants.reduce((sum, v) => sum + (v.stock_quantity || 0), 0)
-        : (p.stock_quantity ?? 0);
-      if (stockFilter === 'in_stock') return totalStock >= 10;
-      if (stockFilter === 'low_stock') return totalStock > 0 && totalStock < 10;
-      if (stockFilter === 'out_of_stock') return totalStock <= 0;
-      return true;
-    });
+    return list.filter((p) => productStockLevel(p) === stockFilter);
   }, [products, stockFilter, isProductManager, profile?.id, categories]);
 
   // Overall KPI metrics
@@ -340,14 +334,9 @@ export const Products: React.FC = () => {
     }, 0);
   }, [products]);
 
-  const lowStockCount = useMemo(() => {
-    return products.filter((p) => {
-      const stock = p.variants?.length
-        ? p.variants.reduce((sum, v) => sum + (v.stock_quantity || 0), 0)
-        : (p.stock_quantity ?? 0);
-      return stock > 0 && stock < 10;
-    }).length;
-  }, [products]);
+  const alerts = useMemo(() => stockAlerts(products), [products]);
+  const lowStockCount = useMemo(() => products.filter((p) => productStockLevel(p) === 'low_stock').length, [products]);
+  const outOfStockCount = useMemo(() => products.filter((p) => productStockLevel(p) === 'out_of_stock').length, [products]);
 
   const totalInventoryValue = useMemo(() => {
     return products.reduce((acc, p) => {
@@ -393,14 +382,14 @@ export const Products: React.FC = () => {
       setOperationError('Chỉ Quản trị viên (Super Admin) mới có quyền khởi tạo dữ liệu chuẩn.');
       return;
     }
-    if (!window.confirm('Khởi tạo 3 dòng tủ SmartBox tiêu chuẩn (Standard, Pro, Mini) với đầy đủ thông số kích thước, tải trọng và thời hạn bảo hành?')) {
+    if (!window.confirm('Khởi tạo 3 dòng tủ Anchor Box tiêu chuẩn (Standard, Pro, Mini) với đầy đủ thông số kích thước, tải trọng và thời hạn bảo hành?')) {
       return;
     }
     setSeeding(true);
     setOperationError('');
     try {
       await productsService.seedStandardProducts();
-      showSuccess('Khởi tạo dòng sản phẩm SmartBox tiêu chuẩn thành công!');
+      showSuccess('Khởi tạo dòng sản phẩm Anchor Box tiêu chuẩn thành công!');
       await loadProducts();
     } catch (err: any) {
       setOperationError('Khởi tạo thất bại: ' + (err?.message || 'Lỗi hệ thống'));
@@ -710,8 +699,8 @@ export const Products: React.FC = () => {
           </div>
           <p className="products-topbar-desc">
             {isTechnician
-              ? 'Tra cứu linh kiện, thiết bị SmartBox và kiểm tra số lượng tồn kho khả dụng để thực hiện lắp đặt & bảo hành.'
-              : 'Quản lý danh mục thiết bị SmartBox, phiên bản kích cỡ và xuất nhập tồn kho.'}
+              ? 'Tra cứu linh kiện, thiết bị Anchor Box và kiểm tra số lượng tồn kho khả dụng để thực hiện lắp đặt & bảo hành.'
+              : 'Quản lý danh mục thiết bị Anchor Box, phiên bản kích cỡ và xuất nhập tồn kho.'}
           </p>
         </div>
 
@@ -800,13 +789,11 @@ export const Products: React.FC = () => {
 
         <div className="products-stat-tile">
           <div className="products-stat-info">
-            <span className="products-stat-label">Cảnh báo sắp hết</span>
-            <span className="products-stat-value" style={{ color: lowStockCount > 0 ? '#d97706' : 'inherit' }}>
-              {lowStockCount}
-            </span>
-            <span className="products-stat-sub">Mặt hàng tồn dưới 10</span>
+            <span className="products-stat-label">Cảnh báo tồn kho</span>
+            <span className="products-stat-value">{alerts.total} SKU</span>
+            <span className="products-stat-sub">{alerts.out} hết hàng · {alerts.low} còn ≤ {LOW_STOCK_THRESHOLD}</span>
           </div>
-          <div className={`products-stat-icon ${lowStockCount > 0 ? 'warning' : ''}`}>
+          <div className={`products-stat-icon ${alerts.total > 0 ? 'warning' : ''}`}>
             <AlertTriangle size={18} />
           </div>
         </div>
@@ -895,7 +882,7 @@ export const Products: React.FC = () => {
                   className={`products-status-chip ${stockFilter === 'out_of_stock' ? 'active' : ''}`}
                   onClick={() => setStockFilter('out_of_stock')}
                 >
-                  Hết hàng
+                  Hết hàng ({outOfStockCount})
                 </button>
               </div>
             </div>
@@ -938,8 +925,8 @@ export const Products: React.FC = () => {
               gap: 8,
               padding: '6px 14px',
               borderRadius: 6,
-              background: 'rgba(249, 115, 22, 0.1)',
-              border: '1px solid rgba(249, 115, 22, 0.25)',
+              background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
               color: 'var(--fpt-orange)',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -1013,7 +1000,7 @@ export const Products: React.FC = () => {
                                   onClick={handleSeedStandardProducts}
                                 >
                                   <Sparkles size={15} />
-                                  <span>{seeding ? 'Đang khởi tạo…' : 'Khởi tạo dòng SmartBox chuẩn'}</span>
+                                  <span>{seeding ? 'Đang khởi tạo…' : 'Khởi tạo dòng Anchor Box chuẩn'}</span>
                                 </button>
                               )}
                             </div>
@@ -1023,12 +1010,9 @@ export const Products: React.FC = () => {
                     </tr>
                   ) : (
                     paginatedProducts.map((p) => {
-                      const totalStock = p.variants?.length
-                        ? p.variants.reduce((sum, v) => sum + (v.stock_quantity || 0), 0)
-                        : (p.stock_quantity ?? 0);
-
-                      const stockCls = totalStock <= 0 ? 'out_of_stock' : totalStock < 10 ? 'low_stock' : 'in_stock';
-                      const stockLabel = totalStock <= 0 ? 'Hết hàng' : totalStock < 10 ? 'Sắp hết' : 'Sẵn sàng';
+                      const totalStock = productTotalStock(p);
+                      const stockCls = productStockLevel(p);
+                      const stockLabel = stockLevelLabel[stockCls];
                       const thumbUrl = p.images && p.images.length > 0 ? p.images[0] : null;
 
                       return (
@@ -1038,7 +1022,7 @@ export const Products: React.FC = () => {
                             <div className="product-info-cell">
                               <div className="product-thumb-box">
                                 {thumbUrl ? (
-                                  <img src={thumbUrl} alt={p.name} loading="lazy" decoding="async" />
+                                  <img src={assetUrl(thumbUrl)} alt={p.name} loading="lazy" decoding="async" />
                                 ) : (
                                   <Package size={18} style={{ color: 'var(--text-muted)' }} />
                                 )}
@@ -1094,7 +1078,7 @@ export const Products: React.FC = () => {
                           {/* Column 5: Stock with inline adjust */}
                           <td>
                             <div className="product-stock-wrap">
-                              <span className={`stock-indicator ${stockCls}`}>
+                              <span className={`stock-indicator ${stockCls}`} title={stockLabel}>
                                 <span className="dot" />
                                 <span>{totalStock}</span>
                               </span>
@@ -1221,7 +1205,7 @@ export const Products: React.FC = () => {
                             onClick={handleSeedStandardProducts}
                           >
                             <Sparkles size={15} />
-                            <span>{seeding ? 'Đang khởi tạo…' : 'Khởi tạo dòng SmartBox chuẩn'}</span>
+                            <span>{seeding ? 'Đang khởi tạo…' : 'Khởi tạo dòng Anchor Box chuẩn'}</span>
                           </button>
                         )}
                       </div>
@@ -1230,18 +1214,15 @@ export const Products: React.FC = () => {
                 </div>
               ) : (
                 paginatedProducts.map((p) => {
-                  const totalStock = p.variants?.length
-                    ? p.variants.reduce((sum, v) => sum + (v.stock_quantity || 0), 0)
-                    : (p.stock_quantity ?? 0);
-
+                  const totalStock = productTotalStock(p);
                   const thumbUrl = p.images && p.images.length > 0 ? p.images[0] : null;
-                  const stockCls = totalStock <= 0 ? 'out_of_stock' : totalStock < 10 ? 'low_stock' : 'in_stock';
+                  const stockCls = productStockLevel(p);
 
                   return (
                     <div key={p.id} className="product-clean-card">
                       <div className="product-card-thumb-wrap">
                         {thumbUrl ? (
-                          <img src={thumbUrl} alt={p.name} loading="lazy" decoding="async" />
+                          <img src={assetUrl(thumbUrl)} alt={p.name} loading="lazy" decoding="async" />
                         ) : (
                           <Package size={32} style={{ color: 'var(--text-muted)' }} />
                         )}
@@ -1738,7 +1719,7 @@ export const Products: React.FC = () => {
                   width: 34,
                   height: 34,
                   borderRadius: 8,
-                  background: 'var(--fpt-orange-soft, rgba(249, 115, 22, 0.12))',
+                  background: 'var(--fpt-orange-soft, color-mix(in srgb, var(--accent-primary) 12%, transparent))',
                   color: 'var(--fpt-orange)',
                   display: 'flex',
                   alignItems: 'center',
@@ -1771,7 +1752,7 @@ export const Products: React.FC = () => {
               <div className="history-product-left">
                 <div className="history-product-thumb">
                   {historyProduct.images && historyProduct.images.length > 0 ? (
-                    <img src={historyProduct.images[0]} alt={historyProduct.name} />
+                    <img src={assetUrl(historyProduct.images[0])} alt={historyProduct.name} />
                   ) : (
                     <Box size={22} style={{ color: 'var(--text-muted)' }} />
                   )}
@@ -1781,7 +1762,7 @@ export const Products: React.FC = () => {
                   <div className="history-product-tags">
                     <span className="history-sku-badge">{historyProduct.sku}</span>
                     <span className={`history-stock-pill ${
-                      historyProductTotalStock >= 10 ? 'in-stock' : historyProductTotalStock > 0 ? 'low-stock' : 'out-stock'
+                      { in_stock: 'in-stock', low_stock: 'low-stock', out_of_stock: 'out-stock' }[productStockLevel(historyProduct)]
                     }`}>
                       Tồn hiện tại: {historyProductTotalStock} cái
                     </span>
@@ -2177,7 +2158,7 @@ export const Products: React.FC = () => {
                       type="text"
                       disabled={isTechnician}
                       className="clean-form-input"
-                      placeholder="Ví dụ: SmartBox Home v2"
+                      placeholder="Ví dụ: Anchor Box Home v2"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
@@ -2344,7 +2325,7 @@ export const Products: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                       {formData.images.map((img, idx) => (
                         <div key={idx} style={{ position: 'relative', height: 110, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
-                          <img src={img} alt="Product preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={assetUrl(img)} alt="Product preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           {!isTechnician && (
                             <button
                               type="button"

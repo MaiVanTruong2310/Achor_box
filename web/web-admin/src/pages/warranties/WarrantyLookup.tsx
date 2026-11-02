@@ -53,13 +53,13 @@ export const WarrantyLookupPage: React.FC = () => {
       {/* 1. Header */}
       <div className="fpt-page-header">
         <div className="fpt-page-title">
-          <div className="fpt-page-icon" style={{ background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)' }}>
+          <div className="fpt-page-icon" style={{ background: 'var(--accent-primary)' }}>
             <QrCode size={22} />
           </div>
           <div>
             <h1>Tra Cứu Bảo Hành Thiết Bị</h1>
             <p className="fpt-page-desc">
-              Nhập mã số Serial trên tem nhãn hoặc dán toàn bộ đường dẫn quét từ mã QR gắn trên tủ SmartBox.
+              Nhập mã số Serial trên tem nhãn hoặc dán toàn bộ đường dẫn quét từ mã QR gắn trên tủ Anchor Box.
             </p>
           </div>
         </div>

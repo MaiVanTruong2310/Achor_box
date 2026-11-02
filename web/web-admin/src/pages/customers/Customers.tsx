@@ -395,9 +395,9 @@ export const CustomersPage: React.FC = () => {
           gap: 8,
           padding: '4px 12px',
           borderRadius: 6,
-          background: 'rgba(249, 115, 22, 0.1)',
-          border: '1px solid rgba(249, 115, 22, 0.25)',
-          color: 'var(--fpt-orange, #ea580c)',
+          background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
+          color: 'var(--fpt-orange, var(--accent-primary))',
           fontSize: '12px',
           fontWeight: 600
         }}>
@@ -768,7 +768,7 @@ export const CustomersPage: React.FC = () => {
                     onClick={() => setC360ActiveTab('devices')}
                   >
                     <Cpu size={13} />
-                    <span>Thiết bị SmartBox</span>
+                    <span>Thiết bị Anchor Box</span>
                     <span className="c360-tab-count">{(customerOrdersData?.devices || []).length}</span>
                   </button>
 
@@ -819,7 +819,7 @@ export const CustomersPage: React.FC = () => {
                             {customerOrdersData.orders.map((o: any) => (
                               <tr key={o.id} className="customer-table-row">
                                 <td>
-                                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#ea580c' }}>
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-primary)' }}>
                                     #{o.id.slice(0, 8).toUpperCase()}
                                   </span>
                                 </td>
@@ -859,7 +859,7 @@ export const CustomersPage: React.FC = () => {
                       <div className="c360-empty-card">
                         <Cpu size={24} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
                         <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>Chưa có thiết bị sở hữu</div>
-                        <div style={{ fontSize: '0.78rem' }}>Khách hàng chưa kích hoạt tủ SmartBox nào trên tài khoản.</div>
+                        <div style={{ fontSize: '0.78rem' }}>Khách hàng chưa kích hoạt tủ Anchor Box nào trên tài khoản.</div>
                       </div>
                     ) : (
                       <div className="customer-table-card" style={{ boxShadow: 'none' }}>
@@ -880,7 +880,7 @@ export const CustomersPage: React.FC = () => {
                                     {d.serialNumber || 'SBX-SER-001'}
                                   </span>
                                 </td>
-                                <td>{d.modelName || 'SmartBox IoT Standard'}</td>
+                                <td>{d.modelName || 'Anchor Box IoT Standard'}</td>
                                 <td>
                                   <span className="customer-account-tag active" style={{ fontSize: '0.7rem' }}>
                                     {d.status || 'Hoạt động'}
@@ -924,7 +924,7 @@ export const CustomersPage: React.FC = () => {
                                   </span>
                                 </td>
                                 <td>
-                                  <code style={{ color: '#ea580c' }}>{w.serialNumber}</code>
+                                  <code style={{ color: 'var(--accent-primary)' }}>{w.serialNumber}</code>
                                 </td>
                                 <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {w.description}

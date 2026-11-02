@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Calendar,
-  Clock,
   User,
   CheckCircle2,
   XCircle,
   AlertTriangle,
   Send,
   RefreshCw,
-  Phone,
-  FileText
+  Phone
 } from 'lucide-react';
 import { toast } from '../../contexts/ToastContext';
 import { deliveryApi, TechnicianAvailability, Job } from '../../services/deliveryInstallation';
@@ -22,35 +20,55 @@ interface PoDeliveryDispatchProps {
   onCancel?: () => void;
 }
 
+const toLocalDateString = (d: Date) => {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const toLocalTimeString = (d: Date) => {
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${min}`;
+};
+
 export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
   orderId,
   orderCode,
   onAssigned,
   onCancel
 }) => {
-  // Default to tomorrow 09:00 to 11:00
+  // Default to tomorrow 09:00 to 11:00 (local time)
   const getDefaultDate = () => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    return toLocalDateString(d);
   };
 
   const [date, setDate] = useState<string>(getDefaultDate);
   const [startTime, setStartTime] = useState<string>('09:00');
   const [endTime, setEndTime] = useState<string>('11:00');
   const [note, setNote] = useState<string>('');
+  const [scheduleError, setScheduleError] = useState<string>('');
 
   const [technicians, setTechnicians] = useState<TechnicianAvailability[]>([]);
   const [selectedTechId, setSelectedTechId] = useState<string>('');
   const [checking, setChecking] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
+  const minDate = toLocalDateString(new Date());
+  const minStartTime = date === minDate ? toLocalTimeString(new Date(Date.now() + 60_000)) : undefined;
+
   // Compute ISO time strings
   const getTimeWindow = useCallback(() => {
     try {
-      const startIso = new Date(`${date}T${startTime}:00`).toISOString();
-      const endIso = new Date(`${date}T${endTime}:00`).toISOString();
-      return { startIso, endIso, valid: true };
+      const startDate = new Date(`${date}T${startTime}:00`);
+      const endDate = new Date(`${date}T${endTime}:00`);
+      if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) {
+        return { startIso: '', endIso: '', valid: false };
+      }
+      return { startIso: startDate.toISOString(), endIso: endDate.toISOString(), valid: true };
     } catch {
       return { startIso: '', endIso: '', valid: false };
     }
@@ -61,11 +79,22 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
     const { startIso, endIso, valid } = getTimeWindow();
     if (!valid || !startIso || !endIso) return;
 
-    if (new Date(endIso) <= new Date(startIso)) {
-      toast.error('Thời gian kết thúc phải sau thời gian bắt đầu.');
+    if (new Date(startIso).getTime() <= Date.now()) {
+      const msg = 'Không thể chọn giờ hẹn trong quá khứ. Vui lòng chọn thời gian trong tương lai.';
+      setScheduleError(msg);
+      setTechnicians([]);
+      setSelectedTechId('');
       return;
     }
 
+    if (new Date(endIso) <= new Date(startIso)) {
+      const msg = 'Thời gian kết thúc phải sau thời gian bắt đầu.';
+      setScheduleError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setScheduleError('');
     setChecking(true);
     try {
       const result = await deliveryApi.availability(startIso, endIso);
@@ -92,6 +121,23 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
 
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
+    const { startIso, endIso, valid } = getTimeWindow();
+    if (!valid || !startIso || !endIso) {
+      toast.error('Vui lòng chọn thời gian hẹn hợp lệ.');
+      return;
+    }
+    if (new Date(startIso).getTime() <= Date.now()) {
+      const msg = 'Không thể chọn giờ hẹn trong quá khứ. Vui lòng chọn thời gian trong tương lai.';
+      setScheduleError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (new Date(endIso) <= new Date(startIso)) {
+      const msg = 'Thời gian kết thúc phải sau thời gian bắt đầu.';
+      setScheduleError(msg);
+      toast.error(msg);
+      return;
+    }
     if (!selectedTechId) {
       toast.error('Vui lòng chọn kỹ thuật viên để phân công.');
       return;
@@ -101,7 +147,6 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
       return;
     }
 
-    const { startIso, endIso } = getTimeWindow();
     setSubmitting(true);
     try {
       const idempotencyKey = crypto.randomUUID();
@@ -156,7 +201,7 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
               type="date"
               required
               value={date}
-              min={new Date().toISOString().split('T')[0]}
+              min={minDate}
               onChange={(e) => setDate(e.target.value)}
               disabled={submitting}
             />
@@ -168,6 +213,7 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
               type="time"
               required
               value={startTime}
+              min={minStartTime}
               onChange={(e) => setStartTime(e.target.value)}
               disabled={submitting}
             />
@@ -179,11 +225,31 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
               type="time"
               required
               value={endTime}
+              min={startTime}
               onChange={(e) => setEndTime(e.target.value)}
               disabled={submitting}
             />
           </div>
         </div>
+
+        {scheduleError && (
+          <div
+            style={{
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#dc2626',
+              fontSize: '0.84rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <AlertTriangle size={16} />
+            <span>{scheduleError}</span>
+          </div>
+        )}
 
         {/* Technicians Availability Cards */}
         <div>
@@ -303,17 +369,17 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={submitting || checking || !selectedTechId || (selectedTech && !selectedTech.isAvailable)}
+            disabled={submitting || checking || !!scheduleError || !selectedTechId || (selectedTech && !selectedTech.isAvailable)}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              padding: '10px 24px',
-              fontWeight: 700,
+              background: '#4f46e5',
+              borderColor: '#4f46e5'
             }}
           >
-            <Send size={16} />
-            <span>{submitting ? 'Đang phân công...' : 'Xác nhận phân công kỹ thuật viên'}</span>
+            <Send size={15} />
+            <span>{submitting ? 'Đang điều phối...' : 'Xác nhận Phân công'}</span>
           </button>
         </div>
       </form>

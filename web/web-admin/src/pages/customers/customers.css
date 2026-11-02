@@ -28,12 +28,12 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: none;
   flex-shrink: 0;
 }
 
@@ -67,11 +67,11 @@
   align-items: center;
   gap: 14px;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .customer-kpi-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--border-subtle);
   transform: translateY(-1px);
 }
 
@@ -146,7 +146,7 @@
 }
 
 .customer-search-box input:focus {
-  border-color: #2563eb;
+  border-color: var(--accent-primary);
 }
 
 .customer-search-icon {
@@ -185,7 +185,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: none;
 }
 
 .customer-table {
@@ -235,7 +235,7 @@
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
 }
 
 .customer-code-chip {
@@ -261,7 +261,7 @@
 }
 
 .customer-contact-link:hover {
-  color: #3b82f6;
+  color: var(--accent-primary);
 }
 
 .customer-phone-link {
@@ -324,10 +324,10 @@
 }
 
 .customer-action-btn.primary {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary) 100%);
   color: #fff;
   border: none;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  box-shadow: none;
 }
 
 .customer-action-btn.primary:hover {
@@ -378,7 +378,7 @@
   font-size: 1.1rem;
   font-weight: 800;
   color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
   flex-shrink: 0;
 }
 
@@ -549,7 +549,7 @@
 
 .c360-tab-btn.active {
   color: #fff;
-  background: #2563eb;
+  background: var(--accent-primary);
 }
 
 .c360-tab-count {

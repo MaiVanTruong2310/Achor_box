@@ -11,7 +11,7 @@
   --tkd-text-main: #0f172a;
   --tkd-text-muted: #64748b;
   --tkd-text-secondary: #334155;
-  --accent-primary: #ea580c;
+  --accent-primary: var(--accent-primary);
   --accent-sky: #0284c7;
 }
 
@@ -87,13 +87,13 @@
   font-weight: 600;
   text-decoration: none;
   transition: all 0.15s ease;
-  box-shadow: var(--tkd-shadow-btn);
+  box-shadow: none;
 }
 
 .tkd-back-link:hover {
-  border-color: #2563eb;
-  color: #2563eb;
-  background: rgba(37, 99, 235, 0.04);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 4%, transparent);
 }
 
 .tkd-subbar-sep {
@@ -143,7 +143,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: var(--tkd-shadow-btn);
+  box-shadow: none;
 }
 
 .tkd-refresh-btn:hover:not(:disabled) {
@@ -324,7 +324,7 @@
   border: 1px solid var(--tkd-card-border);
   border-radius: 14px;
   padding: 16px 18px;
-  box-shadow: var(--tkd-shadow-card);
+  box-shadow: none;
   margin-bottom: 16px;
 }
 
@@ -435,10 +435,10 @@
   margin-top: 8px;
   padding: 7px 12px;
   border-radius: 8px;
-  background: rgba(249, 115, 22, 0.08);
-  border: 1px solid rgba(249, 115, 22, 0.22);
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, transparent);
   font-size: 0.82rem;
-  color: #c2410c;
+  color: var(--accent-hover);
   display: flex;
   align-items: flex-start;
   gap: 6px;
@@ -446,8 +446,8 @@
 }
 
 [data-theme="dark"] .tkd-address-note {
-  background: rgba(249, 115, 22, 0.14);
-  color: #fdba74;
+  background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
 
 /* SECTION 2: DANH MỤC SẢN PHẨM */
@@ -474,7 +474,7 @@
 }
 
 .tkd-product-row:hover {
-  border-color: #cbd5e1;
+  border-color: var(--border-strong);
 }
 
 .tkd-product-left {
@@ -565,8 +565,8 @@
 }
 
 .tkd-decision-strip.returned {
-  background: rgba(14, 165, 233, 0.08);
-  border: 1px solid rgba(14, 165, 233, 0.25);
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent);
 }
 
 .tkd-decision-status-title {
@@ -587,7 +587,7 @@
 /* Decision Action Buttons for PENDING */
 .tkd-action-box {
   background: var(--tkd-card-bg);
-  border: 1px solid rgba(37, 99, 235, 0.25);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent);
   border-radius: 12px;
   padding: 14px 18px;
   margin-bottom: 16px;
@@ -613,12 +613,12 @@
   border: 1px solid #059669;
   color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: none;
   transition: all 0.15s ease;
 }
 
 .btn-tkd-approve:hover:not(:disabled) {
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  box-shadow: none;
   transform: translateY(-1px);
 }
 
@@ -630,15 +630,15 @@
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  background: rgba(14, 165, 233, 0.08);
-  border: 1px solid rgba(14, 165, 233, 0.3);
-  color: #0284c7;
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  color: var(--accent-primary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-tkd-return:hover:not(:disabled) {
-  background: rgba(14, 165, 233, 0.15);
+  background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
 }
 
 .btn-tkd-reject {
@@ -796,8 +796,8 @@
 }
 
 .tkd-chip-btn:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
   color: #fff;
 }
 
@@ -815,7 +815,7 @@
 }
 
 .tkd-textarea:focus {
-  border-color: #2563eb;
+  border-color: var(--accent-primary);
 }
 
 /* SECTION 4: NGHIỆM THU & BÀN GIAO */
@@ -824,7 +824,7 @@
   border: 1px solid var(--tkd-card-border);
   border-radius: 14px;
   padding: 16px 18px;
-  box-shadow: var(--tkd-shadow-card);
+  box-shadow: none;
 }
 
 .tkd-acceptance-header {
@@ -893,7 +893,7 @@
 .tkd-thumb-item:hover {
   transform: translateY(-2px) scale(1.04);
   border-color: #10b981;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  box-shadow: none;
 }
 
 .tkd-thumb-img {
@@ -955,7 +955,7 @@
   border: 1px solid var(--tkd-card-border);
   border-radius: 14px;
   padding: 16px 18px;
-  box-shadow: var(--tkd-shadow-card);
+  box-shadow: none;
   margin-bottom: 14px;
 }
 
@@ -1019,9 +1019,9 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--accent-primary);
   border: 2px solid var(--tkd-card-bg);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
   transition: all 0.2s ease;
 }
 
@@ -1171,7 +1171,7 @@
   max-height: 80vh;
   object-fit: contain;
   border-radius: 8px;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+  box-shadow: none;
 }
 
 .tkd-lightbox-close {
@@ -1238,7 +1238,7 @@
 
 .tkd-acceptance-quick-box:hover {
   border-color: rgba(16, 185, 129, 0.35);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: none;
 }
 
 .tkd-quick-box-main {
@@ -1485,7 +1485,7 @@
 }
 
 .tkd-meta-sub a {
-  color: #2563eb;
+  color: var(--accent-primary);
   text-decoration: none;
   font-weight: 600;
 }
@@ -1521,8 +1521,8 @@
   margin-left: 10px;
   font-size: 0.72rem;
   padding: 2px 6px;
-  background: rgba(14, 165, 233, 0.12);
-  color: #0284c7;
+  background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+  color: var(--accent-primary);
   border-radius: 4px;
   font-weight: 600;
 }

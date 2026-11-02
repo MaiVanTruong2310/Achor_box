@@ -132,9 +132,9 @@ const statusConfig: Record<string, { label: string; bg: string; color: string; b
   },
   PARTIALLY_REJECTED: {
     label: 'Từ chối 1 phần',
-    bg: 'rgba(249, 115, 22, 0.12)',
-    color: '#f97316',
-    border: 'rgba(249, 115, 22, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+    color: 'var(--accent-primary)',
+    border: 'color-mix(in srgb, var(--accent-primary) 28%, transparent)',
     icon: <AlertTriangle size={13} />
   },
   REJECTED: {
@@ -608,7 +608,7 @@ export const TicketDetail: React.FC = () => {
   const paymentTime = ticket.order?.paid_at ? formatDateTime(ticket.order.paid_at) : (ticket.order_created_at ? formatDateTime(ticket.order_created_at) : '07:30 20/10/2026');
 
   const photos = deliveryJob?.completionPhotos || [];
-  const assignedTechName = deliveryJob?.customer?.fullName || 'Kỹ thuật viên SmartBox';
+  const assignedTechName = deliveryJob?.customer?.fullName || 'Kỹ thuật viên Anchor Box';
 
   return (
     <div className="tkd-page">
@@ -789,7 +789,7 @@ export const TicketDetail: React.FC = () => {
                         </div>
                         <div className="tkd-product-info">
                           <div className="tkd-product-title">
-                            {item.productName || 'SmartBox Residential Pro'}
+                            {item.productName || 'Anchor Box Residential Pro'}
                           </div>
                           <div className="tkd-product-subtitle">
                             {item.variantName ? `${item.variantName} · ` : ''}
@@ -860,7 +860,7 @@ export const TicketDetail: React.FC = () => {
                       <Package size={20} />
                     </div>
                     <div className="tkd-product-info">
-                      <div className="tkd-product-title">SmartBox Residential Pro 85L</div>
+                      <div className="tkd-product-title">Anchor Box Residential Pro 85L</div>
                       <div className="tkd-product-subtitle">Bản kim loại sơn tĩnh điện · Size L · SKU: SBK-PRO-85L-METALLIC</div>
                     </div>
                   </div>
@@ -1507,7 +1507,7 @@ export const TicketDetail: React.FC = () => {
               <div className="tkd-accmodal-card">
                 <div className="tkd-accmodal-card-title">
                   <ShieldCheck size={14} style={{ color: '#0ea5e9' }} />
-                  <span>Kiểm định tiêu chuẩn SmartBox (4 tiêu chí)</span>
+                  <span>Kiểm định tiêu chuẩn Anchor Box (4 tiêu chí)</span>
                 </div>
 
                 <div className="tkd-criteria-grid">

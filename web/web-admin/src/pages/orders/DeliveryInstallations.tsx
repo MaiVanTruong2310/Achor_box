@@ -893,7 +893,7 @@ export const DeliveryInstallations: React.FC = () => {
           <div className="di-section-box">
             <div className="di-section-box-header">
               <h3 className="di-section-box-title">
-                <User size={16} color="var(--accent-primary, #ea580c)" />
+                <User size={16} color="var(--accent-primary, var(--accent-primary))" />
                 <span>Thông tin công việc thi công</span>
               </h3>
             </div>
@@ -905,7 +905,7 @@ export const DeliveryInstallations: React.FC = () => {
                   <User size={12} /> Khách hàng
                 </div>
                 <div className="di-info-tile-val">
-                  {job.customerName || job.customer?.fullName || 'Khách hàng SmartBox'}
+                  {job.customerName || job.customer?.fullName || 'Khách hàng Anchor Box'}
                 </div>
                 <div className="di-info-tile-sub">
                   {(job.customerPhone || job.customer?.phone) ? (
@@ -951,7 +951,7 @@ export const DeliveryInstallations: React.FC = () => {
                   <Wrench size={12} /> Kỹ thuật viên phụ trách
                 </div>
                 <div className="di-info-tile-val">
-                  {job.technicianName || job.technician?.fullName || (job.assignedTo ? 'Kỹ thuật viên SmartBox' : 'Chưa phân công')}
+                  {job.technicianName || job.technician?.fullName || (job.assignedTo ? 'Kỹ thuật viên Anchor Box' : 'Chưa phân công')}
                 </div>
                 <div className="di-info-tile-sub">
                   {(job.technicianPhone || job.technician?.phone) ? (
@@ -1007,7 +1007,7 @@ export const DeliveryInstallations: React.FC = () => {
                   {devices.map((d: any, idx: number) => (
                     <tr key={d.id || idx}>
                       <td>
-                        <strong>{d.productName || 'SmartBox Residential Pro'}</strong>
+                        <strong>{d.productName || 'Anchor Box Residential Pro'}</strong>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                           Mã: {d.orderItemId || d.deviceId || d.id}
                         </div>
@@ -1050,7 +1050,7 @@ export const DeliveryInstallations: React.FC = () => {
                   {job.items.map((it: any, idx: number) => (
                     <tr key={it.id || idx}>
                       <td>
-                        <strong>{it.productName || 'SmartBox Residential Pro'}</strong>
+                        <strong>{it.productName || 'Anchor Box Residential Pro'}</strong>
                         {it.variantName && (
                           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                             {it.variantName}
@@ -1065,7 +1065,7 @@ export const DeliveryInstallations: React.FC = () => {
                       </td>
                       <td>
                         {job.status === 'COMPLETED' ? (
-                          <span className="di-serial-code">Bảo hành điện tử SmartBox</span>
+                          <span className="di-serial-code">Bảo hành điện tử Anchor Box</span>
                         ) : (
                           <span style={{ color: '#f59e0b', fontStyle: 'italic' }}>Chưa gán serial</span>
                         )}
@@ -1239,14 +1239,14 @@ export const DeliveryInstallations: React.FC = () => {
             )}
           </div>
 
-          {/* Card: Quy trình thi công SmartBox */}
+          {/* Card: Quy trình thi công Anchor Box */}
           <div className="di-guidelines-accordion">
             <div
               className="di-accordion-header"
               onClick={() => setShowGuidelines(!showGuidelines)}
             >
               <h4 className="di-accordion-title">
-                <ShieldCheck size={14} style={{ color: 'var(--accent-primary, #ea580c)' }} />
+                <ShieldCheck size={14} style={{ color: 'var(--accent-primary, var(--accent-primary))' }} />
                 <span>Quy trình thi công &amp; bàn giao</span>
               </h4>
               <span style={{ fontSize: '0.74rem', color: '#0284c7', fontWeight: 600 }}>
@@ -1259,7 +1259,7 @@ export const DeliveryInstallations: React.FC = () => {
                 <ul className="di-accordion-list">
                   <li><strong>Bước 1:</strong> Tiếp nhận ca thi công &amp; xác nhận lịch hẹn với khách hàng.</li>
                   <li><strong>Bước 2:</strong> Di chuyển đến địa chỉ, khảo sát mặt bằng và kiểm tra kết nối nguồn điện/pin.</li>
-                  <li><strong>Bước 3:</strong> Thi công lắp đặt hộp SmartBox, gắn mã Serial chính xác cho từng thiết bị.</li>
+                  <li><strong>Bước 3:</strong> Thi công lắp đặt hộp Anchor Box, gắn mã Serial chính xác cho từng thiết bị.</li>
                   <li><strong>Bước 4:</strong> Chụp ảnh minh chứng hiện trường và nộp biên bản nghiệm thu để PO thẩm duyệt.</li>
                 </ul>
               </div>

@@ -589,7 +589,7 @@ export const ApprovalTickets: React.FC = () => {
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span className="apt-product-badge">
-                          {t.product_names || 'Thiết bị SmartBox Residential'}
+                          {t.product_names || 'Thiết bị Anchor Box Residential'}
                         </span>
                         {t.item_count != null && (
                           <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>

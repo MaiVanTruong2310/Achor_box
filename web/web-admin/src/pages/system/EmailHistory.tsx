@@ -62,7 +62,7 @@ export const EmailHistoryPage: React.FC = () => {
   const { profile } = useAuth();
   const [testModalOpen, setTestModalOpen] = useState<boolean>(false);
   const [testRecipient, setTestRecipient] = useState<string>('hoangquangdat2005@gmail.com');
-  const [testSubject, setTestSubject] = useState<string>('[SmartBox Test] Kiểm thử gửi email hệ thống');
+  const [testSubject, setTestSubject] = useState<string>('[Anchor Box Test] Kiểm thử gửi email hệ thống');
   const [testSending, setTestSending] = useState<boolean>(false);
   const [testFeedback, setTestFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -871,7 +871,7 @@ export const EmailHistoryPage: React.FC = () => {
                     disabled={testSending}
                     value={testSubject}
                     onChange={e => setTestSubject(e.target.value)}
-                    placeholder="[SmartBox Test] Kiểm thử gửi email hệ thống"
+                    placeholder="[Anchor Box Test] Kiểm thử gửi email hệ thống"
                     style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)', fontSize: '0.9rem' }}
                   />
                 </div>
@@ -885,7 +885,7 @@ export const EmailHistoryPage: React.FC = () => {
                     <div>Máy chủ: <strong style={{ color: 'var(--text-primary)' }}>smtp.gmail.com:587</strong></div>
                     <div>Giao thức: <strong style={{ color: 'var(--text-primary)' }}>STARTTLS</strong></div>
                     <div>Tài khoản gửi: <strong style={{ color: 'var(--text-primary)' }}>hoangquangdat2005@gmail.com</strong></div>
-                    <div>Nhãn hiển thị: <strong style={{ color: 'var(--text-primary)' }}>SmartBox</strong></div>
+                    <div>Nhãn hiển thị: <strong style={{ color: 'var(--text-primary)' }}>Anchor Box</strong></div>
                   </div>
                   <p style={{ margin: '8px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Email được gửi thật ra Internet. Sau khi gửi, bạn có thể kiểm tra hòm thư đến và bản ghi sẽ xuất hiện ngay trong bảng Nhật ký Email.
