@@ -43,7 +43,7 @@ public class CustomerAccountController {
     }
 
     @PostMapping(value = "/avatar", consumes = "multipart/form-data")
-    @Operation(summary = "Tải lên ảnh đại diện của khách hàng lên Cloudinary và cập nhật hồ sơ", description = "Nhận file ảnh đại diện từ client, tải lên Cloudinary và tự động lưu URL vào hồ sơ cá nhân của khách hàng")
+    @Operation(summary = "Tải lên ảnh đại diện của khách hàng lên Supabase Storage và cập nhật hồ sơ", description = "Nhận file ảnh đại diện từ client, tải lên Supabase Storage và tự động lưu URL vào hồ sơ cá nhân của khách hàng")
     public Map<String, String> uploadAvatar(@RequestPart("file") MultipartFile file) {
         return customers.uploadAvatar(file);
     }

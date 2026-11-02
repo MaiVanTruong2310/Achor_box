@@ -46,5 +46,7 @@ public class ProductVariantResponse {
     private BigDecimal maxLoadKg;
     private Boolean hasWeightSensor;
     private Integer warrantyMonths;
+    private String colorName;
+    private String colorHex;
     private java.util.List<String> images;
 }

@@ -101,6 +101,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 path.equals("/api/payments/vnpay/ipn") ||
                 path.equals("/api/payments/vnpay/return") ||
                 path.equals("/api/payments/mode") ||
+                path.equals("/api/public/warranty-lookup") ||
+                path.equals("/api/warranty-plans") ||
                 path.equals("/api/products") ||
                 path.equals("/api/products/categories") ||
                 path.matches("/api/products/[0-9a-fA-F-]{36}/variants") ||

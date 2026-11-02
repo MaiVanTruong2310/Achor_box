@@ -47,6 +47,12 @@ public class ProductVariant {
     @Column(name = "capacity_liter")
     private Integer capacityLiter;
 
+    @Column(name = "color_name")
+    private String colorName;
+
+    @Column(name = "color_hex")
+    private String colorHex;
+
     @Column(name = "model_tier")
     private String modelTier;
 

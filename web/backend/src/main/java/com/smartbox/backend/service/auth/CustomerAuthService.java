@@ -25,9 +25,6 @@ public class CustomerAuthService {
     private final CurrentActor actors;
     private final CustomerAccountService accounts;
 
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private com.smartbox.backend.service.admin.EmailService emailService;
-
     @Value("${smartbox.shop-url:http://localhost:5174}")
     private String shopUrl;
 
@@ -57,11 +54,7 @@ public class CustomerAuthService {
     }
 
     public Map<String, Object> forgot(CustomerRequests.ForgotPassword request) {
-        String cleanEmail = request.email().trim().toLowerCase(Locale.ROOT);
-        var recoveryInfo = provider.recovery(cleanEmail, redirect("/reset-password"));
-        if (recoveryInfo != null && recoveryInfo.otp() != null && !recoveryInfo.otp().isBlank() && emailService != null) {
-            emailService.sendResetPasswordOtpEmail(cleanEmail, "Quý khách", recoveryInfo.otp());
-        }
+        provider.recovery(request.email().trim().toLowerCase(Locale.ROOT), redirect("/reset-password"));
         return Map.of("message", "Nếu tài khoản tồn tại, bạn sẽ nhận được mã OTP xác thực qua email để đặt lại mật khẩu.");
     }
 

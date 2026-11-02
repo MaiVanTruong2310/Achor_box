@@ -23,7 +23,8 @@ import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.
 import com.smartbox.backend.dto.response.commerce.DeliveryInstallationResponses.TechnicianSummary;
 import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.service.commerce.DeliveryInstallationService;
-import com.smartbox.backend.service.warranty.ClaimImageStorage;
+import com.smartbox.backend.service.storage.ImageBucket;
+import com.smartbox.backend.service.storage.ImageStorage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -50,7 +51,7 @@ import java.util.UUID;
 public class DeliveryInstallationController {
 
     private final DeliveryInstallationService jobs;
-    private final ClaimImageStorage imageStorage;
+    private final ImageStorage imageStorage;
     private final CurrentActor actors;
 
     @GetMapping("/api/delivery-installations/availability")
@@ -67,7 +68,7 @@ public class DeliveryInstallationController {
     @Operation(summary = "Tải ảnh minh chứng nghiệm thu", description = "Tải lên tệp hình ảnh biên bản nghiệm thu hoặc ảnh hiện trường lắp đặt lên dịch vụ lưu trữ đám mây")
     public ProofUploadResponse uploadProof(@RequestPart("file") MultipartFile file) {
         actors.get().requireRoles("technician", "product_manager", "super_admin");
-        return new ProofUploadResponse(imageStorage.upload(file).secureUrl());
+        return new ProofUploadResponse(imageStorage.upload(ImageBucket.DELIVERY_PROOFS, file).secureUrl());
     }
 
     @PostMapping("/api/delivery-installations/{id}/submit-completion")

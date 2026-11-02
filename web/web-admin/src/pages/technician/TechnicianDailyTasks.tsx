@@ -1154,7 +1154,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                     <input
                       type="file"
                       ref={fileInputRef}
-                      accept="image/*"
+                      accept="image/png, image/jpeg"
                       capture="environment"
                       multiple
                       style={{ display: 'none' }}

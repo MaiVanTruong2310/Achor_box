@@ -24,7 +24,7 @@ public class CustomerAccountService {
     private final CommerceRepository db;
     private final CurrentActor actors;
     private final ObjectMapper json;
-    private final com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage;
+    private final com.smartbox.backend.service.storage.ImageStorage imageStorage;
 
     public CustomerAccountService(CommerceRepository db, CurrentActor actors, ObjectMapper json) {
         this(db, actors, json, null);
@@ -32,7 +32,7 @@ public class CustomerAccountService {
 
     @org.springframework.beans.factory.annotation.Autowired
     public CustomerAccountService(CommerceRepository db, CurrentActor actors, ObjectMapper json,
-                                  @org.springframework.beans.factory.annotation.Autowired(required = false) com.smartbox.backend.service.warranty.ClaimImageStorage imageStorage) {
+                                  @org.springframework.beans.factory.annotation.Autowired(required = false) com.smartbox.backend.service.storage.ImageStorage imageStorage) {
         this.db = db;
         this.actors = actors;
         this.json = json;
@@ -77,7 +77,7 @@ public class CustomerAccountService {
     @Transactional
     public Map<String, String> uploadAvatar(org.springframework.web.multipart.MultipartFile file) {
         UUID owner = customer();
-        var stored = imageStorage.upload(file);
+        var stored = imageStorage.uploadAvatar(owner, file);
         db.update("UPDATE public.profiles SET avatar_url=?,updated_at=? WHERE id=?", stored.secureUrl(), now(), owner);
         return Map.of("url", stored.secureUrl());
     }

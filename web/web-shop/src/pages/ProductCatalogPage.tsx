@@ -13,6 +13,7 @@ import {
 import { useCatalog } from '../CatalogContext';
 import { shop, money, type CatalogProduct } from '../api/shop';
 import { useResource, ResourceState, ErrorNotice } from '../components/ShopUi';
+import { BoxThumb } from '../components/BoxShowcase';
 import './product-catalog.css';
 
 const SHOWCASE_PRODUCTS: CatalogProduct[] = [
@@ -427,8 +428,8 @@ export function ProductCatalogPage() {
       <div className="container">
         {/* Page Heading */}
         <div className="catalog-heading-wrap">
-          <p className="eyebrow">HỘP NHẬN HÀNG THÔNG MINH ANCHORBOX</p>
-          <h1>{category ? currentCategoryName : 'Tất cả sản phẩm AnchorBox'}</h1>
+          <p className="eyebrow">Cửa hàng Anchor Box</p>
+          <h1>{category ? currentCategoryName : 'Chọn chiếc hộp hợp với ngôi nhà.'}</h1>
           <p className="lead">
             Lựa chọn cấu hình hộp nhận hàng thông minh phù hợp cho ngôi nhà và nhu cầu nhận bưu
             kiện của bạn.
@@ -851,6 +852,9 @@ export function ProductCatalogPage() {
                         .map(v => `${v.capacityLiter}L`) || []
                     ),
                   ];
+                  const colors = [...new Map((product.variants ?? [])
+                    .filter(v => v.isActive && v.colorName && v.colorHex)
+                    .map(v => [v.colorName as string, { name: v.colorName as string, hex: v.colorHex as string }])).values()];
                   const hasLoadcell = product.variants?.some(
                     v => v.isActive && v.hasWeightSensor
                   );
@@ -862,7 +866,13 @@ export function ProductCatalogPage() {
                       className="catalog-card"
                     >
                       <div className="catalog-card-image-wrap">
-                        {firstImage ? (
+                        {/^ANCHORBOX/i.test(product.sku ?? '') ? (
+                          <BoxThumb
+                            className="catalog-card-box"
+                            colorHex={product.variants?.find(v => v.isActive)?.colorHex}
+                            capacity={product.variants?.find(v => v.isActive)?.capacityLiter}
+                          />
+                        ) : firstImage ? (
                           <img
                             src={firstImage}
                             alt={product.name}
@@ -889,6 +899,12 @@ export function ProductCatalogPage() {
                           {product.categoryName || 'AnchorBox'}
                         </span>
                         <h3 className="catalog-card-title">{product.name}</h3>
+
+                        {colors.length > 0 && (
+                          <div className="catalog-card-colors" aria-label={`Màu: ${colors.map(c => c.name).join(', ')}`}>
+                            {colors.map(c => <span key={c.name} title={c.name} style={{ background: c.hex }} />)}
+                          </div>
+                        )}
 
                         {/* Specs row */}
                         <div className="catalog-card-specs">

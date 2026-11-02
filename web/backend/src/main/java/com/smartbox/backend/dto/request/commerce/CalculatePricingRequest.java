@@ -37,5 +37,11 @@ public class CalculatePricingRequest {
         @Min(value = 1, message = "Số lượng tối thiểu là 1")
         @Max(value = 99, message = "Số lượng tối đa là 99")
         private int quantity;
+
+        private UUID warrantyPlanId;
+
+        public PricingItem(UUID variantId, int quantity) {
+            this(variantId, quantity, null);
+        }
     }
 }

@@ -281,6 +281,7 @@ public class ProductService {
                             .sku(vr.getSku())
                             .priceDelta(vr.getPriceDelta() != null ? vr.getPriceDelta() : java.math.BigDecimal.ZERO)
                             .isActive(vr.getIsActive()!=null ? vr.getIsActive() : true).size(vr.getSize()).capacityLiter(vr.getCapacityLiter())
+                            .colorName(colorName(vr.getColorName())).colorHex(colorHex(vr.getColorHex()))
                             .stockQuantity(vr.getStockQuantity() != null ? vr.getStockQuantity() : 0)
                             .build())
                     .toList();
@@ -359,6 +360,8 @@ public class ProductService {
                 if(vr.getIsActive()!=null) variant.setIsActive(vr.getIsActive());
                 if(vr.getSize()!=null) variant.setSize(vr.getSize());
                 if(vr.getCapacityLiter()!=null) variant.setCapacityLiter(vr.getCapacityLiter());
+                if(vr.getColorName()!=null) variant.setColorName(colorName(vr.getColorName()));
+                if(vr.getColorHex()!=null) variant.setColorHex(colorHex(vr.getColorHex()));
                 specifications.applyTo(variant,vr);
                 variantRepository.saveAndFlush(variant); retained.add(variant.getId());
                 if(vr.getId()==null) recordInitialStock(variant);
@@ -542,5 +545,17 @@ public class ProductService {
         response.setHasWeightSensor(v.getHasWeightSensor() != null ? v.getHasWeightSensor() : p.getHasWeightSensor());
         response.setWarrantyMonths(warranties.variantMonths(v));
         return response;
+    }
+
+    private static String colorName(String value) {
+        String name = value == null || value.isBlank() ? null : value.trim();
+        if (name != null && name.length() > 60) throw new com.smartbox.backend.exception.BadRequestException("INVALID_COLOR_NAME: Tên màu tối đa 60 ký tự");
+        return name;
+    }
+
+    private static String colorHex(String value) {
+        String hex = value == null || value.isBlank() ? null : value.trim();
+        if (hex != null && !hex.matches("#[0-9A-Fa-f]{6}")) throw new com.smartbox.backend.exception.BadRequestException("INVALID_COLOR_HEX: Mã màu phải có dạng #RRGGBB");
+        return hex;
     }
 }

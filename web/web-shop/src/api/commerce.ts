@@ -2,7 +2,7 @@ import { request, type OrderView, type Ticket } from './shop';
 import type { CustomerOrder } from './customer';
 export interface Pricing { subtotal: number; discountAmount: number; shippingFee: number; finalTotal: number; voucherCode: string | null; voucherApplied: boolean; voucherMessage: string | null; itemDetails: { variantId: string; productName: string; sku: string; unitPrice: number; quantity: number; itemTotal: number; inStock: boolean }[] }
 export const commerce = {
-  pricing: (items: { variantId: string; quantity: number }[], voucherCode = '', signal?: AbortSignal) => request<Pricing>('/pricing/calculate', { method: 'POST', body: JSON.stringify({ items, voucherCode: voucherCode.trim() || undefined }), signal }, false),
+  pricing: (items: { variantId: string; quantity: number; warrantyPlanId?: string }[], voucherCode = '', signal?: AbortSignal) => request<Pricing>('/pricing/calculate', { method: 'POST', body: JSON.stringify({ items, voucherCode: voucherCode.trim() || undefined }), signal }, false),
   ticket: (id: string, signal?: AbortSignal) => request<Partial<Ticket>>(`/orders/${encodeURIComponent(id)}/ticket`, { signal }),
   decision: (id: string, accept: boolean) => request<OrderView>(`/orders/${encodeURIComponent(id)}/customer-decision`, { method: 'POST', body: JSON.stringify({ accept }) }),
 };

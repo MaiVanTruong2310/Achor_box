@@ -20,6 +20,7 @@ public class ProductVariantMapper {
                 .variantName(v.getVariantName())
                 .sku(v.getSku())
                 .isActive(v.getIsActive()).size(v.getSize()).capacityLiter(v.getCapacityLiter())
+                .colorName(v.getColorName()).colorHex(v.getColorHex())
                 .modelTier(v.getModelTier())
                 .widthCm(v.getWidthCm())
                 .heightCm(v.getHeightCm())

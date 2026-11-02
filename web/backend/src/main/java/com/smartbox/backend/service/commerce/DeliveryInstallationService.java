@@ -1,5 +1,7 @@
 package com.smartbox.backend.service.commerce;
 
+import com.smartbox.backend.service.storage.ImageBucket;
+import com.smartbox.backend.service.storage.ImageStorage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -55,6 +57,8 @@ import static com.smartbox.backend.service.commerce.OrderWorkflowService.uuid;
 @Service
 @RequiredArgsConstructor
 public class DeliveryInstallationService {
+
+    static final int MAX_PROOF_PHOTOS = 10;
     private static final Set<String> STATUSES=Set.of("ASSIGNED","IN_PROGRESS","DELIVERED","INSTALLED","WAITING_PO_CONFIRMATION","COMPLETED","FAILED");
     private final CommerceRepository db;
     private final CurrentActor actors;
@@ -64,6 +68,7 @@ public class DeliveryInstallationService {
     private final AcceptanceWarrantyService warranties;
     private final ObjectMapper json;
     private final ApplicationEventPublisher events;
+    private final ImageStorage storage;
     @Value("${smartbox.mqtt.enabled:false}") private boolean mqttEnabled;
     @Value("${smartbox.installation.freshness-seconds:90}") private int freshnessSeconds;
     @Value("${smartbox.installation.weight-min-delta-kg:0.05}") private double weightDelta;
@@ -794,6 +799,10 @@ public class DeliveryInstallationService {
 
         if (request.proofPhotos() == null || request.proofPhotos().isEmpty()) {
             throw new BadRequestException("PROOF_PHOTOS_REQUIRED: Vui lòng chụp hoặc tải lên ít nhất 1 ảnh minh chứng nghiệm thu");
+        }
+        if (request.proofPhotos().size() > MAX_PROOF_PHOTOS
+                || request.proofPhotos().stream().anyMatch(url -> !storage.owns(ImageBucket.DELIVERY_PROOFS, url))) {
+            throw new BadRequestException("INVALID_PROOF_PHOTOS: Ảnh minh chứng phải được tải lên qua hệ thống (tối đa " + MAX_PROOF_PHOTOS + " ảnh)");
         }
 
         String photosJson;

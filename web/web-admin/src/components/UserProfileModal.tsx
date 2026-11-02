@@ -91,13 +91,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Upload Avatar to Cloudinary via backend API
+  // Upload Avatar to Supabase Storage (bucket avatars) via backend API
   const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setErrorMsg('Vui lòng chọn một tệp hình ảnh hợp lệ (PNG, JPG, WEBP).');
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setErrorMsg('Vui lòng chọn ảnh định dạng PNG hoặc JPG.');
       return;
     }
 
@@ -112,27 +112,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       const formData = new FormData();
       formData.append('file', file);
 
-      let uploadUrl = '';
-      try {
-        const res = await adminRequest<{ url: string }>('/auth/avatar', {
-          method: 'POST',
-          body: formData
-        });
-        uploadUrl = res?.url || '';
-      } catch {
-        // Fallback to /products/images which uses the same Cloudinary storage
-        const res = await adminRequest<{ url: string }>('/products/images', {
-          method: 'POST',
-          body: formData
-        });
-        uploadUrl = res?.url || '';
-      }
-
-      if (uploadUrl) {
-        setAvatarUrl(uploadUrl);
-        setSuccessMsg('Đã tải ảnh lên thành công!');
-        setTimeout(() => setSuccessMsg(''), 3000);
-      }
+      const res = await adminRequest<{ url: string }>('/auth/avatar', {
+        method: 'POST',
+        body: formData
+      });
+      if (!res?.url) throw new Error('Máy chủ không trả về đường dẫn ảnh');
+      setAvatarUrl(res.url);
+      setSuccessMsg('Đã tải ảnh lên thành công!');
+      setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       setErrorMsg('Tải ảnh lên thất bại: ' + (err?.message || 'Lỗi mạng'));
     } finally {
@@ -436,7 +423,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           ) : (
             /* EDIT FORM */
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Avatar Live Preview & Cloudinary Upload */}
+              {/* Avatar Live Preview & Upload */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -477,14 +464,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <div style={{ flex: 1, minWidth: 240 }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                     <Image size={14} style={{ color: 'var(--fpt-orange)' }} />
-                    <span>Ảnh đại diện (Cloudinary)</span>
+                    <span>Ảnh đại diện</span>
                   </label>
 
                   {/* Hidden file input */}
                   <input
                     type="file"
                     ref={avatarFileInputRef}
-                    accept="image/png, image/jpeg, image/jpg, image/webp"
+                    accept="image/png, image/jpeg"
                     onChange={handleAvatarFileSelect}
                     style={{ display: 'none' }}
                   />
@@ -566,7 +553,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     }}
                   />
                   <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
-                    Hỗ trợ tệp PNG, JPG, WEBP tối đa 5MB. Ảnh được lưu trữ bảo mật trên Cloudinary.
+                    Hỗ trợ tệp PNG, JPG tối đa 5MB. Ảnh được lưu trên Supabase Storage.
                   </small>
                 </div>
               </div>
@@ -670,7 +657,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 color: 'var(--text-muted)',
                 lineHeight: 1.5
               }}>
-                💡 <strong>Ghi chú:</strong> Thông tin họ tên và ảnh đại diện Cloudinary sẽ được đồng bộ ngay tức thì trên thanh tiêu đề và các biên bản thao tác hệ thống mà không cần đăng nhập lại.
+                💡 <strong>Ghi chú:</strong> Thông tin họ tên và ảnh đại diện sẽ được đồng bộ ngay tức thì trên thanh tiêu đề và các biên bản thao tác hệ thống mà không cần đăng nhập lại.
               </div>
             </form>
           )}

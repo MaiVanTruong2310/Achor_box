@@ -24,7 +24,16 @@ export interface Variant {
     maxLoadKg?: number | null;
     hasWeightSensor?: boolean | null;
     warrantyMonths?: number | null;
+    colorName?: string | null;
+    colorHex?: string | null;
     images?: string[];
+}
+export interface WarrantyPlan {
+    id: string;
+    code: string;
+    name: string;
+    extraMonths: number;
+    price: number;
 }
 export interface CatalogProduct {
     id: string;
@@ -206,6 +215,7 @@ function normalizeVariant(row: Variant & { calculatedPrice?: number | null }, pr
 export const shop = {
     categories: (signal?: AbortSignal) => request<{ id: string; name: string; slug: string }[]>('/products/categories', { signal }, false),
     product: (id: string, signal?: AbortSignal) => request<CatalogProduct>(`/products/${encodeURIComponent(id)}`, { signal }, false).then(p => ({ ...p, variants: p.variants?.map(v => normalizeVariant(v, p.id)) })),
+    warrantyPlans: (signal?: AbortSignal) => request<WarrantyPlan[]>('/warranty-plans', { signal }, false),
     products: (signal?: AbortSignal) => request<CatalogProduct[]>('/products', { signal }, false).then(rows => rows.filter(p => p.isActive === true).map(p => ({ ...p, variants: p.variants?.map(v => normalizeVariant(v, p.id)).sort((a,b) => (a.capacityLiter ?? Infinity) - (b.capacityLiter ?? Infinity)) }))),
     variants: (id: string, signal?: AbortSignal) => request<(Variant & {
         calculatedPrice?: number | null;

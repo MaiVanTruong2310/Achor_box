@@ -28,7 +28,7 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringJUnitConfig(CommerceIntegrationTests.Config.class)
-@TestPropertySource(properties={"smartbox.payment.hmac-secret=test-only-secret-at-least-thirty-two-characters", "smartbox.orders.draft-minutes=30"})
+@TestPropertySource(properties={"smartbox.payment.hmac-secret=test-only-secret-at-least-thirty-two-characters", "smartbox.orders.draft-minutes=30", "smartbox.supabase.url=https://project.test"})
 class CommerceIntegrationTests {
     static final UUID CUSTOMER=UUID.fromString("10000000-0000-0000-0000-000000000001");
     static final UUID STAFF=UUID.fromString("10000000-0000-0000-0000-000000000002");
@@ -40,7 +40,7 @@ class CommerceIntegrationTests {
         void customer(){actor.set(new Actor(CUSTOMER,"customer"));}
     }
     @Configuration @EnableTransactionManagement
-    @Import({OrderWorkflowService.class,OrderStateMachine.class,PaymentService.class,VnpayGateway.class,ApprovalTicketService.class,OutboxService.class,FulfillmentService.class,RevenueReportService.class,MqttDeviceService.class,VariantInventoryService.class,DeviceWorkflowService.class,DeliveryInstallationService.class,CustomerAccountService.class,CustomerOrderService.class,PaymentAuditService.class,AcceptanceWarrantyService.class,OrderTrackingService.class,InstallationDashboardService.class,PaymentTimeoutService.class,OrderDelayedExpiryQueue.class})
+    @Import({OrderWorkflowService.class,OrderStateMachine.class,PaymentService.class,VnpayGateway.class,ApprovalTicketService.class,OutboxService.class,FulfillmentService.class,RevenueReportService.class,MqttDeviceService.class,VariantInventoryService.class,DeviceWorkflowService.class,DeliveryInstallationService.class,CustomerAccountService.class,CustomerOrderService.class,PaymentAuditService.class,AcceptanceWarrantyService.class,OrderTrackingService.class,InstallationDashboardService.class,PaymentTimeoutService.class,OrderDelayedExpiryQueue.class,com.smartbox.backend.service.storage.SupabaseImageStorage.class,com.smartbox.backend.service.warranty.WarrantyPlanService.class})
     static class Config {
         @Bean DataSource dataSource(@org.springframework.beans.factory.annotation.Value("${test.jdbc.url:jdbc:h2:mem:commerce;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=5000;NON_KEYWORDS=KEY}") String url,
             @org.springframework.beans.factory.annotation.Value("${test.jdbc.user:sa}") String user,@org.springframework.beans.factory.annotation.Value("${test.jdbc.password:}") String password){return new DriverManagerDataSource(url,user,password);}

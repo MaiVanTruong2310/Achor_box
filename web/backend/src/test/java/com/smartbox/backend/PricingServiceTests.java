@@ -37,7 +37,7 @@ class PricingServiceTests {
 
     @BeforeEach
     void setUp() {
-        pricingService = new PricingService(db, promotionService, warranties);
+        pricingService = new PricingService(db, promotionService, warranties, new com.smartbox.backend.service.warranty.WarrantyPlanService(db));
     }
 
     @Test

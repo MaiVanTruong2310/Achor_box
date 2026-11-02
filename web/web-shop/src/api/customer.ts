@@ -8,15 +8,28 @@ export interface Installation { id: string; orderId: string; status: string; att
 export interface PaymentSummary { id: string; provider: string; status: string; amount: number; paidAt?: string; expiresAt?: string; isSimulated: boolean; refund?: { status: string; amount: number; completedAt?: string } | null }
 export interface CustomerOrder extends OrderView { payment: PaymentSummary | null; deliveryInstallation: Installation | null; timeline: TimelineEvent[] }
 export interface WarrantyRecord { id: string; deviceId: string; serialNumber: string; orderId: string; startDate: string; endDate: string; status: string; durationMonths: number; acceptedAt: string }
+export interface PublicWarranty { serialNumber: string; productName?: string | null; valid: boolean; startDate?: string | null; endDate?: string | null; remainingDays?: number | null }
 export interface WarrantyClaim { id: string; warrantyId: string; serialNumber: string; description: string; status: string; images: string[]; createdAt: string; resolvedAt?: string }
 const pathId = (value: string) => encodeURIComponent(value);
+const avatarKey = (userId: string) => `anchorbox_avatar_${userId}`;
 export function getUserAvatar(userId?: string): string | null {
   if (!userId) return null;
-  return localStorage.getItem(`anchorbox_avatar_${userId}`) || null;
+  try {
+    const value = localStorage.getItem(avatarKey(userId));
+    return value && /^https?:\/\//.test(value) ? value : null;
+  } catch {
+    return null;
+  }
 }
-export function setUserAvatar(userId: string, url: string): void {
-  localStorage.setItem(`anchorbox_avatar_${userId}`, url);
-  window.dispatchEvent(new CustomEvent('anchorbox:avatar_changed', { detail: { userId, url } }));
+export function setUserAvatar(userId: string, url: string | null | undefined): void {
+  const value = url && /^https?:\/\//.test(url) ? url : null;
+  try {
+    if (value) localStorage.setItem(avatarKey(userId), value);
+    else localStorage.removeItem(avatarKey(userId));
+  } catch {
+    /* storage unavailable: the in-memory event below still updates open views */
+  }
+  window.dispatchEvent(new CustomEvent('anchorbox:avatar_changed', { detail: { userId, url: value } }));
 }
 export function claimPage(value: { content: WarrantyClaim[]; currentPage: number; pageSize: number; totalElements: number; totalPages: number }): Page<WarrantyClaim> { return { content: value.content, page: value.currentPage, size: value.pageSize, totalElements: value.totalElements, totalPages: value.totalPages }; }
 export const customer = {
@@ -35,9 +48,12 @@ export const customer = {
   deleteAddress: (id: string) => request<void>(`/customer/addresses/${pathId(id)}`, { method: 'DELETE' }),
   orders: (page = 0, signal?: AbortSignal) => request<Page<CustomerOrder>>(`/customer/orders?page=${page}&size=20`, { signal }),
   order: (id: string, signal?: AbortSignal) => request<CustomerOrder>(`/customer/orders/${pathId(id)}`, { signal }),
-  createOrder: (address: { addressId: string } | { shippingDetails: AddressInput }, items: { variantId: string; quantity: number }[], couponCode?: string) => request<OrderView>('/orders', { method: 'POST', body: JSON.stringify({ ...address, items, ...(couponCode ? { couponCode } : {}) }) }),
+  createOrder: (address: { addressId: string } | { shippingDetails: AddressInput }, items: { variantId: string; quantity: number; warrantyPlanId?: string }[], couponCode?: string) => request<OrderView>('/orders', { method: 'POST', body: JSON.stringify({ ...address, items, ...(couponCode ? { couponCode } : {}) }) }),
   timeline: (id: string, signal?: AbortSignal) => request<{ orderId: string; orderStatus: string; events: TimelineEvent[] }>(`/orders/${pathId(id)}/timeline`, { signal }),
   warranties: (page = 0, signal?: AbortSignal) => request<Page<WarrantyRecord>>(`/customer/warranties?page=${page}&size=20`, { signal }),
+  warrantyBySerial: (serial: string, signal?: AbortSignal) => request<Page<WarrantyRecord>>(`/customer/warranties?page=0&size=1&serial=${encodeURIComponent(serial)}`, { signal }).then(page => page.content[0] ?? null),
+  publicWarranty: (serial: string, signal?: AbortSignal) => request<PublicWarranty>(`/public/warranty-lookup?serial=${encodeURIComponent(serial)}`, { signal }, false),
+  deleteImage: (warrantyId: string, imageId: string) => request<{ id: string; deleted: boolean }>(`/customer/warranties/${pathId(warrantyId)}/images/${pathId(imageId)}`, { method: 'DELETE' }),
   claims: (page = 0, signal?: AbortSignal) => request<Parameters<typeof claimPage>[0]>(`/customer/warranty-claims?page=${page}&size=20`, { signal }).then(claimPage),
   claim: (id: string, signal?: AbortSignal) => request<WarrantyClaim>(`/customer/warranty-claims/${pathId(id)}`, { signal }),
   uploadImage: (warrantyId: string, file: File) => { const body = new FormData(); body.append('file', file); return request<{ id: string; url: string }>(`/customer/warranties/${pathId(warrantyId)}/images`, { method: 'POST', body, timeoutMs: 45000 }); },

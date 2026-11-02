@@ -41,6 +41,9 @@ public class CalculatePricingResponse {
         private String size;
         private Integer capacityLiter;
         private Integer warrantyMonths;
+        private UUID warrantyPlanId;
+        private String warrantyPlanName;
+        private BigDecimal warrantyPlanPrice;
         private boolean inStock;
     }
 }

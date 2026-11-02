@@ -36,6 +36,9 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             "/api/payments/callback"
     );
 
+    static final String PUBLIC_LOOKUP_PATH = "/api/public/warranty-lookup";
+    static final int PUBLIC_LOOKUP_PER_MINUTE = 20;
+
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
     private final ObjectMapper json;
 
@@ -46,7 +49,9 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         boolean isImage = path.equals("/api/products/images")
                 || path.matches("/api/customer/warranties/[0-9a-fA-F-]{36}/images");
 
-        if (!"POST".equals(req.getMethod()) || (!isImage && !RATE_LIMITED_PATHS.contains(path))) {
+        boolean isPublicLookup = "GET".equals(req.getMethod()) && path.equals(PUBLIC_LOOKUP_PATH);
+
+        if (!isPublicLookup && (!"POST".equals(req.getMethod()) || (!isImage && !RATE_LIMITED_PATHS.contains(path)))) {
             chain.doFilter(req, res);
             return;
         }
@@ -58,7 +63,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                         ? new Window(now, 1)
                         : new Window(previous.start(), previous.count() + 1));
 
-        int maximum = path.contains("payments") ? 120 : 10;
+        int maximum = path.contains("payments") ? 120 : isPublicLookup ? PUBLIC_LOOKUP_PER_MINUTE : 10;
         if (window.count() > maximum || windows.size() > 10000) {
             log.warn("Rate limit exceeded for key={} count={}", key, window.count());
             res.setStatus(429);

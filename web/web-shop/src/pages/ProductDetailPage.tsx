@@ -1,133 +1,36 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  X,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   ShieldCheck,
   Truck,
-  RotateCcw,
   CheckCircle2,
   ShoppingCart,
   Zap,
   Check,
   Plus,
   Minus,
-  Star,
   Lock,
-  Cpu,
-  Wifi,
-  Eye,
-  Layers
 } from 'lucide-react';
-import { shop, money, type CatalogProduct, type Variant } from '../api/shop';
-import { availableVariant } from '../api/catalog';
+import { shop, money, type Variant, type WarrantyPlan } from '../api/shop';
+import { availableVariant, canBuy } from '../api/catalog';
 import { useCatalog } from '../CatalogContext';
 import { useShop } from '../ShopContext';
 import { useResource, ResourceState } from '../components/ShopUi';
-import { AppleProductViewer } from '../components/AppleProductViewer';
+import { BoxShowcase, BoxThumb } from '../components/BoxShowcase';
+import './product-detail-dark.css';
 import '../apple-home.css';
 import './product-detail.css';
 
 
-// High-quality showcase definitions (graceful fallback when backend is offline or for showcase slugs)
-const FALLBACK_PRODUCTS: Record<string, CatalogProduct> = {
-  'anchorbox-base': {
-    id: 'anchorbox-base',
-    name: 'AnchorBox Base',
-    sku: 'ABX-BASE-STD',
-    price: 2490000,
-    categoryName: 'Hộp nhận bưu kiện thông minh',
-    description: 'Thiết kế nhỏ gọn tối giản cho căn hộ và nhà phố. Tích hợp khóa chốt điện tử Solenoid mã hóa AES-256, tạo mã OTP 1 lần cho shipper và điều khiển từ xa qua ứng dụng di động.',
-    images: ['/products/smartbox-compact-front.svg', '/products/smartbox-std-inside.svg', '/products/smartbox-std-diagram.svg'],
-    isActive: true,
-    variants: [
-      { id: 'v-base-45', productId: 'anchorbox-base', sku: 'ABX-BASE-45L', variantName: 'AnchorBox Base 45L', size: null, capacityLiter: 45, finalPrice: 2490000, stockQuantity: 28, isActive: true, widthCm: 45, heightCm: 85, depthCm: 38, weightKg: 16.5, maxLoadKg: 40, hasWeightSensor: false, warrantyMonths: 24 },
-      { id: 'v-base-75', productId: 'anchorbox-base', sku: 'ABX-BASE-75L', variantName: 'AnchorBox Base 75L', size: null, capacityLiter: 75, finalPrice: 3290000, stockQuantity: 15, isActive: true, widthCm: 50, heightCm: 98, depthCm: 45, weightKg: 19.5, maxLoadKg: 50, hasWeightSensor: false, warrantyMonths: 24 }
-    ]
-  },
-  'anchorbox-pro': {
-    id: 'anchorbox-pro',
-    name: 'AnchorBox Pro',
-    sku: 'ABX-PRO-AI',
-    price: 3890000,
-    categoryName: 'Hộp nhận bưu kiện thông minh AI',
-    description: 'Phiên bản Flagship đột phá tích hợp Camera AI góc siêu rộng 155°, cảm biến cân nặng đa điểm chống tráo hàng và hệ thống đèn LED UV-C tự động khử khuẩn bề mặt bưu phẩm.',
-    images: ['/products/smartbox-std-front.svg', '/products/smartbox-std-inside.svg', '/products/smartbox-std-diagram.svg'],
-    isActive: true,
-    variants: [
-      { id: 'v-pro-45', productId: 'anchorbox-pro', sku: 'ABX-PRO-45L', variantName: 'AnchorBox Pro 45L', size: null, capacityLiter: 45, finalPrice: 3890000, stockQuantity: 19, isActive: true, widthCm: 45, heightCm: 85, depthCm: 38, weightKg: 17.5, maxLoadKg: 40, hasWeightSensor: true, warrantyMonths: 24 },
-      { id: 'v-pro-75', productId: 'anchorbox-pro', sku: 'ABX-PRO-75L', variantName: 'AnchorBox Pro 75L', size: null, capacityLiter: 75, finalPrice: 4690000, stockQuantity: 34, isActive: true, widthCm: 50, heightCm: 98, depthCm: 45, weightKg: 21.0, maxLoadKg: 60, hasWeightSensor: true, warrantyMonths: 24 },
-      { id: 'v-pro-110', productId: 'anchorbox-pro', sku: 'ABX-PRO-110L', variantName: 'AnchorBox Pro 110L Max', size: null, capacityLiter: 110, finalPrice: 5490000, stockQuantity: 11, isActive: true, widthCm: 58, heightCm: 112, depthCm: 50, weightKg: 25.5, maxLoadKg: 80, hasWeightSensor: true, warrantyMonths: 24 }
-    ]
-  },
-  'anchorbox-solar': {
-    id: 'anchorbox-solar',
-    name: 'AnchorBox Solar Max',
-    sku: 'ABX-SOLAR-MAX',
-    price: 4990000,
-    categoryName: 'Hộp nhận bưu kiện năng lượng mặt trời',
-    description: 'Trang bị tấm pin năng lượng mặt trời Monocrystalline trên nóc mái, tự nạp năng lượng ngoài trời liên tục 45 ngày không cần cắm điện. Tương thích chuẩn Matter và Apple HomeKit.',
-    images: ['/products/smartbox-promax-front.svg', '/products/smartbox-std-inside.svg', '/products/smartbox-std-diagram.svg'],
-    isActive: true,
-    variants: [
-      { id: 'v-solar-75', productId: 'anchorbox-solar', sku: 'ABX-SOLAR-75L', variantName: 'AnchorBox Solar 75L', size: null, capacityLiter: 75, finalPrice: 4990000, stockQuantity: 18, isActive: true, widthCm: 50, heightCm: 98, depthCm: 45, weightKg: 23.0, maxLoadKg: 60, hasWeightSensor: true, warrantyMonths: 36 },
-      { id: 'v-solar-110', productId: 'anchorbox-solar', sku: 'ABX-SOLAR-110L', variantName: 'AnchorBox Solar 110L Extreme', size: null, capacityLiter: 110, finalPrice: 5790000, stockQuantity: 8, isActive: true, widthCm: 58, heightCm: 112, depthCm: 50, weightKg: 27.5, maxLoadKg: 80, hasWeightSensor: true, warrantyMonths: 36 }
-    ]
-  }
-};
-
-const FALLBACK_ACCESSORIES: AccessoryItem[] = [
-  {
-    id: 'acc-mount',
-    productId: 'prod-acc-mount',
-    sku: 'SBX-ACC-MOUNT',
-    name: 'Chân đế cố định ngoài trời AnchorMount',
-    variantName: 'Thép mạ kẽm chống ẩm 15cm',
-    image: '/products/accessory-mount.svg',
-    price: 290000,
-    originalPrice: 350000,
-    description: 'Nâng cao đáy hộp 15cm chống ngập úng, kèm bu-lông nở bắt sàn bê tông.',
-  },
-  {
-    id: 'acc-keypad',
-    productId: 'prod-acc-keypad',
-    sku: 'SBX-ACC-KEYPAD',
-    name: 'Bàn phím mã số cảm ứng & Thẻ từ NFC',
-    variantName: 'Phụ kiện mở khóa Pro',
-    image: '/products/accessory-keypad.svg',
-    price: 390000,
-    originalPrice: 450000,
-    description: 'Nhập mã trực tiếp trên tủ hoặc quẹt thẻ từ NFC cho người nhà.',
-  },
-  {
-    id: 'acc-camera',
-    productId: 'prod-acc-camera',
-    sku: 'SBX-ACC-CAM',
-    name: 'Camera an ninh mini AI góc rộng 2K',
-    variantName: 'Gắn nóc khoang tủ chống nước',
-    image: '/products/accessory-camera.svg',
-    price: 550000,
-    originalPrice: 650000,
-    description: 'Tự động chụp ảnh bưu kiện khi nắp mở, lưu trữ đám mây bảo mật.',
-  },
-];
-
 interface AccessoryItem {
-  id: string;
-  productId: string;
-  sku: string;
+  variant: Variant;
   name: string;
-  variantName: string;
   image: string;
   price: number;
-  originalPrice: number;
-  description: string;
 }
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 
 export function ProductDetailPage() {
@@ -136,26 +39,11 @@ export function ProductDetailPage() {
   const { add } = useShop();
   const catalog = useCatalog();
 
-  // Mode Switch: Studio Photography vs Interactive 3D 360° Stage
-  const [displayMode, setDisplayMode] = useState<'studio' | '3d'>('studio');
-
   // Selected variant & quantity
   const [selectedVariantId, setSelectedVariantId] = useState('');
+  const [selectedPlanId, setSelectedPlanId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState('');
-
-  // Apple Configuration Selector States (Pills bo tròn với micro-animations)
-  const [selectedCapacity, setSelectedCapacity] = useState<number>(75);
-  const [selectedColor, setSelectedColor] = useState<{ id: string; name: string; hex: string }>({
-    id: 'space-gray',
-    name: 'Xám Không Gian (Space Gray)',
-    hex: '#4b4846'
-  });
-  const [selectedSensorPack, setSelectedSensorPack] = useState<{ id: string; name: string; addPrice: number }>({
-    id: 'smart',
-    name: 'Nâng cao (Cảm biến cân nặng đa điểm ±5g)',
-    addPrice: 590000
-  });
 
   // Flat Minimalist Accordion Open State
   const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>({
@@ -170,156 +58,91 @@ export function ProductDetailPage() {
     setOpenAccordions(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Interactive Gallery & Lightbox State
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [lightboxScale, setLightboxScale] = useState(1);
-
   // Recommendations / Frequently bought together
-  const [checkedAccessories, setCheckedAccessories] = useState<Record<string, boolean>>({
-    'acc-mount': true,
-    'acc-keypad': false,
-    'acc-camera': false,
-  });
+  const [checkedAccessories, setCheckedAccessories] = useState<Record<string, boolean>>({});
   const [bundleMessage, setBundleMessage] = useState('');
 
   // Reset when ID changes
   useEffect(() => {
     setSelectedVariantId('');
+    setSelectedPlanId('');
     setQuantity(1);
     setMessage('');
-    setActiveImageIndex(0);
-    setIsLightboxOpen(false);
-    setLightboxScale(1);
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [id]);
 
-  // Load product resource from API, with graceful fallback for showcase slugs or when backend is offline
   const resource = useResource(async signal => {
-    try {
-      const matched = catalog.data?.find(p => p.id === id || p.sku?.toLowerCase() === id.toLowerCase());
-      const targetId = matched?.id || id;
-      const p = await shop.product(targetId, signal);
-      if (p && p.isActive) return [p];
-    } catch {
-      // Backend offline or slug lookup - use showcase fallback
+    let targetId = id;
+    if (!UUID_PATTERN.test(id)) {
+      const list = catalog.data ?? await shop.products(signal);
+      const matched = list.find(p => p.sku?.toLowerCase() === id.toLowerCase());
+      if (!matched) return [];
+      targetId = matched.id;
     }
-
-    const fallback = FALLBACK_PRODUCTS[id] || (id.includes('base') ? FALLBACK_PRODUCTS['anchorbox-base'] : id.includes('solar') ? FALLBACK_PRODUCTS['anchorbox-solar'] : FALLBACK_PRODUCTS['anchorbox-pro']);
-    return [fallback];
+    const p = await shop.product(targetId, signal);
+    return p && p.isActive ? [p] : [];
   }, `product-detail-${id}`);
 
-  const product = resource.data?.find(p => p.id === id) || resource.data?.[0];
-  const variant = availableVariant(product, selectedVariantId) || product?.variants?.[0];
+  const product = resource.data?.[0];
+  const variants = useMemo(() => (product?.variants ?? []).filter(v => v.isActive).sort((a, b) => (a.capacityLiter ?? 0) - (b.capacityLiter ?? 0)), [product]);
+  const variant = availableVariant(product, selectedVariantId);
+  const plansResource = useResource(signal => shop.warrantyPlans(signal).catch(() => [] as WarrantyPlan[]), 'warranty-plans');
+  const plans = plansResource.data ?? [];
+  const plan = plans.find(p => p.id === selectedPlanId) ?? null;
+  const capacities = useMemo(() => [...new Set(variants.map(v => v.capacityLiter).filter((c): c is number => c != null))], [variants]);
+  const colorsForCapacity = useMemo(
+    () => variants.filter(v => v.capacityLiter === variant?.capacityLiter && v.colorName),
+    [variants, variant?.capacityLiter],
+  );
 
-  // Sync capacity from variant if available
+  const pickVariant = (capacity: number | null | undefined, colorName: string | null | undefined) => {
+    const sameCapacity = variants.filter(v => v.capacityLiter === capacity);
+    const next = sameCapacity.find(v => v.colorName === colorName && v.stockQuantity > 0)
+      ?? sameCapacity.find(v => v.colorName === colorName)
+      ?? sameCapacity.find(v => v.stockQuantity > 0)
+      ?? sameCapacity[0];
+    if (next) setSelectedVariantId(next.id);
+    setMessage('');
+  };
+  const purchasable = canBuy(variant);
+  const maxQuantity = Math.max(1, Math.min(99, variant?.stockQuantity ?? 1));
+  const notFound = !resource.loading && !resource.error && resource.data !== undefined && !product;
+
   useEffect(() => {
-    if (variant?.capacityLiter) {
-      setSelectedCapacity(variant.capacityLiter);
-    }
-  }, [variant?.capacityLiter]);
+    setQuantity(q => Math.min(q, maxQuantity));
+  }, [maxQuantity]);
 
-  // Build image list: variant images or product images, fallback with standard vector SVGs
-  const galleryImages = useMemo(() => {
-    const images: { src: string; label: string }[] = [];
-    if (variant?.images?.length) {
-      variant.images.forEach((src, i) => images.push({ src, label: `Góc chụp ${i + 1}` }));
-    } else if (product?.images?.length) {
-      product.images.forEach((src, i) => images.push({ src, label: `Ảnh sản phẩm ${i + 1}` }));
-    }
+  useEffect(() => {
+    if (product?.name) document.title = `${product.name} | Anchor Box`;
+  }, [product?.name]);
 
-    if (images.length === 0) {
-      images.push({ src: '/products/smartbox-std-front.svg', label: 'Góc diện mạo trước' });
-      images.push({ src: '/products/smartbox-std-inside.svg', label: 'Khoang chứa bên trong' });
-      images.push({ src: '/products/smartbox-std-diagram.svg', label: 'Bản vẽ kỹ thuật' });
-    } else if (images.length === 1) {
-      images.push({ src: '/products/smartbox-std-inside.svg', label: 'Khoang chứa bên trong' });
-      images.push({ src: '/products/smartbox-std-diagram.svg', label: 'Bản vẽ kỹ thuật' });
-    }
-    return images;
-  }, [product, variant]);
+  const price = (variant?.finalPrice ?? product?.price ?? 0) + (plan?.price ?? 0);
+  const totalWarrantyMonths = (variant?.warrantyMonths ?? 0) + (plan?.extraMonths ?? 0);
 
-  const currentImage = galleryImages[activeImageIndex] || galleryImages[0] || { src: '', label: '' };
-
-  // Calculate dynamic configured price
-  const configuredPrice = useMemo(() => {
-    const base = variant?.finalPrice || product?.price || 3890000;
-    return base + selectedSensorPack.addPrice;
-  }, [variant?.finalPrice, product?.price, selectedSensorPack.addPrice]);
-
-  // Real accessory recommendations from live catalog with resilient fallback
   const accessoryRecommendations: AccessoryItem[] = useMemo(() => {
-    const liveAccs = catalog.data
-      ?.filter(p => p.id !== product?.id && (p.categorySlug === 'phu-kien-tien-ich' || p.categorySlug === 'linh-kien-thay-the'))
-      .map(p => ({
-        id: p.id,
-        productId: p.id,
-        sku: p.sku || p.id,
-        name: p.name,
-        variantName: p.variants?.[0]?.variantName || 'Phụ kiện chính hãng',
-        image: p.images?.[0] || '/products/accessory-mount.svg',
-        price: p.variants?.[0]?.finalPrice || p.price,
-        originalPrice: Math.round((p.variants?.[0]?.finalPrice || p.price) * 1.15),
-        description: p.description
-      }));
-    if (liveAccs && liveAccs.length > 0) return liveAccs;
-    return FALLBACK_ACCESSORIES;
+    return (catalog.data ?? [])
+      .filter(p => p.id !== product?.id && (p.categorySlug === 'phu-kien-tien-ich' || p.categorySlug === 'linh-kien-thay-the'))
+      .flatMap(p => {
+        const accVariant = availableVariant(p);
+        return accVariant && canBuy(accVariant)
+          ? [{ variant: accVariant, name: p.name, image: p.images?.[0] || '/products/accessory-mount.svg', price: accVariant.finalPrice ?? p.price }]
+          : [];
+      })
+      .slice(0, 3);
   }, [catalog.data, product?.id]);
 
   const selectedAccessoriesList = useMemo(() => {
-    return accessoryRecommendations.filter(acc => checkedAccessories[acc.id]);
+    return accessoryRecommendations.filter(acc => checkedAccessories[acc.variant.id]);
   }, [accessoryRecommendations, checkedAccessories]);
 
-  const bundleTotalOriginal = useMemo(() => {
-    const mainOrig = Math.round(configuredPrice * 1.15);
-    const accOrig = selectedAccessoriesList.reduce((sum, acc) => sum + acc.originalPrice, 0);
-    return mainOrig + accOrig;
-  }, [configuredPrice, selectedAccessoriesList]);
-
-  const bundleTotalFinal = useMemo(() => {
-    const accFinal = selectedAccessoriesList.reduce((sum, acc) => sum + acc.price, 0);
-    return configuredPrice + accFinal;
-  }, [configuredPrice, selectedAccessoriesList]);
-
-  const bundleSaving = Math.max(0, bundleTotalOriginal - bundleTotalFinal);
+  const bundleTotalFinal = price + selectedAccessoriesList.reduce((sum, acc) => sum + acc.price, 0);
   const bundleItemCount = 1 + selectedAccessoriesList.length;
 
   const handleAddBundleToCart = () => {
-    if (!product) return;
-    // 1. Add main product
-    const customVariant: Variant = {
-      id: variant?.id || `v-${product.id}-${selectedCapacity}`,
-      productId: product.id,
-      sku: variant?.sku || `${product.sku}-${selectedCapacity}L`,
-      variantName: `${product.name} ${selectedCapacity}L - ${selectedColor.name} (${selectedSensorPack.name})`,
-      size: `${selectedCapacity}L`,
-      capacityLiter: selectedCapacity,
-      finalPrice: configuredPrice,
-      stockQuantity: variant?.stockQuantity || 20,
-      isActive: true,
-      warrantyMonths: variant?.warrantyMonths || 24
-    };
-    add(customVariant, product.name, 1);
-
-    // 2. Add checked accessories
-    selectedAccessoriesList.forEach(acc => {
-      const accVariant: Variant = {
-        id: acc.id,
-        productId: acc.productId,
-        sku: acc.sku,
-        variantName: acc.name,
-        size: null,
-        capacityLiter: null,
-        finalPrice: acc.price,
-        stockQuantity: 50,
-        isActive: true,
-        warrantyMonths: 12
-      };
-      add(accVariant, acc.name, 1);
-    });
-
-    setBundleMessage(`Đã thêm trọn bộ ${bundleItemCount} sản phẩm combo vào giỏ hàng thành công!`);
-    setTimeout(() => setBundleMessage(''), 4500);
+    if (!product || !variant || !purchasable) return;
+    add(variant, product.name, 1, plan);
+    selectedAccessoriesList.forEach(acc => add(acc.variant, acc.name, 1));
+    setBundleMessage(`Đã thêm ${bundleItemCount} sản phẩm vào giỏ hàng.`);
   };
 
   // Similar products from catalog
@@ -330,65 +153,58 @@ export function ProductDetailPage() {
       .slice(0, 3);
   }, [catalog.data, product?.id]);
 
-  // Keyboard navigation for Lightbox
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isLightboxOpen) return;
-      if (e.key === 'Escape') setIsLightboxOpen(false);
-      if (e.key === 'ArrowRight') setActiveImageIndex(prev => (prev + 1) % galleryImages.length);
-      if (e.key === 'ArrowLeft') setActiveImageIndex(prev => (prev - 1 + galleryImages.length) % galleryImages.length);
-      if (e.key === '+') setLightboxScale(s => Math.min(s + 0.5, 3.5));
-      if (e.key === '-') setLightboxScale(s => Math.max(s - 0.5, 1));
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLightboxOpen, galleryImages.length]);
-
-  // Add single variant to cart
   const handleAddToCart = () => {
-    if (!variant || !product) return;
-    const customVariant: Variant = {
-      ...variant,
-      variantName: `${variant.variantName || product.name} · ${selectedCapacity}L · ${selectedColor.name} · ${selectedSensorPack.name}`,
-      finalPrice: configuredPrice
-    };
-    add(customVariant, product.name, quantity);
-    setMessage(`Đã thêm ${quantity} × ${product.name} (${selectedCapacity}L, ${selectedColor.name}) vào giỏ hàng.`);
+    if (!variant || !product || !purchasable) return;
+    add(variant, product.name, quantity, plan);
+    setMessage(`Đã thêm ${quantity} × ${variant.variantName || product.name} vào giỏ hàng.`);
   };
 
-  // Buy now (add to cart and redirect)
   const handleBuyNow = () => {
-    if (!variant || !product) return;
-    const customVariant: Variant = {
-      ...variant,
-      variantName: `${variant.variantName || product.name} · ${selectedCapacity}L · ${selectedColor.name} · ${selectedSensorPack.name}`,
-      finalPrice: configuredPrice
-    };
-    add(customVariant, product.name, quantity);
+    if (!variant || !product || !purchasable) return;
+    add(variant, product.name, quantity, plan);
     navigate('/cart');
   };
 
-  // Color options
-  const colorOptions = [
-    { id: 'space-gray', name: 'Xám Không Gian (Space Gray)', hex: '#4b4846' },
-    { id: 'obsidian-black', name: 'Đen Huyền Bí (Obsidian Black)', hex: '#1d1d1f' },
-    { id: 'titanium-silver', name: 'Bạc Titan (Titanium Silver)', hex: '#d1d1d6' },
-    { id: 'polar-white', name: 'Trắng Tinh Khiết (Polar White)', hex: '#f5f5f7' }
-  ];
-
-  // Sensor package options
-  const sensorPackOptions = [
-    { id: 'basic', name: 'Cơ bản (Khóa Solenoid + OTP)', addPrice: 0, tag: 'TIÊU CHUẨN' },
-    { id: 'smart', name: 'Nâng cao (Cân đa điểm ±5g)', addPrice: 590000, tag: 'KHUYÊN DÙNG' },
-    { id: 'promax', name: 'Pro Max AI (Camera 1080p + UV-C + Cân)', addPrice: 1390000, tag: 'TOÀN DIỆN' }
-  ];
-
-  // Capacity options
-  const capacityOptions = [
-    { liters: 45, label: '45L Tiêu chuẩn', sub: 'Nhỏ gọn cho căn hộ & nhà phố' },
-    { liters: 75, label: '75L Bán chạy nhất', sub: 'Kích thước tối ưu cho gia đình' },
-    { liters: 110, label: '110L Cực đại', sub: 'Chứa bưu kiện lớn cho biệt thự' }
-  ];
+  const specGroups = useMemo(() => {
+    const sku = product?.sku?.toUpperCase() ?? '';
+    const isSolar = sku.includes('SOLAR');
+    const isPro = isSolar || sku.includes('PRO');
+    const upcoming = 'Đang hoàn thiện, thông số công bố khi mở bán';
+    const size = variant?.widthCm && variant.heightCm && variant.depthCm ? `${variant.widthCm} × ${variant.heightCm} × ${variant.depthCm} cm` : 'Đang cập nhật';
+    const groups: { key: string; title: string; rows: [string, string][] }[] = [
+      { key: 'dimensions', title: 'Kích thước và khoang chứa', rows: [
+        ['Dung tích', variant?.capacityLiter ? `${variant.capacityLiter} lít` : 'Đang cập nhật'],
+        ['Kích thước (R × C × S)', size],
+        ['Khối lượng hộp', variant?.weightKg ? `${variant.weightKg} kg` : 'Đang cập nhật'],
+        ['Tải trọng tối đa', variant?.maxLoadKg ? `${variant.maxLoadKg} kg` : 'Đang cập nhật'],
+      ] },
+      { key: 'security', title: 'Khóa và bảo mật', rows: [
+        ['Cơ cấu khóa', 'Khóa kép: chốt điện 12 V và servo gài chốt'],
+        ['Mở khóa', 'Mã PIN dùng một lần cho shipper, mở từ xa qua ứng dụng'],
+        ['Xác thực mã', 'Kiểm tra trên đám mây, mã hết hạn là vô hiệu'],
+        ['Chống dò mã', 'Sai 3 lần liên tiếp, khóa bàn phím 60 giây'],
+        ['Tự khóa', 'Khóa lại 2 giây sau khi cửa đóng'],
+      ] },
+      { key: 'sensors', title: 'Cảm biến', rows: [
+        ['Cân bưu kiện', 'Loadcell + HX711, nhận ra bưu kiện từ 50 g'],
+        ['Cảm biến cửa', 'Công tắc từ MC-38'],
+        ['Camera giám sát', isPro ? upcoming : 'Không có (có trên bản Pro và Solar Max)'],
+      ] },
+      { key: 'connectivity', title: 'Kết nối và nguồn điện', rows: [
+        ['Vi điều khiển', 'ESP32-S3'],
+        ['Kết nối', 'Wi-Fi 2,4 GHz, Bluetooth LE để cài Wi-Fi'],
+        ['Giao diện tại hộp', 'Bàn phím 4×4, màn hình LCD 16×2, 3 đèn trạng thái và còi'],
+        ['Nguồn', 'Adapter DC, đầu vào 9–24 V'],
+        ['Pin dự phòng', isPro ? upcoming : 'Không có (có trên bản Pro và Solar Max)'],
+        ...(isSolar ? [['Tấm pin mặt trời', upcoming] as [string, string]] : []),
+      ] },
+      { key: 'durability', title: 'Bảo hành', rows: [
+        ['Thời hạn', totalWarrantyMonths ? `${totalWarrantyMonths} tháng kể từ ngày nghiệm thu lắp đặt${plan ? ` (gồm ${plan.name.toLowerCase()})` : ''}` : 'Theo phiếu bảo hành điện tử'],
+        ['Hình thức', 'Phiếu bảo hành điện tử, tra cứu bằng số serial'],
+      ] },
+    ];
+    return groups;
+  }, [product?.sku, variant, plan, totalWarrantyMonths]);
 
   return (
     <div className="product-detail-page apple-product-detail-root">
@@ -399,7 +215,7 @@ export function ProductDetailPage() {
           <nav className="detail-breadcrumb" aria-label="Đường dẫn trang">
             <Link to="/">Trang chủ</Link>
             <span className="sep">/</span>
-            <Link to="/#collection">Sản phẩm AnchorBox</Link>
+            <Link to="/products">Sản phẩm</Link>
             <span className="sep">/</span>
             <span className="current">{product ? product.name : 'Chi tiết thiết bị'}</span>
           </nav>
@@ -408,6 +224,14 @@ export function ProductDetailPage() {
 
       <div className="apple-detail-container">
         <ResourceState {...resource} />
+        {notFound && (
+          <div className="purchase-feedback-toast" role="status" style={{ marginTop: 24 }}>
+            <div className="feedback-content">
+              <span>Không tìm thấy sản phẩm “{id}” hoặc sản phẩm đã ngừng bán.</span>
+              <Link to="/products" className="view-cart-link">Xem tất cả sản phẩm →</Link>
+            </div>
+          </div>
+        )}
 
         {product && (
           <>
@@ -419,107 +243,12 @@ export function ProductDetailPage() {
               {/* LEFT COLUMN: Frameless Edge-to-Edge Studio Gallery & 3D Stage */}
               <div className="detail-gallery-column">
                 <div className="gallery-sticky-sidebar">
-                  {/* Switcher: 📸 Ảnh Studio vs 🔄 Trình diễn 3D 360° & Hotspots */}
-                  <div className="apple-gallery-mode-switch">
-                    <button
-                      type="button"
-                      className={`apple-mode-switch-btn ${displayMode === 'studio' ? 'is-active' : ''}`}
-                      onClick={() => setDisplayMode('studio')}
-                    >
-                      <Eye size={15} />
-                      <span>Ảnh chụp Studio</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`apple-mode-switch-btn ${displayMode === '3d' ? 'is-active' : ''}`}
-                      onClick={() => setDisplayMode('3d')}
-                    >
-                      <Layers size={15} />
-                      <span>Trình diễn 3D 360° & Điểm chạm</span>
-                    </button>
-                  </div>
-
-                  {displayMode === 'studio' ? (
-                    <div className="gallery-studio-display">
-                      {/* Edge-to-Edge Frameless Studio Lighting Showcase */}
-                      <div
-                        className="apple-gallery-showcase"
-                        onClick={() => setIsLightboxOpen(true)}
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Click để xem ảnh toàn màn hình"
-                      >
-                        <img
-                          src={currentImage.src}
-                          alt={product.name}
-                          className="apple-gallery-img"
-                          loading="eager"
-                          onError={e => {
-                            (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
-                          }}
-                        />
-
-                        {/* Floating Apple Badges on Image */}
-                        <div className="gallery-floating-tags">
-                          <span className="tag-brand">ANCHORBOX CHÍNH HÃNG</span>
-                          <span className="tag-sensor">ÁNH SÁNG STUDIO CHUẨN XÁC</span>
-                        </div>
-
-                        {/* Fullscreen Button */}
-                        <button
-                          type="button"
-                          className="gallery-zoom-button"
-                          onClick={e => {
-                            e.stopPropagation();
-                            setIsLightboxOpen(true);
-                          }}
-                          title="Xem toàn màn hình"
-                          aria-label="Phóng to ảnh"
-                        >
-                          <Maximize2 size={16} />
-                          <span>Toàn màn hình</span>
-                        </button>
-
-                        <div className="gallery-zoom-cue">
-                          <Maximize2 size={13} />
-                          <span>Click để phóng to chi tiết</span>
-                        </div>
-                      </div>
-
-                      {/* Floating Thumbnail Capsules */}
-                      {galleryImages.length > 1 && (
-                        <div className="apple-gallery-thumb-bar" role="tablist" aria-label="Góc chụp ảnh">
-                          {galleryImages.map((img, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              role="tab"
-                              aria-selected={activeImageIndex === idx}
-                              className={`apple-gallery-thumb-pill ${activeImageIndex === idx ? 'is-active' : ''}`}
-                              onClick={() => {
-                                setActiveImageIndex(idx);
-                              }}
-                            >
-                              <img
-                                src={img.src}
-                                alt={img.label}
-                                onError={e => {
-                                  (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
-                                }}
-                              />
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* 3D 360° Luxury Pedestal Showcase with Interactive Hotspots */
-                    <AppleProductViewer
-                      model={product.id.includes('solar') ? 'solar' : product.id.includes('base') ? 'base' : 'pro'}
-                      capacity={selectedCapacity}
-                      showHotspots={true}
-                    />
-                  )}
+                  <BoxShowcase
+                    productName={product.name}
+                    colorHex={variant?.colorHex}
+                    colorName={variant?.colorName}
+                    capacity={variant?.capacityLiter}
+                  />
 
                   {/* Assurance Trust Grid beneath Image (INSIDE the sticky sidebar to avoid overlap) */}
                   <div className="gallery-compact-desc-card">
@@ -527,29 +256,29 @@ export function ProductDetailPage() {
                       <div className="assurance-item">
                         <Truck size={17} className="item-icon" />
                         <div>
-                          <strong>Giao & Khảo sát tận nơi</strong>
-                          <p>Kỹ thuật viên chuyên nghiệp lắp đặt an toàn</p>
+                          <strong>Giao và lắp tận nơi</strong>
+                          <p>Kỹ thuật viên lắp đặt và gắn serial vào đơn</p>
                         </div>
                       </div>
                       <div className="assurance-item">
                         <ShieldCheck size={17} className="item-icon" />
                         <div>
-                          <strong>Bảo hành 24 tháng</strong>
-                          <p>Đổi mới linh kiện chính hãng tại nhà</p>
-                        </div>
-                      </div>
-                      <div className="assurance-item">
-                        <RotateCcw size={17} className="item-icon" />
-                        <div>
-                          <strong>30 ngày đổi trả</strong>
-                          <p>Nếu có lỗi kỹ thuật từ nhà sản xuất</p>
+                          <strong>{totalWarrantyMonths ? `Bảo hành ${totalWarrantyMonths} tháng` : 'Bảo hành điện tử'}</strong>
+                          <p>Tính từ ngày nghiệm thu, tra cứu bằng serial</p>
                         </div>
                       </div>
                       <div className="assurance-item">
                         <CheckCircle2 size={17} className="item-icon" />
                         <div>
-                          <strong>Đồng kiểm bưu kiện</strong>
-                          <p>Thử nghiệm khóa mở nắp trước khi thanh toán</p>
+                          <strong>Chạy thử trước bàn giao</strong>
+                          <p>Kiểm tra khóa, mở khóa và cân ngay tại nhà</p>
+                        </div>
+                      </div>
+                      <div className="assurance-item">
+                        <Lock size={17} className="item-icon" />
+                        <div>
+                          <strong>Nghiệm thu minh bạch</strong>
+                          <p>Bạn xác nhận nghiệm thu trong tài khoản</p>
                         </div>
                       </div>
                     </div>
@@ -561,134 +290,114 @@ export function ProductDetailPage() {
               <div className="detail-buy-column">
                 <div className="product-summary-block">
                   
-                  {/* Category Chip & Rating */}
-                  <div className="product-meta-top">
-                    <span className="category-pill">{product.categoryName || 'Thiết bị nhận hàng thông minh'}</span>
-                    <div className="rating-pill">
-                      <div className="stars" aria-hidden="true">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} size={14} fill="#eab308" color="#eab308" />
-                        ))}
-                      </div>
-                      <span className="rating-text">5.0 (32 đánh giá chính hãng)</span>
-                    </div>
-                  </div>
-
                   <h1 className="product-title">{product.name}</h1>
-                  <p style={{ color: '#6e6e73', fontSize: '15px', lineHeight: 1.5, margin: '0 0 20px' }}>
+                  <p className="pdp-description">
                     {product.description}
                   </p>
 
-                  {/* Configured Price Display */}
                   <div className="product-price-section">
                     <div className="price-main-row">
-                      <span className="current-price">{money(configuredPrice)}</span>
-                      <span className="reference-price">{money(Math.round(configuredPrice * 1.15))}</span>
-                      <span className="saving-badge">TIẾT KIỆM 15%</span>
+                      <span className="current-price">{money(price)}</span>
                     </div>
-                    <p className="vat-notice">Giá đã bao gồm thuế VAT & Miễn phí vận chuyển toàn quốc</p>
+                    <p className="vat-notice">Giá đã gồm VAT. Phí giao và lắp đặt được tính ở bước thanh toán.</p>
                   </div>
 
-                  {/* ====================================================
-                      CONFIGURATION SELECTOR (PILLS BO TRÒN VỚI MICRO-ANIMATIONS)
-                      ==================================================== */}
-                  
-                  {/* DIMENSION 1: DUNG TÍCH (CAPACITY) */}
-                  <div className="apple-config-group">
-                    <div className="apple-config-label-row">
-                      <span className="apple-config-title">1. Chọn Dung tích khoang chứa:</span>
-                      <span className="apple-config-value-badge">{selectedCapacity} Lít</span>
+                  {capacities.length > 0 && (
+                    <div className="apple-config-group">
+                      <div className="apple-config-label-row">
+                        <span className="apple-config-title">Dung tích</span>
+                        {variant?.capacityLiter && <span className="apple-config-value-badge">{variant.capacityLiter} lít</span>}
+                      </div>
+                      <div className="apple-config-pills-grid" role="radiogroup" aria-label="Dung tích">
+                        {capacities.map(capacity => {
+                          const isSelected = capacity === variant?.capacityLiter;
+                          const options = variants.filter(v => v.capacityLiter === capacity);
+                          const from = Math.min(...options.map(v => v.finalPrice ?? product.price));
+                          const soldOut = options.every(v => v.stockQuantity <= 0);
+                          return (
+                            <button
+                              key={capacity}
+                              type="button"
+                              role="radio"
+                              aria-checked={isSelected}
+                              className={`apple-config-pill ${isSelected ? 'is-active' : ''}`}
+                              onClick={() => pickVariant(capacity, variant?.colorName)}
+                            >
+                              <span>{capacity} L</span>
+                              <span className="pdp-pill-sub">{money(from)}{soldOut ? ' · Hết hàng' : ''}</span>
+                              {isSelected && <Check size={14} color="#0071e3" />}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="apple-config-pills-grid" role="radiogroup" aria-label="Dung tích khoang">
-                      {capacityOptions.map(cap => {
-                        const isSelected = selectedCapacity === cap.liters;
-                        return (
-                          <button
-                            key={cap.liters}
-                            type="button"
-                            role="radio"
-                            aria-checked={isSelected}
-                            className={`apple-config-pill ${isSelected ? 'is-active' : ''}`}
-                            onClick={() => {
-                              setSelectedCapacity(cap.liters);
-                              // Sync variant matching capacity if available
-                              const matched = product.variants?.find(v => v.capacityLiter === cap.liters);
-                              if (matched) setSelectedVariantId(matched.id);
-                            }}
-                          >
-                            <span>{cap.label}</span>
-                            {isSelected && <Check size={14} color="#0071e3" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  )}
 
-                  {/* DIMENSION 2: MÀU SẮC (FINISH / COLORS) */}
-                  <div className="apple-config-group">
-                    <div className="apple-config-label-row">
-                      <span className="apple-config-title">2. Chọn Màu sắc kim loại:</span>
-                      <span className="apple-config-value-badge">{selectedColor.name}</span>
+                  {colorsForCapacity.length > 0 && (
+                    <div className="apple-config-group">
+                      <div className="apple-config-label-row">
+                        <span className="apple-config-title">Màu hộp</span>
+                        {variant?.colorName && <span className="apple-config-value-badge">{variant.colorName}</span>}
+                      </div>
+                      <div className="pdp-swatches" role="radiogroup" aria-label="Màu hộp">
+                        {colorsForCapacity.map(option => {
+                          const isSelected = option.id === variant?.id;
+                          const soldOut = option.stockQuantity <= 0;
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              role="radio"
+                              aria-checked={isSelected}
+                              aria-label={`${option.colorName}${soldOut ? ', hết hàng' : ''}`}
+                              title={`${option.colorName}${soldOut ? ' · Hết hàng' : ''}`}
+                              className={`pdp-swatch ${isSelected ? 'is-active' : ''} ${soldOut ? 'is-sold-out' : ''}`}
+                              onClick={() => pickVariant(option.capacityLiter, option.colorName)}
+                            >
+                              <span style={{ background: option.colorHex || '#d1d1d6' }} />
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="apple-config-pills-grid" role="radiogroup" aria-label="Màu sắc hoàn thiện">
-                      {colorOptions.map(color => {
-                        const isSelected = selectedColor.id === color.id;
-                        return (
-                          <button
-                            key={color.id}
-                            type="button"
-                            role="radio"
-                            aria-checked={isSelected}
-                            className={`apple-config-pill ${isSelected ? 'is-active' : ''}`}
-                            onClick={() => setSelectedColor(color)}
-                          >
-                            <span
-                              className="apple-color-swatch-circle"
-                              style={{ background: color.hex }}
-                            />
-                            <span>{color.name.split(' ')[0]} {color.name.split(' ')[1]}</span>
-                            {isSelected && <Check size={14} color="#0071e3" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  )}
 
-                  {/* DIMENSION 3: GÓI CẢM BIẾN & CÔNG NGHỆ */}
-                  <div className="apple-config-group">
-                    <div className="apple-config-label-row">
-                      <span className="apple-config-title">3. Chọn Gói Cảm biến & Công nghệ:</span>
-                      <span className="apple-config-value-badge">
-                        {selectedSensorPack.addPrice > 0 ? `+${money(selectedSensorPack.addPrice)}` : 'Đã bao gồm'}
-                      </span>
+                  {plans.length > 0 && (
+                    <div className="apple-config-group">
+                      <div className="apple-config-label-row">
+                        <span className="apple-config-title">Gói bảo hành</span>
+                        <span className="apple-config-value-badge">{totalWarrantyMonths} tháng</span>
+                      </div>
+                      <div className="pdp-plan-list" role="radiogroup" aria-label="Gói bảo hành">
+                        {[null, ...plans].map(option => {
+                          const isSelected = (option?.id ?? '') === selectedPlanId;
+                          const months = (variant?.warrantyMonths ?? 0) + (option?.extraMonths ?? 0);
+                          return (
+                            <button
+                              key={option?.id ?? 'standard'}
+                              type="button"
+                              role="radio"
+                              aria-checked={isSelected}
+                              className={`pdp-plan ${isSelected ? 'is-active' : ''}`}
+                              onClick={() => { setSelectedPlanId(option?.id ?? ''); setMessage(''); }}
+                            >
+                              <span className="pdp-plan-name">{option ? option.name : 'Bảo hành tiêu chuẩn'}</span>
+                              <span className="pdp-plan-months">Tổng {months} tháng</span>
+                              <span className="pdp-plan-price">{option ? `+${money(option.price)}` : 'Đã bao gồm'}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="apple-config-pills-grid" role="radiogroup" aria-label="Gói công nghệ">
-                      {sensorPackOptions.map(pack => {
-                        const isSelected = selectedSensorPack.id === pack.id;
-                        return (
-                          <button
-                            key={pack.id}
-                            type="button"
-                            role="radio"
-                            aria-checked={isSelected}
-                            className={`apple-config-pill ${isSelected ? 'is-active' : ''}`}
-                            onClick={() => setSelectedSensorPack(pack)}
-                          >
-                            <Cpu size={14} color={isSelected ? '#0071e3' : '#a1a1a6'} />
-                            <span>{pack.name}</span>
-                            {isSelected && <Check size={14} color="#0071e3" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Stock Status Bar */}
                   <div className="stock-status-bar">
                     <div className="in-stock-alert">
-                      <span className="stock-dot pulse" />
+                      <span className={`stock-dot ${purchasable ? 'pulse' : ''}`} style={purchasable ? undefined : { background: '#86868b' }} />
                       <span>
-                        Sản phẩm chính hãng sẵn sàng giao — <strong>Giao hàng hỏa tốc trong 24 giờ</strong>
+                        {purchasable
+                          ? <>Còn hàng — <strong>{variant?.stockQuantity} sản phẩm</strong>. Giao và lắp đặt tận nhà.</>
+                          : <>Phiên bản này chưa mở bán. <Link to="/contact">Liên hệ để được tư vấn và đặt trước</Link>.</>}
                       </span>
                     </div>
                   </div>
@@ -710,11 +419,11 @@ export function ProductDetailPage() {
                         <input
                           type="number"
                           min={1}
-                          max={99}
+                          max={maxQuantity}
                           value={quantity}
                           onChange={e => {
                             const val = parseInt(e.target.value, 10);
-                            if (!isNaN(val)) setQuantity(Math.max(1, Math.min(val, 99)));
+                            if (!isNaN(val)) setQuantity(Math.max(1, Math.min(val, maxQuantity)));
                           }}
                           className="qty-input"
                           aria-label="Số lượng muốn mua"
@@ -722,8 +431,8 @@ export function ProductDetailPage() {
                         <button
                           type="button"
                           className="step-btn"
-                          disabled={quantity >= 99}
-                          onClick={() => setQuantity(q => q + 1)}
+                          disabled={quantity >= maxQuantity}
+                          onClick={() => setQuantity(q => Math.min(q + 1, maxQuantity))}
                           aria-label="Tăng số lượng"
                         >
                           <Plus size={15} />
@@ -739,6 +448,7 @@ export function ProductDetailPage() {
                         className="apple-btn-buy"
                         style={{ padding: '10px 18px', fontSize: '13.5px' }}
                         onClick={handleAddToCart}
+                        disabled={!purchasable}
                       >
                         <ShoppingCart size={17} />
                         <span>Thêm vào giỏ hàng</span>
@@ -749,6 +459,7 @@ export function ProductDetailPage() {
                         className="apple-btn-primary"
                         style={{ justifyContent: 'center', padding: '10px 18px', fontSize: '13.5px' }}
                         onClick={handleBuyNow}
+                        disabled={!purchasable}
                       >
                         <Zap size={17} />
                         <span>Mua ngay</span>
@@ -768,18 +479,6 @@ export function ProductDetailPage() {
                     )}
                   </div>
 
-                  {/* Security Trust Micro Bar */}
-                  <div className="detail-security-bar">
-                    <div className="sec-item">
-                      <Lock size={15} />
-                      <span>Thanh toán mã hóa bảo mật</span>
-                    </div>
-                    <div className="sec-item">
-                      <Wifi size={15} />
-                      <span>Kết nối ứng dụng iOS & Android trọn đời</span>
-                    </div>
-                  </div>
-
                 </div>
               </div>
 
@@ -791,207 +490,36 @@ export function ProductDetailPage() {
             <section className="apple-specs-accordion-section">
               <div className="apple-accordion-head">
                 <p className="eyebrow">CHI TIẾT PHẦN CỨNG & CÔNG NGHỆ</p>
-                <h2>Thông số kỹ thuật toàn diện</h2>
+                <h2>Thông số kỹ thuật</h2>
               </div>
 
               <div className="apple-flat-accordion" role="region" aria-label="Bảng thông số kỹ thuật accordion">
                 
-                {/* Accordion 1: Kích thước & Thiết kế khoang chứa */}
-                <div className={`apple-accordion-item ${openAccordions.dimensions ? 'is-open' : ''}`}>
-                  <button
-                    type="button"
-                    className="apple-accordion-trigger"
-                    onClick={() => toggleAccordion('dimensions')}
-                    aria-expanded={openAccordions.dimensions}
-                  >
-                    <span className="apple-accordion-title">Kích thước & Thiết kế khoang chứa</span>
-                    <span className="apple-accordion-icon">
-                      <ChevronDown size={17} />
-                    </span>
-                  </button>
-                  {openAccordions.dimensions && (
-                    <div className="apple-accordion-body">
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Dung tích khoang thực tế</span>
-                        <span className="apple-spec-val">{selectedCapacity} Lít (Cấu hình đang chọn)</span>
+                {specGroups.map(group => (
+                  <div key={group.key} className={`apple-accordion-item ${openAccordions[group.key] ? 'is-open' : ''}`}>
+                    <button
+                      type="button"
+                      className="apple-accordion-trigger"
+                      onClick={() => toggleAccordion(group.key)}
+                      aria-expanded={!!openAccordions[group.key]}
+                    >
+                      <span className="apple-accordion-title">{group.title}</span>
+                      <span className="apple-accordion-icon">
+                        <ChevronDown size={17} />
+                      </span>
+                    </button>
+                    {openAccordions[group.key] && (
+                      <div className="apple-accordion-body">
+                        {group.rows.map(([key, value]) => (
+                          <div key={key} className="apple-spec-row">
+                            <span className="apple-spec-key">{key}</span>
+                            <span className="apple-spec-val">{value}</span>
+                          </div>
+                        ))}
                       </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Kích thước phủ bì (R × C × S)</span>
-                        <span className="apple-spec-val">
-                          {selectedCapacity === 45
-                            ? '45 × 85 × 38 cm'
-                            : selectedCapacity === 110
-                            ? '58 × 112 × 50 cm'
-                            : '50 × 98 × 45 cm'}
-                        </span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Khối lượng tịnh vỏ hộp</span>
-                        <span className="apple-spec-val">{selectedCapacity === 45 ? '16.5 kg' : selectedCapacity === 110 ? '25.5 kg' : '20.0 kg'}</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Tải trọng chứa bưu phẩm</span>
-                        <span className="apple-spec-val">Lên tới 60 kg (Gia cường thanh giằng thép chịu lực)</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Lớp đệm đáy khoang</span>
-                        <span className="apple-spec-val">Đệm cao su EVA dày 8mm giảm chấn chống trầy xước bưu phẩm</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Accordion 2: Hệ thống Khóa & Cơ chế Bảo mật */}
-                <div className={`apple-accordion-item ${openAccordions.security ? 'is-open' : ''}`}>
-                  <button
-                    type="button"
-                    className="apple-accordion-trigger"
-                    onClick={() => toggleAccordion('security')}
-                    aria-expanded={openAccordions.security}
-                  >
-                    <span className="apple-accordion-title">Hệ thống Khóa & Cơ chế Bảo mật</span>
-                    <span className="apple-accordion-icon">
-                      <ChevronDown size={17} />
-                    </span>
-                  </button>
-                  {openAccordions.security && (
-                    <div className="apple-accordion-body">
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Ngàm khóa cơ điện</span>
-                        <span className="apple-spec-val">Khóa Solenoid hợp kim chịu lực kéo va đập 250kg</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Chuẩn mã hóa vi xử lý</span>
-                        <span className="apple-spec-val">256-bit AES tiêu chuẩn ngân hàng chống sao chép</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Phương thức mở khóa</span>
-                        <span className="apple-spec-val">Mã OTP 1 lần shipper, Mở từ xa qua App, Chìa cơ khẩn cấp</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Cảnh báo chống cạy phá</span>
-                        <span className="apple-spec-val">Còi báo động 90dB & Tự động đẩy thông báo khẩn về điện thoại</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Trợ lực pít-tông nâng hạ</span>
-                        <span className="apple-spec-val">Pít-tông thủy lực kép nâng mở êm ái chống kẹp tay</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Accordion 3: Cảm biến IoT & Trí tuệ nhân tạo (AI) */}
-                <div className={`apple-accordion-item ${openAccordions.sensors ? 'is-open' : ''}`}>
-                  <button
-                    type="button"
-                    className="apple-accordion-trigger"
-                    onClick={() => toggleAccordion('sensors')}
-                    aria-expanded={openAccordions.sensors}
-                  >
-                    <span className="apple-accordion-title">Cảm biến IoT & Trí tuệ nhân tạo (AI)</span>
-                    <span className="apple-accordion-icon">
-                      <ChevronDown size={17} />
-                    </span>
-                  </button>
-                  {openAccordions.sensors && (
-                    <div className="apple-accordion-body">
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Cảm biến trọng lượng</span>
-                        <span className="apple-spec-val">4 điểm Load-cell HX711 chuẩn xác ±5g chống tráo ruột</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Camera nhận diện AI</span>
-                        <span className="apple-spec-val">Full HD 1080p góc rộng 155° HDR, Night Vision hồng ngoại</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Cảm biến tiệm cận người</span>
-                        <span className="apple-spec-val">PIR góc quét 120° phát hiện chuyển động trong bán kính 2m</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Khử trùng vi khuẩn UV-C</span>
-                        <span className="apple-spec-val">Đèn LED UV-C 254nm tự động kích hoạt khử trùng 3 phút</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Quạt đối lưu vi khí hậu</span>
-                        <span className="apple-spec-val">Tự kích hoạt khi độ ẩm khoang vượt 65% RH chống ẩm mốc</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Accordion 4: Năng lượng & Kết nối không dây */}
-                <div className={`apple-accordion-item ${openAccordions.connectivity ? 'is-open' : ''}`}>
-                  <button
-                    type="button"
-                    className="apple-accordion-trigger"
-                    onClick={() => toggleAccordion('connectivity')}
-                    aria-expanded={openAccordions.connectivity}
-                  >
-                    <span className="apple-accordion-title">Năng lượng & Kết nối không dây</span>
-                    <span className="apple-accordion-icon">
-                      <ChevronDown size={17} />
-                    </span>
-                  </button>
-                  {openAccordions.connectivity && (
-                    <div className="apple-accordion-body">
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Pin dự phòng tích hợp</span>
-                        <span className="apple-spec-val">Pin sạc Lithium 10.000mAh duy trì vận hành 45 ngày</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Tấm pin năng lượng mặt trời</span>
-                        <span className="apple-spec-val">Monocrystalline 15W tích hợp trên nóc mái tự sạc liên tục</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Chuẩn nhà thông minh</span>
-                        <span className="apple-spec-val">Matter Certified & Mạng lưới Thread thế hệ mới</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Kết nối không dây</span>
-                        <span className="apple-spec-val">Wi-Fi 6 (2.4GHz / 5GHz) & Bluetooth 5.3 Low Energy</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Tương thích ứng dụng</span>
-                        <span className="apple-spec-val">Apple HomeKit (Apple Home), Google Home, AnchorBox App</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Accordion 5: Độ bền vật liệu & Chính sách bảo hành */}
-                <div className={`apple-accordion-item ${openAccordions.durability ? 'is-open' : ''}`}>
-                  <button
-                    type="button"
-                    className="apple-accordion-trigger"
-                    onClick={() => toggleAccordion('durability')}
-                    aria-expanded={openAccordions.durability}
-                  >
-                    <span className="apple-accordion-title">Độ bền vật liệu & Chính sách bảo hành</span>
-                    <span className="apple-accordion-icon">
-                      <ChevronDown size={17} />
-                    </span>
-                  </button>
-                  {openAccordions.durability && (
-                    <div className="apple-accordion-body">
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Vật liệu cấu thành</span>
-                        <span className="apple-spec-val">Thép tấm mạ kẽm cường độ cao dày 1.5mm chống va đập</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Xử lý bề mặt</span>
-                        <span className="apple-spec-val">Sơn tĩnh điện AkzoNobel 3 lớp kháng tia cực tím UV và mưa muối</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Chuẩn kháng thời tiết</span>
-                        <span className="apple-spec-val">IP65 Outdoor (Kháng bụi tuyệt đối & chịu mưa bão trực tiếp)</span>
-                      </div>
-                      <div className="apple-spec-row">
-                        <span className="apple-spec-key">Thời hạn bảo hành</span>
-                        <span className="apple-spec-val">24 tháng chính hãng · Đổi mới linh kiện tại nhà</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                ))}
 
               </div>
             </section>
@@ -999,134 +527,83 @@ export function ProductDetailPage() {
             {/* ====================================================
                 3. FREQUENTLY BOUGHT TOGETHER COMBO RECOMMENDATIONS
                 ==================================================== */}
-            {accessoryRecommendations.length > 0 && (
-        <section className="recommendation-bundle-section" style={{ marginTop: '48px' }}>
-              <div className="bundle-heading">
-                <div className="bundle-badge">
-                  <Zap size={14} />
-                  <span>COMBO TIẾT KIỆM CHÍNH HÃNG</span>
+            {accessoryRecommendations.length > 0 && purchasable && variant && (
+              <section className="recommendation-bundle-section" style={{ marginTop: '48px' }}>
+                <div className="bundle-heading">
+                  <h2>Thường được mua cùng</h2>
+                  <p className="bundle-sub">Phụ kiện đang bán, giá theo danh mục hiện tại.</p>
                 </div>
-                <h2>Thường được mua cùng</h2>
-                <p className="bundle-sub">
-                  Trang bị thêm phụ kiện chính hãng để tối ưu khả năng bảo vệ bưu kiện và tiện nghi mở khóa ngoài trời.
-                </p>
-              </div>
 
-              <div className="bundle-card-container">
-                {/* Left: Products Grid (Main + 3 Accessories) */}
-                <div className="bundle-items-flow">
-                  {/* Main Product */}
-                  <div className="bundle-item-card is-main">
-                    <div className="bundle-item-checkbox">
-                      <input type="checkbox" checked disabled readOnly aria-label="Sản phẩm chính" />
-                    </div>
-                    <div className="bundle-img-wrap">
-                      <img
-                        src={product.images?.[0] || '/products/smartbox-std-front.svg'}
-                        alt={product.name}
-                        onError={e => {
-                          (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
-                        }}
-                      />
-                    </div>
-                    <div className="bundle-info">
-                      <span className="bundle-badge-main">Thiết bị chính</span>
-                      <h4>{product.name} ({selectedCapacity}L)</h4>
-                      <span className="bundle-variant-tag">{selectedColor.name}</span>
-                      <div className="bundle-prices-row">
-                        <span className="bundle-price">{money(configuredPrice)}</span>
+                <div className="bundle-card-container">
+                  <div className="bundle-items-flow">
+                    <div className="bundle-item-card is-main">
+                      <div className="bundle-item-checkbox">
+                        <input type="checkbox" checked disabled readOnly aria-label="Sản phẩm chính" />
+                      </div>
+                      <div className="bundle-img-wrap">
+                        <img src={product.images?.[0] || '/products/smartbox-std-front.svg'} alt={product.name} />
+                      </div>
+                      <div className="bundle-info">
+                        <span className="bundle-badge-main">Thiết bị chính</span>
+                        <h4>{variant.variantName || product.name}</h4>
+                        {plan && <span className="bundle-variant-tag">{plan.name}</span>}
+                        <div className="bundle-prices-row">
+                          <span className="bundle-price">{money(price)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Recommended Accessories */}
-                  {accessoryRecommendations.map(acc => {
-                    const isChecked = !!checkedAccessories[acc.id];
-                    return (
-                      <div
-                        key={acc.id}
-                        className={`bundle-item-card ${isChecked ? 'is-checked' : ''}`}
-                        onClick={() =>
-                          setCheckedAccessories(prev => ({
-                            ...prev,
-                            [acc.id]: !prev[acc.id]
-                          }))
-                        }
-                      >
-                        <div className="bundle-item-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {}}
-                            aria-label={acc.name}
-                          />
-                        </div>
-                        <div className="bundle-img-wrap">
-                          <img src={acc.image} alt={acc.name} />
-                        </div>
-                        <div className="bundle-info">
-                          <span className="bundle-badge-accessory">Phụ kiện gợi ý</span>
-                          <h4>{acc.name}</h4>
-                          <span className="bundle-variant-tag">{acc.variantName}</span>
-                          <div className="bundle-prices-row">
-                            <span className="bundle-price">{money(acc.price)}</span>
-                            <span className="bundle-orig-price">{money(acc.originalPrice)}</span>
+                    {accessoryRecommendations.map(acc => {
+                      const isChecked = !!checkedAccessories[acc.variant.id];
+                      const toggle = () => setCheckedAccessories(prev => ({ ...prev, [acc.variant.id]: !prev[acc.variant.id] }));
+                      return (
+                        <label key={acc.variant.id} className={`bundle-item-card ${isChecked ? 'is-checked' : ''}`}>
+                          <div className="bundle-item-checkbox">
+                            <input type="checkbox" checked={isChecked} onChange={toggle} aria-label={acc.name} />
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Right: Checkout Calculation Card */}
-                <div className="bundle-checkout-card">
-                  <div className="bundle-calc-header">
-                    <h4>Tổng thanh toán combo</h4>
-                    <span className="item-count">Đã chọn {bundleItemCount} sản phẩm ({bundleItemCount === 1 ? '1 thiết bị chính' : `1 thiết bị chính + ${selectedAccessoriesList.length} phụ kiện`})</span>
+                          <div className="bundle-img-wrap">
+                            <img src={acc.image} alt={acc.name} />
+                          </div>
+                          <div className="bundle-info">
+                            <span className="bundle-badge-accessory">Phụ kiện</span>
+                            <h4>{acc.name}</h4>
+                            {acc.variant.variantName && <span className="bundle-variant-tag">{acc.variant.variantName}</span>}
+                            <div className="bundle-prices-row">
+                              <span className="bundle-price">{money(acc.price)}</span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
 
-                  <div className="bundle-calc-rows">
-                    <div className="calc-row">
-                      <span>Giá niêm yết:</span>
-                      <strong>{money(bundleTotalOriginal)}</strong>
+                  <div className="bundle-checkout-card">
+                    <div className="bundle-calc-header">
+                      <h4>Tổng cộng</h4>
+                      <span className="item-count">{bundleItemCount} sản phẩm</span>
                     </div>
-
-                    {bundleSaving > 0 && (
-                      <div className="calc-row saving-highlight">
-                        <span>Tiết kiệm combo:</span>
-                        <strong className="saving-amount">-{money(bundleSaving)}</strong>
+                    <div className="bundle-calc-rows">
+                      <div className="calc-row total-row">
+                        <span>Tạm tính:</span>
+                        <strong className="final-total">{money(bundleTotalFinal)}</strong>
+                      </div>
+                    </div>
+                    <button type="button" className="btn-add-bundle" onClick={handleAddBundleToCart}>
+                      <ShoppingCart size={16} />
+                      <span>Thêm {bundleItemCount} sản phẩm vào giỏ</span>
+                    </button>
+                    {bundleMessage && (
+                      <div className="bundle-added-toast" role="status">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <CheckCircle2 size={16} />
+                          <strong>{bundleMessage}</strong>
+                        </div>
+                        <Link to="/cart">Đi tới giỏ hàng →</Link>
                       </div>
                     )}
-
-                    <div className="calc-divider" />
-
-                    <div className="calc-row total-row">
-                      <span>Giá trọn gói:</span>
-                      <strong className="final-total">{money(bundleTotalFinal)}</strong>
-                    </div>
                   </div>
-
-                  <button
-                    type="button"
-                    className="btn-add-bundle"
-                    onClick={handleAddBundleToCart}
-                  >
-                    <ShoppingCart size={16} />
-                    <span>Thêm cả {bundleItemCount} sản phẩm vào giỏ</span>
-                  </button>
-
-                  {bundleMessage && (
-                    <div className="bundle-added-toast" role="status">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle2 size={16} />
-                        <strong>{bundleMessage}</strong>
-                      </div>
-                      <Link to="/cart">Đi tới giỏ hàng & thanh toán →</Link>
-                    </div>
-                  )}
                 </div>
-              </div>
-            </section>
+              </section>
             )}
 
             {/* ====================================================
@@ -1160,15 +637,9 @@ export function ProductDetailPage() {
                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                       >
                         <div className="card-thumb-wrap">
-                          <img
-                            src={itemImg}
-                            alt={item.name}
-                            loading="lazy"
-                            onError={e => {
-                              (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
-                            }}
-                          />
-                          <span className="card-cat-badge">{item.categoryName || 'AnchorBox'}</span>
+                          {/^ANCHORBOX/i.test(item.sku ?? '')
+                            ? <BoxThumb colorHex={item.variants?.[0]?.colorHex} capacity={item.variants?.[0]?.capacityLiter} />
+                            : <img src={itemImg} alt={item.name} loading="lazy" />}
                         </div>
                         <div className="card-body">
                           <h4 className="card-name">{item.name}</h4>
@@ -1192,102 +663,7 @@ export function ProductDetailPage() {
         )}
       </div>
 
-      {/* FULLSCREEN LIGHTBOX MODAL WITH ZOOM CONTROLS */}
-      {isLightboxOpen && (
-        <div
-          className="lightbox-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Xem ảnh phóng to"
-          onClick={() => setIsLightboxOpen(false)}
-        >
-          <div className="lightbox-modal" onClick={e => e.stopPropagation()}>
-            <div className="lightbox-toolbar">
-              <span className="lightbox-counter">
-                {activeImageIndex + 1} / {galleryImages.length} — {currentImage.label}
-              </span>
 
-              <div className="lightbox-actions">
-                <button
-                  type="button"
-                  className="tb-btn"
-                  title="Phóng to (+)"
-                  onClick={() => setLightboxScale(s => Math.min(s + 0.5, 3.5))}
-                >
-                  <ZoomIn size={20} />
-                </button>
-                <button
-                  type="button"
-                  className="tb-btn"
-                  title="Thu nhỏ (-)"
-                  disabled={lightboxScale <= 1}
-                  onClick={() => setLightboxScale(s => Math.max(s - 0.5, 1))}
-                >
-                  <ZoomOut size={20} />
-                </button>
-                <button
-                  type="button"
-                  className="tb-btn"
-                  title="Đặt lại tỉ lệ (100%)"
-                  onClick={() => setLightboxScale(1)}
-                >
-                  100%
-                </button>
-                <button
-                  type="button"
-                  className="tb-btn close-btn"
-                  title="Đóng cửa sổ (ESC)"
-                  onClick={() => setIsLightboxOpen(false)}
-                >
-                  <X size={22} />
-                </button>
-              </div>
-            </div>
-
-            <div className="lightbox-viewport">
-              {galleryImages.length > 1 && (
-                <button
-                  type="button"
-                  className="lightbox-nav-btn prev"
-                  title="Ảnh trước"
-                  onClick={() => {
-                    setActiveImageIndex(prev => (prev - 1 + galleryImages.length) % galleryImages.length);
-                    setLightboxScale(1);
-                  }}
-                >
-                  <ChevronLeft size={28} />
-                </button>
-              )}
-
-              <div className="lightbox-image-container">
-                <img
-                  src={currentImage.src}
-                  alt={currentImage.label}
-                  className="lightbox-img"
-                  style={{ transform: `scale(${lightboxScale})` }}
-                  onError={e => {
-                    (e.target as HTMLImageElement).src = '/products/smartbox-std-front.svg';
-                  }}
-                />
-              </div>
-
-              {galleryImages.length > 1 && (
-                <button
-                  type="button"
-                  className="lightbox-nav-btn next"
-                  title="Ảnh kế tiếp"
-                  onClick={() => {
-                    setActiveImageIndex(prev => (prev + 1) % galleryImages.length);
-                    setLightboxScale(1);
-                  }}
-                >
-                  <ChevronRight size={28} />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

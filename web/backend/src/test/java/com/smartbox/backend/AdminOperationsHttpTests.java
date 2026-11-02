@@ -1,6 +1,6 @@
 package com.smartbox.backend;
 
-import com.smartbox.backend.service.warranty.ClaimImageStorage;
+import com.smartbox.backend.service.storage.ImageStorage;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -13,7 +13,7 @@ class AdminOperationsHttpTests extends BackendApplicationTests {
         var headers=new HttpHeaders();headers.setContentType(MediaType.APPLICATION_JSON);if(token!=null)headers.setBearerAuth(token);if(key!=null)headers.set("Idempotency-Key",key);if(version!=null)headers.set("If-Match",version);
         return http.exchange(java.net.URI.create(http.getRootUri()+path),method,new HttpEntity<>(body,headers),Map.class);
     }
-    @MockitoBean ClaimImageStorage storage;
+    @MockitoBean ImageStorage storage;
     UUID actor(String role,String token){var id=profile(role);when(identity.identity(token)).thenReturn(id);return id;}
     UUID warranty(UUID owner,boolean active){
         UUID device=UUID.randomUUID(),warranty=UUID.randomUUID();
@@ -23,10 +23,50 @@ class AdminOperationsHttpTests extends BackendApplicationTests {
     Map<String,Object> postClaim(UUID warranty,String token,String key,List<UUID> images,int status){
         var result=call("/api/customer/warranty-claims",HttpMethod.POST,token,Map.of("warrantyId",warranty,"description","Khóa điện tử không mở được.","imageIds",images),key,null);assertEquals(status,result.getStatusCode().value(),Objects.toString(result.getBody()));return result.getBody();
     }
+    @org.springframework.beans.factory.annotation.Autowired com.smartbox.backend.service.warranty.CustomerWarrantyClaimService claimService;
+    String serialOf(UUID warranty){return jdbc.queryForObject("SELECT d.serial_number FROM public.devices d JOIN public.warranties w ON w.device_id=d.id WHERE w.id=?",String.class,warranty);}
+    UUID image(UUID owner,UUID warranty,String age){UUID id=UUID.randomUUID();jdbc.update("INSERT INTO public.warranty_claim_images(id,owner_id,warranty_id,public_id,secure_url,created_at) VALUES(?,?,?,?,?,now()-CAST(? AS interval))",id,owner,warranty,"warranty-claims/"+UUID.randomUUID()+".png","https://project.test/storage/v1/object/public/warranty-claims/x.png",age);return id;}
+    @Test void publicLookupShowsOnlyValidityAndIsRateLimited(){
+        UUID owner=actor("customer","lookup-owner"),device=UUID.randomUUID(),warranty=UUID.randomUUID();
+        String serial="DBX-"+device.toString().substring(0,12).toUpperCase();
+        jdbc.update("INSERT INTO public.devices(id,owner_id,serial_number,mqtt_topic_id) VALUES(?,?,?,?)",device,owner,serial,"delivery_box/lookup-"+device);
+        jdbc.update("INSERT INTO public.warranties(id,device_id,start_date,end_date,status) VALUES(?,?,CURRENT_DATE-1,CURRENT_DATE+30,CAST('active' AS public.warranty_status))",warranty,device);
+        var found=call("/api/public/warranty-lookup?serial="+serial.toLowerCase(),HttpMethod.GET,null,null,null,null);
+        assertEquals(200,found.getStatusCode().value(),Objects.toString(found.getBody()));
+        assertEquals(Set.of("serialNumber","productName","valid","startDate","endDate","remainingDays"),found.getBody().keySet());
+        assertEquals(true,found.getBody().get("valid"));
+        assertEquals(404,call("/api/public/warranty-lookup?serial=DBX-UNKNOWN0000",HttpMethod.GET,null,null,null,null).getStatusCode().value());
+        assertEquals(400,call("/api/public/warranty-lookup?serial=x'%20or%201=1",HttpMethod.GET,null,null,null,null).getStatusCode().value());
+        assertEquals(401,call("/api/warranties/lookup?serial="+serial,HttpMethod.GET,null,null,null,null).getStatusCode().value());
+        int status=200;for(int i=0;i<30 && status!=429;i++)status=call("/api/public/warranty-lookup?serial="+serial,HttpMethod.GET,null,null,null,null).getStatusCode().value();
+        assertEquals(429,status);
+    }
+    @Test void customerCanFilterWarrantiesBySerial(){
+        UUID owner=actor("customer","filter-owner");UUID first=warranty(owner,true);warranty(owner,true);
+        var page=call("/api/customer/warranties?serial="+serialOf(first).toLowerCase(),HttpMethod.GET,"filter-owner",null,null,null).getBody();
+        assertEquals(1,((Number)page.get("totalElements")).intValue());
+        assertEquals(2,((Number)call("/api/customer/warranties",HttpMethod.GET,"filter-owner",null,null,null).getBody().get("totalElements")).intValue());
+    }
+    @Test void unattachedImagesCanBeDeletedAndAreSwept(){
+        UUID owner=actor("customer","img-owner");actor("customer","img-other");UUID warranty=warranty(owner,true);
+        UUID fresh=image(owner,warranty,"1 minute"),stale=image(owner,warranty,"25 hours"),kept=image(owner,warranty,"2 minutes");
+        String path="/api/customer/warranties/"+warranty+"/images/"+fresh;
+        assertEquals(404,call(path,HttpMethod.DELETE,"img-other",null,null,null).getStatusCode().value());
+        assertEquals(200,call(path,HttpMethod.DELETE,"img-owner",null,null,null).getStatusCode().value());
+        assertEquals(404,call(path,HttpMethod.DELETE,"img-owner",null,null,null).getStatusCode().value());
+        verify(storage,times(1)).delete(startsWith("warranty-claims/"));
+        postClaim(warranty,"img-owner",UUID.randomUUID().toString(),List.of(stale),404);
+        postClaim(warranty,"img-owner",UUID.randomUUID().toString(),List.of(kept),200);
+        assertEquals(404,call("/api/customer/warranties/"+warranty+"/images/"+kept,HttpMethod.DELETE,"img-owner",null,null,null).getStatusCode().value());
+        claimService.sweepOrphanImages();
+        assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM public.warranty_claim_images WHERE id=?",Integer.class,stale));
+        assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.warranty_claim_images WHERE id=?",Integer.class,kept));
+        verify(storage,times(2)).delete(startsWith("warranty-claims/"));
+    }
     @Test void claimOwnershipExpiryIdempotencyAndPrivateNotes(){
         UUID owner=actor("customer","claim-customer"),other=actor("customer","claim-other");actor("super_admin","claim-admin");
         UUID warranty=warranty(owner,true),image=UUID.randomUUID();
-        jdbc.update("INSERT INTO public.warranty_claim_images(id,owner_id,warranty_id,public_id,secure_url,created_at) VALUES(?,?,?,?,?,now())",image,owner,warranty,"test-"+image,"https://res.cloudinary.com/test/image/upload/claim.png");
+        jdbc.update("INSERT INTO public.warranty_claim_images(id,owner_id,warranty_id,public_id,secure_url,created_at) VALUES(?,?,?,?,?,now())",image,owner,warranty,"warranty-claims/"+image+".png","https://project.test/storage/v1/object/public/warranty-claims/"+image+".png");
         String key=UUID.randomUUID().toString();var claim=postClaim(warranty,"claim-customer",key,List.of(image),200);
         assertEquals(claim.get("id"),postClaim(warranty,"claim-customer",key,List.of(image),200).get("id"));
         postClaim(warranty,"claim-customer",key,List.of(),409);
@@ -43,10 +83,10 @@ class AdminOperationsHttpTests extends BackendApplicationTests {
     }
     @Test void uploadOwnershipAndProviderFailureDoNotPersistFakeImages(){
         UUID owner=actor("customer","upload-owner");actor("customer","upload-other");UUID warranty=warranty(owner,true);
-        when(storage.upload(any())).thenReturn(new ClaimImageStorage.StoredImage("uploaded-id","https://res.cloudinary.com/test/image/upload/image.png"));
-        assertEquals(404,upload(warranty,"upload-other").getStatusCode().value());verify(storage,never()).upload(any());
+        when(storage.upload(any(),any())).thenReturn(new ImageStorage.StoredImage("warranty-claims/"+UUID.randomUUID()+".png","https://project.test/storage/v1/object/public/warranty-claims/image.png"));
+        assertEquals(404,upload(warranty,"upload-other").getStatusCode().value());verify(storage,never()).upload(any(),any());
         var result=upload(warranty,"upload-owner");assertEquals(200,result.getStatusCode().value());assertNotNull(result.getBody().get("id"));
-        when(storage.upload(any())).thenThrow(new com.smartbox.backend.exception.AppException(502,"CLOUDINARY_UPLOAD_FAILED"));
+        when(storage.upload(any(),any())).thenThrow(new com.smartbox.backend.exception.AppException(502,"STORAGE_UPLOAD_FAILED"));
         assertEquals(502,upload(warranty,"upload-owner").getStatusCode().value());
         assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.warranty_claim_images WHERE warranty_id=?",Integer.class,warranty));
     }
@@ -96,6 +136,42 @@ class AdminOperationsHttpTests extends BackendApplicationTests {
         assertEquals(0,((Number)call("/api/orders/paged?search="+unique+"&status=completed",HttpMethod.GET,"search-admin",null,null,null).getBody().get("totalElements")).intValue());
         for(String path:List.of("/api/users/paged?page=-1","/api/users/paged?size=101","/api/users/paged?role=bad","/api/orders/paged?status=bad"))assertEquals(400,call(path,HttpMethod.GET,"search-admin",null,null,null).getStatusCode().value());
         assertEquals(403,call("/api/orders/paged",HttpMethod.GET,"search-customer",null,null,null).getStatusCode().value());
+    }
+    @Test void colorsAndPaidWarrantyPlansArePricedAndSnapshottedByServer(){
+        actor("product_manager","plan-manager");actor("customer","plan-customer");
+        String sku="PLAN-"+UUID.randomUUID();
+        var variants=List.of(Map.of("sku",sku+"-GRAY","variantName","45 L Xám","stockQuantity",5,"warrantyMonths",12,"colorName","Xám than","colorHex","#4B4846"));
+        var created=call("/api/products",HttpMethod.POST,"plan-manager",Map.of("name","Hộp kiểm thử gói","sku",sku,"price",2000000,"variants",variants),null,null);
+        assertEquals(200,created.getStatusCode().value(),Objects.toString(created.getBody()));
+        var variant=(Map<?,?>)((List<?>)created.getBody().get("variants")).getFirst();UUID vid=UUID.fromString(variant.get("id").toString());
+        assertEquals("Xám than",variant.get("colorName"));assertEquals("#4B4846",variant.get("colorHex"));
+        var badColor=List.of(Map.of("sku",sku+"-BAD","variantName","Sai màu","stockQuantity",1,"colorHex","red"));
+        assertEquals(400,call("/api/products",HttpMethod.POST,"plan-manager",Map.of("name","Sai màu","sku",sku+"-X","price",1,"variants",badColor),null,null).getStatusCode().value());
+        UUID plan=UUID.randomUUID(),retired=UUID.randomUUID();
+        jdbc.update("INSERT INTO public.warranty_plans(id,code,name,extra_months,price,sort_order,is_active) VALUES(?,?,?,12,490000,1,true)",plan,"T-"+plan,"Gói bảo hành +12 tháng");
+        jdbc.update("INSERT INTO public.warranty_plans(id,code,name,extra_months,price,sort_order,is_active) VALUES(?,?,?,6,290000,0,false)",retired,"T-"+retired,"Gói cũ");
+        var listed=http.exchange(java.net.URI.create(http.getRootUri()+"/api/warranty-plans"),HttpMethod.GET,null,List.class);
+        assertEquals(200,listed.getStatusCode().value());
+        assertTrue(listed.getBody().stream().anyMatch(p->plan.toString().equals(((Map<?,?>)p).get("id"))));
+        assertTrue(listed.getBody().stream().noneMatch(p->retired.toString().equals(((Map<?,?>)p).get("id"))));
+        var pricing=call("/api/pricing/calculate",HttpMethod.POST,null,Map.of("items",List.of(Map.of("variantId",vid,"quantity",2,"warrantyPlanId",plan))),null,null);
+        assertEquals(200,pricing.getStatusCode().value(),Objects.toString(pricing.getBody()));
+        var detail=(Map<?,?>)((List<?>)pricing.getBody().get("itemDetails")).getFirst();
+        assertEquals(0,new java.math.BigDecimal(detail.get("unitPrice").toString()).compareTo(new java.math.BigDecimal("2490000")));
+        assertEquals(24,((Number)detail.get("warrantyMonths")).intValue());
+        assertEquals(400,call("/api/pricing/calculate",HttpMethod.POST,null,Map.of("items",List.of(Map.of("variantId",vid,"quantity",1,"warrantyPlanId",retired))),null,null).getStatusCode().value());
+        var conflict=List.of(Map.of("variantId",vid,"quantity",1,"warrantyPlanId",plan),Map.of("variantId",vid,"quantity",1));
+        assertEquals(400,call("/api/orders",HttpMethod.POST,"plan-customer",Map.of("shippingAddress","Địa chỉ thử nghiệm","items",conflict),null,null).getStatusCode().value());
+        assertEquals(5,jdbc.queryForObject("SELECT stock_quantity FROM public.product_variants WHERE id=?",Integer.class,vid));
+        var order=call("/api/orders",HttpMethod.POST,"plan-customer",Map.of("shippingAddress","Địa chỉ thử nghiệm","items",List.of(Map.of("variantId",vid,"quantity",2,"warrantyPlanId",plan))),null,null);
+        assertEquals(201,order.getStatusCode().value(),Objects.toString(order.getBody()));
+        var item=jdbc.queryForMap("SELECT unit_price,warranty_months_snapshot,warranty_plan_id,warranty_plan_price,warranty_extra_months,variant_name_snapshot FROM public.order_items WHERE variant_id=?",vid);
+        assertEquals(0,new java.math.BigDecimal(item.get("unit_price").toString()).compareTo(new java.math.BigDecimal("2490000")));
+        assertEquals(24,((Number)item.get("warranty_months_snapshot")).intValue());
+        assertEquals(plan,item.get("warranty_plan_id"));
+        assertEquals(12,((Number)item.get("warranty_extra_months")).intValue());
+        assertTrue(item.get("variant_name_snapshot").toString().endsWith("Gói bảo hành +12 tháng"));
+        assertEquals(3,jdbc.queryForObject("SELECT stock_quantity FROM public.product_variants WHERE id=?",Integer.class,vid));
     }
     @Test void metadataCannotOverwriteReservedStockAndAdjustmentsAreJournaled(){
         UUID admin=actor("product_manager","stock-manager");UUID customer=actor("customer","stock-customer");
