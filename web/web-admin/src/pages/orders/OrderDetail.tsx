@@ -82,7 +82,7 @@ function formatEventLabel(source?: string, action?: string): { title: string; de
       return { title: 'Nghiệm thu & bàn giao xong', desc: 'Khách hàng đã ký nhận biên bản nghiệm thu', iconType: 'acceptance', tag: 'Nghiệm thu' };
     }
     if (act.includes('INSTALL')) {
-      return { title: 'Lắp đặt SmartBox hoàn tất', desc: 'Đã thi công định vị & kết nối cảm biến', iconType: 'install', tag: 'Lắp đặt' };
+      return { title: 'Lắp đặt Anchor Box hoàn tất', desc: 'Đã thi công định vị & kết nối cảm biến', iconType: 'install', tag: 'Lắp đặt' };
     }
     if (act.includes('DELIVER')) {
       return { title: 'Đã giao tới địa chỉ nhận', desc: 'Kiện hàng đã bàn giao tại địa chỉ khách', iconType: 'delivery', tag: 'Vận chuyển' };
@@ -118,7 +118,7 @@ function formatEventLabel(source?: string, action?: string): { title: string; de
     return { title: 'Chờ thanh toán', desc: 'Chờ giao dịch từ cổng thanh toán VNPAY', iconType: 'payment', tag: 'Thanh toán' };
   }
   if (lowAct.includes('created') || lowAct.includes('pending')) {
-    return { title: 'Khách hàng đặt đơn hàng', desc: 'Khởi tạo đơn hàng trên SmartBox', iconType: 'order', tag: 'Đặt đơn' };
+    return { title: 'Khách hàng đặt đơn hàng', desc: 'Khởi tạo đơn hàng trên Anchor Box', iconType: 'order', tag: 'Đặt đơn' };
   }
   if (lowAct.includes('cancelled')) {
     return { title: 'Đơn hàng đã hủy', desc: 'Hủy đơn theo yêu cầu', iconType: 'order', tag: 'Hủy đơn' };
@@ -283,7 +283,7 @@ export const OrderDetail: React.FC = () => {
       case 'payment':
         return <CreditCard size={13} style={{ color: '#10b981' }} />;
       default:
-        return <ShoppingBag size={13} style={{ color: '#ea580c' }} />;
+        return <ShoppingBag size={13} style={{ color: 'var(--accent-primary)' }} />;
     }
   };
 
@@ -315,7 +315,7 @@ export const OrderDetail: React.FC = () => {
 
   // Customer snapshot
   const snapshot = order.shippingAddressSnapshot || {};
-  const recipientName = snapshot.recipientName || snapshot.fullName || 'Khách hàng SmartBox';
+  const recipientName = snapshot.recipientName || snapshot.fullName || 'Khách hàng Anchor Box';
   const phone = snapshot.phone || '0988776655';
   const email = snapshot.email || '—';
   const addressLine = [snapshot.addressLine, snapshot.ward, snapshot.district, snapshot.city].filter(Boolean).join(', ') || order.shippingAddress || 'Chưa cung cấp';
@@ -335,7 +335,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   const assignedTechName = deliveryJob?.assignedTo
-    ? (technicians.find(t => t.id === deliveryJob.assignedTo)?.fullName || 'Kỹ thuật viên SmartBox')
+    ? (technicians.find(t => t.id === deliveryJob.assignedTo)?.fullName || 'Kỹ thuật viên Anchor Box')
     : (order.technicianName || 'Chưa phân công');
 
   const currentJobStatus = deliveryJob?.status ? (JOB_STATUS_MAP[deliveryJob.status] || { label: deliveryJob.status, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' }) : null;
@@ -441,13 +441,13 @@ export const OrderDetail: React.FC = () => {
                             <span style={{ fontWeight: 600 }}>{it.productName}</span>
                           )}
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
-                            {it.variantName ? `${it.variantName} • ` : ''}SKU: <code style={{ color: '#ea580c' }}>{it.sku || 'SBX-DEF'}</code>
+                            {it.variantName ? `${it.variantName} • ` : ''}SKU: <code style={{ color: 'var(--accent-primary)' }}>{it.sku || 'SBX-DEF'}</code>
                           </div>
                         </div>
                       </td>
                       <td style={{ textAlign: 'center', fontWeight: 600 }}>x{it.quantity || 1}</td>
                       <td style={{ textAlign: 'right' }}>{Number(it.unitPrice || 0).toLocaleString('vi-VN')} ₫</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700, color: '#ea580c' }}>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--accent-primary)' }}>
                         {Number(it.subtotal || it.unitPrice * (it.quantity || 1)).toLocaleString('vi-VN')} ₫
                       </td>
                     </tr>
@@ -489,7 +489,7 @@ export const OrderDetail: React.FC = () => {
                   </span>
                 </div>
                 {order.transactionRef && (
-                  <code style={{ fontSize: '11px', color: '#ea580c' }}>Ref: {order.transactionRef}</code>
+                  <code style={{ fontSize: '11px', color: 'var(--accent-primary)' }}>Ref: {order.transactionRef}</code>
                 )}
               </div>
             </div>
@@ -576,7 +576,7 @@ export const OrderDetail: React.FC = () => {
               ) : (
                 <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 2px' }}>
                   <Clock size={12} />
-                  <span>Đang tiến hành giao hàng & thi công định vị SmartBox.</span>
+                  <span>Đang tiến hành giao hàng & thi công định vị Anchor Box.</span>
                 </div>
               )}
             </div>
@@ -616,7 +616,7 @@ export const OrderDetail: React.FC = () => {
                 <div className="compact-kv-row" style={{ borderBottom: 'none' }}>
                   <span className="compact-kv-lbl">Địa chỉ nhận:</span>
                   <span className="compact-kv-val" style={{ fontWeight: 500 }}>
-                    <MapPin size={11} style={{ display: 'inline', marginRight: 3, color: '#ea580c' }} />
+                    <MapPin size={11} style={{ display: 'inline', marginRight: 3, color: 'var(--accent-primary)' }} />
                     {addressLine}
                   </span>
                 </div>
@@ -758,7 +758,7 @@ export const OrderDetail: React.FC = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <div className="proof-check-row">
                       <CheckCircle2 size={14} style={{ color: '#10b981' }} />
-                      <span>Xác minh mã Serial SmartBox khớp hợp đồng PO</span>
+                      <span>Xác minh mã Serial Anchor Box khớp hợp đồng PO</span>
                     </div>
                     <div className="proof-check-row">
                       <CheckCircle2 size={14} style={{ color: '#10b981' }} />
@@ -788,7 +788,7 @@ export const OrderDetail: React.FC = () => {
                               border: '1px solid var(--border-color)',
                               fontFamily: 'monospace',
                               fontSize: '11.5px',
-                              color: '#ea580c',
+                              color: 'var(--accent-primary)',
                               fontWeight: 700
                             }}
                           >

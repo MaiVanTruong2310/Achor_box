@@ -288,7 +288,7 @@ export const CouponsPage: React.FC = () => {
             <span className="products-topbar-count">{totalCount} mã</span>
           </h1>
           <p className="products-topbar-desc">
-            Cấu hình voucher khuyến mãi, tỷ lệ chiết khấu, giá trị đơn tối thiểu và thời hạn áp dụng đơn hàng SmartBox.
+            Cấu hình voucher khuyến mãi, tỷ lệ chiết khấu, giá trị đơn tối thiểu và thời hạn áp dụng đơn hàng Anchor Box.
           </p>
         </div>
 
@@ -702,7 +702,7 @@ export const CouponsPage: React.FC = () => {
                     type="text"
                     maxLength={150}
                     className="clean-form-input"
-                    placeholder="VD: Giảm 10% tối đa 100k cho khách hàng đặt mua tủ SmartBox"
+                    placeholder="VD: Giảm 10% tối đa 100k cho khách hàng đặt mua tủ Anchor Box"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={submitting}

@@ -108,6 +108,14 @@ async function findWarranty(serial: string, asCustomer: boolean, signal: AbortSi
   }
 }
 
+const CLAIM_ERRORS: Record<string, string> = {
+  CLAIM_ALREADY_OPEN: 'Thiết bị này đang có một yêu cầu bảo hành chưa xử lý xong. Vui lòng theo dõi yêu cầu đó trong mục “Yêu cầu đã gửi”.',
+  WARRANTY_NOT_ACTIVE: 'Thiết bị đã hết hạn hoặc chưa kích hoạt bảo hành.',
+  IMAGE_ALREADY_ATTACHED: 'Ảnh đã được dùng cho một yêu cầu khác. Vui lòng tải ảnh mới.',
+  IDEMPOTENCY_KEY_REUSED: 'Nội dung yêu cầu đã thay đổi so với lần gửi trước. Vui lòng gửi lại.',
+  INVALID_CLAIM: 'Thông tin yêu cầu chưa hợp lệ (mô tả từ 10 ký tự, tối đa 5 ảnh).',
+};
+
 export function Warranty({ claim = false }: { claim?: boolean }) {
   const { user } = useShop();
   const [params, setParams] = useSearchParams();
@@ -271,6 +279,11 @@ export function Warranty({ claim = false }: { claim?: boolean }) {
                       <div>
                         <small>Serial {item.serialNumber} · Gửi {date(item.createdAt)}{item.resolvedAt ? ` · Xử lý ${date(item.resolvedAt)}` : ''}</small>
                         <p>{item.description}</p>
+                        {item.status === 'rejected' && item.rejectionReason && (
+                          <p style={{ margin: '6px 0 4px', padding: '8px 12px', borderRadius: 8, background: 'rgba(220, 38, 38, 0.08)', border: '1px solid rgba(220, 38, 38, 0.25)', color: '#b91c1c', fontSize: 13 }}>
+                            <strong>Lý do từ chối:</strong> {item.rejectionReason}
+                          </p>
+                        )}
                         <small>Mã yêu cầu {item.id}</small>
                       </div>
                       <CommerceStatus value={item.status} />
@@ -605,7 +618,9 @@ function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted
       keyRef.current = '';
       onSubmitted();
     } catch (reason) {
-      setError(reason as Error);
+      const code = (reason as Error).message || '';
+      const friendly = CLAIM_ERRORS[code.split(':')[0].trim()];
+      setError(friendly ? new Error(friendly) : (reason as Error));
     } finally {
       lockedRef.current = false;
       setBusy(false);

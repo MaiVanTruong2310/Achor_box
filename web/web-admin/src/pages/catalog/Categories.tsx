@@ -250,7 +250,7 @@ export const Categories: React.FC = () => {
             <span className="products-topbar-count">{categories.length}</span>
           </h1>
           <p className="products-topbar-desc">
-            Phân loại thiết bị tủ SmartBox, phụ tùng linh kiện sửa chữa và tiện ích mở rộng.
+            Phân loại thiết bị tủ Anchor Box, phụ tùng linh kiện sửa chữa và tiện ích mở rộng.
           </p>
         </div>
 
@@ -380,8 +380,8 @@ export const Categories: React.FC = () => {
           gap: 8,
           padding: '6px 14px',
           borderRadius: 6,
-          background: 'rgba(249, 115, 22, 0.1)',
-          border: '1px solid rgba(249, 115, 22, 0.25)',
+          background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
           color: 'var(--fpt-orange)',
           fontSize: '12.5px',
           fontWeight: 600,

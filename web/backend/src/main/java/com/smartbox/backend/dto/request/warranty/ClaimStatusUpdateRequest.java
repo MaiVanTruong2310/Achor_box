@@ -14,4 +14,7 @@ public class ClaimStatusUpdateRequest {
 
     @Schema(description = "Trạng thái mới (new, assigned, in_progress, resolved, rejected)", example = "in_progress")
     private String status;
+
+    @Schema(description = "Lý do từ chối hiển thị cho khách hàng (bắt buộc khi status = rejected)", example = "Thiết bị hư hỏng vật lý do rơi vỡ ngoài phạm vi bảo hành")
+    private String reason;
 }

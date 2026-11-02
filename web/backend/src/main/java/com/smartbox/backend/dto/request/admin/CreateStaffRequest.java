@@ -33,6 +33,6 @@ public class CreateStaffRequest {
     @Schema(description = "Địa chỉ làm việc / chi nhánh", example = "Tầng 5, Tòa SmartBox Tower, Hà Nội")
     private String defaultAddress;
 
-    @Schema(description = "Mật khẩu ban đầu bắt buộc, dài 12–128 ký tự; được Auth provider băm và lưu trữ")
+    @Schema(description = "Mật khẩu ban đầu bắt buộc, dài 12–72 ký tự (giới hạn bcrypt của Supabase Auth); được Auth provider băm và lưu trữ")
     private String initialPassword;
 }

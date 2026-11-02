@@ -44,6 +44,9 @@ public class ClaimResponse {
     @Schema(description = "Ghi chú nội bộ")
     private String internalNotes;
 
+    @Schema(description = "Lý do từ chối bảo hành hiển thị cho khách hàng")
+    private String rejectionReason;
+
     @Schema(description = "Thời gian tạo yêu cầu")
     private OffsetDateTime createdAt;
 
@@ -65,7 +68,7 @@ public class ClaimResponse {
     @Schema(description = "Địa chỉ khách hàng")
     private String customerAddress;
 
-    @Schema(description = "Nhóm lỗi phân loại", example = "HARDWARE_LOCK")
+    @Schema(description = "Nhóm lỗi phân loại", example = "mechanical_jam")
     private String faultCategory;
 
     @Schema(description = "Ngày bắt đầu bảo hành")

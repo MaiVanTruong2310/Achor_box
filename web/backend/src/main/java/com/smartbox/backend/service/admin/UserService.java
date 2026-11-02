@@ -148,7 +148,7 @@ public class UserService {
     public UserProfileResponse createStaffUser(CreateStaffRequest req) {
         actors.get().requireRoles("super_admin");
         if(!java.util.Set.of("super_admin","product_manager","technician").contains(req.getRole()))throw new AppException(400,"INVALID_STAFF_ROLE");
-        if(req.getInitialPassword()==null||req.getInitialPassword().length()<12||req.getInitialPassword().length()>128)throw new AppException(400,"INITIAL_PASSWORD_REQUIRED: Mật khẩu phải dài 12–128 ký tự");
+        if(req.getInitialPassword()==null||req.getInitialPassword().length()<12||req.getInitialPassword().length()>72)throw new AppException(400,"INITIAL_PASSWORD_REQUIRED: Mật khẩu phải dài 12–72 ký tự");
         String email=req.getEmail().trim().toLowerCase(java.util.Locale.ROOT);
         if(profileRepository.existsByEmail(email))throw new AppException(409,"EMAIL_ALREADY_EXISTS");
         UUID id=authProvider.createStaff(email,req.getInitialPassword(),req.getFullName());

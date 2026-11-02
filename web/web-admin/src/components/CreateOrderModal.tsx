@@ -6,13 +6,12 @@ import {
   Trash2,
   ShieldAlert,
   User,
-  MapPin,
   Package,
-  CreditCard,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react';
-import { adminRequest, AdminApiError } from '../services/adminRequest';
+import { adminRequest } from '../services/adminRequest';
 import { adminCatalogApi } from '../services/adminCatalogApi';
 import { toast } from '../contexts/ToastContext';
 import { Profile } from '../types/database';
@@ -24,6 +23,11 @@ interface ProductVariant {
   variant_name: string;
   price_delta: number;
   stock_quantity: number;
+  color_name: string | null;
+  color_hex: string | null;
+  capacity_liter: number | null;
+  warranty_months: number;
+  is_active: boolean;
 }
 
 interface ProductItem {
@@ -33,12 +37,29 @@ interface ProductItem {
   variants: ProductVariant[];
 }
 
+interface WarrantyPlan {
+  id: string;
+  code: string;
+  name: string;
+  extraMonths: number;
+  price: number;
+  description?: string | null;
+}
+
 interface SelectedItem {
   productId: string;
   productName: string;
   variantId: string;
   variantName: string;
   sku: string;
+  colorName: string | null;
+  colorHex: string | null;
+  basePrice: number;
+  warrantyMonths: number;
+  warrantyPlanId: string;
+  warrantyPlanName: string | null;
+  warrantyPlanPrice: number;
+  warrantyExtraMonths: number;
   price: number;
   quantity: number;
 }
@@ -56,13 +77,14 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 }) => {
   const [customers, setCustomers] = useState<Profile[]>([]);
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [warrantyPlans, setWarrantyPlans] = useState<WarrantyPlan[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(false);
 
   // Customer form state
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [recipientName, setRecipientName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [, setEmail] = useState('');
   const [addressLine, setAddressLine] = useState('');
   const [installationNote, setInstallationNote] = useState('');
 
@@ -70,6 +92,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [chosenProductId, setChosenProductId] = useState<string>('');
   const [chosenVariantId, setChosenVariantId] = useState<string>('');
+  const [chosenPlanId, setChosenPlanId] = useState<string>('');
   const [chosenQuantity, setChosenQuantity] = useState<number>(1);
 
   // Coupon & metadata
@@ -77,7 +100,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Load initial catalog & customers
+  // Load initial catalog, warranty plans & customers
   useEffect(() => {
     if (!isOpen) return;
 
@@ -87,25 +110,46 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 
     Promise.all([
       adminCatalogApi.users(0, '', 'customer', 'all'),
-      adminRequest<any[]>('/products')
+      adminRequest<any[]>('/products'),
+      adminRequest<any[]>('/warranty-plans').catch(() => [])
     ])
-      .then(([usersPage, prods]) => {
+      .then(([usersPage, prods, plans]) => {
         if (!active) return;
         setCustomers(usersPage.content || []);
-        
-        // Filter active products and transform variants
-        const mappedProds: ProductItem[] = (prods || []).map((p) => ({
-          id: p.id,
-          name: p.name,
-          price: Number(p.price) || 0,
-          variants: (p.variants || []).map((v: any) => ({
-            id: v.id,
-            sku: v.sku || 'N/A',
-            variant_name: v.variant_name || v.variantName || 'Tiêu chuẩn',
-            price_delta: Number(v.price_delta || v.priceDelta) || 0,
-            stock_quantity: Number(v.stock_quantity ?? v.stockQuantity) || 0
-          }))
+
+        const mappedPlans: WarrantyPlan[] = (plans || []).map((pl: any) => ({
+          id: pl.id,
+          code: pl.code || '',
+          name: pl.name || 'Gói gia hạn bảo hành',
+          extraMonths: Number(pl.extraMonths ?? pl.extra_months) || 0,
+          price: Number(pl.price) || 0,
+          description: pl.description || null
         }));
+        setWarrantyPlans(mappedPlans);
+
+        // Filter active products and transform active variants
+        const mappedProds: ProductItem[] = (prods || [])
+          .filter((p: any) => p.isActive !== false && p.is_active !== false)
+          .map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: Number(p.price) || 0,
+            variants: (p.variants || [])
+              .filter((v: any) => v.isActive !== false && v.is_active !== false)
+              .map((v: any) => ({
+                id: v.id,
+                sku: v.sku || 'N/A',
+                variant_name: v.variant_name || v.variantName || 'Tiêu chuẩn',
+                price_delta: Number(v.price_delta ?? v.priceDelta) || 0,
+                stock_quantity: Number(v.stock_quantity ?? v.stockQuantity) || 0,
+                color_name: v.colorName ?? v.color_name ?? null,
+                color_hex: v.colorHex ?? v.color_hex ?? null,
+                capacity_liter: v.capacityLiter ?? v.capacity_liter ?? null,
+                warranty_months: Number(v.warrantyMonths ?? v.warranty_months) || 12,
+                is_active: v.isActive !== false && v.is_active !== false
+              }))
+          }))
+          .filter((p) => p.variants.length > 0);
         setProducts(mappedProds);
 
         if (mappedProds.length > 0) {
@@ -114,8 +158,9 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
             setChosenVariantId(mappedProds[0].variants[0].id);
           }
         }
+        setChosenPlanId('');
       })
-      .catch((err) => {
+      .catch(() => {
         if (!active) return;
         toast.error('Không thể tải danh mục sản phẩm hoặc khách hàng.', 'Lỗi tải dữ liệu');
       })
@@ -160,6 +205,53 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
     return currentVariants.find((v) => v.id === chosenVariantId);
   }, [currentVariants, chosenVariantId]);
 
+  // Distinct color options for the current product
+  const currentColors = useMemo(() => {
+    const seen = new Set<string>();
+    return currentVariants
+      .filter((v) => v.color_name)
+      .filter((v) => {
+        const key = `${v.color_name}|${v.color_hex || ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((v) => ({ name: v.color_name as string, hex: v.color_hex || '#d4d4d8' }));
+  }, [currentVariants]);
+
+  // Distinct capacity options for the current product
+  const currentCapacities = useMemo(() => {
+    return Array.from(
+      new Set(currentVariants.map((v) => v.capacity_liter).filter((c): c is number => typeof c === 'number' && c > 0))
+    );
+  }, [currentVariants]);
+
+  const currentPlanObj = useMemo(() => {
+    return warrantyPlans.find((pl) => pl.id === chosenPlanId) || null;
+  }, [warrantyPlans, chosenPlanId]);
+
+  const selectColor = (colorName: string) => {
+    if (!currentVariantObj) return;
+    const match =
+      currentVariants.find(
+        (v) => v.color_name === colorName && v.capacity_liter === currentVariantObj.capacity_liter
+      ) || currentVariants.find((v) => v.color_name === colorName);
+    if (match) {
+      setChosenVariantId(match.id);
+    }
+  };
+
+  const selectCapacity = (capacity: number) => {
+    if (!currentVariantObj) return;
+    const match =
+      currentVariants.find(
+        (v) => v.capacity_liter === capacity && v.color_name === currentVariantObj.color_name
+      ) || currentVariants.find((v) => v.capacity_liter === capacity);
+    if (match) {
+      setChosenVariantId(match.id);
+    }
+  };
+
   // Subtotal calculation
   const subtotal = useMemo(() => {
     return selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -180,9 +272,13 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
       return;
     }
 
+    const baseUnitPrice = prod.price + variant.price_delta;
+    const planPrice = currentPlanObj ? currentPlanObj.price : 0;
+    const extraMonths = currentPlanObj ? currentPlanObj.extraMonths : 0;
+    const unitPrice = baseUnitPrice + planPrice;
+
     // Check if already in list
     const existingIndex = selectedItems.findIndex((it) => it.variantId === variant.id);
-    const unitPrice = prod.price + variant.price_delta;
 
     if (existingIndex >= 0) {
       const updated = [...selectedItems];
@@ -191,7 +287,15 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
         toast.error(`Tổng số lượng vượt quá tồn kho khả dụng (${variant.stock_quantity}).`);
         return;
       }
-      updated[existingIndex].quantity = newQty;
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        quantity: newQty,
+        warrantyPlanId: currentPlanObj ? currentPlanObj.id : '',
+        warrantyPlanName: currentPlanObj ? currentPlanObj.name : null,
+        warrantyPlanPrice: planPrice,
+        warrantyExtraMonths: extraMonths,
+        price: unitPrice
+      };
       setSelectedItems(updated);
     } else {
       if (chosenQuantity > variant.stock_quantity) {
@@ -206,6 +310,14 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
           variantId: variant.id,
           variantName: variant.variant_name,
           sku: variant.sku,
+          colorName: variant.color_name,
+          colorHex: variant.color_hex,
+          basePrice: baseUnitPrice,
+          warrantyMonths: variant.warranty_months,
+          warrantyPlanId: currentPlanObj ? currentPlanObj.id : '',
+          warrantyPlanName: currentPlanObj ? currentPlanObj.name : null,
+          warrantyPlanPrice: planPrice,
+          warrantyExtraMonths: extraMonths,
           price: unitPrice,
           quantity: chosenQuantity
         }
@@ -214,6 +326,25 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 
     setChosenQuantity(1);
     toast.success(`Đã thêm ${prod.name} (${variant.variant_name}) vào đơn.`);
+  };
+
+  const handleUpdateItemPlan = (variantId: string, planId: string) => {
+    const plan = warrantyPlans.find((pl) => pl.id === planId) || null;
+    setSelectedItems((prev) =>
+      prev.map((it) => {
+        if (it.variantId !== variantId) return it;
+        const planPrice = plan ? plan.price : 0;
+        const extraMonths = plan ? plan.extraMonths : 0;
+        return {
+          ...it,
+          warrantyPlanId: plan ? plan.id : '',
+          warrantyPlanName: plan ? plan.name : null,
+          warrantyPlanPrice: planPrice,
+          warrantyExtraMonths: extraMonths,
+          price: it.basePrice + planPrice
+        };
+      })
+    );
   };
 
   const handleRemoveItem = (variantId: string) => {
@@ -234,6 +365,11 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
       return;
     }
 
+    if (!/^(?:\+84|84|0)(?:3|5|7|8|9)\d{8}$/.test(phone.replace(/[\s.-]/g, ''))) {
+      setErrorMsg('Số điện thoại không hợp lệ (ví dụ 0912345678 hoặc +84912345678).');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -247,7 +383,8 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
         },
         items: selectedItems.map((it) => ({
           variantId: it.variantId,
-          quantity: it.quantity
+          quantity: it.quantity,
+          ...(it.warrantyPlanId ? { warrantyPlanId: it.warrantyPlanId } : {})
         }))
       };
 
@@ -402,17 +539,17 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
             </div>
           </div>
 
-          {/* 2. Products & Variants Selection */}
+          {/* 2. Products, Color & Warranty Plan Selection */}
           <div className="com-section">
             <h3 className="com-section-title">
               <Package size={18} color="var(--accent-primary, #2563eb)" />
-              <span>2. Thêm sản phẩm & biến thể vào đơn</span>
+              <span>2. Thêm sản phẩm, màu sắc & gói bảo hành vào đơn</span>
             </h3>
 
-            <div className="com-add-item-box">
+            <div className="com-add-item-box" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div className="com-item-select-row">
                 <div className="com-field">
-                  <label className="com-label">Sản phẩm SmartBox:</label>
+                  <label className="com-label">Sản phẩm Anchor Box:</label>
                   <select
                     className="com-select"
                     value={chosenProductId}
@@ -428,7 +565,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 </div>
 
                 <div className="com-field">
-                  <label className="com-label">Biến thể / Quy cách:</label>
+                  <label className="com-label">Biến thể / Quy cách & Màu:</label>
                   <select
                     className="com-select"
                     value={chosenVariantId}
@@ -437,7 +574,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                   >
                     {currentVariants.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.variant_name} ({v.sku}) - Tồn: {v.stock_quantity}
+                        {v.variant_name}{v.color_name ? ` - Màu: ${v.color_name}` : ''} ({v.sku}) - Tồn: {v.stock_quantity}
                       </option>
                     ))}
                   </select>
@@ -468,11 +605,147 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 </button>
               </div>
 
+              {/* Capacity & Color Swatches + Extended Warranty Plan selector */}
+              <div className="com-grid-2" style={{ gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {currentCapacities.length > 1 && (
+                    <div>
+                      <span className="com-label" style={{ display: 'block', marginBottom: 4 }}>Chọn nhanh dung tích:</span>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {currentCapacities.map((cap) => {
+                          const active = currentVariantObj?.capacity_liter === cap;
+                          return (
+                            <button
+                              key={cap}
+                              type="button"
+                              onClick={() => selectCapacity(cap)}
+                              disabled={submitting}
+                              style={{
+                                padding: '5px 10px',
+                                borderRadius: 6,
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                border: active ? '2px solid #2563eb' : '1px solid var(--border-subtle, #cbd5e1)',
+                                background: active ? 'rgba(37, 99, 235, 0.08)' : 'var(--bg-surface, #fff)',
+                                color: active ? '#1d4ed8' : 'var(--text-primary, #1e293b)'
+                              }}
+                            >
+                              {cap} L
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {currentColors.length > 0 && (
+                    <div>
+                      <span className="com-label" style={{ display: 'block', marginBottom: 4 }}>Chọn màu hộp:</span>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {currentColors.map((color) => {
+                          const active = currentVariantObj?.color_name === color.name;
+                          return (
+                            <button
+                              key={color.name}
+                              type="button"
+                              onClick={() => selectColor(color.name)}
+                              disabled={submitting}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: '5px 10px',
+                                borderRadius: 20,
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                border: active ? '2px solid #2563eb' : '1px solid var(--border-subtle, #cbd5e1)',
+                                background: active ? 'rgba(37, 99, 235, 0.08)' : 'var(--bg-surface, #fff)',
+                                color: active ? '#1d4ed8' : 'var(--text-primary, #1e293b)'
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 12,
+                                  height: 12,
+                                  borderRadius: '50%',
+                                  backgroundColor: color.hex,
+                                  border: '1px solid rgba(0,0,0,0.2)',
+                                  display: 'inline-block'
+                                }}
+                              />
+                              <span>{color.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Warranty Plan Selector */}
+                <div className="com-field" style={{ margin: 0 }}>
+                  <label className="com-label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <ShieldCheck size={14} color="#2563eb" />
+                    <span>Gói bảo hành áp dụng:</span>
+                  </label>
+                  <select
+                    className="com-select"
+                    value={chosenPlanId}
+                    onChange={(e) => setChosenPlanId(e.target.value)}
+                    disabled={loadingInitial || submitting}
+                  >
+                    <option value="">
+                      Bảo hành tiêu chuẩn ({currentVariantObj?.warranty_months || 12} tháng - Đã bao gồm)
+                    </option>
+                    {warrantyPlans.map((pl) => (
+                      <option key={pl.id} value={pl.id}>
+                        {pl.name} (+{pl.extraMonths} tháng · +{pl.price.toLocaleString('vi-VN')} ₫/sp)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               {currentVariantObj && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', display: 'flex', gap: 16 }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                   <span>SKU: <b>{currentVariantObj.sku}</b></span>
+                  {currentVariantObj.color_name && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      Màu:
+                      <span
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          backgroundColor: currentVariantObj.color_hex || '#d4d4d8',
+                          border: '1px solid rgba(0,0,0,0.2)',
+                          display: 'inline-block'
+                        }}
+                      />
+                      <b>{currentVariantObj.color_name}</b>
+                    </span>
+                  )}
+                  <span>
+                    Bảo hành:{' '}
+                    <b>
+                      {(currentVariantObj.warranty_months || 12) + (currentPlanObj?.extraMonths || 0)} tháng
+                      {currentPlanObj ? ` (${currentPlanObj.name})` : ' (Tiêu chuẩn)'}
+                    </b>
+                  </span>
                   <span>Tồn kho khả dụng: <b style={{ color: currentVariantObj.stock_quantity > 0 ? '#10b981' : '#ef4444' }}>{currentVariantObj.stock_quantity}</b> chiếc</span>
-                  <span>Đơn giá biến thể: <b>{((products.find(p => p.id === chosenProductId)?.price || 0) + currentVariantObj.price_delta).toLocaleString('vi-VN')} ₫</b></span>
+                  <span>
+                    Đơn giá tạm tính:{' '}
+                    <b>
+                      {(
+                        (products.find((p) => p.id === chosenProductId)?.price || 0) +
+                        currentVariantObj.price_delta +
+                        (currentPlanObj?.price || 0)
+                      ).toLocaleString('vi-VN')}{' '}
+                      ₫
+                    </b>
+                  </span>
                 </div>
               )}
             </div>
@@ -483,7 +756,8 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 <thead>
                   <tr>
                     <th>Sản phẩm</th>
-                    <th>Biến thể / SKU</th>
+                    <th>Biến thể / Màu</th>
+                    <th>Gói bảo hành</th>
                     <th>Số lượng</th>
                     <th>Đơn giá</th>
                     <th>Thành tiền</th>
@@ -495,8 +769,39 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                     <tr key={item.variantId}>
                       <td style={{ fontWeight: 600 }}>{item.productName}</td>
                       <td>
-                        <span>{item.variantName}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {item.colorHex && (
+                            <span
+                              style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                backgroundColor: item.colorHex,
+                                border: '1px solid rgba(0,0,0,0.2)',
+                                display: 'inline-block',
+                                flexShrink: 0
+                              }}
+                            />
+                          )}
+                          <span>{item.variantName}</span>
+                        </div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)' }}>{item.sku}</div>
+                      </td>
+                      <td>
+                        <select
+                          className="com-select"
+                          style={{ padding: '4px 8px', fontSize: '0.78rem', height: 32 }}
+                          value={item.warrantyPlanId}
+                          onChange={(e) => handleUpdateItemPlan(item.variantId, e.target.value)}
+                          disabled={submitting}
+                        >
+                          <option value="">Tiêu chuẩn ({item.warrantyMonths} tháng)</option>
+                          {warrantyPlans.map((pl) => (
+                            <option key={pl.id} value={pl.id}>
+                              {pl.name} (+{pl.price.toLocaleString('vi-VN')} ₫)
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td style={{ fontWeight: 700 }}>{item.quantity}</td>
                       <td>{item.price.toLocaleString('vi-VN')} ₫</td>

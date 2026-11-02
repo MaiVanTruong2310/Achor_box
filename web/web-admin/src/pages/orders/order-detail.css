@@ -27,7 +27,7 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
 }
 
 .order-header-left {
@@ -107,7 +107,7 @@
 
 .order-total-highlight strong {
   font-size: 17px;
-  color: #ea580c;
+  color: var(--accent-primary);
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -150,12 +150,12 @@
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
   transition: border-color 0.2s ease;
 }
 
 .order-panel:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--border-subtle);
 }
 
 .order-panel-header {
@@ -182,7 +182,7 @@
 }
 
 .order-panel-title svg {
-  color: #ea580c;
+  color: var(--accent-primary);
 }
 
 .order-panel-body {
@@ -243,7 +243,7 @@
 }
 
 .compact-prod-link:hover {
-  color: #ea580c;
+  color: var(--accent-primary);
 }
 
 .compact-finance-summary {
@@ -266,7 +266,7 @@
 .compact-finance-row.grand {
   font-size: 15px;
   font-weight: 800;
-  color: #ea580c;
+  color: var(--accent-primary);
   padding-top: 8px;
   border-top: 1px dashed var(--border-subtle);
 }
@@ -354,7 +354,7 @@
 }
 
 .tracking-input-group input:focus {
-  border-color: #ea580c;
+  border-color: var(--accent-primary);
 }
 
 .tracking-input-group button {
@@ -363,7 +363,7 @@
   font-weight: 600;
   border-radius: 6px;
   border: none;
-  background: #ea580c;
+  background: var(--accent-primary);
   color: #fff;
   cursor: pointer;
   transition: opacity 0.15s ease;
@@ -389,7 +389,7 @@
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: none;
   transition: all 0.15s ease;
   width: 100%;
 }
@@ -438,7 +438,7 @@
 }
 
 .compact-kv-val a {
-  color: #ea580c;
+  color: var(--accent-primary);
   text-decoration: none;
 }
 
@@ -486,7 +486,7 @@
 
 .stepper-connector-fill {
   height: 100%;
-  background: linear-gradient(90deg, #10b981, #ea580c);
+  background: linear-gradient(90deg, #10b981, var(--accent-primary));
   transition: width 0.3s ease;
 }
 
@@ -523,17 +523,17 @@
 }
 
 .stepper-step.active .stepper-node {
-  background: #ea580c;
-  border-color: #ea580c;
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
   color: #fff;
-  box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.25);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 25%, transparent);
   animation: pulseNode 1.8s infinite;
 }
 
 @keyframes pulseNode {
-  0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.5); }
-  70% { box-shadow: 0 0 0 8px rgba(234, 88, 12, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
+  0% { box-shadow: none; }
+  70% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent-primary) 0%, transparent); }
+  100% { box-shadow: none; }
 }
 
 .stepper-label {
@@ -549,7 +549,7 @@
 }
 
 .stepper-step.active .stepper-label {
-  color: #ea580c;
+  color: var(--accent-primary);
   font-weight: 700;
 }
 
@@ -583,7 +583,7 @@
   bottom: 14px;
   left: 11px;
   width: 2px;
-  background: linear-gradient(180deg, #10b981 0%, #3b82f6 50%, var(--border-subtle) 100%);
+  background: linear-gradient(180deg, #10b981 0%, var(--accent-primary) 50%, var(--border-subtle) 100%);
 }
 
 .flow-node-item {
@@ -638,8 +638,8 @@
 
 .flow-node-item:hover .flow-card {
   transform: translateX(2px);
-  border-color: rgba(234, 88, 12, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  box-shadow: none;
 }
 
 .flow-card-top {

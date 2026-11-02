@@ -32,7 +32,7 @@ import {
   Plus
 } from 'lucide-react';
 import { ExtendedOrder } from '../../services/api';
-import { adminCatalogApi } from '../../services/adminCatalogApi';
+import { adminCatalogApi, ORDER_PAGE_SIZE, type OrderSummary } from '../../services/adminCatalogApi';
 import { adminRequest, AdminApiError } from '../../services/adminRequest';
 import { deliveryApi } from '../../services/deliveryInstallation';
 import { useAuth } from '../../contexts/AuthContext';
@@ -239,6 +239,7 @@ export const Orders: React.FC = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [listError, setListError] = useState('');
   const requestVersion = useRef(0);
+  const detailFor = useRef<string | null>(null);
 
   // Modal State for Order Details
   const [selectedOrder, setSelectedOrder] = useState<ExtendedOrder | null>(null);
@@ -319,6 +320,10 @@ export const Orders: React.FC = () => {
       setDispatchError('Vui lòng chọn thời gian hẹn hợp lệ.');
       return;
     }
+    if (time.getTime() <= Date.now()) {
+      setDispatchError('Thời gian hẹn giao & thi công phải ở trong tương lai.');
+      return;
+    }
 
     setDispatchLoading(true);
     setDispatchError('');
@@ -349,6 +354,7 @@ export const Orders: React.FC = () => {
 
   // Status Counts State
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [summary, setSummary] = useState<OrderSummary | null>(null);
 
   const statusTabs = [
     { key: 'all', label: 'Tất cả' },
@@ -362,7 +368,8 @@ export const Orders: React.FC = () => {
 
   const loadCounts = async () => {
     try {
-      const counts = await adminCatalogApi.orderCounts();
+      const [counts, totals] = await Promise.all([adminCatalogApi.orderCounts(), adminCatalogApi.orderSummary()]);
+      setSummary(totals);
       if (counts && Object.keys(counts).length > 0) {
         setStatusCounts(counts);
       }
@@ -371,10 +378,6 @@ export const Orders: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadCounts();
-  }, [totalElements, orders.length]);
-
   const getTabCount = (key: string) => {
     if (statusCounts[key] !== undefined) return statusCounts[key];
     if (key === 'all') return totalElements || orders.length;
@@ -382,6 +385,7 @@ export const Orders: React.FC = () => {
   };
 
   const handleSort = (field: 'created_at' | 'total' | 'customer' | 'status' | 'id') => {
+    setPage(0);
     if (sortField === field) {
       setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -400,44 +404,28 @@ export const Orders: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const sortedOrders = useMemo(() => {
-    const list = [...orders];
-    list.sort((a, b) => {
-      let cmp = 0;
-      if (sortField === 'created_at') {
-        cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      } else if (sortField === 'total') {
-        cmp = Number(a.total || 0) - Number(b.total || 0);
-      } else if (sortField === 'customer') {
-        cmp = (a.customer?.full_name || '').localeCompare(b.customer?.full_name || '', 'vi');
-      } else if (sortField === 'status') {
-        cmp = (a.status || '').localeCompare(b.status || '');
-      } else if (sortField === 'id') {
-        cmp = a.id.localeCompare(b.id);
-      }
-      return sortOrder === 'asc' ? cmp : -cmp;
-    });
-    return list;
-  }, [orders, sortField, sortOrder]);
+  // Sorting runs on the server across every matching order, not just the loaded page.
+  const sortKey = sortField === 'id' ? '' : `${sortField}_${sortOrder}`;
+  const sortedOrders = orders;
 
   const loadOrders = async () => {
     const request = ++requestVersion.current;
     setLoading(true);
     setListError('');
     try {
-      const data = await adminCatalogApi.orders(page, debouncedSearch, statusFilter, paymentFilter);
+      const data = await adminCatalogApi.orders(page, debouncedSearch, statusFilter, paymentFilter, sortKey);
       if (request === requestVersion.current) {
         setOrders(data.content);
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
 
-        // Auto open if orderId is in URL query
+        // ?orderId= deep link: open the modal when the order is on this page, otherwise use the detail page.
         if (initialOrderId && !selectedOrder) {
           const matched = data.content.find((o) => o.id === initialOrderId);
-          if (matched) {
-            openDetailModal(matched);
-          }
+          if (matched) openDetailModal(matched);
+          else navigate(`/orders/${encodeURIComponent(initialOrderId)}`, { replace: true });
         }
+        void loadCounts();
       }
     } catch (e) {
       if (request === requestVersion.current) {
@@ -450,7 +438,7 @@ export const Orders: React.FC = () => {
 
   useEffect(() => {
     loadOrders();
-  }, [page, debouncedSearch, statusFilter, paymentFilter]);
+  }, [page, debouncedSearch, statusFilter, paymentFilter, sortKey]);
 
   useEffect(() => {
     const handleNewOrder = () => {
@@ -465,6 +453,9 @@ export const Orders: React.FC = () => {
 
   // Open modal and fetch secondary data
   const openDetailModal = (ord: ExtendedOrder, initialTab: 'overview' | 'timeline' | 'approval' = 'overview') => {
+    detailFor.current = ord.id;
+    setTimeline(null);
+    setTicket(null);
     setSelectedOrder(ord);
     setDetailTab(initialTab);
     setIsDetailModalOpen(true);
@@ -475,19 +466,16 @@ export const Orders: React.FC = () => {
     // Load timeline
     setLoadingTimeline(true);
     adminRequest<TimelineData>(`/orders/${encodeURIComponent(ord.id)}/timeline`)
-      .then((data) => setTimeline(data))
-      .catch(() => setTimeline(null))
-      .finally(() => setLoadingTimeline(false));
+      .then((data) => { if (detailFor.current === ord.id) setTimeline(data); })
+      .catch(() => { if (detailFor.current === ord.id) setTimeline(null); })
+      .finally(() => { if (detailFor.current === ord.id) setLoadingTimeline(false); });
 
     // Load PO Ticket
     setLoadingTicket(true);
     adminRequest<TicketData>(`/orders/${encodeURIComponent(ord.id)}/ticket`)
-      .then((data) => {
-        if (data && data.id) setTicket(data);
-        else setTicket(null);
-      })
-      .catch(() => setTicket(null))
-      .finally(() => setLoadingTicket(false));
+      .then((data) => { if (detailFor.current === ord.id) setTicket(data && data.id ? data : null); })
+      .catch(() => { if (detailFor.current === ord.id) setTicket(null); })
+      .finally(() => { if (detailFor.current === ord.id) setLoadingTicket(false); });
   };
 
   // Perform PO Ticket action (Approve / Return / Reject)
@@ -545,7 +533,7 @@ export const Orders: React.FC = () => {
     }
   };
 
-  // Financial totals for current page
+  // Page-level totals, used only until /orders/summary answers.
   const paidRevenue = orders
     .filter((o) => o.payment_status === 'paid' && o.status !== 'cancelled')
     .reduce((acc, o) => acc + Number(o.total || 0), 0);
@@ -555,6 +543,11 @@ export const Orders: React.FC = () => {
     .reduce((acc, o) => acc + Number(o.total || 0), 0);
 
   const completedCount = orders.filter((o) => o.status === 'completed').length;
+
+  // Prefer system-wide totals from /orders/summary; fall back to the loaded page and say so.
+  const kpi = summary
+    ? { scope: 'Toàn hệ thống', paid: summary.paidRevenue, paidCount: summary.paidCount, awaiting: summary.awaitingPaymentRevenue, awaitingCount: summary.awaitingPaymentCount, completed: summary.completed, total: summary.total }
+    : { scope: 'Trên trang này', paid: paidRevenue, paidCount: orders.filter((o) => o.payment_status === 'paid' && o.status !== 'cancelled').length, awaiting: pendingRevenue, awaitingCount: orders.filter((o) => o.payment_status === 'pending' && o.status !== 'cancelled').length, completed: completedCount, total: orders.length };
 
   return (
     <div className="orders-page-container">
@@ -647,9 +640,9 @@ export const Orders: React.FC = () => {
           <div className="orders-mini-info">
             <span className="orders-mini-label">Doanh thu đã thu</span>
             <span className="orders-mini-value" style={{ color: 'var(--fpt-emerald)' }}>
-              {paidRevenue.toLocaleString('vi-VN')} ₫
+              {kpi.paid.toLocaleString('vi-VN')} ₫
             </span>
-            <span className="orders-mini-sub">Đã quyết toán (VNPAY / Thẻ)</span>
+            <span className="orders-mini-sub">{kpi.paidCount} đơn đã thanh toán · {kpi.scope}</span>
           </div>
         </div>
 
@@ -660,9 +653,9 @@ export const Orders: React.FC = () => {
           <div className="orders-mini-info">
             <span className="orders-mini-label">Chờ thanh toán</span>
             <span className="orders-mini-value" style={{ color: 'var(--fpt-amber)' }}>
-              {pendingRevenue.toLocaleString('vi-VN')} ₫
+              {kpi.awaiting.toLocaleString('vi-VN')} ₫
             </span>
-            <span className="orders-mini-sub">Chờ khách thanh toán</span>
+            <span className="orders-mini-sub">{kpi.awaitingCount} đơn chờ thanh toán · {kpi.scope}</span>
           </div>
         </div>
 
@@ -671,11 +664,11 @@ export const Orders: React.FC = () => {
             <CheckCircle2 size={18} />
           </div>
           <div className="orders-mini-info">
-            <span className="orders-mini-label">Nghiệm thu thành công</span>
+            <span className="orders-mini-label">Đơn hoàn tất</span>
             <span className="orders-mini-value" style={{ color: 'var(--fpt-blue)' }}>
-              {completedCount} <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>/ {orders.length} đơn</span>
+              {kpi.completed} <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>/ {kpi.total} đơn</span>
             </span>
-            <span className="orders-mini-sub">Số đơn trên trang</span>
+            <span className="orders-mini-sub">{kpi.scope}</span>
           </div>
         </div>
 
@@ -686,9 +679,9 @@ export const Orders: React.FC = () => {
           <div className="orders-mini-info">
             <span className="orders-mini-label">Tỷ lệ hoàn tất</span>
             <span className="orders-mini-value" style={{ color: 'var(--fpt-purple)' }}>
-              {orders.length > 0 ? `${Math.round((completedCount / orders.length) * 100)}%` : '0%'}
+              {kpi.total > 0 ? `${Math.round((kpi.completed / kpi.total) * 100)}%` : '0%'}
             </span>
-            <span className="orders-mini-sub">Tiến độ trang hiện tại</span>
+            <span className="orders-mini-sub">Đơn hoàn tất / tổng đơn · {kpi.scope}</span>
           </div>
         </div>
       </div>
@@ -1016,7 +1009,7 @@ export const Orders: React.FC = () => {
           page={page}
           totalPages={totalPages}
           totalElements={totalElements}
-          pageSize={10}
+          pageSize={ORDER_PAGE_SIZE}
           onPageChange={setPage}
           loading={loading}
           itemLabel="đơn hàng"
@@ -1642,6 +1635,7 @@ export const Orders: React.FC = () => {
                   id="sched-input"
                   type="datetime-local"
                   required
+                  min={(() => { const d = new Date(Date.now() + 60000); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); })()}
                   value={scheduledAt}
                   disabled={dispatchLoading}
                   onChange={(e) => setScheduledAt(e.target.value)}

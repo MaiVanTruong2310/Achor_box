@@ -33,6 +33,8 @@ import { navigation, roleNavigation, roleLabels, tabs } from '../navigation';
 import { getRoleDefaultPath } from '../types/database';
 import { UserProfileModal } from './UserProfileModal';
 import { NotificationPopover } from './NotificationPopover';
+import { PageErrorBoundary } from './PageErrorBoundary';
+import { BrandMark } from './brand/BrandMark';
 import './admin-workspace.css';
 
 const icons = {
@@ -155,28 +157,11 @@ const Shell: React.FC = () => {
       <aside className={`workspace-sidebar ${mobile ? 'open' : ''}`} aria-label="Menu quản trị">
         <div className="workspace-brand-row">
           <NavLink to={profile ? getRoleDefaultPath(profile.role) : '/login'} className="workspace-brand">
-            <img src="/Logo.png" alt="Anchor Box" />
+            <span className="brand-tile" aria-hidden="true"><BrandMark size={18} /></span>
             <div className="workspace-brand-info">
               <strong>Anchor Box</strong>
-              <span className="workspace-brand-badge">Retail OS</span>
             </div>
           </NavLink>
-          {!compact && (
-            <button
-              type="button"
-              className="workspace-collapse-btn-header"
-              onClick={() => {
-                setCompact((value) => {
-                  localStorage.setItem('smartbox_nav_compact', String(!value));
-                  return !value;
-                });
-              }}
-              title="Thu gọn menu"
-              aria-label="Thu gọn menu"
-            >
-              <PanelLeftClose size={15} />
-            </button>
-          )}
         </div>
 
         <nav>
@@ -215,7 +200,7 @@ const Shell: React.FC = () => {
             aria-label={compact ? "Mở rộng menu" : "Thu gọn menu"}
           >
             {compact ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={14} />}
-            <span>Thu gọn</span>
+            <span>{compact ? 'Mở rộng' : 'Thu gọn'}</span>
           </button>
           <button
             type="button"
@@ -244,11 +229,6 @@ const Shell: React.FC = () => {
           </div>
 
           <div className="workspace-tools">
-            <div className="fpt-live-pill">
-              <span className="live-dot" />
-              <span>Hệ thống trực tuyến</span>
-            </div>
-
             <button
               className="icon-button"
               onClick={toggleTheme}
@@ -372,9 +352,11 @@ const Shell: React.FC = () => {
           </div>
         </header>
         <main className="workspace-content">
-          <Suspense fallback={<PageSkeleton />}>
-            <Outlet />
-          </Suspense>
+          <PageErrorBoundary key={location.pathname}>
+            <Suspense fallback={<PageSkeleton />}>
+              <Outlet />
+            </Suspense>
+          </PageErrorBoundary>
         </main>
       </div>
 

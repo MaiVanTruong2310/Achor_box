@@ -43,14 +43,21 @@ public class OrderController {
             @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String payment) {
-        return ResponseEntity.ok(orderService.getOrdersPaged(page, size, search, status, payment));
+            @RequestParam(required = false) String payment,
+            @Parameter(description = "Sắp xếp: created_at_desc (mặc định), created_at_asc, total_asc/desc, customer_asc/desc, status_asc/desc") @RequestParam(required = false) String sort) {
+        return ResponseEntity.ok(orderService.getOrdersPaged(page, size, search, status, payment, sort));
     }
 
     @GetMapping("/counts")
     @Operation(summary = "Lấy thống kê số lượng đơn hàng theo từng trạng thái", description = "Tổng hợp số lượng đơn hàng tương ứng với từng trạng thái xử lý nhằm hiển thị huy hiệu (badge) trên giao diện")
     public ResponseEntity<Map<String, Long>> getOrderCounts() {
         return ResponseEntity.ok(orderService.getOrderCounts());
+    }
+
+    @GetMapping("/summary")
+    @Operation(summary = "Tổng hợp KPI đơn hàng", description = "Tổng số đơn, đơn hoàn tất, doanh thu đã thu và số tiền chờ thanh toán trên toàn hệ thống (PO chỉ thấy phạm vi mình quản lý)")
+    public ResponseEntity<Map<String, Object>> getOrderSummary() {
+        return ResponseEntity.ok(orderService.getOrderSummary());
     }
 
     @PatchMapping("/{id}/status")

@@ -487,14 +487,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         alignItems: 'center',
                         gap: 6,
                         padding: '7px 14px',
-                        background: 'linear-gradient(135deg, var(--fpt-orange) 0%, #ea580c 100%)',
+                        background: 'var(--accent-primary)',
                         color: '#fff',
                         border: 'none',
                         borderRadius: 7,
                         fontSize: '12.5px',
                         fontWeight: 600,
                         cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
-                        boxShadow: '0 2px 8px rgba(249, 115, 22, 0.25)',
+                        boxShadow: '0 2px 8px color-mix(in srgb, var(--accent-primary) 25%, transparent)',
                         transition: 'all 0.15s ease'
                       }}
                     >

@@ -52,11 +52,19 @@ public class WarrantyController {
     }
 
     @GetMapping("/claims/paged")
-    @Operation(summary = "Lấy danh sách yêu cầu bảo hành có phân trang dạng Map<String, Object>", description = "Phân trang danh sách yêu cầu bảo hành, hỗ trợ lọc theo trạng thái (new, in_progress, resolved, rejected)")
+    @Operation(summary = "Lấy danh sách yêu cầu bảo hành có phân trang dạng Map<String, Object>", description = "Phân trang danh sách yêu cầu bảo hành, hỗ trợ lọc theo trạng thái và tìm kiếm")
     public ResponseEntity<Map<String, Object>> getClaimsPaged(
             @Parameter(description = "Chỉ số trang (0-based)") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
-            @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
-        return ResponseEntity.ok(warrantyService.getClaimsPaged(page, size));
+            @Parameter(description = "Số lượng bản ghi mỗi trang") @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
+            @Parameter(description = "Trạng thái phiếu bảo hành (new, assigned, in_progress, resolved, rejected)") @RequestParam(required = false) String status,
+            @Parameter(description = "Từ khóa tìm kiếm (serial, mã phiếu, khách hàng, SĐT, mô tả)") @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(warrantyService.getClaimsPaged(page, size, status, search));
+    }
+
+    @GetMapping("/claims/counts")
+    @Operation(summary = "Đếm số lượng yêu cầu bảo hành theo trạng thái", description = "Trả về tổng số phiếu bảo hành theo từng trạng thái trên toàn hệ thống (hoặc phạm vi kỹ thuật viên)")
+    public ResponseEntity<Map<String, Long>> getClaimCounts() {
+        return ResponseEntity.ok(warrantyService.getClaimCounts());
     }
 
     @PatchMapping("/claims/{id}/assign")
@@ -72,7 +80,7 @@ public class WarrantyController {
     public ResponseEntity<ClaimResponse> updateClaimStatus(
             @PathVariable UUID id,
             @RequestBody ClaimStatusUpdateRequest request) {
-        return ResponseEntity.ok(warrantyService.updateClaimStatus(id, request.getStatus()));
+        return ResponseEntity.ok(warrantyService.updateClaimStatus(id, request.getStatus(), request.getReason()));
     }
 
     @PatchMapping("/claims/{id}/notes")

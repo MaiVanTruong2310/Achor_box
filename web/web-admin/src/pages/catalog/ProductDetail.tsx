@@ -24,6 +24,7 @@ import { adminRequest } from '../../services/adminRequest';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../contexts/ToastContext';
 import './product-detail.css';
+import { assetUrl } from '../../services/assetUrl';
 
 export const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -185,6 +186,8 @@ export const ProductDetail: React.FC = () => {
   }
 
   const variants = product.variants || [];
+  const capacities = [...new Set(variants.map((v) => v.capacity_liter).filter((n): n is number => typeof n === 'number'))].sort((a, b) => a - b);
+  const warrantyMonths = [...new Set(variants.map((v) => v.warranty_months).filter((n): n is number => typeof n === 'number' && n > 0))].sort((a, b) => a - b);
   const totalStock = variants.length > 0
     ? variants.reduce((sum, v) => sum + (v.stock_quantity || 0), 0)
     : (product.stock_quantity ?? 0);
@@ -249,7 +252,7 @@ export const ProductDetail: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Giá gốc niêm yết</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ea580c' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-primary)' }}>
               {(product.price || 0).toLocaleString('vi-VN')} ₫
             </div>
           </div>
@@ -265,7 +268,7 @@ export const ProductDetail: React.FC = () => {
             <div className="product-gallery-wrap">
               <div className="product-main-image">
                 {selectedImage ? (
-                  <img src={selectedImage} alt={product.name} />
+                  <img src={assetUrl(selectedImage)} alt={product.name} />
                 ) : (
                   <Package size={40} style={{ color: 'var(--text-muted)' }} />
                 )}
@@ -278,7 +281,7 @@ export const ProductDetail: React.FC = () => {
                       className={`thumb-item ${selectedImage === img ? 'active' : ''}`}
                       onClick={() => setSelectedImage(img)}
                     >
-                      <img src={img} alt={`Thumb ${i}`} />
+                      <img src={assetUrl(img)} alt={`Thumb ${i}`} />
                     </div>
                   ))}
                 </div>
@@ -305,7 +308,7 @@ export const ProductDetail: React.FC = () => {
                   </div>
                   <div className="spec-box">
                     <span className="spec-lbl">Số lượng biến thể kích cỡ</span>
-                    <span className="spec-val">{variants.length} biến thể (S/M/L)</span>
+                    <span className="spec-val">{variants.length} biến thể{capacities.length > 0 && ` (${capacities.join(' / ')} L)`}</span>
                   </div>
                 </div>
               </div>
@@ -316,7 +319,7 @@ export const ProductDetail: React.FC = () => {
           <div className="product-card-panel">
             <div className="product-panel-header">
               <h3>
-                <Layers size={16} style={{ color: '#ea580c' }} />
+                <Layers size={16} style={{ color: 'var(--accent-primary)' }} />
                 Danh Sách Biến Thể Kích Cỡ & Định Mức Tồn Kho
               </h3>
             </div>
@@ -346,7 +349,7 @@ export const ProductDetail: React.FC = () => {
                           <strong style={{ color: 'var(--text-primary)' }}>{v.variant_name || v.name}</strong>
                         </td>
                         <td>
-                          <code style={{ fontSize: '0.74rem', color: '#ea580c' }}>{v.sku}</code>
+                          <code style={{ fontSize: '0.74rem', color: 'var(--accent-primary)' }}>{v.sku}</code>
                         </td>
                         <td>
                           {v.height_cm || v.width_cm || v.depth_cm ? (
@@ -379,7 +382,7 @@ export const ProductDetail: React.FC = () => {
                           </span>
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          {v.warranty_months ? `${v.warranty_months} tháng` : '12 tháng'}
+                          {v.warranty_months ? `${v.warranty_months} tháng` : '—'}
                         </td>
                       </tr>
                     ))}
@@ -464,13 +467,13 @@ export const ProductDetail: React.FC = () => {
             <div className="product-card-panel">
               <div className="product-panel-header">
                 <h3>
-                  <ArrowUpDown size={16} style={{ color: '#ea580c' }} />
+                  <ArrowUpDown size={16} style={{ color: 'var(--accent-primary)' }} />
                   {userRole === 'product_manager' ? 'Gửi Đề Xuất Điều Chỉnh Kho' : 'Điều Chỉnh Xuất / Nhập Kho Nhanh'}
                 </h3>
               </div>
 
               {userRole === 'product_manager' && (
-                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--bg-surface-hover, rgba(234, 88, 12, 0.05))', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', marginBottom: 10, lineHeight: 1.45 }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--bg-surface-hover, color-mix(in srgb, var(--accent-primary) 5%, transparent))', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', marginBottom: 10, lineHeight: 1.45 }}>
                   ℹ️ <strong>Quy trình PO:</strong> Yêu cầu xuất/nhập kho sẽ được gửi đến Quản trị viên (Admin) thẩm định và phê duyệt trước khi cập nhật số lượng tồn thực tế.
                 </div>
               )}
@@ -628,14 +631,14 @@ export const ProductDetail: React.FC = () => {
           <div className="product-card-panel">
             <div className="product-panel-header">
               <h3>
-                <Shield size={16} style={{ color: '#10b981' }} />
-                Chính Sách Bảo Hành & Lắp Đặt
+                <Shield size={16} />
+                Bảo hành
               </h3>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-              <div>• <strong>Bảo hành chính hãng:</strong> 12 - 24 tháng theo từng biến thể kích cỡ SmartBox.</div>
-              <div>• <strong>Hỗ trợ kỹ thuật:</strong> Đội ngũ kỹ thuật viên SmartBox hỗ trợ lắp đặt tận nơi.</div>
-              <div>• <strong>Kiểm định:</strong> Tiêu chuẩn chống nước IP54 / IP65 theo quy chuẩn công nghiệp.</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              {warrantyMonths.length === 0
+                ? 'Chưa cấu hình thời hạn bảo hành cho biến thể nào.'
+                : `Bảo hành tiêu chuẩn ${warrantyMonths.join(' / ')} tháng tính từ ngày nghiệm thu lắp đặt, theo cấu hình của từng biến thể.`}
             </div>
           </div>
         </div>

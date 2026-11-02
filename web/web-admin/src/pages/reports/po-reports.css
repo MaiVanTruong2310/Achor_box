@@ -41,14 +41,14 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(234, 88, 12, 0.18), rgba(245, 158, 11, 0.18));
-  border: 1px solid rgba(234, 88, 12, 0.3);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 18%, transparent), rgba(245, 158, 11, 0.18));
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ea580c;
+  color: var(--accent-primary);
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.15);
+  box-shadow: none;
 }
 
 .po-rep-title {
@@ -73,8 +73,8 @@
   gap: 8px;
   padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.08);
-  border: 1px solid rgba(37, 99, 235, 0.25);
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent);
   color: var(--accent-primary);
   font-size: 0.8rem;
   font-weight: 600;
@@ -97,7 +97,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
@@ -105,7 +105,7 @@
 
 .po-rep-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .po-rep-kpi-card::before {
@@ -117,8 +117,8 @@
   width: 4px;
 }
 
-.po-rep-kpi-card.kpi-orange::before { background: #ea580c; }
-.po-rep-kpi-card.kpi-blue::before { background: #0284c7; }
+.po-rep-kpi-card.kpi-orange::before { background: var(--accent-primary); }
+.po-rep-kpi-card.kpi-blue::before { background: var(--accent-primary); }
 .po-rep-kpi-card.kpi-emerald::before { background: #10b981; }
 .po-rep-kpi-card.kpi-amber::before { background: #f59e0b; }
 
@@ -160,13 +160,13 @@
 }
 
 .po-rep-kpi-card.kpi-orange .po-rep-kpi-icon-box {
-  background: rgba(234, 88, 12, 0.12);
-  color: #ea580c;
+  background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+  color: var(--accent-primary);
 }
 
 .po-rep-kpi-card.kpi-blue .po-rep-kpi-icon-box {
   background: rgba(2, 132, 199, 0.12);
-  color: #0284c7;
+  color: var(--accent-primary);
 }
 
 .po-rep-kpi-card.kpi-emerald .po-rep-kpi-icon-box {
@@ -190,7 +190,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 .po-rep-filters {
@@ -259,7 +259,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 .po-rep-table-header {

@@ -21,6 +21,7 @@ import { useAdminNotifications, noticeStatusLabel } from '../../contexts/AdminNo
 import { InstallationBacklog } from '../../components/InstallationBacklog';
 import { getConcurrentDashboard, type ConcurrentDashboard } from '../../services/concurrentDashboardApi';
 import { deliveryApi, DailyTask } from '../../services/deliveryInstallation';
+import { LOW_STOCK_THRESHOLD, splitAlertRows } from '../../services/stock';
 
 interface StatusConfig {
   label: string;
@@ -325,9 +326,9 @@ const RevenueLineChart: React.FC<{
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
-                    background: active ? 'var(--fpt-orange, #ea580c)' : 'transparent',
-                    color: active ? '#ffffff' : 'var(--text-muted, #64748b)',
-                    boxShadow: active ? '0 1px 3px rgba(234, 88, 12, 0.3)' : 'none',
+                    background: active ? 'var(--bg-card)' : 'transparent',
+                    color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                    boxShadow: active ? '0 0 0 1px var(--border-subtle)' : 'none',
                   }}
                 >
                   {label}
@@ -354,7 +355,7 @@ const RevenueLineChart: React.FC<{
             <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', lineHeight: 1.2 }}>
               {totalLabel}
             </span>
-            <b style={{ fontSize: 13, color: 'var(--fpt-orange)', fontWeight: 700 }}>
+            <b style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
               {money(totalRevenue)}
             </b>
           </div>
@@ -363,7 +364,7 @@ const RevenueLineChart: React.FC<{
             <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', lineHeight: 1.2 }}>
               {avgLabel}
             </span>
-            <b style={{ fontSize: 13, color: 'var(--text-main)', fontWeight: 600 }}>
+            <b style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
               {money(avgRevenue)}
             </b>
           </div>
@@ -378,13 +379,9 @@ const RevenueLineChart: React.FC<{
         >
           <defs>
             <linearGradient id="revenueLineGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f97316" stopOpacity="0.35" />
-              <stop offset="70%" stopColor="#f97316" stopOpacity="0.08" />
-              <stop offset="100%" stopColor="#f97316" stopOpacity="0.0" />
+              <stop offset="0%" style={{ stopColor: 'var(--accent-primary)', stopOpacity: 0.14 }} />
+              <stop offset="100%" style={{ stopColor: 'var(--accent-primary)', stopOpacity: 0 }} />
             </linearGradient>
-            <filter id="dotGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#ea580c" floodOpacity="0.5" />
-            </filter>
           </defs>
 
           {/* Grid lines */}
@@ -426,11 +423,10 @@ const RevenueLineChart: React.FC<{
             <path
               d={curvePath}
               fill="none"
-              stroke="#f97316"
-              strokeWidth="2.8"
+              style={{ stroke: 'var(--accent-primary)', transition: 'all 0.4s ease' }}
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ transition: 'all 0.4s ease' }}
             />
           )}
 
@@ -445,8 +441,8 @@ const RevenueLineChart: React.FC<{
                     y1={padTop}
                     x2={pt.x}
                     y2={padTop + plotHeight}
-                    stroke="#f97316"
-                    strokeWidth="1.2"
+                    style={{ stroke: 'var(--border-strong)' }}
+                    strokeWidth="1"
                     strokeDasharray="2 3"
                     opacity="0.8"
                   />
@@ -466,11 +462,8 @@ const RevenueLineChart: React.FC<{
                   cx={pt.x}
                   cy={pt.y}
                   r={isHovered ? 5.5 : 3.5}
-                  fill={isHovered ? '#ea580c' : '#ffffff'}
-                  stroke="#ea580c"
-                  strokeWidth={isHovered ? 2.5 : 2}
-                  filter={isHovered ? 'url(#dotGlow)' : undefined}
-                  style={{ transition: 'all 0.15s ease', pointerEvents: 'none' }}
+                  strokeWidth={2}
+                  style={{ fill: isHovered ? 'var(--accent-primary)' : 'var(--bg-card)', stroke: 'var(--accent-primary)', transition: 'all 0.15s ease', pointerEvents: 'none' }}
                 />
                 {/* X axis label */}
                 <text
@@ -505,11 +498,10 @@ const RevenueLineChart: React.FC<{
               pointerEvents: 'none',
               whiteSpace: 'nowrap',
               zIndex: 10,
-              border: '1px solid rgba(249, 115, 22, 0.4)',
-              backdropFilter: 'blur(4px)'
+              border: '1px solid rgba(255, 255, 255, 0.08)'
             }}
           >
-            <div style={{ fontWeight: 700, color: '#fed7aa', marginBottom: 2, fontSize: 11 }}>
+            <div style={{ fontWeight: 700, color: '#e5e7eb', marginBottom: 2, fontSize: 11 }}>
               {chartCoords[hoveredIdx].fullTitle}
             </div>
             <div>
@@ -539,7 +531,7 @@ const TechnicianTimetableWidget: React.FC = () => {
 
   const shifts = [
     { id: 'morning' as const, title: 'Ca Sáng', range: '08:00 – 12:00', icon: '🌅', color: '#0284c7' },
-    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: '#ea580c' },
+    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: 'var(--accent-primary)' },
     { id: 'evening' as const, title: 'Ca Tối', range: '18:00 – 21:00', icon: '🌙', color: '#8b5cf6' },
   ];
 
@@ -649,6 +641,7 @@ export const Dashboard: React.FC = () => {
   const [mode, setMode] = useState<'parallel' | 'sequential'>('parallel');
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState<ConcurrentDashboard | null>(null);
+  const stockSplit = useMemo(() => splitAlertRows(data?.lowStockVariants || []), [data]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [demo, setDemo] = useState(false);
@@ -859,10 +852,10 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
               <div className="fpt-stat-value">
-                {`${data?.lowStockVariants?.length || 0} SKU`}
+                {`${stockSplit.total} SKU`}
               </div>
               <div className="fpt-stat-footer">
-                <span>Tồn có thể bán ≤ 5</span>
+                <span>{stockSplit.out} hết hàng · {stockSplit.low} còn ≤ {LOW_STOCK_THRESHOLD}</span>
                 <Link to="/products" className="fpt-badge-pill amber" style={{ textDecoration: 'none' }}>
                   Kiểm tra kho →
                 </Link>

@@ -97,7 +97,42 @@ class AdminOperationsHttpTests extends BackendApplicationTests {
         var mine=call("/api/warranties/claims/paged",HttpMethod.GET,"claim-tech",null,null,null).getBody();assertEquals(1,((Number)mine.get("totalElements")).intValue());
         var theirs=call("/api/warranties/claims/paged",HttpMethod.GET,"claim-tech-other",null,null,null).getBody();assertEquals(0,((Number)theirs.get("totalElements")).intValue());
         assertEquals(403,call("/api/warranties/claims/"+claim.get("id")+"/status",HttpMethod.PATCH,"claim-tech-other",Map.of("status","resolved"),null,null).getStatusCode().value());
-        assertEquals(200,call("/api/warranties/claims/"+claim.get("id")+"/status",HttpMethod.PATCH,"claim-tech",Map.of("status","resolved"),null,null).getStatusCode().value());
+        String status="/api/warranties/claims/"+claim.get("id")+"/status";
+        assertEquals("assigned",jdbc.queryForObject("SELECT CAST(status AS text) FROM public.warranty_claims WHERE id=?",String.class,UUID.fromString(claim.get("id").toString())));
+        assertEquals(409,call(status,HttpMethod.PATCH,"claim-tech",Map.of("status","resolved"),null,null).getStatusCode().value());
+        assertEquals(409,call(status,HttpMethod.PATCH,"claim-tech",Map.of("status","rejected"),null,null).getStatusCode().value());
+        assertEquals(200,call(status,HttpMethod.PATCH,"claim-tech",Map.of("status","in_progress"),null,null).getStatusCode().value());
+        assertEquals(200,call(status,HttpMethod.PATCH,"claim-tech",Map.of("status","resolved"),null,null).getStatusCode().value());
+        assertEquals(409,call(status,HttpMethod.PATCH,"claim-support",Map.of("status","in_progress"),null,null).getStatusCode().value());
+        assertEquals(409,call("/api/warranties/claims/"+claim.get("id")+"/assign",HttpMethod.PATCH,"claim-support",Map.of("technicianId",tech),null,null).getStatusCode().value());
+        assertEquals(3,jdbc.queryForObject("SELECT count(*) FROM public.notifications WHERE user_id=? AND type='system'",Integer.class,owner));
+    }
+    @Test void warrantyClaimsSearchCountsRejectionReasonAndFaultCategories(){
+        UUID owner=actor("customer","reject-claim-owner");actor("product_manager","reject-claim-manager");
+        UUID w1=warranty(owner,true),w2=warranty(owner,true);
+        var c1=call("/api/customer/warranty-claims",HttpMethod.POST,"reject-claim-owner",Map.of("warrantyId",w1,"description","[Wi-Fi & ứng dụng] Mất kết nối ứng dụng điện thoại.","imageIds",List.of()),UUID.randomUUID().toString(),null).getBody();
+        var c2=call("/api/customer/warranty-claims",HttpMethod.POST,"reject-claim-owner",Map.of("warrantyId",w2,"description","[Khác] Vỏ hộp bị trầy xước nhẹ bên ngoài.","imageIds",List.of()),UUID.randomUUID().toString(),null).getBody();
+        assertEquals(200,call("/api/warranties/claims/"+c1.get("id")+"/notes",HttpMethod.PATCH,"reject-claim-manager",Map.of("notes","Ghi chú nội bộ chỉ PO xem"),null,null).getStatusCode().value());
+        assertEquals(400,call("/api/warranties/claims/"+c1.get("id")+"/status",HttpMethod.PATCH,"reject-claim-manager",Map.of("status","rejected"),null,null).getStatusCode().value());
+        var rejected=call("/api/warranties/claims/"+c1.get("id")+"/status",HttpMethod.PATCH,"reject-claim-manager",Map.of("status","rejected","reason","Hư hỏng do tác động ngoại lực ngoài phạm vi bảo hành"),null,null);
+        assertEquals(200,rejected.getStatusCode().value(),Objects.toString(rejected.getBody()));
+        assertEquals("connectivity",rejected.getBody().get("faultCategory"));
+        assertEquals("Hư hỏng do tác động ngoại lực ngoài phạm vi bảo hành",rejected.getBody().get("rejectionReason"));
+        var customerDetail=call("/api/customer/warranty-claims/"+c1.get("id"),HttpMethod.GET,"reject-claim-owner",null,null,null).getBody();
+        assertFalse(customerDetail.containsKey("internalNotes"));
+        assertEquals("Hư hỏng do tác động ngoại lực ngoài phạm vi bảo hành",customerDetail.get("rejectionReason"));
+        var filtered=call("/api/warranties/claims/paged?status=new&search="+serialOf(w2),HttpMethod.GET,"reject-claim-manager",null,null,null).getBody();
+        assertEquals(1,((Number)filtered.get("totalElements")).intValue());
+        var row2=(Map<?,?>)((List<?>)filtered.get("content")).getFirst();
+        assertEquals("other",row2.get("faultCategory"));
+        var counts=call("/api/warranties/claims/counts",HttpMethod.GET,"reject-claim-manager",null,null,null).getBody();
+        assertTrue(((Number)counts.get("rejected")).longValue()>=1);
+        assertTrue(((Number)counts.get("all")).longValue()>=2);
+    }
+    @Test void customerCannotOpenSecondClaimWhileOneIsOpen(){
+        UUID owner=actor("customer","double-claim-owner");UUID warranty=warranty(owner,true);
+        postClaim(warranty,"double-claim-owner",UUID.randomUUID().toString(),List.of(),200);
+        postClaim(warranty,"double-claim-owner",UUID.randomUUID().toString(),List.of(),409);
     }
     ResponseEntity<Map> upload(UUID warranty,String token){
         var form=new org.springframework.util.LinkedMultiValueMap<String,Object>();form.add("file",new org.springframework.core.io.ByteArrayResource(new byte[]{1,2,3}){@Override public String getFilename(){return "claim.png";}});

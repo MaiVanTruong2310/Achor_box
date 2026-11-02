@@ -337,7 +337,7 @@ export const productsService = {
         const catId = mainCat ? mainCat.id : undefined;
 
         await this.createProduct({
-            name: 'Tủ Nhận Hàng Thông Minh SmartBox Home Standard',
+            name: 'Tủ Nhận Hàng Thông Minh Anchor Box Home Standard',
             sku: 'SBX-STD-01',
             category_id: catId,
             price: 3490000,
@@ -352,7 +352,7 @@ export const productsService = {
         } as any);
 
         await this.createProduct({
-            name: 'Tủ Nhận Hàng Thông Minh SmartBox Pro Flagship',
+            name: 'Tủ Nhận Hàng Thông Minh Anchor Box Pro Flagship',
             sku: 'SBX-PRO-02',
             category_id: catId,
             price: 5890000,
@@ -367,7 +367,7 @@ export const productsService = {
         } as any);
 
         await this.createProduct({
-            name: 'Tủ Nhận Hàng Thông Minh SmartBox Mini Eco',
+            name: 'Tủ Nhận Hàng Thông Minh Anchor Box Mini Eco',
             sku: 'SBX-MINI-03',
             category_id: catId,
             price: 2490000,
@@ -752,7 +752,8 @@ export interface ExtendedWarrantyClaim extends WarrantyClaim {
     customer_phone?: string;
     customer_address?: string;
     error_category?: string;
-    fault_category?: 'sensor_fault' | 'mechanical_jam' | 'scale_deviation' | 'connectivity' | 'power_supply';
+    fault_category?: 'sensor_fault' | 'mechanical_jam' | 'scale_deviation' | 'connectivity' | 'power_supply' | 'keypad_display' | 'other' | string;
+    rejection_reason?: string | null;
     replacement_parts?: string[];
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     sla_hours?: number;
@@ -795,14 +796,14 @@ export const warrantiesService = {
         if (updates.internal_notes !== undefined)
             await fetchBackend('/warranties/claims/' + claimId + '/notes', { method: 'PATCH', body: JSON.stringify({ notes: updates.internal_notes }) });
         if (updates.status)
-            await fetchBackend('/warranties/claims/' + claimId + '/status', { method: 'PATCH', body: JSON.stringify({ status: updates.status }) });
+            await fetchBackend('/warranties/claims/' + claimId + '/status', { method: 'PATCH', body: JSON.stringify({ status: updates.status, reason: updates.rejection_reason }) });
         return { success: true, error: null };
     },
     async assignTechnician(claimId: string, technicianId: string | null): Promise<{
         success: boolean;
         error: string | null;
     }> {
-        return this.updateClaimFull(claimId, { assigned_to: technicianId, status: 'in_progress' });
+        return this.updateClaimFull(claimId, { assigned_to: technicianId });
     },
     async updateClaimStatus(claimId: string, status: ClaimStatus): Promise<{
         success: boolean;

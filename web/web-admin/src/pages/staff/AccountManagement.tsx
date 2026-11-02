@@ -225,8 +225,8 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
       setCreateStaffError('Vai trò nhân sự không hợp lệ.');
       return;
     }
-    if (staffForm.initialPassword.length < 12 || staffForm.initialPassword.length > 128) {
-      setCreateStaffError('Mật khẩu khởi tạo ban đầu phải có từ 12 đến 128 ký tự.');
+    if (staffForm.initialPassword.length < 12 || staffForm.initialPassword.length > 72) {
+      setCreateStaffError('Mật khẩu khởi tạo ban đầu phải có từ 12 đến 72 ký tự.');
       return;
     }
 
@@ -332,7 +332,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
       case 'product_manager':
         return 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)';
       case 'technician':
-        return 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)';
+        return 'var(--accent-primary)';
       default:
         return 'linear-gradient(135deg, #64748b 0%, #475569 100%)';
     }
@@ -345,7 +345,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
       case 'product_manager':
         return 'Quản lý danh mục, biến thể sản phẩm, định mức tồn kho, quản lý đơn hàng, phê duyệt PO và xuất báo cáo doanh thu.';
       case 'technician':
-        return 'Tiếp nhận phân công giao hàng & lắp đặt tủ SmartBox, kiểm tra kỹ thuật tại hiện trường và xử lý yêu cầu bảo hành.';
+        return 'Tiếp nhận phân công giao hàng & lắp đặt tủ Anchor Box, kiểm tra kỹ thuật tại hiện trường và xử lý yêu cầu bảo hành.';
       default:
         return 'Tài khoản người dùng thông thường.';
     }
@@ -420,12 +420,12 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
         </div>
 
         <div className="staff-kpi-card">
-          <div className="staff-kpi-bubble" style={{ background: 'rgba(249, 115, 22, 0.12)', color: '#f97316' }}>
+          <div className="staff-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)', color: 'var(--accent-primary)' }}>
             <Wrench size={20} />
           </div>
           <div className="staff-kpi-meta">
             <span className="staff-kpi-label">Kỹ thuật viên</span>
-            <div className="staff-kpi-value" style={{ color: '#f97316' }}>{countTechnician}</div>
+            <div className="staff-kpi-value" style={{ color: 'var(--accent-primary)' }}>{countTechnician}</div>
             <span className="staff-kpi-sub">Giao hàng, lắp đặt tủ & bảo hành</span>
           </div>
         </div>
@@ -651,7 +651,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
                           disabled={!!busy}
                           onClick={() => handleOpenResetPassword(user)}
                           title="Đặt lại mật khẩu cho nhân viên"
-                          style={{ color: 'var(--fpt-orange)', borderColor: 'rgba(234, 88, 12, 0.35)' }}
+                          style={{ color: 'var(--fpt-orange)', borderColor: 'color-mix(in srgb, var(--accent-primary) 35%, transparent)' }}
                         >
                           <KeyRound size={13} />
                           <span>Đổi MK</span>
@@ -816,7 +816,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
                     type="password"
                     required
                     minLength={12}
-                    maxLength={128}
+                    maxLength={72}
                     autoComplete="new-password"
                     placeholder="Tối thiểu 12 ký tự (chữ hoa, số, ký tự đặc biệt)"
                     value={staffForm.initialPassword}
@@ -953,7 +953,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: 'rgba(234, 88, 12, 0.12)',
+                    background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
                     color: 'var(--fpt-orange)',
                     display: 'flex',
                     alignItems: 'center',
@@ -1200,7 +1200,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
                   setStaffDetail(null);
                   handleOpenResetPassword(target);
                 }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--fpt-orange)', borderColor: 'rgba(234, 88, 12, 0.3)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--fpt-orange)', borderColor: 'color-mix(in srgb, var(--accent-primary) 30%, transparent)' }}
               >
                 <KeyRound size={13} />
                 <span>Đặt lại mật khẩu</span>
