@@ -120,3 +120,6 @@
 @media (prefers-reduced-motion: reduce) {
   .ab-cart .ab-cart-more-card, .ab-cart .ab-cart-btn { transition: none; }
 }
+.ab-cart .ab-cart-qty button:disabled { background: transparent; color: var(--ab-text-3); opacity: 0.5; }
+.ab-cart .ab-cart-coupon button:disabled { background: var(--ab-surface); color: var(--ab-text-3); opacity: 0.6; }
+.ab-cart .ab-cart-remove:disabled { background: transparent; }

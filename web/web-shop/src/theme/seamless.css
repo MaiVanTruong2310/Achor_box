@@ -1,0 +1,35 @@
+/* One continuous surface per page: no full-width bands or rules between sections and the footer. */
+.store-footer { background: transparent; border-top: 0; }
+.detail-breadcrumb-bar { background: transparent !important; border-bottom: 0 !important; }
+body:has(.ab-cart) { background: var(--ab-bg); }
+.ab-cart-head { border-bottom: 0 !important; padding-bottom: 8px !important; }
+.ab-cart-more { border-top: 0 !important; }
+.auth-recovery-page { background: transparent !important; }
+.ab-info .ab-subnav, .ab-landing .ab-productbar { border-bottom: 0 !important; box-shadow: none !important; background: color-mix(in srgb, var(--ab-bg) 84%, transparent) !important; }
+
+.ab-info .ab-dark-band { width: min(1120px, 100% - 48px); margin: 0 auto clamp(80px, 12vw, 140px); border-radius: 32px; }
+.ab-info .ab-dark-band > .ab-container { width: min(1000px, 100% - 64px); }
+
+/* Legacy pages (compare, FAQ, contact, app, blog, order tracking, account) follow the dark theme too. */
+[data-theme='dark'] body { background: var(--ab-bg); color: var(--ab-text); }
+[data-theme='dark'] main :is(h1, h2, h3, h4, h5, h6, summary, label, legend, th, dt) { color: var(--ab-text); }
+[data-theme='dark'] main :is(p, li, dd, td, small, figcaption, .muted, .lead) { color: var(--ab-text-2); }
+[data-theme='dark'] main :is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea) { background: var(--ab-surface-2); color: var(--ab-text); border-color: var(--ab-separator); }
+[data-theme='dark'] main :is(input, textarea)::placeholder { color: var(--ab-text-3); }
+[data-theme='dark'] main :is(details, hr, .journey li) { border-color: var(--ab-separator); }
+[data-theme='dark'] main :is(
+  .panel, .notice, .product-card, .catalog-toolbar, .button.secondary, .phone, .model-segments span, .size-segments span,
+  .order-tracking-box, .tracking-result-card, .tracking-info-block, .support-contact-box, .table-responsive-box, .apple-map-route-widget,
+  .apple-route-endpoints, .apple-turn-step-card, .device-chip, .qty-tag, .copy-id-btn, .tracking-action-btn.secondary,
+  .contact-card, .contact-hero, .contact-panel, .blog-card, .article-card, .faq-item, .commerce-empty, .account-card
+) { background: var(--ab-surface); border-color: var(--ab-separator); color: var(--ab-text); box-shadow: none; }
+[data-theme='dark'] main .notice.danger { background: color-mix(in srgb, var(--ab-red) 14%, var(--ab-surface)); color: var(--ab-text); }
+[data-theme='dark'] main :is(table, tr, tbody, thead) { border-color: var(--ab-separator); }
+[data-theme='dark'] main tbody tr:nth-child(even) { background: transparent; }
+
+
+[data-theme='dark'] .auth-recovery-page { color: var(--ab-text); }
+[data-theme='dark'] .apple-auth-recovery-card { background: var(--ab-surface); border-color: var(--ab-separator); box-shadow: none; }
+[data-theme='dark'] .auth-back-link { background: var(--ab-surface); color: var(--ab-text-2); border-color: var(--ab-separator); }
+[data-theme='dark'] .auth-input { background: var(--ab-surface-2) !important; border-color: var(--ab-separator) !important; color: var(--ab-text) !important; }
+[data-theme='dark'] .auth-recovery-header :is(h1, p), [data-theme='dark'] .auth-recovery-footer { color: var(--ab-text); }
