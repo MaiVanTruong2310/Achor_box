@@ -8,7 +8,12 @@ import com.smartbox.backend.exception.BadRequestException;
 import com.smartbox.backend.exception.ConflictException;
 import com.smartbox.backend.repository.CommerceRepository;
 import com.smartbox.backend.security.CurrentActor;
+import com.smartbox.backend.service.storage.ImageBucket;
+import com.smartbox.backend.service.storage.ImageStorage;
+import com.smartbox.backend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,13 +35,16 @@ import java.util.UUID;
 
 import static com.smartbox.backend.service.commerce.OrderWorkflowService.now;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomerWarrantyClaimService {
 
+    static final long ORPHAN_IMAGE_TTL_HOURS = 24;
+
     private final CommerceRepository db;
     private final CurrentActor actors;
-    private final ClaimImageStorage storage;
+    private final ImageStorage storage;
     private final ObjectMapper json;
 
     private Map<String, Object> warranty(UUID id, UUID owner, boolean lock) {
@@ -65,11 +73,41 @@ public class CustomerWarrantyClaimService {
         if (pending >= 20) {
             throw new ConflictException("PENDING_IMAGE_LIMIT");
         }
-        // External HTTP upload to Cloudinary (executed outside DB transaction to prevent HikariCP connection starvation)
-        var image = storage.upload(file);
+        // External HTTP upload to Supabase Storage (executed outside DB transaction to prevent HikariCP connection starvation)
+        var image = storage.upload(ImageBucket.WARRANTY_CLAIMS, file);
         UUID id = UUID.randomUUID();
         db.update("INSERT INTO public.warranty_claim_images(id,owner_id,warranty_id,public_id,secure_url,created_at) VALUES(?,?,?,?,?,?)", id, actor.id(), warranty, image.publicId(), image.secureUrl(), now());
         return Map.of("id", id, "url", image.secureUrl());
+    }
+
+    public Map<String, Object> deleteImage(UUID warranty, UUID image) {
+        var actor = actors.get();
+        actor.requireRoles("customer");
+        var rows = db.list("DELETE FROM public.warranty_claim_images WHERE id=? AND owner_id=? AND warranty_id=? AND claim_id IS NULL RETURNING public_id", image, actor.id(), warranty);
+        if (rows.isEmpty()) {
+            throw new ResourceNotFoundException("IMAGE_NOT_FOUND");
+        }
+        removeRemote(rows.getFirst().get("public_id").toString());
+        return Map.of("id", image, "deleted", true);
+    }
+
+    @Scheduled(fixedDelayString = "${smartbox.warranty.orphan-image-sweep-ms:3600000}", initialDelayString = "${smartbox.warranty.orphan-image-initial-delay-ms:600000}")
+    public void sweepOrphanImages() {
+        var cutoff = now().minusHours(ORPHAN_IMAGE_TTL_HOURS);
+        var stale = db.list("DELETE FROM public.warranty_claim_images WHERE claim_id IS NULL AND created_at < ? AND id IN (SELECT id FROM public.warranty_claim_images WHERE claim_id IS NULL AND created_at < ? ORDER BY created_at LIMIT 100) RETURNING public_id",
+                cutoff, cutoff);
+        stale.forEach(row -> removeRemote(row.get("public_id").toString()));
+        if (!stale.isEmpty()) {
+            log.info("Removed {} unattached warranty claim images", stale.size());
+        }
+    }
+
+    private void removeRemote(String publicId) {
+        try {
+            storage.delete(publicId);
+        } catch (RuntimeException ex) {
+            log.warn("Could not delete claim image {} from storage: {}", publicId, ex.getMessage());
+        }
     }
 
     @Transactional
@@ -101,7 +139,7 @@ public class CustomerWarrantyClaimService {
         eligible(warranty(request.warrantyId(), actor.id(), true));
         var urls = new ArrayList<String>();
         for (UUID image : request.imageIds().stream().sorted().toList()) {
-            var row = db.one("SELECT secure_url,claim_id,created_at FROM public.warranty_claim_images WHERE id=? AND owner_id=? AND warranty_id=? FOR UPDATE", image, actor.id(), request.warrantyId());
+            var row = db.one("SELECT secure_url,claim_id,created_at FROM public.warranty_claim_images WHERE id=? AND owner_id=? AND warranty_id=? AND created_at >= ? FOR UPDATE", image, actor.id(), request.warrantyId(), now().minusHours(ORPHAN_IMAGE_TTL_HOURS - 1));
             if (row.get("claim_id") != null) {
                 throw new ConflictException("IMAGE_ALREADY_ATTACHED");
             }

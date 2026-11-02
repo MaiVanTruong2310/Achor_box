@@ -10,7 +10,8 @@ import com.smartbox.backend.entity.ProductCategory;
 import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.service.catalog.ProductService;
 import com.smartbox.backend.service.catalog.VariantInventoryService;
-import com.smartbox.backend.service.warranty.ClaimImageStorage;
+import com.smartbox.backend.service.storage.ImageBucket;
+import com.smartbox.backend.service.storage.ImageStorage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,7 +43,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final VariantInventoryService variantInventory;
-    private final ClaimImageStorage imageStorage;
+    private final ImageStorage imageStorage;
     private final CurrentActor actors;
 
     @GetMapping("/inventory-movements")
@@ -58,10 +59,10 @@ public class ProductController {
     }
 
     @PostMapping(value = "/images", consumes = "multipart/form-data")
-    @Operation(summary = "Tải ảnh sản phẩm lên Cloudinary", description = "Upload hình ảnh sản phẩm hoặc biến thể lên Cloudinary dành cho Super Admin và Product Manager")
+    @Operation(summary = "Tải ảnh sản phẩm lên Supabase Storage", description = "Upload hình ảnh sản phẩm hoặc biến thể lên bucket product-images của Supabase Storage dành cho Super Admin và Product Manager")
     public Map<String, String> upload(@RequestPart("file") MultipartFile file) {
         actors.get().requireRoles("super_admin", "product_manager");
-        return Map.of("url", imageStorage.upload(file).secureUrl());
+        return Map.of("url", imageStorage.upload(ImageBucket.PRODUCTS, file).secureUrl());
     }
 
     @PatchMapping("/{id}/variants/{variantId}/stock")

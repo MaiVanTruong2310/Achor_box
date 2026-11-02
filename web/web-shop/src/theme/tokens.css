@@ -1,0 +1,113 @@
+/* Anchor Box design tokens — "Apple Home" look, mirrored from the Flutter app (light + dark). */
+:root {
+  --ab-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --ab-brand: #0c1f3d;          /* anchor navy (app icon) */
+  --ab-brand-ink: #ffffff;
+  --ab-tint: #007aff;           /* system blue: actions only */
+  --ab-tint-hover: #0062cc;
+
+  --ab-bg: #f2f2f7;
+  --ab-bg-alt: #ffffff;
+  --ab-surface: #ffffff;
+  --ab-surface-2: #f7f7fa;
+  --ab-tile-off: rgba(118, 118, 128, 0.12);
+  --ab-tile-on: #ffffff;
+  --ab-text: #1c1c1e;
+  --ab-text-2: #636366;
+  --ab-text-3: #8e8e93;
+  --ab-separator: rgba(60, 60, 67, 0.16);
+  --ab-glass: rgba(246, 246, 250, 0.72);
+  --ab-glass-border: rgba(255, 255, 255, 0.6);
+  --ab-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.07);
+  --ab-shadow-lg: 0 30px 80px rgba(12, 31, 61, 0.18);
+
+  --ab-green: #34c759;
+  --ab-orange: #ff9500;
+  --ab-yellow: #ffcc00;
+  --ab-red: #ff3b30;
+  --ab-teal: #30b0c7;
+  --ab-indigo: #5856d6;
+
+  /* 3D box materials */
+  --ab-metal-1: #8b8f96;
+  --ab-metal-2: #6d7178;
+  --ab-metal-3: #55595f;
+  --ab-cavity: #1d1f23;
+
+  --ab-radius-tile: 22px;
+  --ab-radius-card: 28px;
+  --ab-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-theme='dark'] {
+  --ab-brand: #e8eefb;
+  --ab-brand-ink: #0c1f3d;
+  --ab-tint: #0a84ff;
+  --ab-tint-hover: #409cff;
+
+  --ab-bg: #000000;
+  --ab-bg-alt: #0b0b0d;
+  --ab-surface: #1c1c1e;
+  --ab-surface-2: #2c2c2e;
+  --ab-tile-off: rgba(118, 118, 128, 0.24);
+  --ab-tile-on: #f2f2f7;
+  --ab-text: #f5f5f7;
+  --ab-text-2: #aeaeb2;
+  --ab-text-3: #8e8e93;
+  --ab-separator: rgba(84, 84, 88, 0.55);
+  --ab-glass: rgba(22, 22, 24, 0.72);
+  --ab-glass-border: rgba(255, 255, 255, 0.08);
+  --ab-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --ab-shadow-lg: 0 30px 90px rgba(0, 0, 0, 0.6);
+
+  --ab-green: #30d158;
+  --ab-orange: #ff9f0a;
+  --ab-yellow: #ffd60a;
+  --ab-red: #ff453a;
+  --ab-teal: #40c8e0;
+  --ab-indigo: #5e5ce6;
+
+  --ab-metal-1: #5a5e65;
+  --ab-metal-2: #464a50;
+  --ab-metal-3: #34373c;
+  --ab-cavity: #0d0e10;
+}
+
+/* Brand logo (header, footer) */
+.ab-brand-logo { display: inline-flex; align-items: center; gap: 8px; color: inherit; }
+.ab-brand-mark { display: block; flex: none; }
+.ab-brand-wordmark { font-family: var(--ab-font); font-size: 17px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+
+/* Shared chrome follows the theme */
+.apple-global-nav .apple-nav-brand, .apple-global-nav .apple-nav-brand:hover { color: #1d1d1f; opacity: 1; }
+.apple-global-nav.apple-nav-dark .apple-nav-brand, .apple-global-nav.apple-nav-dark .apple-nav-brand:hover { color: #f5f5f7; }
+.store-topbar { background: var(--ab-bg); color: var(--ab-text-2); border-bottom: 1px solid var(--ab-separator); }
+.store-topbar a { color: var(--ab-text-2); }
+.store-topbar a:hover { color: var(--ab-text); }
+
+.store-footer { position: relative; z-index: 1; background: var(--ab-bg); color: var(--ab-text-2); border-top: 1px solid var(--ab-separator); }
+footer.store-footer h2 { color: var(--ab-text); font-size: 12px; font-weight: 600; }
+footer.store-footer :is(a, p, span), footer.store-footer .store-footer-grid > div > a:not(.brand) { color: var(--ab-text-2); font-size: 12px; text-decoration: none; }
+footer.store-footer a:hover, footer.store-footer .store-footer-grid > div > a:not(.brand):hover { color: var(--ab-text); text-decoration: underline; }
+footer.store-footer .brand, footer.store-footer .brand:hover { color: var(--ab-text); text-decoration: none; }
+footer.store-footer .brand .ab-brand-wordmark { font-size: 17px; color: var(--ab-text); }
+.store-footer .brand { color: var(--ab-text); text-decoration: none; }
+.store-footer-bottom { border-top-color: var(--ab-separator); color: var(--ab-text-3); }
+
+/* Icon buttons in the nav must stay perfect circles (shop.css gives every <button> min-height: 44px). */
+.apple-global-nav .apple-nav-action-btn, .apple-global-nav .apple-mobile-menu-btn { width: 36px; height: 36px; min-width: 36px; min-height: 36px; padding: 0; border: 0; border-radius: 50%; flex: none; aspect-ratio: 1; }
+.apple-global-nav .apple-mobile-menu-btn { background: transparent; color: #1d1d1f; }
+.apple-global-nav.apple-nav-dark .apple-mobile-menu-btn { color: #f5f5f7; }
+.ab-theme-toggle { color: inherit; }
+
+/* Notification bell: same circular icon button as search / compare / cart */
+.apple-global-nav .ab-notif-btn { color: #1d1d1f; }
+.apple-global-nav.apple-nav-dark .ab-notif-btn { color: #e5e5ea; }
+.apple-global-nav .ab-notif-btn.is-active { opacity: 1; background: rgba(0, 0, 0, 0.08); color: var(--ab-tint); }
+.apple-global-nav.apple-nav-dark .ab-notif-btn.is-active { background: rgba(255, 255, 255, 0.14) !important; color: #2997ff !important; }
+.ab-notif-btn svg { transition: transform 0.35s var(--ab-ease); transform-origin: 50% 10%; }
+.ab-notif-btn:hover svg { transform: rotate(-12deg); }
+.ab-notif-badge { position: absolute; top: 2px; right: 1px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; display: grid; place-items: center; border-radius: 999px; background: var(--ab-red); color: #fff; font: 700 9.5px/1 var(--ab-font); box-shadow: 0 0 0 2px #fbfbfd; pointer-events: none; }
+.apple-global-nav.apple-nav-dark .ab-notif-badge { box-shadow: 0 0 0 2px #161617; }
+@media (prefers-reduced-motion: reduce) { .ab-notif-btn:hover svg { transform: none; } }

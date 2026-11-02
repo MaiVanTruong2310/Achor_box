@@ -41,5 +41,10 @@ class CustomerAuthGatewayTests {
         status=429;assertEquals(429,assertThrows(AppException.class,()->gateway.register("a@b.test","password-123","Khách","","http://localhost/login")).getCode());
         status=503;assertEquals(503,assertThrows(AppException.class,()->gateway.recovery("a@b.test","http://localhost/reset-password")).getCode());
     }
-    @Test void recoveryRequestUsesConfiguredRedirect(){gateway.recovery("a@b.test","http://localhost:5174/reset-password");assertTrue(route.get().startsWith("POST /auth/v1/recover?redirect_to="));assertEquals(Map.of("email","a@b.test"),body.get());}
+    @Test void recoveryRequestUsesConfiguredRedirect(){gateway.recovery("a@b.test","http://localhost:5174/reset-password");assertTrue(route.get().startsWith("POST /auth/v1/otp?redirect_to="));assertEquals(Map.of("email","a@b.test","create_user",false),body.get());}
+    @Test void recoveryOtpVerifiesAsEmailOtpLikeTheApp(){
+        response="{\"access_token\":\"otp-session\"}";
+        gateway.verifyRecoveryOtp(" A@B.test ","123456");assertEquals(Map.of("type","email","email","a@b.test","token","123456"),body.get());
+        status=422;response="{\"msg\":\"Signups not allowed for otp\"}";assertDoesNotThrow(()->gateway.recovery("nobody@b.test","http://localhost/reset-password"));
+    }
 }

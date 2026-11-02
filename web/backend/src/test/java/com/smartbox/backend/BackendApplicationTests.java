@@ -39,7 +39,7 @@ class BackendApplicationTests {
         if (count != null && count > 0) {
             return;
         }
-        for(String migration:java.util.List.of("001_order_enum.sql","002_commerce.sql","003_iot.sql","004_delivery_installation.sql","005_installation_completion_guard.sql","006_customer_account.sql","007_tracking_warranty_variant_specs.sql","008_customer_warranty_claims.sql","009_vnpay_sandbox.sql","010_sales_invoices.sql","011_customer_directory.sql","012_staff_roles.sql"))
+        for(String migration:java.util.List.of("001_order_enum.sql","002_commerce.sql","003_iot.sql","004_delivery_installation.sql","005_installation_completion_guard.sql","006_customer_account.sql","007_tracking_warranty_variant_specs.sql","008_customer_warranty_claims.sql","009_vnpay_sandbox.sql","010_sales_invoices.sql","011_customer_directory.sql","012_staff_roles.sql","013_variant_color_warranty_plans.sql"))
             jdbc.execute(new String(BackendApplicationTests.class.getResourceAsStream("/db/migration/"+migration).readAllBytes(),StandardCharsets.UTF_8));
     }
 

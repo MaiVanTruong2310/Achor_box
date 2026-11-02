@@ -352,4 +352,28 @@ public class WarrantyService {
         String p = phone.trim();
         return p.substring(0, 3) + "****" + p.substring(p.length() - 3);
     }
+
+    private static final java.util.regex.Pattern PUBLIC_SERIAL = java.util.regex.Pattern.compile("[A-Z0-9][A-Z0-9-]{3,63}");
+
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Object> publicLookup(String serialNumber) {
+        String serial = serialNumber == null ? "" : serialNumber.trim().toUpperCase();
+        if (!PUBLIC_SERIAL.matcher(serial).matches()) {
+            throw new BadRequestException("INVALID_SERIAL");
+        }
+        WarrantyLookupResponse found;
+        try {
+            found = lookupWarrantyBySerial(serial);
+        } catch (ResourceNotFoundException ex) {
+            throw new ResourceNotFoundException("WARRANTY_NOT_FOUND");
+        }
+        var result = new java.util.LinkedHashMap<String, Object>();
+        result.put("serialNumber", found.getSerialNumber());
+        result.put("productName", found.getProductName());
+        result.put("valid", Boolean.TRUE.equals(found.getIsValid()));
+        result.put("startDate", found.getStartDate() == null ? null : found.getStartDate().toString());
+        result.put("endDate", found.getEndDate() == null ? null : found.getEndDate().toString());
+        result.put("remainingDays", found.getRemainingDays());
+        return result;
+    }
 }

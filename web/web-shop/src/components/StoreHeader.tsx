@@ -12,14 +12,18 @@ import {
   Cpu,
   MapPin,
   ShieldCheck,
-  LayoutDashboard
+  LayoutDashboard,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { useShop } from '../ShopContext';
 import { shop } from '../api/shop';
-import { getUserAvatar } from '../api/customer';
+import { customer, getUserAvatar, setUserAvatar } from '../api/customer';
 import { useResource } from './ShopUi';
 import { NotificationCenter } from './NotificationCenter';
 import { StoreSearch } from './StoreSearch';
+import { BrandLogo } from './brand/BrandMark';
+import { useTheme } from '../theme/ThemeContext';
 import '../apple-home.css';
 
 type NavDropdownKey = 'products' | 'technology' | 'app' | 'warranty' | 'about';
@@ -35,78 +39,67 @@ interface DropdownContent {
 
 const NAV_DROPDOWNS: Record<NavDropdownKey, DropdownContent> = {
   products: {
-    eyebrow1: 'Dòng Tủ Thông Minh',
+    eyebrow1: 'Dòng Anchor Box',
     primaryLinks: [
-      { label: 'Tất cả sản phẩm AnchorBox', to: '/products' },
-      { label: 'AnchorBox Base (Tiêu chuẩn 45L/75L)', to: '/products/anchorbox-base' },
-      { label: 'AnchorBox Pro (Camera AI & Cân)', to: '/products/anchorbox-pro' },
-      { label: 'AnchorBox Solar Max (Tấm pin mặt trời)', to: '/products/anchorbox-solar' },
+      { label: 'Tất cả sản phẩm Anchor Box', to: '/products' },
+      { label: 'Anchor Box Base — bản tiêu chuẩn', to: '/products/anchorbox-base' },
+      { label: 'Anchor Box Pro — thêm camera giám sát', to: '/products/anchorbox-pro' },
+      { label: 'Anchor Box Solar Max — thêm nguồn mặt trời', to: '/products/anchorbox-solar' },
       { label: 'So sánh các phiên bản', to: '/compare' }
     ],
-    eyebrow2: 'Linh Kiện & Cảm Biến',
+    eyebrow2: 'Bên trong bản Base',
     secondaryLinks: [
-      { label: 'Cảm biến tải trọng Loadcell ±5g', to: '/products#components' },
-      { label: 'Khóa chốt điện tử Solenoid chịu lực', to: '/products#components' },
-      { label: 'Đèn UV-C khử khuẩn bưu kiện', to: '/products#components' },
-      { label: 'Pin sạc dự phòng Matter 72h', to: '/products#components' },
-      { label: 'Chân đế trụ nâng cao chống ngập', to: '/products#accessories' }
+      { label: 'Khóa kép: chốt điện 12V + servo', to: '/#hardware' },
+      { label: 'Cân bưu kiện loadcell + HX711', to: '/#hardware' },
+      { label: 'Cảm biến cửa từ MC-38', to: '/#hardware' },
+      { label: 'Bàn phím 4×4 & màn hình LCD 16×2', to: '/#hardware' }
     ],
     eyebrow3: 'Nghiệp Vụ & Dịch Vụ',
     specialLinks: [
       { label: 'Tra cứu hành trình đơn hàng', to: '/order-tracking' },
-      { label: 'Chính sách bảo hành 12 - 24 tháng', to: '/warranty' },
+      { label: 'Chính sách bảo hành', to: '/warranty' },
       { label: 'Đăng ký khảo sát lắp đặt tại nhà', to: '/contact' },
-      { label: 'Giải pháp cho tòa nhà & chung cư', to: '/contact' },
       { label: 'Xem giỏ hàng của bạn', to: '/cart' }
     ]
   },
   technology: {
-    eyebrow1: 'Công Nghệ Cốt Lõi IoT',
+    eyebrow1: 'Công Nghệ Bên Trong',
     primaryLinks: [
-      { label: 'Hệ điều hành nhúng AnchorOS', to: '/technology' },
-      { label: 'Camera AI nhận diện bưu tá 1080p', to: '/technology#camera' },
-      { label: 'Cảm biến cân nặng chống tráo hàng', to: '/technology#weight' },
-      { label: 'Diệt khuẩn UV-C tự động 99.9%', to: '/technology#uvc' },
-      { label: 'Chốt khóa điện tử chuẩn an ninh', to: '/technology#security' },
-      { label: 'Giao thức Matter over Thread', to: '/technology#connectivity' }
+      { label: 'Vi điều khiển ESP32-S3 (Wi-Fi + Bluetooth LE)', to: '/technology' },
+      { label: 'Cân phát hiện bưu kiện từ 50 g', to: '/#hardware' },
+      { label: 'Khóa kép chốt điện + servo', to: '/#hardware' },
+      { label: 'Chống dò mã: sai 3 lần khóa 60 giây', to: '/#hardware' }
     ],
-    eyebrow2: 'Nền Tảng & Điều Khiển',
+    eyebrow2: 'Kết Nối & Đám Mây',
     secondaryLinks: [
-      { label: 'Khám phá mô hình 3D tương tác', to: '/#technology' },
-      { label: 'Mã hóa truyền thông đầu cuối AES-128', to: '/technology#security' },
-      { label: 'Nguồn pin lưu điện duy trì 72 giờ', to: '/technology#battery' },
-      { label: 'Cập nhật firmware từ xa qua OTA', to: '/technology' }
+      { label: 'Cài Wi-Fi qua Bluetooth từ ứng dụng', to: '/#app' },
+      { label: 'Đồng bộ trạng thái lên đám mây Supabase', to: '/technology' },
+      { label: 'Trạng thái trực tiếp qua MQTT', to: '/technology' }
     ],
-    eyebrow3: 'Tiêu Chuẩn Kỹ Thuật',
+    eyebrow3: 'Nguồn & Lắp Đặt',
     specialLinks: [
-      { label: 'Kháng thời tiết ngoài trời IP65', to: '/technology#ip65' },
-      { label: 'Chống va đập cơ học chuẩn IK08', to: '/technology' },
-      { label: 'Tương thích Apple HomeKit & Siri', to: '/app' },
-      { label: 'Chứng nhận liên minh CSA Matter', to: '/technology' }
+      { label: 'Nguồn DC 9–24 V, hạ áp LM2576', to: '/#hardware' },
+      { label: 'Quy trình giao & lắp đặt', to: '/how-it-works' }
     ]
   },
   app: {
-    eyebrow1: 'Ứng Dụng AnchorBox Home',
+    eyebrow1: 'Ứng Dụng Anchor Box',
     primaryLinks: [
-      { label: 'Tổng quan ứng dụng di động', to: '/app' },
-      { label: 'Mở khóa từ xa không chạm 1 chạm', to: '/app' },
-      { label: 'Tạo mã OTP dùng 1 lần cho shipper', to: '/app' },
-      { label: 'Giám sát bưu kiện thời gian thực', to: '/app' },
-      { label: 'Nhật ký hình ảnh bưu phẩm lưu kho', to: '/account' }
+      { label: 'Tổng quan ứng dụng di động', to: '/#app' },
+      { label: 'Mở khóa từ xa', to: '/#app' },
+      { label: 'Tạo mã PIN dùng một lần cho shipper', to: '/#app' },
+      { label: 'Thông báo khi có bưu kiện mới', to: '/#app' }
     ],
     eyebrow2: 'Cài Đặt & Kết Nối',
     secondaryLinks: [
-      { label: 'Tải ứng dụng trên iOS App Store', to: '/app' },
-      { label: 'Tải ứng dụng trên Google Play', to: '/app' },
-      { label: 'Hướng dẫn cấu hình Wi-Fi lần đầu', to: '/how-it-works' },
+      { label: 'Ghép nối hộp bằng mã QR', to: '/how-it-works' },
+      { label: 'Cấu hình Wi-Fi lần đầu qua Bluetooth', to: '/how-it-works' },
       { label: 'Quản lý danh sách hộp đã kích hoạt', to: '/account/devices' }
     ],
-    eyebrow3: 'Hệ Sinh Thái Thông Minh',
+    eyebrow3: 'Gia Đình',
     specialLinks: [
-      { label: 'Chia sẻ quyền mở khóa cho gia đình', to: '/app' },
-      { label: 'Tự động đồng bộ mã vận đơn TMĐT', to: '/app' },
-      { label: 'Tích hợp Apple Home & Siri Shortcuts', to: '/app' },
-      { label: 'Hỗ trợ Google Assistant & Android', to: '/app' }
+      { label: 'Chia sẻ quyền mở hộp cho người thân', to: '/#app' },
+      { label: 'Lịch sử mở cửa & nhận hàng', to: '/#app' }
     ]
   },
   warranty: {
@@ -134,9 +127,9 @@ const NAV_DROPDOWNS: Record<NavDropdownKey, DropdownContent> = {
     ]
   },
   about: {
-    eyebrow1: 'Về Thương Hiệu AnchorBox',
+    eyebrow1: 'Về Thương Hiệu Anchor Box',
     primaryLinks: [
-      { label: 'Câu chuyện sứ mệnh AnchorBox', to: '/about' },
+      { label: 'Câu chuyện sứ mệnh Anchor Box', to: '/about' },
       { label: 'Tầm nhìn giải pháp bưu kiện IoT', to: '/about' },
       { label: 'Đội ngũ kỹ sư R&D phần cứng', to: '/about' },
       { label: 'Cam kết chất lượng & kiểm định', to: '/about' }
@@ -160,6 +153,7 @@ const NAV_DROPDOWNS: Record<NavDropdownKey, DropdownContent> = {
 
 export function StoreHeader() {
   const { user, lines, logout } = useShop();
+  const { theme, toggle: toggleTheme } = useTheme();
   const location = useLocation();
   const categories = useResource(shop.categories, 'catalog-categories');
   const [menu, setMenu] = useState(false);
@@ -217,13 +211,22 @@ export function StoreHeader() {
     setActiveDropdown(null);
   };
 
+  useEffect(() => {
+    if (!user || user.role !== 'customer') return;
+    const controller = new AbortController();
+    customer.profile(controller.signal)
+      .then((profile) => setUserAvatar(user.userId, profile.avatarUrl))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [user]);
+
   // Sync avatar when user changes or when an avatar update event fires
   useEffect(() => {
     setAvatarUrl(getUserAvatar(user?.userId));
     const handleAvatarUpdate = (e: Event) => {
-      const customEvent = e as CustomEvent<{ userId: string; url: string }>;
-      if (!user || customEvent.detail?.userId === user.userId) {
-        setAvatarUrl(customEvent.detail?.url || getUserAvatar(user?.userId));
+      const customEvent = e as CustomEvent<{ userId: string; url: string | null }>;
+      if (user && customEvent.detail?.userId === user.userId) {
+        setAvatarUrl(customEvent.detail.url);
       }
     };
     const handleStorage = (e: StorageEvent) => {
@@ -313,13 +316,11 @@ export function StoreHeader() {
 
   return (
     <>
-      <header className={`apple-global-nav ${location.pathname === '/' || location.pathname === '/technology' ? 'apple-nav-dark' : ''}`} ref={headerRoot} role="banner">
+      <header className={`apple-global-nav ${theme === 'dark' ? 'apple-nav-dark' : ''}`} ref={headerRoot} role="banner">
         <div className="apple-nav-container" onMouseLeave={handleNavMouseLeave}>
           
-          {/* 1. Logo AnchorBox thanh mảnh tinh xảo */}
-          <Link to="/" className="apple-nav-brand" aria-label="AnchorBox trang chủ" onMouseEnter={() => handleNavMouseEnter('home')}>
-            <span className="apple-brand-symbol">A</span>
-            <span className="apple-brand-name">anchorbox</span>
+          <Link to="/" className="apple-nav-brand" aria-label="Anchor Box — trang chủ" onMouseEnter={() => handleNavMouseEnter('home')}>
+            <BrandLogo size={22} />
           </Link>
 
           {/* 2. Apple Desktop Nav Menu Links with Hover Dropdown Trigger */}
@@ -378,7 +379,7 @@ export function StoreHeader() {
               className={({ isActive }) => `apple-nav-link ${isActive || activeDropdown === 'about' ? 'is-active' : ''}`}
               onMouseEnter={() => handleNavMouseEnter('about')}
             >
-              Về AnchorBox
+              Về Anchor Box
             </NavLink>
           </nav>
 
@@ -399,6 +400,16 @@ export function StoreHeader() {
               }}
             >
               {isSearchOpen ? <X size={17} strokeWidth={1.5} /> : <Search size={17} strokeWidth={1.5} />}
+            </button>
+
+            <button
+              type="button"
+              className="apple-nav-action-btn ab-theme-toggle"
+              aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+              title={theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
+              onClick={toggleTheme}
+            >
+              {theme === 'dark' ? <Sun size={17} strokeWidth={1.5} /> : <Moon size={17} strokeWidth={1.5} />}
             </button>
 
             {/* Nút So sánh dưới dạng biểu tượng Apple tối giản */}
@@ -488,7 +499,7 @@ export function StoreHeader() {
                       <Link to="/account/devices" onClick={() => setAccountMenuOpen(false)} className="dropdown-nav-item">
                         <Cpu size={16} />
                         <div>
-                          <strong>Thiết bị AnchorBox</strong>
+                          <strong>Thiết bị Anchor Box</strong>
                           <small>Quản lý hộp & cảm biến</small>
                         </div>
                       </Link>
@@ -655,7 +666,7 @@ export function StoreHeader() {
             <span>Trang chủ</span>
           </NavLink>
           <NavLink to="/products" onClick={() => setMenu(false)} className="apple-nav-link">
-            <span>Sản phẩm AnchorBox</span>
+            <span>Sản phẩm Anchor Box</span>
           </NavLink>
           <NavLink to="/technology" onClick={() => setMenu(false)} className="apple-nav-link">
             <span>Công nghệ IoT</span>
@@ -670,7 +681,7 @@ export function StoreHeader() {
             <span>Bảo hành chính hãng</span>
           </NavLink>
           <NavLink to="/about" onClick={() => setMenu(false)} className="apple-nav-link">
-            <span>Về AnchorBox</span>
+            <span>Về Anchor Box</span>
           </NavLink>
 
           <div className="apple-drawer-divider" />

@@ -32,6 +32,10 @@ public class ProductVariantRequest {
     private Boolean isActive;
     private String size;
     private Integer capacityLiter;
+    @jakarta.validation.constraints.Size(max = 60)
+    private String colorName;
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Mã màu phải có dạng #RRGGBB")
+    private String colorHex;
     private String modelTier;
     private BigDecimal widthCm;
     private BigDecimal heightCm;

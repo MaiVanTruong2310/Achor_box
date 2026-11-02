@@ -88,14 +88,27 @@ public class AcceptanceWarrantyService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> mine(int page, int size) {
+        return mine(page, size, null);
+    }
+
+    public Map<String, Object> mine(int page, int size, String serial) {
         actors.get().requireRoles("customer");
         if (page < 0 || size < 1 || size > 100) {
             throw new BadRequestException("VALIDATION_ERROR");
         }
+        String cleanSerial = serial == null ? "" : serial.trim().toUpperCase();
+        if (cleanSerial.length() > 64) {
+            throw new BadRequestException("VALIDATION_ERROR");
+        }
         UUID owner = actors.get().id();
-        String from = " FROM public.warranties w JOIN public.devices d ON d.id=w.device_id LEFT JOIN public.order_items i ON i.id=w.order_item_id WHERE d.owner_id=?";
-        long total = ((Number) db.one("SELECT count(*) AS n" + from, owner).get("n")).longValue();
-        var rows = db.list("SELECT w.id,w.device_id AS \"deviceId\",d.serial_number AS \"serialNumber\",i.order_id AS \"orderId\",w.start_date AS \"startDate\",w.end_date AS \"endDate\",w.status,w.duration_months AS \"durationMonths\",w.accepted_at AS \"acceptedAt\"" + from + " ORDER BY w.start_date DESC,w.id LIMIT ? OFFSET ?", owner, size, (long) page * size);
+        String from = " FROM public.warranties w JOIN public.devices d ON d.id=w.device_id LEFT JOIN public.order_items i ON i.id=w.order_item_id WHERE d.owner_id=?"
+                + (cleanSerial.isEmpty() ? "" : " AND upper(d.serial_number)=?");
+        Object[] filter = cleanSerial.isEmpty() ? new Object[]{owner} : new Object[]{owner, cleanSerial};
+        long total = ((Number) db.one("SELECT count(*) AS n" + from, filter).get("n")).longValue();
+        Object[] paged = java.util.Arrays.copyOf(filter, filter.length + 2);
+        paged[filter.length] = size;
+        paged[filter.length + 1] = (long) page * size;
+        var rows = db.list("SELECT w.id,w.device_id AS \"deviceId\",d.serial_number AS \"serialNumber\",i.order_id AS \"orderId\",w.start_date AS \"startDate\",w.end_date AS \"endDate\",w.status,w.duration_months AS \"durationMonths\",w.accepted_at AS \"acceptedAt\"" + from + " ORDER BY w.start_date DESC,w.id LIMIT ? OFFSET ?", paged);
         var today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         for (var row : rows) {
             LocalDate start = parseLocalDate(row.get("startDate"));

@@ -212,7 +212,7 @@ public class SupabaseAuthGateway {
                     .uri("/verify")
                     .header("apikey", key)
                     .body(Map.of(
-                            "type", "recovery",
+                            "type", "email",
                             "email", email.trim().toLowerCase(Locale.ROOT),
                             "token", otp.trim()
                     ))
@@ -347,71 +347,38 @@ public class SupabaseAuthGateway {
         }
     }
 
-    public record RecoveryInfo(String otp, String actionLink, String hashedToken) {}
-
-    public RecoveryInfo recovery(String email) {
-        return recovery(email, null);
+    public void recovery(String email) {
+        recovery(email, null);
     }
 
-    @SuppressWarnings("unchecked")
-    public RecoveryInfo recovery(String email, String redirect) {
+    // Same flow as the mobile app (signInWithOtp, shouldCreateUser=false): Supabase Auth
+    // sends the OTP email itself through the project's custom SMTP, using the shared template.
+    public void recovery(String email, String redirect) {
         configured();
-        // Ưu tiên tạo recovery link và mã OTP qua Admin API nếu có serviceKey
-        // Tránh lỗi Supabase SMTP ("Error sending recovery email")
-        if (serviceKey != null && !serviceKey.isBlank()) {
-            try {
-                Map<String, Object> linkRes = client.post()
-                        .uri("/admin/generate_link")
-                        .header("apikey", serviceKey)
-                        .header("Authorization", "Bearer " + serviceKey)
-                        .body(Map.of(
-                                "type", "recovery",
-                                "email", email,
-                                "redirect_to", redirect != null ? redirect : ""
-                        ))
-                        .retrieve()
-                        .body(Map.class);
-                if (linkRes != null) {
-                    String otp = java.util.Objects.toString(linkRes.get("email_otp"), "");
-                    String actionLink = java.util.Objects.toString(linkRes.get("action_link"), "");
-                    String hashedToken = java.util.Objects.toString(linkRes.get("hashed_token"), "");
-                    log.info("[AUTH RECOVERY] Đã tạo mã OTP khôi phục mật khẩu cho {}: [OTP: {}] - Link: {}", email, otp, actionLink);
-                    return new RecoveryInfo(otp, actionLink, hashedToken);
-                }
-            } catch (RestClientResponseException adminEx) {
-                int status = adminEx.getStatusCode().value();
-                if (status == 429) {
-                    throw new AppException(429, "AUTH_RATE_LIMITED");
-                }
-                if (status == 404 || status == 422) {
-                    log.info("Yêu cầu khôi phục mật khẩu cho email không tồn tại trong hệ thống: {}", email);
-                    return null;
-                }
-                log.warn("Supabase Admin generate_link trả về status {}, thử tiếp bằng standard recover: {}", status, adminEx.getResponseBodyAsString());
-            } catch (ResourceAccessException ex) {
-                throw new AppException(503, "AUTH_PROVIDER_UNAVAILABLE");
-            }
-        }
-
         try {
             client.post()
                     .uri(builder -> {
-                        builder.path("/recover");
+                        builder.path("/otp");
                         if (redirect != null) {
                             builder.queryParam("redirect_to", redirect);
                         }
                         return builder.build();
                     })
                     .header("apikey", key)
-                    .body(Map.of("email", email))
+                    .body(Map.of("email", email, "create_user", false))
                     .retrieve()
                     .toBodilessEntity();
-            return null;
         } catch (RestClientResponseException ex) {
-            if (ex.getStatusCode().value() == 429) {
+            int status = ex.getStatusCode().value();
+            if (status == 429) {
                 throw new AppException(429, "AUTH_RATE_LIMITED");
             }
-            log.error("Supabase recover thất bại: status={}, body={}", ex.getStatusCode().value(), ex.getResponseBodyAsString());
+            // Unknown email (signups disabled for OTP): stay silent so accounts cannot be enumerated.
+            if (status == 400 || status == 404 || status == 422) {
+                log.info("Password recovery requested for an email without an account");
+                return;
+            }
+            log.error("Supabase OTP email failed: status={}, body={}", status, ex.getResponseBodyAsString());
             throw new AppException(503, "AUTH_RECOVERY_UNAVAILABLE");
         } catch (ResourceAccessException ex) {
             throw new AppException(503, "AUTH_PROVIDER_UNAVAILABLE");

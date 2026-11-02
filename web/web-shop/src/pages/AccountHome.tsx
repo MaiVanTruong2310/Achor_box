@@ -116,27 +116,44 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
   };
 
   // Avatar change handler
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+
+  useEffect(() => {
+    if (!user || !profileRes.data) return;
+    setAvatarUrlState(profileRes.data.avatarUrl || null);
+    setUserAvatar(user.userId, profileRes.data.avatarUrl);
+  }, [user, profileRes.data]);
+
   const handleAvatarFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Kích thước ảnh tối đa là 5MB');
+    e.target.value = '';
+    if (!file || !user || avatarBusy) return;
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setAvatarError('Chỉ nhận ảnh JPG hoặc PNG.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      setAvatarUrlState(dataUrl);
-      setUserAvatar(user.userId, dataUrl);
-      try {
-        await customer.uploadAvatar(file);
-        profileRes.retry();
-      } catch {
-        // Local avatar remains active
-      }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Kích thước ảnh tối đa là 5 MB.');
+      return;
+    }
+    const previous = avatarUrl;
+    const preview = URL.createObjectURL(file);
+    setAvatarError('');
+    setAvatarBusy(true);
+    setAvatarUrlState(preview);
+    try {
+      const { url } = await customer.uploadAvatar(file);
+      setAvatarUrlState(url);
+      setUserAvatar(user.userId, url);
+      profileRes.retry();
+    } catch (reason) {
+      setAvatarUrlState(previous);
+      setAvatarError((reason as Error).message || 'Chưa tải được ảnh đại diện. Vui lòng thử lại.');
+    } finally {
+      URL.revokeObjectURL(preview);
+      setAvatarBusy(false);
+    }
   };
 
   // Modals state
@@ -446,7 +463,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
         type="file"
         ref={fileInputRef}
         onChange={handleAvatarFile}
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png"
         style={{ display: 'none' }}
         aria-hidden="true"
       />
@@ -471,10 +488,14 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
           <div className="apple-sidebar-profile-card">
             <div
               className="apple-avatar-wrap"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => !avatarBusy && fileInputRef.current?.click()}
+              onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !avatarBusy) { event.preventDefault(); fileInputRef.current?.click(); } }}
               title="Nhấn để đổi ảnh đại diện"
               role="button"
               tabIndex={0}
+              aria-busy={avatarBusy}
+              aria-label="Đổi ảnh đại diện"
+              style={avatarBusy ? { opacity: 0.6, cursor: 'progress' } : undefined}
             >
               <div className="apple-monogram-avatar">
                 {avatarUrl ? (
@@ -490,6 +511,8 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
 
             <h2 className="apple-profile-name">{displayName}</h2>
             <p className="apple-profile-email">{displayEmail}</p>
+            {avatarBusy && <p className="apple-profile-email" role="status">Đang tải ảnh lên…</p>}
+            {avatarError && <p className="apple-profile-email" role="alert" style={{ color: '#d70015' }}>{avatarError}</p>}
 
             <span className="apple-id-pill-badge">
               <CheckCircle2 size={12} />

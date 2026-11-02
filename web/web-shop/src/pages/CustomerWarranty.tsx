@@ -1,866 +1,715 @@
-import { useState, useRef, type FormEvent, useEffect } from 'react';
-import { Link, useSearchParams, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
-  ShieldCheck,
-  Search,
-  CheckCircle2,
-  RefreshCw,
-  PhoneCall,
-  Wrench,
-  ChevronDown,
-  X,
-  FileCheck2,
   AlertTriangle,
-  Upload,
+  BadgeCheck,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  CircleSlash,
+  ClipboardList,
   Cpu,
-  ArrowRight,
+  ImagePlus,
   Package,
-  CalendarDays
+  PhoneCall,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  UserCog,
+  Wrench,
+  X,
+  type LucideIcon,
 } from 'lucide-react';
 import { useShop } from '../ShopContext';
-import { customer, warrantyEligible, type WarrantyRecord } from '../api/customer';
+import { customer, warrantyEligible, type PublicWarranty, type WarrantyRecord } from '../api/customer';
+import { ApiError } from '../api/shop';
+import { useCatalog } from '../CatalogContext';
 import { useResource, ResourceState, ErrorNotice } from '../components/ShopUi';
 import { displayDate as date, warrantyState } from '../components/commercePresentation';
 import { OrderNavigation } from '../components/OrderNavigation';
 import { EventTimeline, CommerceStatus, EmptyState } from '../components/CommerceUi';
 import { consultationPhone } from '../contact';
-import './warranty-portal.css';
+import { CtaBand, InfoPage, PageHero, SubNav } from './info/InfoChrome';
 
+const ISSUE_CATEGORIES = ['Khóa / cửa hộp', 'Cảm biến cân', 'Nguồn điện', 'Wi-Fi & ứng dụng', 'Bàn phím / màn hình', 'Khác'];
+const DESCRIPTION_MAX = 4800;
+const MAX_IMAGES = 5;
 
-const ISSUE_CATEGORIES = [
-  'Khóa điện tử / Cửa tủ',
-  'Cảm biến cân tải trọng',
-  'Nguồn điện / Pin dự phòng',
-  'Kết nối Wi-Fi & App',
-  'Sự cố kỹ thuật khác'
+const SECTIONS = [
+  { id: 'lookup', label: 'Tra cứu' },
+  { id: 'mine', label: 'Thiết bị của tôi' },
+  { id: 'coverage', label: 'Phạm vi' },
+  { id: 'process', label: 'Quy trình' },
+  { id: 'warranty-faq', label: 'Hỏi đáp' },
 ];
+
+const COVERED = [
+  { title: 'Bo mạch điều khiển', body: 'ESP32-S3, mạch nguồn và mạch điều khiển khóa.' },
+  { title: 'Khóa kép', body: 'Chốt điện 12 V và servo gài chốt.' },
+  { title: 'Cảm biến', body: 'Loadcell + HX711 và công tắc từ báo cửa.' },
+  { title: 'Bàn phím, màn hình, đèn và còi', body: 'Các bộ phận giao tiếp ngay trên hộp.' },
+];
+
+const NOT_COVERED = [
+  { title: 'Hư hại do va đập hoặc ngoại lực', body: 'Cạy phá, móp vỏ, gãy bản lề do tác động bên ngoài.' },
+  { title: 'Tự ý tháo lắp, sửa mạch hoặc nạp firmware khác', body: 'Mọi can thiệp ngoài kỹ thuật viên Anchor Box.' },
+  { title: 'Sự cố mạng hoặc điện của gia đình', body: 'Mất điện, Wi-Fi yếu hoặc đổi mật khẩu Wi-Fi không phải lỗi thiết bị.' },
+  { title: 'Ngập nước, thiên tai, hao mòn bề mặt', body: 'Trầy xước sơn và hao mòn theo thời gian sử dụng.' },
+];
+
+const PROCESS: { icon: LucideIcon; tint: string; title: string; body: string; status: string }[] = [
+  { icon: ClipboardList, tint: 'blue', title: 'Gửi yêu cầu', body: 'Chọn thiết bị, mô tả sự cố và đính kèm ảnh nếu có.', status: 'Đã tiếp nhận' },
+  { icon: UserCog, tint: 'indigo', title: 'Phân công', body: 'Yêu cầu được giao cho kỹ thuật viên phụ trách khu vực của bạn.', status: 'Đã phân công' },
+  { icon: Wrench, tint: 'orange', title: 'Kiểm tra và sửa', body: 'Kỹ thuật viên xem lịch sử thiết bị, liên hệ bạn và xử lý tại nhà khi cần.', status: 'Đang xử lý' },
+  { icon: BadgeCheck, tint: 'green', title: 'Kết quả', body: 'Bạn nhận kết quả trong tài khoản. Nếu bị từ chối, lý do được ghi rõ.', status: 'Đã xử lý' },
+];
+
+const FAQ = [
+  { q: 'Bảo hành bắt đầu khi nào?', a: 'Phiếu bảo hành điện tử được tạo tự động khi nghiệm thu lắp đặt được xác nhận. Ngày bắt đầu là ngày nghiệm thu, thời hạn theo phiên bản bạn mua và được ghi trên phiếu.' },
+  { q: 'Số serial nằm ở đâu?', a: 'Serial có dạng DBX-… và được in trên tem kèm mã QR ở thân hộp. Bạn cũng xem được serial trong ứng dụng Anchor Box và trong chi tiết đơn hàng.' },
+  { q: 'Mất điện thì hộp có hỏng không?', a: 'Không. Bản Base dùng adapter DC và không có pin dự phòng, nên khi mất điện hộp tạm ngừng hoạt động và chạy lại khi có điện. Đây không phải lỗi thuộc bảo hành.' },
+  { q: 'Tôi có cần gửi ảnh không?', a: 'Không bắt buộc, nhưng ảnh giúp kỹ thuật viên chẩn đoán nhanh hơn. Tối đa 5 ảnh JPG hoặc PNG, mỗi ảnh dưới 5 MB.' },
+  { q: 'Bán nhà thì phiếu bảo hành có chuyển được không?', a: 'Phiếu gắn với thiết bị và tài khoản đã mua. Hãy liên hệ hỗ trợ để được hướng dẫn chuyển quyền quản lý thiết bị.' },
+];
+
+const vietnamToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const normalizeSerial = (value: string) => value.trim().toUpperCase().replace(/\s+/g, '');
+const SERIAL_PATTERN = /^[A-Z0-9][A-Z0-9-]{3,63}$/;
+const dayNumber = (value: string) => Date.parse(`${value.slice(0, 10)}T00:00:00Z`) / 86_400_000;
+
+function usage(record: WarrantyRecord, today: string) {
+  const start = dayNumber(record.startDate);
+  const end = dayNumber(record.endDate);
+  const now = dayNumber(today);
+  if (![start, end, now].every(Number.isFinite)) return { used: 0, remaining: 0 };
+  const span = Math.max(1, end - start);
+  return { used: Math.min(1, Math.max(0, (now - start) / span)), remaining: Math.max(0, Math.round(end - now)) };
+}
+
+type Lookup =
+  | { kind: 'missing' | 'invalid' }
+  | { kind: 'owned'; record: WarrantyRecord }
+  | { kind: 'public'; result: PublicWarranty };
+
+async function findWarranty(serial: string, asCustomer: boolean, signal: AbortSignal): Promise<Lookup> {
+  if (asCustomer) {
+    const own = await customer.warrantyBySerial(serial, signal);
+    if (own) return { kind: 'owned', record: own };
+  }
+  try {
+    return { kind: 'public', result: await customer.publicWarranty(serial, signal) };
+  } catch (reason) {
+    if (reason instanceof ApiError && reason.status === 404) return { kind: 'missing' };
+    if (reason instanceof ApiError && reason.status === 400) return { kind: 'invalid' };
+    if (reason instanceof ApiError && reason.status === 429) throw new Error('Bạn tra cứu hơi nhanh. Vui lòng thử lại sau một phút.');
+    throw reason;
+  }
+}
 
 export function Warranty({ claim = false }: { claim?: boolean }) {
   const { user } = useShop();
-  const [params] = useSearchParams();
-  const [searchSerial, setSearchSerial] = useState('');
-  const [lookupResult, setLookupResult] = useState<WarrantyRecord | null>(null);
-  const [lookupError, setLookupError] = useState('');
-  const [claimModalOpen, setClaimModalOpen] = useState(claim);
-  const [activeFaq, setActiveFaq] = useState<number | null>(0);
+  const [params, setParams] = useSearchParams();
+  const isCustomer = user?.role === 'customer';
+  const today = vietnamToday();
 
-  // Form State
-  const [selectedWarrantyId, setSelectedWarrantyId] = useState(params.get('warrantyId') || '');
-  const [selectedCategory, setSelectedCategory] = useState(ISSUE_CATEGORIES[0]);
-  const [description, setDescription] = useState('');
-  const [images, setImages] = useState<{ id: string; url: string }[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [formError, setFormError] = useState<Error>();
-  const [formSuccess, setFormSuccess] = useState('');
-  const keyRef = useRef('');
-  const lockedRef = useRef(false);
+  const [serialInput, setSerialInput] = useState(() => params.get('serial') ?? '');
+  const [submitted, setSubmitted] = useState(() => {
+    const initial = normalizeSerial(params.get('serial') ?? '');
+    return SERIAL_PATTERN.test(initial) ? initial : '';
+  });
+  const [inputError, setInputError] = useState('');
+  const [sheet, setSheet] = useState<{ warrantyId: string } | null>(() => (claim ? { warrantyId: params.get('warrantyId') ?? '' } : null));
 
-  // Real Warranties Resource (if user logged in)
-  const warranties = useResource(async signal => {
-    if (!user) return null;
-    return customer.warranties(0, signal);
-  }, `${user?.userId}:warranties`);
-
-  // Real Claims Resource (if user logged in)
-  const claims = useResource(async signal => {
-    if (!user) return null;
-    return customer.claims(0, signal);
-  }, `${user?.userId}:claims`);
-
-  const eligibleWarranties = warranties.data?.content.filter(warrantyEligible) || [];
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(new Date());
+  const warranties = useResource(async (signal) => (isCustomer ? customer.warranties(0, signal) : null), `${user?.userId}:${isCustomer}:warranties`);
+  const claims = useResource(async (signal) => (isCustomer ? customer.claims(0, signal) : null), `${user?.userId}:${isCustomer}:claims`);
+  const records = warranties.data?.content ?? [];
+  const eligible = records.filter(warrantyEligible);
 
   useEffect(() => {
-    if (claim) setClaimModalOpen(true);
-  }, [claim]);
+    if (claim) setSheet((current) => current ?? { warrantyId: params.get('warrantyId') ?? '' });
+  }, [claim, params]);
 
-  // Handle Serial Search
-  function handleSearch(e?: FormEvent, presetSerial?: string) {
-    if (e) e.preventDefault();
-    const query = (presetSerial !== undefined ? presetSerial : searchSerial).trim().toUpperCase();
-    if (!query) {
-      setLookupError('Vui lòng nhập số Serial thiết bị hoặc mã phiếu bảo hành.');
-      setLookupResult(null);
+  const lookup = useResource(async (signal) => (submitted ? findWarranty(submitted, isCustomer, signal) : null), `${user?.userId}:${isCustomer}:lookup:${submitted}`);
+
+  function handleLookup(event: FormEvent) {
+    event.preventDefault();
+    const value = normalizeSerial(serialInput);
+    if (!value) {
+      setInputError('Nhập số serial in trên tem của hộp, ví dụ DBX-98C377AD9D60.');
+      setSubmitted('');
       return;
     }
-    setLookupError('');
-
-    // Check user's real warranties first if logged in
-    const foundUserWarranty = warranties.data?.content.find(
-      w => w.serialNumber.toUpperCase().includes(query) || w.id.toUpperCase().includes(query)
-    );
-    if (foundUserWarranty) {
-      setLookupResult(foundUserWarranty);
+    if (!SERIAL_PATTERN.test(value)) {
+      setInputError('Serial chỉ gồm chữ, số và dấu gạch ngang, ví dụ DBX-98C377AD9D60.');
+      setSubmitted('');
       return;
     }
-
-    setLookupError(`Không tìm thấy thông tin bảo hành cho mã "${query}". Vui lòng kiểm tra lại tem dán bên hông hộp.`);
-    setLookupResult(null);
+    setInputError('');
+    setSubmitted(value);
+    const next = new URLSearchParams(params);
+    next.set('serial', value);
+    setParams(next, { replace: true });
   }
 
-  // Upload claim photos
-  async function handleUpload(files: FileList | null) {
-    if (!files || lockedRef.current) return;
-    setFormError(undefined);
-    const selected = Array.from(files);
-    if (selected.length + images.length > 5 || selected.some(f => !['image/jpeg', 'image/png'].includes(f.type) || f.size > 5 * 1024 * 1024)) {
-      setFormError(new Error('Tối đa 5 ảnh định dạng JPG/PNG, dung lượng không quá 5MB mỗi ảnh.'));
-      return;
-    }
-    if (!eligibleWarranties.some(x => x.id === selectedWarrantyId)) {
-      setFormError(new Error('Vui lòng chọn thiết bị còn hạn bảo hành trước khi tải ảnh.'));
-      return;
-    }
-
-    lockedRef.current = true;
-    setBusy(true);
-    try {
-      for (const file of selected) {
-        const uploaded = await customer.uploadImage(selectedWarrantyId, file);
-        setImages(prev => [...prev, uploaded]);
-      }
-    } catch (err) {
-      setFormError(err as Error);
-    } finally {
-      lockedRef.current = false;
-      setBusy(false);
-    }
-  }
-
-  // Submit claim
-  async function handleSubmitClaim(e: FormEvent) {
-    e.preventDefault();
-    if (lockedRef.current) return;
-    setFormError(undefined);
-
-    if (!selectedWarrantyId) {
-      setFormError(new Error('Vui lòng chọn thiết bị AnchorBox cần yêu cầu bảo hành.'));
-      return;
-    }
-    const cleanDesc = description.trim();
-    if (cleanDesc.length < 10) {
-      setFormError(new Error('Mô tả sự cố phải có tối thiểu 10 ký tự.'));
-      return;
-    }
-    if (cleanDesc.length > 5000) {
-      setFormError(new Error('Mô tả sự cố không được vượt quá 5000 ký tự.'));
-      return;
-    }
-    if (images.length > 5) {
-      setFormError(new Error('Hồ sơ bảo hành chỉ được đính kèm tối đa 5 ảnh hiện trường.'));
-      return;
-    }
-
-    lockedRef.current = true;
-    setBusy(true);
-
-    if (!keyRef.current) keyRef.current = crypto.randomUUID();
-    try {
-      const fullDesc = `[${selectedCategory}] ${cleanDesc}`;
-      const res = await customer.createClaim(
-        selectedWarrantyId,
-        fullDesc,
-        images.map(img => img.id),
-        keyRef.current
-      );
-      setFormSuccess(`Đã gửi yêu cầu bảo hành thành công! Mã yêu cầu: ${res.id}. Kỹ thuật viên sẽ liên hệ trong 2h.`);
-      setDescription('');
-      setImages([]);
-      keyRef.current = '';
-      claims.retry();
-      setTimeout(() => {
-        setClaimModalOpen(false);
-        setFormSuccess('');
-      }, 3000);
-    } catch (err) {
-      setFormError(err as Error);
-    } finally {
-      lockedRef.current = false;
-      setBusy(false);
-    }
-  }
+  const loginHref = `/login?returnTo=${encodeURIComponent(`/warranty${submitted ? `?serial=${submitted}` : ''}`)}`;
+  const refreshing = warranties.loading || claims.loading;
 
   return (
-    <div className="warranty-portal">
-      {/* 1. HERO SECTION */}
-      <section className="warranty-hero">
-        <div className="container">
-          <div className="warranty-hero-inner">
-            <div className="warranty-badge">
-              <ShieldCheck size={16} />
-              <span>Dịch vụ & Bảo hành chính hãng AnchorBox</span>
-            </div>
-            <h1>An Tâm Tuyệt Đối Với Hộp Nhận Hàng Thông Minh</h1>
-            <p className="lead">
-              Tra cứu bảo hành điện tử tức thì bằng số Serial. Cam kết 1 đổi 1 trong 30 ngày, bảo hành phần cứng
-              lên đến 24 tháng và hỗ trợ kỹ thuật tận nơi 24/7.
-            </p>
+    <InfoPage>
+      <SubNav
+        title="Bảo hành"
+        links={SECTIONS}
+        action={isCustomer && eligible.length > 0
+          ? <button type="button" className="ab-btn ab-btn-primary ab-btn-xs" onClick={() => setSheet({ warrantyId: eligible[0].id })}>Yêu cầu hỗ trợ</button>
+          : <a href={consultationPhone.href} className="ab-btn ab-btn-secondary ab-btn-xs">Gọi hỗ trợ</a>}
+      />
 
-            <div className="warranty-hero-stats">
-              <div className="warranty-stat-pill">
-                <strong>12 - 24 Tháng</strong>
-                <span>Bảo hành chính hãng</span>
-              </div>
-              <div className="warranty-stat-pill">
-                <strong>1 Đổi 1</strong>
-                <span>Trong 30 ngày đầu</span>
-              </div>
-              <div className="warranty-stat-pill">
-                <strong>&lt; 2 Giờ</strong>
-                <span>Chẩn đoán từ xa qua IoT</span>
-              </div>
-              <div className="warranty-stat-pill">
-                <strong>24/7</strong>
-                <span>Tổng đài hỗ trợ kỹ thuật</span>
-              </div>
+      <PageHero
+        crumb="Bảo hành"
+        eyebrow="Bảo hành Anchor Box"
+        title={<>Yên tâm cho<br /><span className="ab-gradient-text">mỗi lần nhận hàng.</span></>}
+        lead="Phiếu bảo hành điện tử được tạo ngay khi nghiệm thu lắp đặt. Tra cứu thời hạn, gửi yêu cầu và theo dõi kết quả ở cùng một nơi."
+      >
+        <div id="lookup" className="ab-lookup" data-reveal>
+          <form onSubmit={handleLookup} role="search" aria-label="Tra cứu bảo hành theo serial">
+            <label className="ab-lookup-field">
+              <Search size={18} aria-hidden />
+              <span className="sr-only">Số serial thiết bị</span>
+              <input
+                value={serialInput}
+                onChange={(event) => setSerialInput(event.target.value)}
+                placeholder="Nhập số serial, ví dụ DBX-98C377AD9D60"
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={!!inputError}
+                aria-describedby="lookup-hint"
+              />
+            </label>
+            <button type="submit" className="ab-btn ab-btn-primary">Kiểm tra</button>
+          </form>
+          <p id="lookup-hint" className="ab-lookup-hint">Serial in trên tem QR ở thân hộp và trong ứng dụng Anchor Box.</p>
+        </div>
+
+        {inputError ? <Alert>{inputError}</Alert> : submitted && (
+          lookup.loading ? <Alert tint="blue">Đang tra cứu serial {submitted}…</Alert>
+            : lookup.error ? <Alert tint="red">{lookup.error.message} <button type="button" className="ab-btn-link" onClick={lookup.retry}>Thử lại</button></Alert>
+            : lookup.data && (
+              <LookupResult
+                lookup={lookup.data}
+                submitted={submitted}
+                today={today}
+                signedIn={!!user}
+                loginHref={loginHref}
+                onClaim={(record) => setSheet({ warrantyId: record.id })}
+              />
+            )
+        )}
+      </PageHero>
+
+      <section id="mine" className="ab-section ab-section-alt" aria-labelledby="w-mine-title">
+        <div className="ab-container">
+          <div className="ab-hub-head">
+            <div>
+              <p className="ab-eyebrow" data-reveal>Thiết bị của tôi</p>
+              <h2 id="w-mine-title" className="ab-section-title" data-reveal>Mọi phiếu bảo hành, một chỗ.</h2>
             </div>
+            {isCustomer && (
+              <div className="ab-cta-actions">
+                <button type="button" className="ab-icon-btn" onClick={() => { warranties.retry(); claims.retry(); }} disabled={refreshing} aria-label="Tải lại dữ liệu bảo hành">
+                  <RefreshCw size={18} className={refreshing ? 'ab-spin' : undefined} aria-hidden />
+                </button>
+                <button type="button" className="ab-btn ab-btn-primary ab-btn-sm" disabled={eligible.length === 0} onClick={() => setSheet({ warrantyId: eligible[0]?.id ?? '' })}>
+                  <Wrench size={16} aria-hidden /> Yêu cầu hỗ trợ
+                </button>
+              </div>
+            )}
+          </div>
+
+          {!user && (
+            <div className="ab-empty ab-mt" data-reveal>
+              <h3>Đăng nhập để xem thiết bị của bạn.</h3>
+              <p>Phiếu bảo hành và lịch sử yêu cầu hỗ trợ gắn với tài khoản đã đặt mua Anchor Box.</p>
+              <Link to={loginHref} className="ab-btn ab-btn-primary ab-btn-sm">Đăng nhập</Link>
+            </div>
+          )}
+
+          {user && !isCustomer && (
+            <div className="ab-empty ab-mt">
+              <h3>Đây là khu vực dành cho khách hàng.</h3>
+              <p>Tài khoản nhân viên tra cứu bảo hành trong trang quản trị.</p>
+            </div>
+          )}
+
+          {isCustomer && (
+            <>
+              <div className="ab-mt"><ResourceState {...warranties} /></div>
+              {!warranties.loading && !warranties.error && records.length === 0 && (
+                <div className="ab-empty">
+                  <h3>Chưa có phiếu bảo hành.</h3>
+                  <p>Phiếu sẽ tự xuất hiện ở đây sau khi thiết bị được lắp đặt và nghiệm thu.</p>
+                  <Link to="/account/orders" className="ab-btn ab-btn-secondary ab-btn-sm">Xem đơn hàng</Link>
+                </div>
+              )}
+              {records.length > 0 && (
+                <div className="ab-grid-3">
+                  {records.map((record, index) => (
+                    <DeviceCard key={record.id} record={record} today={today} index={index} onClaim={() => setSheet({ warrantyId: record.id })} />
+                  ))}
+                </div>
+              )}
+
+              <h3 className="ab-section-title" style={{ fontSize: 'clamp(24px, 3vw, 32px)', marginTop: 64 }}>
+                Yêu cầu đã gửi{claims.data ? ` (${claims.data.totalElements})` : ''}.
+              </h3>
+              <ResourceState {...claims} />
+              {claims.data && claims.data.content.length > 0 ? (
+                <ul className="ab-claims">
+                  {claims.data.content.map((item) => (
+                    <li key={item.id}>
+                      <div>
+                        <small>Serial {item.serialNumber} · Gửi {date(item.createdAt)}{item.resolvedAt ? ` · Xử lý ${date(item.resolvedAt)}` : ''}</small>
+                        <p>{item.description}</p>
+                        <small>Mã yêu cầu {item.id}</small>
+                      </div>
+                      <CommerceStatus value={item.status} />
+                      {item.images?.length > 0 && (
+                        <div className="ab-claim-images">
+                          {item.images.map((src, imageIndex) => (
+                            <a key={src} href={src} target="_blank" rel="noopener noreferrer"><img src={src} alt={`Ảnh sự cố ${imageIndex + 1}`} loading="lazy" /></a>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                !claims.loading && !claims.error && <p className="ab-footnote">Bạn chưa gửi yêu cầu hỗ trợ nào.</p>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
+      <section id="coverage" className="ab-section" aria-labelledby="w-cov-title">
+        <div className="ab-container">
+          <p className="ab-eyebrow" data-reveal>Phạm vi bảo hành</p>
+          <h2 id="w-cov-title" className="ab-section-title" data-reveal>Rõ ràng điều gì được bảo hành.</h2>
+          <div className="ab-grid-2 ab-mt">
+            <article className="ab-card ab-card-lg" data-tint="green" data-reveal>
+              <span className="ab-feature-icon"><ShieldCheck size={20} aria-hidden /></span>
+              <h3>Được bảo hành khi lỗi do sản xuất</h3>
+              <ul className="ab-checklist" style={{ marginTop: 18 }}>
+                {COVERED.map(({ title, body }) => <li key={title}><Check size={20} aria-hidden /><span><strong>{title}</strong>{body}</span></li>)}
+              </ul>
+            </article>
+            <article className="ab-card ab-card-lg" data-tint="red" data-reveal style={{ '--i': 1 } as CSSProperties}>
+              <span className="ab-feature-icon"><CircleSlash size={20} aria-hidden /></span>
+              <h3>Không thuộc bảo hành miễn phí</h3>
+              <ul className="ab-checklist is-muted" style={{ marginTop: 18 }}>
+                {NOT_COVERED.map(({ title, body }) => <li key={title}><CircleSlash size={18} aria-hidden /><span><strong>{title}</strong>{body}</span></li>)}
+              </ul>
+            </article>
+          </div>
+          <WarrantyTerms />
+        </div>
+      </section>
+
+      <section id="process" className="ab-section ab-section-alt" aria-labelledby="w-proc-title">
+        <div className="ab-container">
+          <p className="ab-eyebrow" data-reveal>Quy trình</p>
+          <h2 id="w-proc-title" className="ab-section-title" data-reveal>Từ lúc gửi đến lúc xong.</h2>
+          <p className="ab-section-lead" data-reveal>Nhãn trạng thái bên dưới là đúng nhãn bạn thấy trong danh sách yêu cầu.</p>
+          <div className="ab-grid-4 ab-mt">
+            {PROCESS.map(({ icon: Icon, tint, title, body, status }, index) => (
+              <article key={title} className="ab-card" data-tint={tint} data-reveal style={{ '--i': index } as CSSProperties}>
+                <span className="ab-feature-icon"><Icon size={20} aria-hidden /></span>
+                <span className="ab-install-index">Bước {index + 1}</span>
+                <h3>{title}</h3>
+                <p>{body}</p>
+                <p><span className="ab-chip" data-tint={tint}>{status}</span></p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 2. FLOATING SERIAL LOOKUP TOOL */}
-      <div className="container warranty-lookup-wrap">
-        <div className="warranty-lookup-card">
-          <div className="warranty-lookup-header">
-            <h2>
-              <Search size={22} color="#0866e8" />
-              Tra cứu Phiếu bảo hành Điện tử
-            </h2>
-            <span>Kiểm tra trạng thái & thời hạn bảo hành theo số Serial dán trên thiết bị</span>
-          </div>
-
-          <form onSubmit={handleSearch} className="warranty-search-bar">
-            <div className="warranty-search-input-wrap">
-              <Search size={18} />
-              <input
-                type="text"
-                className="warranty-search-input"
-                placeholder="Nhập số Serial thiết bị (ví dụ: AB-PRO-8842, AB-BASE-1205)..."
-                value={searchSerial}
-                onChange={e => setSearchSerial(e.target.value)}
-              />
-            </div>
-            <button type="submit" className="warranty-search-btn">
-              <span>Kiểm tra ngay</span>
-              <ArrowRight size={17} />
-            </button>
-          </form>
-
-          <div className="warranty-sample-chips">
-            <span>Gợi ý Serial mẫu:</span>
-            {['AB-PRO-8842', 'AB-BASE-1205', 'AB-L-9901'].map(sample => (
-              <button
-                key={sample}
-                type="button"
-                className="warranty-chip"
-                onClick={() => {
-                  setSearchSerial(sample);
-                  handleSearch(undefined, sample);
-                }}
-              >
-                {sample}
-              </button>
-            ))}
-          </div>
-
-          {lookupError && (
-            <div className="notice" style={{ marginTop: 18, color: '#d12435', background: '#fef1f2' }}>
-              <AlertTriangle size={18} />
-              <span>{lookupError}</span>
-            </div>
-          )}
-
-          {/* Certificate Result Card */}
-          {lookupResult && (
-            <div className="warranty-cert-card">
-              <div className="warranty-cert-top">
-                <div className="warranty-cert-title-group">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <ShieldCheck size={20} color="#0866e8" />
-                    <span className="order-caption" style={{ color: '#0866e8', fontWeight: 700 }}>
-                      CHỨNG NHẬN BẢO HÀNH ĐIỆN TỬ
-                    </span>
-                  </div>
-                  <h3>AnchorBox Device (Mã đơn: {lookupResult.orderId || 'Chính hãng'})</h3>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                    <span className="warranty-cert-serial">{lookupResult.serialNumber}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className={`warranty-status-pill ${warrantyEligible(lookupResult) ? 'is-active' : 'is-expired'}`}>
-                    <CheckCircle2 size={15} />
-                    {warrantyState(lookupResult, today)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="warranty-cert-grid">
-                <div className="warranty-cert-item">
-                  <dt>Ngày kích hoạt</dt>
-                  <dd>{date(lookupResult.startDate, true)}</dd>
-                </div>
-                <div className="warranty-cert-item">
-                  <dt>Hạn bảo hành</dt>
-                  <dd>{date(lookupResult.endDate, true)}</dd>
-                </div>
-                <div className="warranty-cert-item">
-                  <dt>Thời hạn bảo hành</dt>
-                  <dd>{lookupResult.durationMonths} tháng chính hãng</dd>
-                </div>
-                <div className="warranty-cert-item">
-                  <dt>Hình thức dịch vụ</dt>
-                  <dd>Tận nơi &amp; Chẩn đoán OTA</dd>
-                </div>
-              </div>
-
-              <div className="warranty-cert-coverage">
-                <strong>Phạm vi bảo hành:</strong>
-                Bảo hành đầy đủ bo mạch vi điều khiển IoT ESP32, khóa điện từ Solenoid, cảm biến tải trọng Loadcell, pin dự phòng và hỗ trợ kỹ thuật tận nơi.
-              </div>
-
-              <div className="warranty-cert-actions">
-                <button
-                  type="button"
-                  className="button"
-                  onClick={() => {
-                    if (user) {
-                      if ('id' in lookupResult) setSelectedWarrantyId(lookupResult.id);
-                      setClaimModalOpen(true);
-                    } else {
-                      window.location.href = `/login?returnTo=/warranty`;
-                    }
-                  }}
-                >
-                  <Wrench size={16} />
-                  <span>Gửi yêu cầu hỗ trợ cho thiết bị này</span>
-                </button>
-                <a
-                  href={`tel:${consultationPhone.href.replace('tel:', '')}`}
-                  className="button secondary"
-                >
-                  <PhoneCall size={16} />
-                  <span>Tổng đài kỹ thuật: {consultationPhone.display}</span>
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="container">
-        {/* 3. LOGGED-IN CUSTOMER HUB OR GUEST CALLOUT */}
-        {user ? (
-          <div className="warranty-user-hub">
-            <div className="user-hub-header">
-              <div>
-                <h2>
-                  <FileCheck2 size={24} color="#0866e8" />
-                  Phiếu bảo hành của bạn
-                </h2>
-                <p className="muted" style={{ margin: '4px 0 0' }}>
-                  Danh sách thiết bị AnchorBox đã được kích hoạt bảo hành điện tử gắn với tài khoản của bạn.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  type="button"
-                  className="button"
-                  onClick={() => setClaimModalOpen(true)}
-                  disabled={eligibleWarranties.length === 0}
-                >
-                  <Wrench size={16} />
-                  <span>Yêu cầu bảo hành mới</span>
-                </button>
-                <button
-                  type="button"
-                  className="button secondary"
-                  onClick={() => {
-                    warranties.retry();
-                    claims.retry();
-                  }}
-                  title="Cập nhật dữ liệu"
-                >
-                  <RefreshCw size={16} className={warranties.loading || claims.loading ? 'rotating' : ''} />
-                </button>
-              </div>
-            </div>
-
-            <ResourceState {...warranties} />
-
-            {warranties.data && warranties.data.content.length > 0 ? (
-              <div className="warranty-cards-row">
-                {warranties.data.content.map(rec => (
-                  <article key={rec.id} className="portal-warranty-card">
-                    <div className="portal-card-header">
-                      <span className="order-caption">SERIAL THIẾT BỊ</span>
-                      <span
-                        className={`warranty-status-pill ${
-                          warrantyEligible(rec) ? 'is-active' : 'is-expired'
-                        }`}
-                      >
-                        {warrantyState(rec, today)}
-                      </span>
-                    </div>
-                    <div className="portal-card-serial">{rec.serialNumber}</div>
-                    <div className="portal-card-dates">
-                      <span>
-                        Kích hoạt: <strong>{date(rec.startDate, true)}</strong>
-                      </span>
-                      <span>
-                        Hết hạn: <strong>{date(rec.endDate, true)}</strong>
-                      </span>
-                      <span>
-                        Thời hạn: <strong>{rec.durationMonths} tháng</strong>
-                      </span>
-                    </div>
-                    <div className="portal-card-actions">
-                      {rec.orderId && (
-                        <Link to={`/account/orders/${rec.orderId}`} className="text-link">
-                          Xem đơn hàng →
-                        </Link>
-                      )}
-                      {warrantyEligible(rec) && (
-                        <button
-                          type="button"
-                          className="button secondary"
-                          style={{ padding: '6px 14px', fontSize: 13 }}
-                          onClick={() => {
-                            setSelectedWarrantyId(rec.id);
-                            setClaimModalOpen(true);
-                          }}
-                        >
-                          Yêu cầu bảo hành
-                        </button>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              !warranties.loading && (
-                <EmptyState
-                  title="Chưa có phiếu bảo hành nào"
-                  action={
-                    <Link className="button" to="/products">
-                      Xem danh mục thiết bị
-                    </Link>
-                  }
-                >
-                  Sau khi đặt mua và hoàn tất bàn giao lắp đặt, phiếu bảo hành điện tử của thiết bị sẽ tự động xuất hiện tại đây.
-                </EmptyState>
-              )
-            )}
-
-            {/* Claims History Table/Cards */}
-            <div style={{ marginTop: 40, borderTop: '1px solid #eef4fb', paddingTop: 28 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                <h3 style={{ fontSize: 19, fontWeight: 700, margin: 0, color: '#112b50' }}>
-                  Lịch sử yêu cầu hỗ trợ đã gửi ({claims.data?.totalElements || 0})
-                </h3>
-              </div>
-
-              <ResourceState {...claims} />
-
-              {claims.data && claims.data.content.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {claims.data.content.map(claimItem => (
-                    <div
-                      key={claimItem.id}
-                      style={{
-                        background: '#f8fbfe',
-                        border: '1px solid #dce8f5',
-                        borderRadius: 14,
-                        padding: 18
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
-                        <div>
-                          <span style={{ fontSize: 12, color: '#6882a2', fontWeight: 600 }}>
-                            MÃ YÊU CẦU: {claimItem.id} · SERIAL: <strong>{claimItem.serialNumber}</strong>
-                          </span>
-                          <h4 style={{ margin: '4px 0 6px', fontSize: 15, color: '#112b50' }}>
-                            {claimItem.description}
-                          </h4>
-                          <span style={{ fontSize: 12, color: '#5b7696' }}>
-                            Gửi ngày {date(claimItem.createdAt)} {claimItem.resolvedAt ? `· Xử lý lúc ${date(claimItem.resolvedAt)}` : ''}
-                          </span>
-                        </div>
-                        <CommerceStatus value={claimItem.status} />
-                      </div>
-                      {claimItem.images && claimItem.images.length > 0 && (
-                        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                          {claimItem.images.map((img, idx) => (
-                            <a href={img} target="_blank" rel="noopener noreferrer" key={img}>
-                              <img
-                                src={img}
-                                alt={`Ảnh minh họa ${idx + 1}`}
-                                style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 6, border: '1px solid #cbdff5' }}
-                              />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                !claims.loading && (
-                  <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-                    Bạn chưa gửi yêu cầu hỗ trợ kỹ thuật nào. Thiết bị của bạn hiện đang hoạt động bình thường!
-                  </p>
-                )
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="warranty-guest-banner">
-            <div>
-              <h3>Bạn đã sở hữu AnchorBox?</h3>
-              <p>
-                Đăng nhập vào tài khoản để quản lý toàn bộ phiếu bảo hành điện tử, theo dõi tiến độ xử lý sự cố
-                và nhận thông báo nhắc nhở kiểm tra định kỳ miễn phí.
-              </p>
-            </div>
-            <Link className="button" to="/login?returnTo=/warranty">
-              Đăng nhập xem bảo hành của bạn
-            </Link>
-          </div>
-        )}
-
-        {/* 4. FOUR CORE COMMITMENTS */}
-        <div className="warranty-section">
-          <div className="section-head-center">
-            <span className="eyebrow">CHÍNH SÁCH BẢO HÀNH VÀNG</span>
-            <h2>Cam Kết Bảo Vệ Toàn Diện Cho Thiết Bị Của Bạn</h2>
-            <p>
-              Mỗi sản phẩm AnchorBox được chế tạo theo tiêu chuẩn cơ khí và điện tử khắt khe, đi kèm chế độ
-              bảo hành chính hãng uy tín hàng đầu.
-            </p>
-          </div>
-
-          <div className="warranty-commitments-grid">
-            <article className="commitment-card">
-              <div className="commitment-icon-wrap">
-                <ShieldCheck size={28} />
-              </div>
-              <h3>Bảo hành 12 - 24 Tháng</h3>
-              <p>
-                Áp dụng cho toàn bộ bo mạch điều khiển IoT, khóa từ solenoid, cảm biến tải trọng loadcell và hệ
-                thống cấp nguồn điện dự phòng.
-              </p>
-            </article>
-
-            <article className="commitment-card">
-              <div className="commitment-icon-wrap">
-                <RefreshCw size={28} />
-              </div>
-              <h3>1 Đổi 1 Trong 30 Ngày</h3>
-              <p>
-                Đổi mới hoàn toàn sản phẩm nếu phát sinh lỗi kỹ thuật do nhà sản xuất mà không thể khắc phục
-                bằng cập nhật phần mềm từ xa.
-              </p>
-            </article>
-
-            <article className="commitment-card">
-              <div className="commitment-icon-wrap">
-                <Wrench size={28} />
-              </div>
-              <h3>Kỹ Thuật Tận Nhà Trong 24h</h3>
-              <p>
-                Đội ngũ kỹ thuật viên AnchorBox hỗ trợ kiểm tra trực tiếp tại nhà đối với các vấn đề liên quan
-                đến khung cơ khí, chốt khóa và lắp đặt cố định.
-              </p>
-            </article>
-
-            <article className="commitment-card">
-              <div className="commitment-icon-wrap">
-                <Cpu size={28} />
-              </div>
-              <h3>Cập Nhật Firmware OTA Miễn Phí</h3>
-              <p>
-                Hệ thống liên tục được nâng cấp tính năng mới, tối ưu hóa độ nhạy cảm biến và vá lỗi bảo mật tự
-                động qua kết nối Wi-Fi/4G đám mây.
-              </p>
-            </article>
+      <section id="warranty-faq" className="ab-section ab-faq" aria-labelledby="w-faq-title">
+        <div className="ab-container ab-container-narrow">
+          <h2 id="w-faq-title" className="ab-section-title" data-reveal>Câu hỏi về bảo hành.</h2>
+          <div className="ab-faq-list">
+            {FAQ.map(({ q, a }) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
           </div>
         </div>
+      </section>
 
-        {/* 5. 4-STEP RESOLUTION PROCESS */}
-        <div className="warranty-process-wrap">
-          <div className="section-head-center" style={{ marginBottom: 20 }}>
-            <span className="eyebrow">QUY TRÌNH TIÊU CHUẨN</span>
-            <h2>Xử Lý Yêu Cầu Bảo Hành 4 Bước Nhanh Chóng</h2>
-            <p>Quy trình minh bạch, ứng dụng công nghệ IoT giúp chẩn đoán và khắc phục sự cố tức thì.</p>
-          </div>
+      <section className="ab-section" style={{ paddingTop: 0 }}>
+        <CtaBand
+          title={`Cần hỗ trợ ngay? Gọi ${consultationPhone.display}.`}
+          body="Hoặc gửi yêu cầu tư vấn, chúng tôi sẽ gọi lại cho bạn."
+          primary={{ to: '/contact', label: 'Liên hệ hỗ trợ' }}
+          secondary={{ to: '/how-it-works', label: 'Quy trình lắp đặt' }}
+        />
+      </section>
 
-          <div className="process-steps-grid">
-            <div className="process-step">
-              <div className="process-step-num">1</div>
-              <h4>Tiếp Nhận Sự Cố</h4>
-              <p>Khách hàng gửi yêu cầu qua Web, App hoặc gọi hotline. Hệ thống cấp mã Ticket xử lý tự động.</p>
-            </div>
-            <div className="process-step">
-              <div className="process-step-num">2</div>
-              <h4>Chẩn Đoán Từ Xa</h4>
-              <p>Kỹ sư kiểm tra telemetry cảm biến, log đóng mở và điện áp pin qua Cloud trong vòng 2 giờ.</p>
-            </div>
-            <div className="process-step">
-              <div className="process-step-num">3</div>
-              <h4>Xử Lý Tận Nơi</h4>
-              <p>Kỹ thuật viên đến trực tiếp khắc phục hoặc gửi linh kiện thay thế chuẩn hóa trong 24 giờ.</p>
-            </div>
-            <div className="process-step">
-              <div className="process-step-num">4</div>
-              <h4>Nghiệm Thu &amp; Bảo Lưu</h4>
-              <p>Kiểm tra chu trình khóa và độ chuẩn xác cân tải, kích hoạt lại thời hạn bảo hành điện tử.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* 6. FAQ ACCORDION */}
-        <div className="warranty-section">
-          <div className="section-head-center">
-            <span className="eyebrow">CÂU HỎI THƯỜNG GẶP</span>
-            <h2>Những Thắc Mắc Về Chính Sách Bảo Hành</h2>
-            <p>Giải đáp chi tiết các quyền lợi bảo hành và cách chăm sóc bảo dưỡng hộp nhận hàng thông minh.</p>
-          </div>
-
-          <div className="warranty-faq-list">
-            {[
-              {
-                q: 'Làm thế nào để kích hoạt bảo hành sau khi mua?',
-                a: 'Bảo hành điện tử của AnchorBox được tự động kích hoạt ngay khi nhân viên kỹ thuật hoàn tất giao hàng, lắp đặt và nghiệm thu cùng bạn. Số Serial của thiết bị sẽ tự động liên kết với tài khoản đặt hàng của bạn trên hệ thống.'
-              },
-              {
-                q: 'Nếu mất điện hoặc Wi-Fi bị gián đoạn, hộp có được bảo hành không?',
-                a: 'AnchorBox được trang bị pin lưu điện dự phòng duy trì hoạt động đến 30 ngày và bộ nhớ đệm lưu trữ mã mở khóa offline. Nếu hộp gặp sự cố không mở được hoặc không sạc pin, kỹ thuật viên sẽ hỗ trợ kiểm tra và thay thế bộ nguồn miễn phí theo chính sách bảo hành.'
-              },
-              {
-                q: 'Những trường hợp nào không được bảo hành miễn phí?',
-                a: 'Các trường hợp can thiệp phần cứng trái phép, tự ý đập phá, thiên tai ngập nước vượt quá ngưỡng chuẩn chống nước IP54 ngoài trời hoặc hư hại do ngoại lực cố ý sẽ không được bảo hành miễn phí. Tuy nhiên, AnchorBox sẽ hỗ trợ sửa chữa và thay thế linh kiện với chi phí ưu đãi nhất.'
-              },
-              {
-                q: 'Cảm biến cân tải trọng Loadcell có cần hiệu chuẩn định kỳ không?',
-                a: 'Cảm biến Loadcell của AnchorBox tự động cân bằng điểm 0 (Auto Tare) mỗi lần đóng cửa. Tuy nhiên, định kỳ 12 tháng một lần, bạn có thể yêu cầu kỹ thuật viên đến kiểm tra và hiệu chuẩn tải trọng miễn phí trong thời gian bảo hành.'
-              },
-              {
-                q: 'Tôi có thể chuyển nhượng phiếu bảo hành cho chủ nhà mới nếu bán nhà không?',
-                a: 'Hoàn toàn được! Bạn chỉ cần gửi yêu cầu chuyển nhượng thiết bị kèm số Serial qua ứng dụng hoặc hotline, chúng tôi sẽ hỗ trợ bàn giao quyền quản lý thiết bị và tiếp tục duy trì thời hạn bảo hành cho chủ sở hữu mới.'
-              }
-            ].map((faq, idx) => {
-              const isOpen = activeFaq === idx;
-              return (
-                <div key={idx} className={`warranty-faq-item ${isOpen ? 'is-open' : ''}`}>
-                  <button
-                    type="button"
-                    className="warranty-faq-toggle"
-                    onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    aria-expanded={isOpen}
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown
-                      size={18}
-                      style={{
-                        transform: isOpen ? 'rotate(180deg)' : 'none',
-                        transition: 'transform 0.2s ease'
-                      }}
-                    />
-                  </button>
-                  {isOpen && <div className="warranty-faq-body">{faq.a}</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 7. EMERGENCY SUPPORT & HOTLINE BANNER */}
-        <div className="warranty-emergency-bar">
-          <div className="warranty-emergency-info">
-            <h3>Cần Hỗ Trợ Kỹ Thuật Khẩn Cấp?</h3>
-            <p>
-              Đội ngũ kỹ sư AnchorBox luôn sẵn sàng giải đáp thắc mắc và hướng dẫn khắc phục sự cố 24/7.
-            </p>
-          </div>
-          <div className="warranty-emergency-contacts">
-            <a href={consultationPhone.href} className="warranty-hotline-btn">
-              <PhoneCall size={18} />
-              <span>Hotline 24/7: {consultationPhone.display}</span>
-            </a>
-            <Link to="/contact" className="button" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
-              Trung tâm Hỗ trợ &rarr;
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* 8. CLAIM MODAL POPUP */}
-      {claimModalOpen && (
-        <div className="warranty-modal-overlay" onClick={() => setClaimModalOpen(false)}>
-          <div className="warranty-modal-box" onClick={e => e.stopPropagation()}>
-            <div className="warranty-modal-header">
-              <div>
-                <h3>Yêu Cầu Hỗ Trợ &amp; Bảo Hành</h3>
-                <p className="warranty-modal-subtitle">
-                  Kỹ sư kỹ thuật AnchorBox sẽ kiểm tra chẩn đoán và liên hệ hỗ trợ bạn
-                </p>
-              </div>
-              <button
-                type="button"
-                className="warranty-modal-close"
-                onClick={() => setClaimModalOpen(false)}
-                title="Đóng modal"
-                aria-label="Đóng"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="warranty-modal-body">
-              {formSuccess ? (
-                <div className="notice" style={{ background: '#eafbf0', color: '#107c39', padding: '20px', borderRadius: '18px' }}>
-                  <CheckCircle2 size={24} style={{ marginBottom: '8px' }} />
-                  <strong style={{ display: 'block', fontSize: '1rem', marginBottom: '4px' }}>Đã gửi yêu cầu thành công!</strong>
-                  <span>{formSuccess}</span>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmitClaim}>
-                  <ErrorNotice error={formError} />
-
-                  <div className="warranty-form-group">
-                    <label>1. Chọn thiết bị cần bảo hành *</label>
-                    <select
-                      className="warranty-form-select"
-                      required
-                      value={selectedWarrantyId}
-                      onChange={e => setSelectedWarrantyId(e.target.value)}
-                    >
-                      <option value="">-- Chọn phiếu bảo hành còn hiệu lực --</option>
-                      {eligibleWarranties.map(w => (
-                        <option key={w.id} value={w.id}>
-                          {w.serialNumber} (Hạn đến {date(w.endDate, true)})
-                        </option>
-                      ))}
-                      {eligibleWarranties.length === 0 && (
-                        <option value="SAMPLE-01">AB-PRO-8842 (Thiết bị mẫu trải nghiệm)</option>
-                      )}
-                    </select>
-                  </div>
-
-                  {/* 2. CHỌN NHÓM SỰ CỐ (APPLE ISSUE PILLS) */}
-                  <div className="warranty-form-group">
-                    <span className="apple-issue-pills-label">2. Vấn đề bạn đang gặp phải *</span>
-                    <div className="apple-issue-pills-grid">
-                      {ISSUE_CATEGORIES.map(cat => (
-                        <button
-                          key={cat}
-                          type="button"
-                          className={`apple-issue-pill ${selectedCategory === cat ? 'is-active' : ''}`}
-                          onClick={() => setSelectedCategory(cat)}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="warranty-form-group">
-                    <label>3. Mô tả chi tiết sự cố gặp phải *</label>
-                    <textarea
-                      className="warranty-form-textarea"
-                      required
-                      minLength={10}
-                      maxLength={5000}
-                      placeholder="Ví dụ: Cửa hộp không tự động khóa sau khi đóng, cảm biến cân không nhận diện kiện hàng..."
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                    />
-                    <small style={{ color: '#86868b', display: 'block', marginTop: 4 }}>
-                      Tối thiểu 10 ký tự ({description.length}/5000 ký tự)
-                    </small>
-                  </div>
-
-                  <div className="warranty-form-group">
-                    <label>4. Ảnh chụp sự cố hoặc vị trí hỏng (Tối đa 5 ảnh, dưới 5MB)</label>
-                    <label className="warranty-upload-zone">
-                      <Upload size={24} color="#0071e3" style={{ marginBottom: 6 }} />
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f' }}>
-                        Bấm để tải ảnh chụp sự cố
-                      </div>
-                      <div style={{ fontSize: 12, color: '#86868b' }}>Định dạng JPG, PNG (tối đa 5 ảnh)</div>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        multiple
-                        style={{ display: 'none' }}
-                        disabled={images.length >= 5 || busy}
-                        onChange={e => {
-                          void handleUpload(e.target.files);
-                          e.target.value = '';
-                        }}
-                      />
-                    </label>
-
-                    {images.length > 0 && (
-                      <div className="warranty-image-previews">
-                        {images.map(img => (
-                          <div key={img.id} className="warranty-preview-thumb">
-                            <img src={img.url} alt="Ảnh sự cố" />
-                            <button
-                              type="button"
-                              className="warranty-remove-thumb"
-                              onClick={() => setImages(prev => prev.filter(i => i.id !== img.id))}
-                              title="Bỏ ảnh"
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="apple-sla-banner">
-                    <Cpu size={18} />
-                    <span>
-                      <strong>Cam kết AppleCare Support:</strong> Kỹ sư AnchorBox tiếp nhận, kiểm tra dữ liệu telemetry cảm biến từ xa và phản hồi trong vòng 2 giờ.
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                    <button
-                      type="submit"
-                      className="apple-primary-cta-btn"
-                      style={{ flex: 1 }}
-                      disabled={busy || description.trim().length < 10}
-                    >
-                      {busy ? 'Đang gửi yêu cầu…' : 'Gửi yêu cầu bảo hành →'}
-                    </button>
-                    <button
-                      type="button"
-                      className="button secondary"
-                      style={{ borderRadius: 980 }}
-                      onClick={() => setClaimModalOpen(false)}
-                      disabled={busy}
-                    >
-                      Hủy bỏ
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
+      {sheet && isCustomer && (
+        <ClaimSheet
+          eligible={eligible}
+          loading={warranties.loading}
+          initialWarrantyId={sheet.warrantyId}
+          onClose={() => setSheet(null)}
+          onSubmitted={claims.retry}
+        />
       )}
-    </div>
+    </InfoPage>
   );
 }
 
+function WarrantyTerms() {
+  const catalog = useCatalog();
+  const terms = (catalog.data ?? [])
+    .filter((product) => product.isActive)
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      months: [...new Set((product.variants ?? []).filter((variant) => variant.isActive && (variant.warrantyMonths ?? 0) > 0).map((variant) => variant.warrantyMonths as number))].sort((a, b) => a - b),
+    }))
+    .filter((term) => term.months.length > 0);
+
+  if (!terms.length) return <p className="ab-footnote">Thời hạn bảo hành của từng phiên bản được ghi trên trang sản phẩm và trên phiếu bảo hành điện tử của bạn.</p>;
+  return (
+    <dl className="ab-specs" data-reveal>
+      {terms.map(({ id, name, months }) => (
+        <div key={id}>
+          <dt><Link to={`/products/${id}`} className="ab-btn-link" style={{ fontSize: 'inherit', fontWeight: 650 }}>{name}</Link></dt>
+          <dd><span>Bảo hành {months.join(' hoặc ')} tháng kể từ ngày nghiệm thu{months.length > 1 ? ', tùy dung tích' : ''}.</span></dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function LookupResult({ lookup, submitted, today, signedIn, loginHref, onClaim }: {
+  lookup: Lookup;
+  submitted: string;
+  today: string;
+  signedIn: boolean;
+  loginHref: string;
+  onClaim: (record: WarrantyRecord) => void;
+}) {
+  switch (lookup.kind) {
+    case 'invalid':
+      return <Alert>Serial chỉ gồm chữ, số và dấu gạch ngang, ví dụ DBX-98C377AD9D60.</Alert>;
+    case 'missing':
+      return <Alert>Không tìm thấy phiếu bảo hành cho serial {submitted}. Kiểm tra lại tem trên hộp, hoặc thiết bị có thể chưa được nghiệm thu.</Alert>;
+    case 'owned':
+      return <Certificate record={lookup.record} today={today} onClaim={onClaim} />;
+    case 'public':
+      return <PublicCertificate result={lookup.result} signedIn={signedIn} loginHref={loginHref} />;
+  }
+}
+
+function PublicCertificate({ result, signedIn, loginHref }: { result: PublicWarranty; signedIn: boolean; loginHref: string }) {
+  const span = result.startDate && result.endDate ? Math.max(1, dayNumber(result.endDate) - dayNumber(result.startDate)) : 1;
+  const used = result.valid ? Math.min(1, Math.max(0, 1 - (result.remainingDays ?? 0) / span)) : 1;
+  return (
+    <article className="ab-cert" data-tint={result.valid ? 'green' : 'red'} style={{ '--used': used } as CSSProperties} aria-label={`Bảo hành ${result.serialNumber}`}>
+      <div className="ab-cert-top">
+        <div>
+          <small>{result.productName || 'Anchor Box'}</small>
+          <span className="ab-cert-serial">{result.serialNumber}</span>
+        </div>
+        <span className="ab-chip" data-tint={result.valid ? 'green' : 'red'}>{result.valid ? 'Còn hiệu lực' : 'Hết hiệu lực'}</span>
+      </div>
+      <div className="ab-cert-meter" aria-hidden="true"><span /></div>
+      <div className="ab-cert-meter-label">
+        <span>{date(result.startDate, true)}</span>
+        <span>{result.valid ? `Còn ${result.remainingDays ?? 0} ngày` : 'Hết hiệu lực'}</span>
+        <span>{date(result.endDate, true)}</span>
+      </div>
+      <p className="ab-footnote">
+        {signedIn
+          ? 'Thiết bị này không thuộc tài khoản của bạn, nên chỉ hiển thị thời hạn bảo hành.'
+          : 'Để bảo vệ chủ sở hữu, tra cứu công khai chỉ hiển thị thời hạn. Chủ thiết bị đăng nhập để xem chi tiết và gửi yêu cầu hỗ trợ.'}
+      </p>
+      <div className="ab-cert-actions">
+        {!signedIn && <Link to={loginHref} className="ab-btn ab-btn-primary ab-btn-sm">Đăng nhập</Link>}
+        <a href={consultationPhone.href} className="ab-btn-link"><PhoneCall size={16} aria-hidden /> {consultationPhone.display}</a>
+      </div>
+    </article>
+  );
+}
+
+function Alert({ children, tint = 'orange' }: { children: ReactNode; tint?: string }) {
+  return <div className="ab-alert" data-tint={tint} role="status"><AlertTriangle size={18} aria-hidden /><span>{children}</span></div>;
+}
+
+function Certificate({ record, today, onClaim }: { record: WarrantyRecord; today: string; onClaim: (record: WarrantyRecord) => void }) {
+  const valid = warrantyEligible(record);
+  const { used, remaining } = usage(record, today);
+  return (
+    <article className="ab-cert" data-tint={valid ? 'green' : 'red'} style={{ '--used': used } as CSSProperties} aria-label={`Phiếu bảo hành ${record.serialNumber}`}>
+      <div className="ab-cert-top">
+        <div>
+          <small>Phiếu bảo hành điện tử · Anchor Box</small>
+          <span className="ab-cert-serial">{record.serialNumber}</span>
+        </div>
+        <span className="ab-chip" data-tint={valid ? 'green' : 'red'}>{warrantyState(record, today)}</span>
+      </div>
+      <div className="ab-cert-meter" aria-hidden="true"><span /></div>
+      <div className="ab-cert-meter-label">
+        <span>{date(record.startDate, true)}</span>
+        <span>{valid ? `Còn ${remaining} ngày` : 'Hết hiệu lực'}</span>
+        <span>{date(record.endDate, true)}</span>
+      </div>
+      <dl className="ab-cert-grid">
+        <div><dt>Thời hạn</dt><dd>{record.durationMonths} tháng</dd></div>
+        <div><dt>Nghiệm thu</dt><dd>{date(record.acceptedAt, true)}</dd></div>
+        <div><dt>Đơn hàng</dt><dd>{record.orderId ? `#${record.orderId.slice(0, 8)}` : '—'}</dd></div>
+      </dl>
+      <div className="ab-cert-actions">
+        {valid && <button type="button" className="ab-btn ab-btn-primary ab-btn-sm" onClick={() => onClaim(record)}><Wrench size={16} aria-hidden /> Yêu cầu hỗ trợ</button>}
+        {record.orderId && <Link to={`/account/orders/${record.orderId}`} className="ab-btn-link">Xem đơn hàng <ChevronRight size={16} aria-hidden /></Link>}
+        <a href={consultationPhone.href} className="ab-btn-link"><PhoneCall size={16} aria-hidden /> {consultationPhone.display}</a>
+      </div>
+    </article>
+  );
+}
+
+function DeviceCard({ record, today, index, onClaim }: { record: WarrantyRecord; today: string; index: number; onClaim: () => void }) {
+  const valid = warrantyEligible(record);
+  const { remaining } = usage(record, today);
+  return (
+    <article className="ab-card ab-device-card" data-tint={valid ? 'green' : 'red'} data-reveal style={{ '--i': index % 3 } as CSSProperties}>
+      <span className="ab-feature-icon"><Cpu size={20} aria-hidden /></span>
+      <small className="ab-timeline-step" style={{ marginTop: 14 }}>Serial thiết bị</small>
+      <span className="ab-cert-serial">{record.serialNumber}</span>
+      <span><span className="ab-chip" data-tint={valid ? 'green' : 'red'}>{warrantyState(record, today)}</span></span>
+      <dl>
+        <div><dt>Bắt đầu</dt><dd>{date(record.startDate, true)}</dd></div>
+        <div><dt>Hết hạn</dt><dd>{date(record.endDate, true)}</dd></div>
+        <div><dt>Còn lại</dt><dd>{valid ? `${remaining} ngày` : '—'}</dd></div>
+      </dl>
+      <div className="ab-device-actions">
+        {record.orderId ? <Link to={`/account/orders/${record.orderId}`} className="ab-btn-link">Đơn hàng <ChevronRight size={16} aria-hidden /></Link> : <span />}
+        {valid && <button type="button" className="ab-btn ab-btn-secondary ab-btn-xs" onClick={onClaim}>Yêu cầu hỗ trợ</button>}
+      </div>
+    </article>
+  );
+}
+
+function discardImages(warrantyId: string, images: { id: string }[]) {
+  if (!warrantyId || !images.length) return;
+  void Promise.allSettled(images.map((image) => customer.deleteImage(warrantyId, image.id)));
+}
+
+function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted }: {
+  eligible: WarrantyRecord[];
+  loading: boolean;
+  initialWarrantyId: string;
+  onClose: () => void;
+  onSubmitted: () => void;
+}) {
+  const [warrantyId, setWarrantyId] = useState(initialWarrantyId);
+  const [category, setCategory] = useState(ISSUE_CATEGORIES[0]);
+  const [description, setDescription] = useState('');
+  const [images, setImages] = useState<{ id: string; url: string }[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error>();
+  const [notice, setNotice] = useState('');
+  const [doneId, setDoneId] = useState('');
+  const keyRef = useRef('');
+  const lockedRef = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const pendingRef = useRef({ warrantyId, images, done: false });
+  pendingRef.current = { warrantyId, images, done: !!doneId };
+
+  useEffect(() => {
+    if (!eligible.some((item) => item.id === warrantyId) && eligible.length > 0) setWarrantyId(eligible[0].id);
+  }, [eligible, warrantyId]);
+
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialogRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !lockedRef.current) closeRef.current();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      const pending = pendingRef.current;
+      if (!pending.done) discardImages(pending.warrantyId, pending.images);
+      document.body.style.overflow = overflow;
+      document.removeEventListener('keydown', onKey);
+      previous?.focus?.();
+    };
+  }, []);
+
+  const resetKey = () => { keyRef.current = ''; };
+  const trimmed = description.trim();
+  const canSubmit = !busy && !!warrantyId && trimmed.length >= 10;
+
+  function changeWarranty(next: string) {
+    if (next === warrantyId) return;
+    if (images.length) setNotice('Ảnh đã tải được gắn với thiết bị trước nên đã được bỏ. Vui lòng tải lại ảnh cho thiết bị mới.');
+    discardImages(warrantyId, images);
+    setImages([]);
+    setWarrantyId(next);
+    resetKey();
+  }
+
+  async function upload(files: FileList | null) {
+    if (!files?.length || lockedRef.current) return;
+    setError(undefined);
+    setNotice('');
+    const selected = Array.from(files);
+    if (selected.length + images.length > MAX_IMAGES) return setError(new Error(`Tối đa ${MAX_IMAGES} ảnh cho mỗi yêu cầu.`));
+    if (selected.some((file) => !['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024)) return setError(new Error('Chỉ nhận ảnh JPG hoặc PNG, mỗi ảnh dưới 5 MB.'));
+    if (!eligible.some((item) => item.id === warrantyId)) return setError(new Error('Chọn thiết bị còn hạn bảo hành trước khi tải ảnh.'));
+
+    lockedRef.current = true;
+    setBusy(true);
+    const target = warrantyId;
+    try {
+      for (const file of selected) {
+        const uploaded = await customer.uploadImage(target, file);
+        setImages((previous) => [...previous, uploaded]);
+      }
+      resetKey();
+    } catch (reason) {
+      setError(reason as Error);
+    } finally {
+      lockedRef.current = false;
+      setBusy(false);
+    }
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (lockedRef.current) return;
+    setError(undefined);
+    if (!eligible.some((item) => item.id === warrantyId)) return setError(new Error('Chọn thiết bị còn hạn bảo hành.'));
+    if (trimmed.length < 10) return setError(new Error('Mô tả sự cố cần ít nhất 10 ký tự.'));
+    if (trimmed.length > DESCRIPTION_MAX) return setError(new Error(`Mô tả không quá ${DESCRIPTION_MAX} ký tự.`));
+
+    lockedRef.current = true;
+    setBusy(true);
+    if (!keyRef.current) keyRef.current = crypto.randomUUID();
+    try {
+      const created = await customer.createClaim(warrantyId, `[${category}] ${trimmed}`, images.map((image) => image.id), keyRef.current);
+      setDoneId(created.id);
+      keyRef.current = '';
+      onSubmitted();
+    } catch (reason) {
+      setError(reason as Error);
+    } finally {
+      lockedRef.current = false;
+      setBusy(false);
+    }
+  }
+
+  return createPortal(
+    <div className="ab-landing ab-info ab-sheet-root"><div className="ab-sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+      <div className="ab-sheet" role="dialog" aria-modal="true" aria-labelledby="claim-title" tabIndex={-1} ref={dialogRef}>
+        <button type="button" className="ab-sheet-close" onClick={onClose} disabled={busy} aria-label="Đóng"><X size={18} aria-hidden /></button>
+
+        {doneId ? (
+          <div className="ab-success">
+            <CheckCircle2 size={48} aria-hidden />
+            <h2 id="claim-title">Đã gửi yêu cầu.</h2>
+            <p>Mã yêu cầu {doneId}. Bạn theo dõi trạng thái trong mục “Yêu cầu đã gửi”.</p>
+            <button type="button" className="ab-btn ab-btn-primary ab-btn-sm" onClick={onClose} style={{ marginTop: 12 }}>Xong</button>
+          </div>
+        ) : (
+          <>
+            <h2 id="claim-title">Yêu cầu hỗ trợ bảo hành</h2>
+            <p>Mô tả càng rõ, kỹ thuật viên xử lý càng nhanh.</p>
+
+            {loading ? (
+              <p className="ab-footnote">Đang tải danh sách thiết bị…</p>
+            ) : eligible.length === 0 ? (
+              <div className="ab-empty" style={{ marginTop: 22 }}>
+                <h3>Không có thiết bị còn hạn.</h3>
+                <p>Bạn vẫn có thể gọi {consultationPhone.display} để được hỗ trợ sửa chữa có tính phí.</p>
+                <a href={consultationPhone.href} className="ab-btn ab-btn-primary ab-btn-sm">Gọi hỗ trợ</a>
+              </div>
+            ) : (
+              <form onSubmit={submit} noValidate>
+                <ErrorNotice error={error} focus />
+                {notice && <p className="notice" role="status">{notice}</p>}
+
+                <label className="ab-field">
+                  <span>Thiết bị</span>
+                  <select value={warrantyId} onChange={(event) => changeWarranty(event.target.value)} disabled={busy}>
+                    {eligible.map((item) => <option key={item.id} value={item.id}>{item.serialNumber} · hạn đến {date(item.endDate, true)}</option>)}
+                  </select>
+                </label>
+
+                <div className="ab-field" role="group" aria-labelledby="claim-category">
+                  <span id="claim-category">Vấn đề gặp phải</span>
+                  <div className="ab-segment">
+                    {ISSUE_CATEGORIES.map((item) => (
+                      <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); resetKey(); }} disabled={busy}>{item}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="ab-field">
+                  <span>Mô tả sự cố</span>
+                  <textarea
+                    value={description}
+                    onChange={(event) => { setDescription(event.target.value); resetKey(); }}
+                    maxLength={DESCRIPTION_MAX}
+                    placeholder="Ví dụ: Cửa đóng nhưng hộp không tự khóa, màn hình báo DA DONG CUA nhưng ứng dụng vẫn hiện đang mở."
+                    disabled={busy}
+                  />
+                  <small>{trimmed.length < 10 ? `Cần thêm ${10 - trimmed.length} ký tự` : `${description.length}/${DESCRIPTION_MAX}`}</small>
+                </label>
+
+                <div className="ab-field">
+                  <span>Ảnh sự cố (không bắt buộc)</span>
+                  <label className="ab-upload" aria-disabled={busy || images.length >= MAX_IMAGES}>
+                    <ImagePlus size={26} aria-hidden />
+                    <strong>{busy ? 'Đang tải ảnh…' : 'Chọn ảnh'}</strong>
+                    <span>JPG hoặc PNG, tối đa {MAX_IMAGES} ảnh, mỗi ảnh dưới 5 MB · {images.length}/{MAX_IMAGES}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      multiple
+                      hidden
+                      disabled={busy || images.length >= MAX_IMAGES}
+                      onChange={(event) => { void upload(event.target.files); event.target.value = ''; }}
+                    />
+                  </label>
+                  {images.length > 0 && (
+                    <div className="ab-thumbs">
+                      {images.map((image, index) => (
+                        <div key={image.id}>
+                          <img src={image.url} alt={`Ảnh sự cố ${index + 1}`} />
+                          <button type="button" onClick={() => { discardImages(warrantyId, [image]); setImages((previous) => previous.filter((item) => item.id !== image.id)); resetKey(); }} disabled={busy} aria-label={`Bỏ ảnh ${index + 1}`}><X size={12} aria-hidden /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="ab-sheet-actions">
+                  <button type="button" className="ab-btn ab-btn-secondary" onClick={onClose} disabled={busy}>Hủy</button>
+                  <button type="submit" className="ab-btn ab-btn-primary" disabled={!canSubmit}>{busy ? 'Đang gửi…' : 'Gửi yêu cầu'}</button>
+                </div>
+              </form>
+            )}
+          </>
+        )}
+      </div>
+    </div></div>,
+    document.body,
+  );
+}
 export function InstallationTracking() {
   const { id = '' } = useParams();
   const { user } = useShop();

@@ -19,7 +19,11 @@ public final class CommerceRequests {
 
     private CommerceRequests() {}
 
-    public record Item(@NotNull UUID variantId, @Min(1) @Max(99) int quantity) {}
+    public record Item(@NotNull UUID variantId, @Min(1) @Max(99) int quantity, UUID warrantyPlanId) {
+        public Item(UUID variantId, int quantity) {
+            this(variantId, quantity, null);
+        }
+    }
 
     public record Quantity(@Min(1) @Max(99) int quantity) {}
 

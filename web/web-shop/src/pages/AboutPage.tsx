@@ -1,494 +1,188 @@
-import { useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Package,
-  ShieldCheck,
+  ChevronRight,
+  CloudRain,
   Cpu,
-  GraduationCap,
-  Users,
-  CheckCircle2,
-  AlertCircle,
-  Lightbulb,
   HeartHandshake,
-  TrendingUp,
-  Zap,
-  Lock,
+  KeyRound,
   Layers,
-  PhoneCall
+  Lightbulb,
+  Lock,
+  PackageCheck,
+  PhoneMissed,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Wrench,
+  type LucideIcon,
 } from 'lucide-react';
 import { consultationPhone } from '../contact';
-import './about-page.css';
+import { CtaBand, InfoPage, PageHero, SubNav } from './info/InfoChrome';
+
+const SECTIONS = [
+  { id: 'story', label: 'Câu chuyện' },
+  { id: 'journey', label: 'Hành trình' },
+  { id: 'values', label: 'Giá trị' },
+  { id: 'built', label: 'Sản phẩm' },
+];
+
+const PROBLEMS: { icon: LucideIcon; tint: string; title: string; body: string }[] = [
+  { icon: PhoneMissed, tint: 'red', title: 'Cuộc gọi nhỡ', body: 'Shipper gọi đúng lúc bạn đang họp, đang lái xe hay vắng nhà. Đơn bị hẹn lại, cả hai bên cùng mất thời gian.' },
+  { icon: CloudRain, tint: 'orange', title: 'Hàng để ngoài cửa', body: 'Bưu kiện nằm ngoài hiên, gặp mưa nắng hoặc bị lấy mất, không ai biết là lúc nào.' },
+  { icon: PackageCheck, tint: 'green', title: 'Một chỗ chờ an toàn', body: 'Shipper nhập mã dùng một lần, đặt hàng vào hộp, đóng cửa là hộp tự khóa và báo cho bạn.' },
+];
+
+const MILESTONES: { tint: string; phase: string; title: string; body: string }[] = [
+  { tint: 'blue', phase: 'Giai đoạn 1', title: 'Khảo sát và ý tưởng', body: 'Tìm hiểu thói quen nhận hàng của các hộ gia đình đô thị và xác định bài toán của chặng giao cuối.' },
+  { tint: 'indigo', phase: 'Giai đoạn 2', title: 'Mạch và cơ khí', body: 'Thiết kế bo mạch trên Altium, chọn khóa kép chốt điện + servo, tích hợp cân và cảm biến cửa.' },
+  { tint: 'orange', phase: 'Giai đoạn 3', title: 'Firmware và đám mây', body: 'Viết firmware ESP32-S3 không chặn, xây hàng đợi lệnh, xác thực PIN và ghép nối trên đám mây.' },
+  { tint: 'green', phase: 'Giai đoạn 4', title: 'Ứng dụng và cửa hàng', body: 'Hoàn thiện ứng dụng di động, cửa hàng trực tuyến, quy trình lắp đặt và bảo hành điện tử.' },
+];
+
+const VALUES: { icon: LucideIcon; tint: string; title: string; body: string }[] = [
+  { icon: Sparkles, tint: 'blue', title: 'Đơn giản trước hết', body: 'Shipper không cần cài ứng dụng. Nhập mã, đặt hàng, đóng cửa. Thế là xong.' },
+  { icon: Lock, tint: 'indigo', title: 'Riêng tư và an toàn', body: 'Mã PIN dùng một lần, kiểm tra trên đám mây, chống dò mã và phân quyền theo từng tài khoản.' },
+  { icon: ShieldCheck, tint: 'green', title: 'Nói đúng sự thật', body: 'Ứng dụng chỉ báo “đã mở” khi thiết bị xác nhận. Trang web chỉ công bố thông số phần cứng làm được.' },
+  { icon: HeartHandshake, tint: 'orange', title: 'Đồng hành lâu dài', body: 'Lắp đặt tận nơi, nghiệm thu rõ ràng và bảo hành điện tử theo dõi được trong tài khoản.' },
+];
+
+const STACK = ['ESP32-S3 · C++', 'Altium Designer', 'MQTT', 'Supabase · PostgreSQL', 'Flutter', 'Spring Boot', 'React'];
+
+const BUILT: { icon: LucideIcon; tint: string; title: string; body: string; to: string; cta: string }[] = [
+  { icon: Cpu, tint: 'orange', title: 'Thiết bị', body: 'Khóa kép, cân bưu kiện, cảm biến cửa, bàn phím và màn hình trong một chiếc hộp.', to: '/technology', cta: 'Công nghệ bên trong' },
+  { icon: Smartphone, tint: 'blue', title: 'Ứng dụng', body: 'Tạo PIN cho shipper, mở hộp từ xa và nhận thông báo khi có bưu kiện.', to: '/app', cta: 'Về ứng dụng' },
+  { icon: Wrench, tint: 'green', title: 'Dịch vụ', body: 'Giao, lắp đặt, nghiệm thu và bảo hành điện tử cho mỗi thiết bị.', to: '/how-it-works', cta: 'Quy trình giao & lắp' },
+];
+
+function IconCard({ icon: Icon, tint, title, body, index }: { icon: LucideIcon; tint: string; title: string; body: string; index: number }) {
+  return (
+    <article className="ab-card" data-tint={tint} data-reveal style={{ '--i': index } as CSSProperties}>
+      <span className="ab-feature-icon"><Icon size={20} aria-hidden /></span>
+      <h3>{title}</h3>
+      <p>{body}</p>
+    </article>
+  );
+}
 
 export function AboutPage() {
-  // Scroll reveal IntersectionObserver engine
-  useEffect(() => {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const elements = document.querySelectorAll<HTMLElement>('.scroll-reveal');
-
-    if (reducedMotion || !('IntersectionObserver' in window)) {
-      elements.forEach(el => el.classList.add('is-revealed'));
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-revealed');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.08,
-        rootMargin: '0px 0px -40px 0px'
-      }
-    );
-
-    elements.forEach(el => {
-      // If element is already in initial view, reveal it immediately
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight) {
-        el.classList.add('is-revealed');
-      } else {
-        observer.observe(el);
-      }
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <div className="about-us-page">
-      {/* 1. HERO SECTION: LỜI MỞ ĐẦU (ẢNH NỀN BACKGROUND CHO CHỮ ĐÈ LÊN) */}
-      <section className="about-hero-section">
-        <div className="container">
-          <div className="about-hero-content scroll-reveal">
-            <div className="about-badge">
-              <Package size={15} />
-              <span>VỀ CHÚNG TÔI · CÂU CHUYỆN ANCHORBOX</span>
-            </div>
-            <h1 className="about-hero-title">
-              Chúng Tôi Là Ai? <br />
-              <span className="highlight-cyan">Khát vọng định hình lại văn hóa giao nhận.</span>
-            </h1>
-            <p className="about-hero-lead">
-              Khởi nguồn từ đề tài Đồ án Tốt nghiệp chuyên ngành tại <strong>Học viện Ngân hàng</strong> đến
-              giải pháp hộp nhận hàng thông minh thực tế. Chúng tôi kết hợp cơ khí vững chắc, công nghệ IoT
-              thời gian thực và sự thấu hiểu sâu sắc nhu cầu người dùng Việt Nam để mang lại sự an tâm tuyệt
-              đối cho mỗi bưu kiện.
-            </p>
+    <InfoPage>
+      <SubNav title="Về Anchor Box" links={SECTIONS} action={<Link to="/products" className="ab-btn ab-btn-primary ab-btn-xs">Mua</Link>} />
 
-            <div className="about-hero-metrics">
-              <div className="hero-metric-item">
-                <strong>100%</strong>
-                <span>R&amp;D tự chủ sinh viên</span>
-              </div>
-              <div className="hero-metric-item">
-                <strong>HVNH</strong>
-                <span>Học viện Ngân hàng</span>
-              </div>
-              <div className="hero-metric-item">
-                <strong>IP54</strong>
-                <span>Chuẩn kháng nước bụi</span>
-              </div>
-              <div className="hero-metric-item">
-                <strong>24/7</strong>
-                <span>Kết nối giám sát Cloud</span>
-              </div>
-            </div>
-
-            <div className="about-hero-badges-row">
-              <div className="hero-glass-pill">
-                <ShieldCheck size={18} color="#2bd0ff" />
-                <span>AnchorBox Project · Chế tạo &amp; phát triển tại Việt Nam</span>
-              </div>
-              <div className="hero-glass-pill">
-                <Zap size={18} color="#ffd166" />
-                <span>Khóa Solenoid điện từ &amp; Cảm biến tải trọng Loadcell</span>
-              </div>
-            </div>
-          </div>
+      <PageHero
+        crumb="Về Anchor Box"
+        eyebrow="Về chúng tôi"
+        title={<>Một nơi tử tế<br /><span className="ab-gradient-text">cho mỗi bưu kiện.</span></>}
+        lead="Anchor Box bắt đầu từ một đồ án tốt nghiệp tại Học viện Ngân hàng, với một câu hỏi đơn giản: vì sao ngôi nhà hiện đại vẫn chưa có chỗ nào dành riêng cho bưu kiện?"
+      >
+        <div className="ab-hero-cta" data-reveal>
+          <Link to="/products" className="ab-btn ab-btn-primary">Khám phá Anchor Box</Link>
+          <Link to="/contact" className="ab-btn-link">Liên hệ hợp tác <ChevronRight size={16} aria-hidden /></Link>
         </div>
-      </section>
+      </PageHero>
 
-      {/* 2. WHY WE STARTED: LÝ DO CHÚNG TÔI BẮT ĐẦU */}
-      <section className="story-section">
-        <div className="container">
-          <div className="why-story-grid">
-            <div className="why-story-text scroll-reveal reveal-left">
-              <span className="section-tag">
-                <Lightbulb size={16} />
-                KHỞI NGUỒN Ý TƯỞNG
-              </span>
-              <h2 className="section-title">Tại Sao Lại Là AnchorBox?</h2>
-              <p>
-                Mỗi ngày, hàng triệu bưu kiện được vận chuyển hối hả khắp mọi ngõ phố Việt Nam. Thương mại điện
-                tử đem đến sự tiện lợi vượt trội, nhưng khâu giao nhận chặng cuối (Last-Mile Delivery) vẫn tồn tại
-                vô số điểm nghẽn nhức nhối: những cuộc gọi nhỡ lúc bạn đang họp, kiện hàng bị vứt ngoài hiên mưa
-                ướt, hay nỗi lo hàng giá trị cao bị thất lạc khi vắng nhà.
-              </p>
-              <p>
-                Người giao hàng thì vất vả chờ đợi, người mua thì bất an mỗi lần đặt hàng online. Chúng tôi tự đặt
-                câu hỏi: <em>Tại sao một ngôi nhà hiện đại lại chưa có một nơi an toàn, tử tế dành riêng cho bưu kiện?</em>
-              </p>
-              <div className="why-story-quote">
-                &ldquo;AnchorBox ra đời không chỉ để lưu trữ một món hàng, mà để giải phóng con người khỏi sự chờ
-                đợi và mang lại sự an tâm tuyệt đối cho tổ ấm của bạn.&rdquo;
-              </div>
-            </div>
-
-            <div className="why-cards-col">
-              <div className="problem-solution-card scroll-reveal delay-100">
-                <div className="problem-card-icon is-red">
-                  <AlertCircle size={22} />
-                </div>
-                <div>
-                  <h4>Thực Trạng Bất Cập</h4>
-                  <p>
-                    Khách hàng vắng nhà hoặc bận rộn; shipper phải gọi nhiều lần; bưu kiện để trước cửa có nguy cơ bị
-                    mưa nắng làm hỏng hoặc mất cắp.
-                  </p>
-                </div>
-              </div>
-
-              <div className="problem-solution-card scroll-reveal delay-200">
-                <div className="problem-card-icon is-amber">
-                  <Lightbulb size={22} />
-                </div>
-                <div>
-                  <h4>Ý Tưởng Đột Phá</h4>
-                  <p>
-                    Tạo ra một điểm giao nhận cơ khí thép bền bỉ, tích hợp khóa điện từ tự động và cảm biến tải trọng
-                    kết nối đám mây, vận hành hoàn toàn độc lập 24/7.
-                  </p>
-                </div>
-              </div>
-
-              <div className="problem-solution-card scroll-reveal delay-300">
-                <div className="problem-card-icon is-green">
-                  <CheckCircle2 size={22} />
-                </div>
-                <div>
-                  <h4>Giải Pháp AnchorBox</h4>
-                  <p>
-                    Shipper mở hộp bằng mã OTP 1 lần nhanh gọn; chủ nhà nhận thông báo tức thì kèm trọng lượng kiện hàng
-                    trên điện thoại; kiểm soát đóng mở từ xa chỉ bằng 1 chạm.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. ACADEMIC THESIS JOURNEY: DẤU ẤN HỌC VIỆN NGÂN HÀNG (ẢNH NỀN CHO CHỮ ĐÈ LÊN) */}
-      <section className="story-section has-bg">
-        <div className="container">
-          <div className="academic-banner-box scroll-reveal">
-            <div className="academic-info">
-              <span className="about-badge" style={{ background: 'rgba(255,255,255,0.18)', color: '#ffffff' }}>
-                <GraduationCap size={15} />
-                ĐỒ ÁN TỐT NGHIỆP XUẤT SẮC
-              </span>
-              <h3>Từ Giảng Đường Đại Học Đến Giải Pháp Thực Tế</h3>
-              <p>
-                AnchorBox được thai nghén và hiện thực hóa từ đề tài Đồ án Tốt nghiệp chuyên ngành Hệ thống Thông
-                tin &amp; Thương mại Điện tử tại <strong>Học viện Ngân hàng</strong>. Chúng tôi không bằng lòng với
-                một bài báo cáo lý thuyết trên giấy, mà quyết tâm tự tay nghiên cứu, thiết kế vi mạch PCB, lập trình
-                firmware C++ và gia công cơ khí hoàn chỉnh để mang đến một sản phẩm hữu dụng thực sự cho đời sống.
-              </p>
-              <div className="academic-tags">
-                <span className="academic-tag-item">🎓 Khoa Hệ thống Thông tin - HVNH</span>
-                <span className="academic-tag-item">🔬 R&amp;D Phần Cứng &amp; Firmware IoT</span>
-                <span className="academic-tag-item">☁️ Cloud Microservices &amp; MQTT</span>
-                <span className="academic-tag-item">📦 Thử nghiệm thực địa thành công</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Timeline steps */}
-          <div className="center-text scroll-reveal">
-            <span className="section-tag">
-              <TrendingUp size={16} />
-              CỘT MỐC PHÁT TRIỂN
-            </span>
-            <h2 className="section-title">Hành Trình Nghiên Cứu &amp; Hoàn Thiện</h2>
-            <p className="section-subtitle">
-              Mỗi chặng đường là sự kiên trì thử nghiệm, cải tiến để đưa sản phẩm từ bản vẽ ý tưởng ra ngoài thực địa.
-            </p>
-          </div>
-
-          <div className="thesis-steps-grid">
-            <div className="thesis-step-card scroll-reveal delay-100">
-              <span className="thesis-step-date">09/2025</span>
-              <h4>Khảo Sát &amp; Phác Thảo</h4>
-              <p>
-                Khảo sát nhu cầu thực tế của 500 hộ gia đình tại Hà Nội; nhận diện bài toán giao nhận chặng cuối và
-                xác định yêu cầu kỹ thuật cơ khí, chống nước.
-              </p>
-            </div>
-
-            <div className="thesis-step-card scroll-reveal delay-200">
-              <span className="thesis-step-date">11/2025</span>
-              <h4>Thiết Kế 3D &amp; Cơ Khí</h4>
-              <p>
-                Hoàn thiện bản vẽ CAD 3D với 3 kích thước S (45L), M (85L), L (150L); gia công mẫu khung thép cán nguội
-                và thử nghiệm cơ cấu khóa Solenoid lực giữ &gt;1500N.
-              </p>
-            </div>
-
-            <div className="thesis-step-card scroll-reveal delay-300">
-              <span className="thesis-step-date">01/2026</span>
-              <h4>Mạch Nhúng &amp; Firmware</h4>
-              <p>
-                Thiết kế bo mạch MCU ESP32, tích hợp cảm biến tải trọng Loadcell HX711, hệ thống nguồn kép pin UPS và
-                lập trình firmware điều khiển giao tiếp MQTT.
-              </p>
-            </div>
-
-            <div className="thesis-step-card scroll-reveal delay-400">
-              <span className="thesis-step-date">05/2026</span>
-              <h4>Thực Địa &amp; Nghiệm Thu</h4>
-              <p>
-                Triển khai thử nghiệm 15 thiết bị tại khu dân cư; bảo vệ xuất sắc Đồ án Tốt nghiệp và hoàn thiện hệ sinh
-                thái Web/App quản lý thương mại.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. CORE VALUES: GIÁ TRỊ CỐT LÕI */}
-      <section className="story-section">
-        <div className="container">
-          <div className="center-text scroll-reveal">
-            <span className="section-tag">
-              <HeartHandshake size={16} />
-              KIM CHỈ NAM HÀNH ĐỘNG
-            </span>
-            <h2 className="section-title">Những Giá Trị Chúng Tôi Tin Tưởng</h2>
-            <p className="section-subtitle">
-              Sản phẩm công nghệ tốt phải được xây dựng từ sự tử tế, tôn trọng khách hàng và cam kết chất lượng bền vững.
-            </p>
-          </div>
-
-          <div className="values-four-grid">
-            <div className="value-box scroll-reveal delay-100">
-              <span className="value-box-num">01</span>
-              <div className="value-box-icon">
-                <ShieldCheck size={26} />
-              </div>
-              <h3>Tử Tế Trong Chi Tiết</h3>
-              <p>
-                Từ độ dày của thép tấm 1.5mm, lớp sơn tĩnh điện ngoài trời chống tia UV, cho đến từng gioăng cao su chống
-                thấm nước. Mọi chi tiết đều được chăm chút kỹ lưỡng.
-              </p>
-            </div>
-
-            <div className="value-box scroll-reveal delay-200">
-              <span className="value-box-num">02</span>
-              <div className="value-box-icon">
-                <Zap size={26} />
-              </div>
-              <h3>Đơn Giản &amp; Tiện Dụng</h3>
-              <p>
-                Công nghệ không làm phức tạp cuộc sống. Shipper lớn tuổi hay trẻ nhỏ đều có thể mở khóa nhận hàng trong 5
-                giây bằng mã OTP hoặc bàn phím số mà không cần cài đặt ứng dụng.
-              </p>
-            </div>
-
-            <div className="value-box scroll-reveal delay-300">
-              <span className="value-box-num">03</span>
-              <div className="value-box-icon">
-                <Lock size={26} />
-              </div>
-              <h3>Bảo Mật &amp; Trách Nhiệm</h3>
-              <p>
-                Mọi lệnh đóng mở và dữ liệu cân nặng đều được mã hóa đầu cuối. Bưu kiện của bạn là tài sản và sự riêng tư,
-                chúng tôi bảo vệ nó như tài sản của chính mình.
-              </p>
-            </div>
-
-            <div className="value-box scroll-reveal delay-400">
-              <span className="value-box-num">04</span>
-              <div className="value-box-icon">
-                <TrendingUp size={26} />
-              </div>
-              <h3>Đồng Hành Bền Vững</h3>
-              <p>
-                Hỗ trợ kỹ thuật 24/7, cập nhật firmware OTA từ xa và cam kết bảo hành chính hãng uy tín trong suốt vòng đời
-                sử dụng của thiết bị.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. MEET THE TEAM: ĐỘI NGŨ PHÁT TRIỂN */}
-      <section className="story-section has-bg">
-        <div className="container">
-          <div className="center-text scroll-reveal">
-            <span className="section-tag">
-              <Users size={16} />
-              ĐỘI NGŨ SÁNG LẬP
-            </span>
-            <h2 className="section-title">Những Con Người Đứng Sau AnchorBox</h2>
-            <p className="section-subtitle">
-              Tập thể những sinh viên, kỹ sư trẻ đam mê công nghệ tại Học viện Ngân hàng, cùng chung một lý tưởng biến
-              giải pháp thông minh thành hiện thực.
-            </p>
-          </div>
-
-          <div className="team-cards-grid">
-            <div className="team-card scroll-reveal delay-100">
-              <div className="team-avatar-wrap">
-                <Cpu size={36} />
-              </div>
-              <h3>Nhóm Phần Cứng &amp; IoT</h3>
-              <span className="team-role">Hardware &amp; Embedded Firmware</span>
-              <p>
-                Chịu trách nhiệm thiết kế sơ đồ nguyên lý mạch in PCB, lập trình firmware vi điều khiển MCU ESP32,
-                tích hợp cơ cấu khóa Solenoid và hiệu chuẩn cảm biến tải trọng Loadcell HX711.
-              </p>
-              <div className="team-skills-chips">
-                <span>ESP32 C/C++</span>
-                <span>KiCAD PCB</span>
-                <span>Loadcell HX711</span>
-                <span>Solenoid Lock</span>
-              </div>
-            </div>
-
-            <div className="team-card scroll-reveal delay-200">
-              <div className="team-avatar-wrap">
-                <Layers size={36} />
-              </div>
-              <h3>Nhóm Nền Tảng &amp; Cloud</h3>
-              <span className="team-role">Backend &amp; Mobile Architecture</span>
-              <p>
-                Xây dựng hệ thống microservices bảo mật với Spring Boot, hạ tầng thông điệp MQTT thời gian thực,
-                cơ chế sinh mã OTP chống trùng lặp và ứng dụng quản lý di động đa nền tảng.
-              </p>
-              <div className="team-skills-chips">
-                <span>Spring Boot</span>
-                <span>MQTT Broker</span>
-                <span>React &amp; Vite</span>
-                <span>PostgreSQL</span>
-              </div>
-            </div>
-
-            <div className="team-card scroll-reveal delay-300">
-              <div className="team-avatar-wrap">
-                <ShieldCheck size={36} />
-              </div>
-              <h3>Nhóm Vận Hành &amp; Dịch Vụ</h3>
-              <span className="team-role">Product &amp; Customer Care</span>
-              <p>
-                Nghiên cứu hành vi người dùng, tối ưu hóa quy trình giao nhận chặng cuối, xây dựng chính sách bảo hành
-                điện tử và kiểm định chất lượng xuất xưởng cho từng sản phẩm.
-              </p>
-              <div className="team-skills-chips">
-                <span>Product Design</span>
-                <span>Last-Mile Logistics</span>
-                <span>E-Warranty</span>
-                <span>QA Testing</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. VISION & GREEN IMPACT: TẦM NHÌN TƯƠNG LAI */}
-      <section className="story-section">
-        <div className="container">
-          <div className="center-text scroll-reveal">
-            <span className="section-tag">
-              <TrendingUp size={16} />
-              TẦM NHÌN 2026 - 2030
-            </span>
-            <h2 className="section-title">Kiến Tạo Tương Lai Giao Nhận Xanh Cho Đô Thị</h2>
-            <p className="section-subtitle">
-              AnchorBox không chỉ dừng lại ở một sản phẩm phần cứng gia đình, mà hướng tới việc trở thành hạ tầng tiêu chuẩn
-              cho mọi khu đô thị, nhà phố và chung cư thông minh tại Việt Nam.
-            </p>
-          </div>
-
-          <div className="stats-showcase-grid">
-            <div className="stats-card-box scroll-reveal delay-100">
-              <strong>99.8%</strong>
-              <h4>An Toàn Tuyệt Đối</h4>
-              <p>Loại bỏ hoàn toàn rủi ro mất cắp hoặc bưu kiện bị mưa gió ẩm ướt.</p>
-            </div>
-
-            <div className="stats-card-box scroll-reveal delay-200">
-              <strong>80%</strong>
-              <h4>Giảm Thời Gian Chờ</h4>
-              <p>Shipper chỉ mất 10 giây để thả hàng và tiếp tục hành trình giao tiếp theo.</p>
-            </div>
-
-            <div className="stats-card-box scroll-reveal delay-300">
-              <strong>30 Ngày</strong>
-              <h4>Pin Dự Phòng UPS</h4>
-              <p>Hoạt động bền bỉ, nhận hàng và cảnh báo liên tục ngay cả khi mất điện.</p>
-            </div>
-
-            <div className="stats-card-box scroll-reveal delay-400">
-              <strong>100%</strong>
-              <h4>Tự Chủ Công Nghệ</h4>
-              <p>Tự thiết kế phần cứng, viết phần mềm và làm chủ dây chuyền tại Việt Nam.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. GRAND CTA: LỜI NGỎ & KẾT NỐI */}
-      <section className="container scroll-reveal" style={{ marginTop: 20 }}>
-        <div className="about-final-cta">
-          <h2>Đồng Hành Cùng Chúng Tôi Trên Hành Trình Đổi Mới</h2>
-          <p>
-            Dù bạn là một khách hàng tìm kiếm sự an tâm cho bưu kiện gia đình, một đối tác logistics hay đơn giản là người
-            yêu công nghệ muốn chia sẻ ý tưởng — đội ngũ sáng lập AnchorBox luôn sẵn sàng lắng nghe và kết nối.
+      <section className="ab-section" style={{ paddingTop: 0 }} aria-label="Tuyên ngôn">
+        <div className="ab-container ab-center">
+          <p className="ab-quote" data-reveal>
+            Chúng tôi không làm thêm một chiếc hộp. <span>Chúng tôi làm để bạn không phải chờ shipper, và shipper không phải chờ bạn.</span>
           </p>
+        </div>
+      </section>
 
-          <div className="about-final-actions">
-            <Link
-              to="/products"
-              className="button"
-              style={{ background: '#ffffff', color: '#0866e8', fontWeight: 800, padding: '14px 32px' }}
-            >
-              Khám Phá Các Dòng Hộp AnchorBox
-            </Link>
-
-            <Link
-              to="/contact"
-              className="button secondary"
-              style={{
-                background: 'rgba(255,255,255,0.15)',
-                color: '#ffffff',
-                borderColor: 'rgba(255,255,255,0.3)',
-                padding: '14px 28px'
-              }}
-            >
-              Liên Hệ &amp; Hợp Tác
-            </Link>
-
-            <a
-              href={consultationPhone.href}
-              className="button secondary"
-              style={{
-                background: 'rgba(255,255,255,0.15)',
-                color: '#ffffff',
-                borderColor: 'rgba(255,255,255,0.3)',
-                padding: '14px 28px'
-              }}
-            >
-              <PhoneCall size={16} />
-              <span>Hotline: {consultationPhone.display}</span>
-            </a>
+      <section id="story" className="ab-section ab-section-alt" aria-labelledby="about-story-title">
+        <div className="ab-container">
+          <div className="ab-story-grid">
+            <div>
+              <p className="ab-eyebrow" data-reveal><Lightbulb size={14} aria-hidden style={{ verticalAlign: '-2px' }} /> Khởi nguồn</p>
+              <h2 id="about-story-title" className="ab-section-title" data-reveal>Chặng giao cuối vẫn là chặng khó nhất.</h2>
+            </div>
+            <div>
+              <p className="ab-section-lead" data-reveal>Thương mại điện tử giúp đặt hàng chỉ trong vài giây, nhưng khoảnh khắc nhận hàng vẫn phụ thuộc vào việc bạn có ở nhà hay không.</p>
+              <p className="ab-section-lead" data-reveal>Anchor Box là một điểm nhận hàng đặt ngay tại nhà bạn: chắc chắn, tự khóa và luôn kết nối, để mỗi lần giao hàng diễn ra trọn vẹn kể cả khi không ai ở nhà.</p>
+            </div>
+          </div>
+          <div className="ab-grid-3 ab-mt">
+            {PROBLEMS.map((item, index) => <IconCard key={item.title} {...item} index={index} />)}
           </div>
         </div>
       </section>
-    </div>
+
+      <section className="ab-dark-band" aria-labelledby="about-thesis-title">
+        <div className="ab-container">
+          <p className="ab-eyebrow" data-reveal>Đồ án tốt nghiệp · Học viện Ngân hàng</p>
+          <h2 id="about-thesis-title" className="ab-section-title" data-reveal>Từ giảng đường đến cửa nhà bạn.</h2>
+          <p className="ab-section-lead" data-reveal>Không dừng ở bản báo cáo, nhóm tự thiết kế mạch, viết firmware, xây hạ tầng đám mây, ứng dụng di động và cả cửa hàng bạn đang xem.</p>
+          <div className="ab-stack" data-reveal>
+            {STACK.map((item) => <span key={item} style={{ background: 'rgba(255,255,255,0.1)', color: '#f5f5f7' }}>{item}</span>)}
+          </div>
+        </div>
+      </section>
+
+      <section id="journey" className="ab-section" aria-labelledby="about-journey-title">
+        <div className="ab-container">
+          <p className="ab-eyebrow" data-reveal>Hành trình</p>
+          <h2 id="about-journey-title" className="ab-section-title" data-reveal>Bốn chặng, một sản phẩm hoàn chỉnh.</h2>
+          <ol className="ab-milestones">
+            {MILESTONES.map(({ tint, phase, title, body }, index) => (
+              <li key={title} data-tint={tint} data-reveal style={{ '--i': index } as CSSProperties}>
+                <small>{phase}</small>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section id="values" className="ab-section ab-section-alt" aria-labelledby="about-values-title">
+        <div className="ab-container">
+          <p className="ab-eyebrow" data-reveal>Giá trị</p>
+          <h2 id="about-values-title" className="ab-section-title" data-reveal>Điều chúng tôi tin.</h2>
+          <div className="ab-grid-4 ab-mt">
+            {VALUES.map((item, index) => <IconCard key={item.title} {...item} index={index} />)}
+          </div>
+        </div>
+      </section>
+
+      <section id="built" className="ab-section" aria-labelledby="about-built-title">
+        <div className="ab-container">
+          <p className="ab-eyebrow" data-reveal>Chúng tôi đã làm gì</p>
+          <h2 id="about-built-title" className="ab-section-title" data-reveal>Một hệ sinh thái, ba phần ăn khớp.</h2>
+          <div className="ab-grid-3 ab-mt">
+            {BUILT.map(({ icon: Icon, tint, title, body, to, cta }, index) => (
+              <Link key={title} to={to} className="ab-card ab-card-link" data-tint={tint} data-reveal style={{ '--i': index } as CSSProperties}>
+                <span className="ab-feature-icon"><Icon size={20} aria-hidden /></span>
+                <h3>{title}</h3>
+                <p>{body}</p>
+                <span className="ab-btn-link">{cta} <ChevronRight size={16} aria-hidden /></span>
+              </Link>
+            ))}
+          </div>
+          <div className="ab-grid-2 ab-mt">
+            <article className="ab-card" data-tint="indigo" data-reveal>
+              <span className="ab-feature-icon"><Layers size={20} aria-hidden /></span>
+              <h3>Hợp tác cùng chúng tôi</h3>
+              <p>Chủ đầu tư khu đô thị, chung cư hay đơn vị giao nhận muốn thử nghiệm Anchor Box, hãy để lại thông tin.</p>
+            </article>
+            <article className="ab-card" data-tint="teal" data-reveal style={{ '--i': 1 } as CSSProperties}>
+              <span className="ab-feature-icon"><KeyRound size={20} aria-hidden /></span>
+              <h3>Gọi trực tiếp</h3>
+              <p>Tư vấn sản phẩm và lắp đặt: <a href={consultationPhone.href} className="ab-btn-link" style={{ fontSize: 'inherit' }}>{consultationPhone.display}</a></p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="ab-section" style={{ paddingTop: 0 }}>
+        <CtaBand
+          title="Để bưu kiện có chỗ chờ bạn về."
+          body="Xem các phiên bản Anchor Box và đặt lịch lắp đặt tại nhà."
+          primary={{ to: '/products', label: 'Mua Anchor Box' }}
+          secondary={{ to: '/contact', label: 'Liên hệ tư vấn' }}
+        />
+      </section>
+    </InfoPage>
   );
 }
 

@@ -68,7 +68,7 @@ public final class DeliveryInstallationResponses {
 
     @Schema(description = "Phản hồi tải tệp ảnh minh chứng hiện trường hoặc biên bản nghiệm thu")
     public record ProofUploadResponse(
-            @Schema(description = "Đường dẫn URL ảnh trực tuyến", example = "https://res.cloudinary.com/smartbox/image/upload/v1/proof.jpg")
+            @Schema(description = "Đường dẫn URL ảnh trực tuyến", example = "https://<project>.supabase.co/storage/v1/object/public/delivery-proofs/9b2f0c1e-3d4a-4b5c-8d6e-7f8091a2b3c4.jpg")
             String url
     ) {}
 

@@ -26,6 +26,8 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
     @Autowired com.fasterxml.jackson.databind.ObjectMapper json;
     @Autowired AcceptanceWarrantyService warranties;
     @Autowired OrderTrackingService tracking;
+    @Autowired com.smartbox.backend.service.storage.ImageStorage storage;
+    String proofUrl(){return storage.publicUrl(com.smartbox.backend.service.storage.ImageBucket.DELIVERY_PROOFS,UUID.randomUUID()+".jpg");}
     @Autowired InstallationDashboardService backlog;
     @Test void testBacklogSummary() {
         actors.staff();
@@ -220,7 +222,10 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
         UUID order = confirmedOrder(), job = job(order);
         installed(job, order);
         tech();
-        jobs.submitCompletion(job, new CompletionSubmission(List.of("https://res.cloudinary.com/test.png"), "Nộp ảnh"), version(job), UUID.randomUUID());
+        for (String foreign : List.of("https://evil.example/x.jpg", "javascript:alert(1)", storage.publicUrl(com.smartbox.backend.service.storage.ImageBucket.PRODUCTS, UUID.randomUUID() + ".jpg"), proofUrl().replace(".jpg", ".svg"))) {
+            assertThrows(BadRequestException.class, () -> jobs.submitCompletion(job, new CompletionSubmission(List.of(foreign), "Nộp ảnh"), version(job), UUID.randomUUID()));
+        }
+        jobs.submitCompletion(job, new CompletionSubmission(List.of(proofUrl()), "Nộp ảnh"), version(job), UUID.randomUUID());
         assertEquals("WAITING_PO_CONFIRMATION", jdbc.queryForObject("SELECT status FROM public.delivery_installations WHERE id=?", String.class, job));
 
         tech();
@@ -236,7 +241,7 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
         assertEquals("IN_PROGRESS", jdbc.queryForObject("SELECT status FROM public.delivery_installations WHERE id=?", String.class, job));
 
         tech();
-        jobs.submitCompletion(job, new CompletionSubmission(List.of("https://res.cloudinary.com/test2.png"), "Nộp lại"), version(job), UUID.randomUUID());
+        jobs.submitCompletion(job, new CompletionSubmission(List.of(proofUrl()), "Nộp lại"), version(job), UUID.randomUUID());
         assertEquals("WAITING_PO_CONFIRMATION", jdbc.queryForObject("SELECT status FROM public.delivery_installations WHERE id=?", String.class, job));
 
         actors.actor.set(new CurrentActor.Actor(STAFF, "super_admin"));

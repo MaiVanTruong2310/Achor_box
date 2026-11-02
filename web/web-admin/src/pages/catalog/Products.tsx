@@ -2328,7 +2328,7 @@ export const Products: React.FC = () => {
                         <input
                           ref={fileInputRef}
                           type="file"
-                          accept="image/*"
+                          accept="image/png, image/jpeg"
                           style={{ display: 'none' }}
                           onChange={handleImageFileChange}
                         />

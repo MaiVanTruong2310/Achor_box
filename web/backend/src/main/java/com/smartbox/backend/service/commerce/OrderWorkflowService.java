@@ -1,5 +1,6 @@
 package com.smartbox.backend.service.commerce;
 
+import com.smartbox.backend.service.warranty.WarrantyPlanService;
 import com.smartbox.backend.dto.request.commerce.CommerceRequests;
 import com.smartbox.backend.exception.BadRequestException;
 import com.smartbox.backend.exception.ConflictException;
@@ -42,6 +43,7 @@ public class OrderWorkflowService {
     private final OutboxService outbox;
     private final CustomerAccountService customers;
     private final AcceptanceWarrantyService warranties;
+    private final WarrantyPlanService warrantyPlans;
 
     @Value("${smartbox.orders.draft-minutes:30}")
     private int draftMinutes;
@@ -136,18 +138,24 @@ public class OrderWorkflowService {
             throw new BadRequestException("EMAIL_REQUIRED: Tài khoản cần có email nhận thông báo");
         }
         TreeMap<UUID, Integer> quantities = new TreeMap<>(Comparator.comparing(UUID::toString));
+        java.util.Map<UUID, java.util.Optional<UUID>> plans = new java.util.HashMap<>();
         for (var item : request.items()) {
             quantity(item.quantity());
             int total = quantities.getOrDefault(item.variantId(), 0) + item.quantity();
             quantity(total);
             quantities.put(item.variantId(), total);
+            var chosen = java.util.Optional.ofNullable(item.warrantyPlanId());
+            var previousPlan = plans.putIfAbsent(item.variantId(), chosen);
+            if (previousPlan != null && !previousPlan.equals(chosen)) {
+                throw new BadRequestException("WARRANTY_PLAN_CONFLICT: Mỗi sản phẩm trong đơn chỉ chọn một gói bảo hành");
+            }
         }
         UUID id = UUID.randomUUID();
         var snapshot = customers.snapshot(user, request.addressId(), request.shippingDetails(), request.shippingAddress());
         db.update("INSERT INTO public.orders(id,user_id,status,shipping_address,shipping_address_snapshot,source_address_id,total,expires_at,workflow_version) VALUES(?,?,CAST(? AS public.order_status),?,?,?,0,?,2)",
                 id, user, "pending", snapshot.get("addressLine"), customers.serialize(snapshot), request.addressId(), now().plusMinutes(draftMinutes));
         for (var entry : quantities.entrySet()) {
-            addLocked(id, entry.getKey(), entry.getValue(), user);
+            addLocked(id, entry.getKey(), entry.getValue(), user, plans.get(entry.getKey()).orElse(null));
         }
         recalculate(id);
         if (request.couponCode() != null && !request.couponCode().isBlank()) {
@@ -185,14 +193,18 @@ public class OrderWorkflowService {
         var actor = actors.get();
         var order = owned(id, actor, true);
         editable(order);
-        addLocked(id, variant, quantity, actor.id());
+        addLocked(id, variant, quantity, actor.id(), null);
         recalculate(id);
         return view(id);
     }
 
-    private void addLocked(UUID orderId, UUID variantId, int amount, UUID actor) {
+    private void addLocked(UUID orderId, UUID variantId, int amount, UUID actor, UUID planId) {
         quantity(amount);
         var existing = db.list("SELECT * FROM public.order_items WHERE order_id=? AND variant_id=?", orderId, variantId);
+        if (!existing.isEmpty() && planId != null && !planId.toString().equals(String.valueOf(existing.getFirst().get("warranty_plan_id")))) {
+            throw new BadRequestException("WARRANTY_PLAN_CONFLICT: Mỗi sản phẩm trong đơn chỉ chọn một gói bảo hành");
+        }
+        var plan = existing.isEmpty() ? warrantyPlans.require(planId) : null;
         int previous = existing.isEmpty() ? 0 : ((Number) existing.getFirst().get("quantity")).intValue();
         quantity(previous + amount);
         var variant = db.one("SELECT v.*, p.name AS product_name, p.price AS base_price, p.is_active AS product_active FROM public.product_variants v JOIN public.products p ON p.id=v.product_id WHERE v.id=? FOR UPDATE OF v", variantId);
@@ -203,12 +215,19 @@ public class OrderWorkflowService {
         if (price.signum() < 0) {
             throw new BadRequestException("INVALID_PRICE: Giá SKU phải không âm");
         }
+        if (plan != null) {
+            price = price.add(plan.price());
+        }
         moveStock(variantId, -amount, orderId, actor, "RESERVE");
         if (existing.isEmpty()) {
             db.update("INSERT INTO public.order_items(id,order_id,product_id,variant_id,quantity,unit_price,sku_snapshot,product_name_snapshot,variant_name_snapshot,size_snapshot,capacity_liter_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                     UUID.randomUUID(), orderId, variant.get("product_id"), variantId, amount, price, variant.get("sku"), variant.get("product_name"), variant.get("variant_name"), variant.get("size"), variant.get("capacity_liter"));
             db.update("UPDATE public.order_items SET warranty_months_snapshot=? WHERE order_id=? AND variant_id=?",
-                    warranties.months(variant), orderId, variantId);
+                    warranties.months(variant) + (plan == null ? 0 : plan.extraMonths()), orderId, variantId);
+            if (plan != null) {
+                db.update("UPDATE public.order_items SET warranty_plan_id=?,warranty_plan_price=?,warranty_extra_months=?,variant_name_snapshot=? WHERE order_id=? AND variant_id=?",
+                        plan.id(), plan.price(), plan.extraMonths(), variant.get("variant_name") + " · " + plan.name(), orderId, variantId);
+            }
         } else {
             db.update("UPDATE public.order_items SET quantity=? WHERE id=?", previous + amount, existing.getFirst().get("id"));
         }

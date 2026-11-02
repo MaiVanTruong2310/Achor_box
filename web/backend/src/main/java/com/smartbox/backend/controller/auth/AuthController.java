@@ -9,7 +9,7 @@ import com.smartbox.backend.entity.Profile;
 import com.smartbox.backend.repository.ProfileRepository;
 import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.service.auth.AuthService;
-import com.smartbox.backend.service.warranty.ClaimImageStorage;
+import com.smartbox.backend.service.storage.ImageStorage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,7 +38,7 @@ public class AuthController {
     private final AuthService authService;
     private final ProfileRepository profiles;
     private final CurrentActor actors;
-    private final ClaimImageStorage imageStorage;
+    private final ImageStorage imageStorage;
 
     @GetMapping("/me")
     @Operation(summary = "Lấy thông tin hồ sơ của người dùng hiện tại", description = "Truy xuất thông tin profile của tài khoản đang đăng nhập từ cơ sở dữ liệu dựa trên JWT token")
@@ -70,10 +70,10 @@ public class AuthController {
     }
 
     @PostMapping(value = "/avatar", consumes = "multipart/form-data")
-    @Operation(summary = "Tải lên ảnh đại diện cá nhân lên Cloudinary", description = "Upload file ảnh đại diện của người dùng lên Cloudinary và cập nhật đường dẫn vào hồ sơ người dùng")
+    @Operation(summary = "Tải lên ảnh đại diện cá nhân lên Supabase Storage", description = "Upload file ảnh đại diện của người dùng lên bucket avatars của Supabase Storage và cập nhật đường dẫn vào hồ sơ người dùng")
     public Map<String, String> uploadAvatar(@RequestPart("file") MultipartFile file) {
         var actor = actors.get();
-        var stored = imageStorage.upload(file);
+        var stored = imageStorage.uploadAvatar(actor.id(), file);
         String url = stored.secureUrl();
         var profileOpt = profiles.findById(actor.id());
         if (profileOpt.isPresent()) {

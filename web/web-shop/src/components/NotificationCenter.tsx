@@ -141,7 +141,8 @@ export function NotificationCenter() {
       <button
         ref={trigger}
         type="button"
-        className={`commerce-icon-action commerce-notification-btn ${open ? 'is-active' : ''}`}
+        className={`apple-nav-action-btn ab-notif-btn ${open ? 'is-active' : ''}`}
+        title="Thông báo"
         aria-label={`Thông báo hoạt động${unread ? `, ${unread} chưa đọc` : ''}`}
         aria-expanded={open}
         aria-haspopup="dialog"
@@ -150,15 +151,12 @@ export function NotificationCenter() {
           if (!open) resource.retry();
         }}
       >
-        <span className="commerce-notification-icon-wrap">
-          <Bell size={20} />
-          {unread > 0 && (
-            <small className="commerce-notification-badge">
-              {unread > 99 ? '99+' : unread}
-            </small>
-          )}
-        </span>
-        <span>Thông báo</span>
+        <Bell size={17} strokeWidth={1.5} aria-hidden="true" />
+        {unread > 0 && (
+          <span className="ab-notif-badge" aria-hidden="true">
+            {unread > 99 ? '99+' : unread}
+          </span>
+        )}
       </button>
 
       {open && (

@@ -1,5 +1,6 @@
 package com.smartbox.backend.service.commerce;
 
+import com.smartbox.backend.service.warranty.WarrantyPlanService;
 import com.smartbox.backend.dto.request.commerce.CalculatePricingRequest;
 import com.smartbox.backend.dto.response.catalog.ValidateCouponResponse;
 import com.smartbox.backend.dto.response.commerce.CalculatePricingResponse;
@@ -38,6 +39,7 @@ public class PricingService {
     private final CommerceRepository db;
     private final PromotionService promotionService;
     private final AcceptanceWarrantyService warranties;
+    private final WarrantyPlanService warrantyPlans;
 
     /**
      * Tính toán bảng chiết tính chi tiết cho danh sách sản phẩm và mã voucher.
@@ -101,12 +103,16 @@ public class PricingService {
             if (unitPrice.signum() < 0) {
                 unitPrice = BigDecimal.ZERO;
             }
+            var plan = warrantyPlans.require(itemReq.getWarrantyPlanId());
+            if (plan != null) {
+                unitPrice = unitPrice.add(plan.price());
+            }
 
             BigDecimal itemTotal = unitPrice.multiply(BigDecimal.valueOf(qty));
             subtotal = subtotal.add(itemTotal);
 
             int stock = ((Number) variant.get("stock_quantity")).intValue();
-            int warrantyMonths = warranties.months(variant);
+            int warrantyMonths = warranties.months(variant) + (plan == null ? 0 : plan.extraMonths());
 
             details.add(CalculatePricingResponse.PricingItemDetail.builder()
                     .variantId(variantId)
@@ -120,6 +126,9 @@ public class PricingService {
                     .size((String) variant.get("size"))
                     .capacityLiter(variant.get("capacity_liter") != null ? ((Number) variant.get("capacity_liter")).intValue() : null)
                     .warrantyMonths(warrantyMonths)
+                    .warrantyPlanId(plan == null ? null : plan.id())
+                    .warrantyPlanName(plan == null ? null : plan.name())
+                    .warrantyPlanPrice(plan == null ? BigDecimal.ZERO : plan.price())
                     .inStock(stock >= qty)
                     .build());
         }
