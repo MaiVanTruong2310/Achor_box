@@ -12,7 +12,8 @@ import { Link, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { ShopProvider } from './ShopContext';
 import { CatalogProvider } from './CatalogContext';
 import { Guard } from './components/ShopUi';
-import { Compare, Faq, ProductDetail, Technology } from './pages/ShopPublic';
+import { Faq, ProductDetail, Technology } from './pages/ShopPublic';
+import { ComparePage } from './pages/ComparePage';
 import { HowItWorksPage } from './pages/HowItWorksPage';
 import { Cart, Checkout, CheckoutRedirect, OrderDetail, OrderTicket, PaymentResult } from './pages/ShopCommerce';
 import { useMarketingMotion } from './components/MarketingMotion';
@@ -86,7 +87,7 @@ function Shell() {
   const bare = location.pathname === '/login' || location.pathname === '/register';
   return <><a className="skip" href="#main">Đi đến nội dung</a>
     {!bare && <StoreHeader />}<main id="main" tabIndex={-1}><Routes>
-      <Route path="/" element={<StoreHome />} /><Route path="/products" element={<ProductCatalogPage />} /><Route path="/products/:id" element={<ProductDetail />} /><Route path="/compare" element={<Compare />} /><Route path="/technology" element={<Technology />} /><Route path="/app" element={<AppStory />} /><Route path="/faq" element={<Faq />} />
+      <Route path="/" element={<StoreHome />} /><Route path="/products" element={<ProductCatalogPage />} /><Route path="/products/:id" element={<ProductDetail />} /><Route path="/compare" element={<ComparePage />} /><Route path="/technology" element={<Technology />} /><Route path="/app" element={<AppStory />} /><Route path="/faq" element={<Faq />} />
       <Route path="/order-tracking" element={<OrderTracking />} /><Route path="/tracking" element={<Navigate to="/order-tracking" replace />} />
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/about" element={<AboutPage />} />

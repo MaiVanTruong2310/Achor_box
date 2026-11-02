@@ -4,55 +4,6 @@
 .commerce-header .brand-icon{background:#1d1d1f;border:0;color:#fff;box-shadow:none;width:30px;height:30px;border-radius:8px;font-size:16px}
 .commerce-header .brand-dot{color:#0071e3}
 
-/* Real-time Search Container */
-.commerce-search-container{position:relative;flex:1;min-width:0;z-index:80}
-.commerce-search{position:relative;display:flex;align-items:stretch;width:100%;height:38px;border:1px solid rgba(0, 0, 0, 0.1);border-radius:9999px;background:#f5f5f7;transition:all .2s ease;overflow:hidden}
-.commerce-search:focus-within{border-color:var(--apple-blue,#0071e3);background:#ffffff;box-shadow:0 0 0 3px rgba(0, 113, 227, 0.15)}
-.commerce-search label{margin:0;min-width:0;display:flex;align-items:stretch}
-.commerce-search-category{flex:0 0 94px;border-right:1px solid rgba(0, 0, 0, 0.08)}
-.commerce-search select{height:100%;width:100%;border:0;border-radius:0;margin:0;background:transparent;padding:0 10px;font-size:12px;min-height:0;color:#1d1d1f;cursor:pointer}
-.commerce-search-query{flex:1;position:relative;display:flex;align-items:center}
-.commerce-search input{height:100%;width:100%;min-width:0;border:0;border-radius:0;margin:0;background:transparent;padding:0 30px 0 14px;font-size:13px;min-height:0;color:#1d1d1f}
-.commerce-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:20px;height:20px;border-radius:50%;border:0;background:#e5e5ea;color:#6e6e73;cursor:pointer;padding:0}
-.commerce-search-clear:hover{background:#d1d1d6;color:#1d1d1f}
-.commerce-search button[type="submit"]{border:0;border-radius:0;background:#1d1d1f;color:#fff;font-size:12px;font-weight:600;padding:0 16px;min-height:0;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
-.commerce-search button[type="submit"]:hover{background:#3a3a3c}
-.search-spin{animation:search-rotate 1s linear infinite}
-@keyframes search-rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-/* Real-time Search Dropdown List Results */
-.commerce-search-dropdown{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#ffffff;border:1px solid #cce0f5;border-radius:12px;box-shadow:0 16px 36px rgba(16,40,75,0.18);z-index:1000;overflow:hidden;display:flex;flex-direction:column;animation:search-dropdown-anim 0.16s ease-out}
-@keyframes search-dropdown-anim{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.commerce-search-dropdown-header{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:#f6faff;border-bottom:1px solid #e3eefb;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#456488}
-.search-result-count{font-weight:500;text-transform:none;color:#6b829e;font-size:11.5px}
-.commerce-search-dropdown-list{max-height:360px;overflow-y:auto;display:flex;flex-direction:column}
-.search-result-item{display:flex;align-items:center;gap:12px;padding:9px 14px;text-decoration:none;color:#172b46;border-bottom:1px solid #f1f5fa;transition:background .15s ease}
-.search-result-item:hover,.search-result-item.is-selected{background:#edf6ff}
-.search-result-thumb{width:42px;height:42px;border-radius:8px;border:1px solid #dce8f5;background:#f8fbff;display:grid;place-items:center;overflow:hidden;flex-shrink:0}
-.search-result-thumb img{width:100%;height:100%;object-fit:cover}
-.search-result-fallback-icon{color:#7d96b4}
-.search-result-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.search-result-category{font-size:10px;font-weight:650;color:#0866e8;text-transform:uppercase;letter-spacing:0.03em}
-.search-result-title{font-size:13px;font-weight:650;margin:0;color:#132742;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.search-highlight{background:#ffe380;color:#0d223f;font-weight:750;border-radius:2px;padding:0 2px}
-.search-result-sku{font-size:11px;color:#637791;font-family:ui-monospace,Consolas,monospace}
-.search-result-meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
-.search-result-price{font-size:12.5px;font-weight:700;color:#0866e8;white-space:nowrap}
-.search-result-price small{font-size:10.5px;font-weight:500;color:#536c89}
-.search-result-stock{font-size:9.5px;font-weight:650;padding:2px 6px;border-radius:999px;line-height:1}
-.search-result-stock.in-stock{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
-.search-result-stock.out-of-stock{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1}
-.search-result-arrow{color:#8da4be;flex-shrink:0;transition:transform .15s ease}
-.search-result-item:hover .search-result-arrow{transform:translateX(2px);color:#0866e8}
-.search-result-empty{padding:28px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;color:#64748b}
-.search-result-empty svg{color:#94a3b8;margin-bottom:2px}
-.search-result-empty p{margin:0;font-size:13px;color:#1e314b}
-.search-result-empty span{font-size:11.5px;color:#64748b}
-.search-view-all-btn{margin-top:6px;font-size:12px;min-height:30px;padding:5px 12px;border-radius:6px;background:#edf6ff;border:1px solid #c8e0fb;color:#0866e8;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
-.search-view-all-btn:hover{background:#0866e8;color:#ffffff}
-.commerce-search-dropdown-footer{padding:9px 14px;background:#f6faff;border-top:1px solid #e3eefb;text-align:center}
-.search-view-all-link{width:100%;border:0;background:transparent;color:#0866e8;font-size:12px;font-weight:650;cursor:pointer;padding:3px}
-.search-view-all-link:hover{text-decoration:underline;color:#0051c7}
 
 /* Header Actions */
 .commerce-header-actions{display:flex;align-items:center;gap:18px;flex:none}

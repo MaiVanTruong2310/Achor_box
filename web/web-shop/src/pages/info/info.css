@@ -1,5 +1,5 @@
 .ab-info { background: var(--ab-bg); }
-.ab-info .ab-section-alt { background: var(--ab-bg-alt); }
+.ab-info .ab-section-alt { background: transparent; }
 .ab-info .ab-center { text-align: center; }
 .ab-info .ab-center .ab-section-title, .ab-info .ab-center .ab-section-lead { margin-inline: auto; }
 

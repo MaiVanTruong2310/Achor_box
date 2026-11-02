@@ -1,8 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, X, Package, ChevronRight, Loader2, ArrowUpRight } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Loader2, Search, X } from 'lucide-react';
 import { useCatalog } from '../CatalogContext';
 import { money, type CatalogProduct } from '../api/shop';
+import { canBuy } from '../api/catalog';
+import { BoxThumb } from './BoxShowcase';
+import './box-showcase.css';
+import './store-search.css';
 
 interface StoreSearchProps {
   categories?: { id: string; name: string }[];
@@ -12,401 +16,184 @@ interface StoreSearchProps {
   onClose?: () => void;
 }
 
-// Helper to normalize Vietnamese accents for flexible search matching
-function normalizeText(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'd')
-    .toLowerCase()
-    .trim();
+const QUICK_LINKS = [
+  { label: 'Tất cả sản phẩm', to: '/products', keywords: 'san pham cua hang mua hop' },
+  { label: 'So sánh các phiên bản', to: '/compare', keywords: 'so sanh base pro solar max phien ban' },
+  { label: 'Theo dõi đơn hàng', to: '/order-tracking', keywords: 'theo doi don hang van chuyen giao' },
+  { label: 'Tra cứu bảo hành', to: '/warranty', keywords: 'bao hanh tra cuu serial sua chua' },
+  { label: 'Giao và lắp đặt', to: '/how-it-works', keywords: 'giao lap dat quy trinh cai dat' },
+  { label: 'Công nghệ bên trong', to: '/technology', keywords: 'cong nghe khoa can hx711 load cell esp32 wifi' },
+  { label: 'Câu hỏi thường gặp', to: '/faq', keywords: 'cau hoi faq ho tro' },
+  { label: 'Liên hệ tư vấn', to: '/contact', keywords: 'lien he tu van hotline dat truoc' },
+];
+
+const fold = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
+
+function Highlight({ text, query }: { text: string; query: string }) {
+  const needle = fold(query.trim());
+  const at = needle ? fold(text).indexOf(needle) : -1;
+  if (at < 0) return <>{text}</>;
+  return <>{text.slice(0, at)}<mark>{text.slice(at, at + needle.length)}</mark>{text.slice(at + needle.length)}</>;
 }
 
-function highlightMatch(text: string, query: string) {
-  if (!query.trim()) return <span>{text}</span>;
-  const normalizedQuery = normalizeText(query);
-  const normalizedText = normalizeText(text);
-  const index = normalizedText.indexOf(normalizedQuery);
-  if (index === -1) return <span>{text}</span>;
-
-  const start = text.slice(0, index);
-  const matched = text.slice(index, index + query.length);
-  const end = text.slice(index + query.length);
-  return (
-    <span>
-      {start}
-      <mark className="search-highlight">{matched}</mark>
-      {end}
-    </span>
-  );
+function minPrice(product: CatalogProduct) {
+  const prices = product.variants?.filter((v) => v.isActive && v.finalPrice != null && Number.isFinite(v.finalPrice)).map((v) => v.finalPrice!) || [];
+  return prices.length ? Math.min(...prices) : product.price ?? null;
 }
 
-function getProductMinPrice(product: CatalogProduct): number | null {
-  const values = product.variants
-    ?.filter(v => v.isActive && v.finalPrice != null && Number.isFinite(v.finalPrice))
-    .map(v => v.finalPrice!) || [];
-  if (values.length) return Math.min(...values);
-  if (product.price != null && Number.isFinite(product.price)) return product.price;
-  return null;
+function score(product: CatalogProduct, needle: string) {
+  const name = fold(product.name || '');
+  if (name.startsWith(needle)) return 0;
+  if (name.includes(needle)) return 1;
+  if (fold(product.sku || '').includes(needle) || product.variants?.some((v) => fold(`${v.sku} ${v.variantName}`).includes(needle))) return 2;
+  if (fold(`${product.categoryName || ''} ${product.description || ''}`).includes(needle)) return 3;
+  return -1;
 }
 
-export function StoreSearch({ categories: _categories = [], initialCategory = '', initialQuery = '', topOffset, onClose }: StoreSearchProps) {
+type Item = { key: string; to: string; node: ReactNode };
+
+export function StoreSearch({ initialCategory = '', initialQuery = '', topOffset, onClose }: StoreSearchProps) {
   const navigate = useNavigate();
   const catalog = useCatalog();
+  const listId = useId();
   const [query, setQuery] = useState(initialQuery);
-  const [category, setCategory] = useState(initialCategory);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [isSearching, setIsSearching] = useState(false);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(-1);
+  const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const needle = fold(query.trim());
 
-  // Sync with initial props & auto-focus input on mount
-  useEffect(() => {
-    setQuery(initialQuery);
-  }, [initialQuery]);
+  useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
 
   useEffect(() => {
-    setCategory(initialCategory);
-  }, [initialCategory]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, 60);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Handle click outside to close
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      if (
-        containerRef.current?.contains(target) ||
-        dropdownRef.current?.contains(target)
-      ) {
-        return;
-      }
+    const outside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (panelRef.current?.contains(target) || target.closest?.('.apple-nav-search-trigger')) return;
       onClose?.();
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    };
+    document.addEventListener('mousedown', outside);
+    return () => document.removeEventListener('mousedown', outside);
   }, [onClose]);
 
-  // Suggested keywords generated directly from actual store products & accessories
-  const suggestedKeywords = useMemo(() => {
-    const products = catalog.data || [];
-    const suggestions: { label: string; query: string; category?: string; badge?: string }[] = [];
+  const products = useMemo(() => {
+    const rows = (catalog.data || []).filter((p) => !initialCategory || p.categoryId === initialCategory || p.categorySlug === initialCategory);
+    if (!needle) return rows.slice(0, 3);
+    return rows.map((p) => ({ p, s: score(p, needle) })).filter((r) => r.s >= 0).sort((a, b) => a.s - b.s || a.p.name.localeCompare(b.p.name, 'vi')).map((r) => r.p);
+  }, [catalog.data, needle, initialCategory]);
 
-    // 1. Live products in catalog
-    products.forEach(p => {
-      if (p.name && !suggestions.some(s => s.query.toLowerCase() === p.name.toLowerCase())) {
-        suggestions.push({
-          label: p.name,
-          query: p.name,
-          badge: p.categoryName || 'Tủ thông minh',
-        });
-      }
-    });
+  const links = useMemo(() => (needle ? QUICK_LINKS.filter((l) => fold(`${l.label} ${l.keywords}`).includes(needle)) : QUICK_LINKS.slice(0, 5)), [needle]);
 
-    // 2. Core AnchorBox product lines and genuine store accessories
-    const storeProducts = [
-      { label: 'AnchorBox Pro', query: 'AnchorBox Pro', badge: 'Camera AI & Cảm biến tải trọng' },
-      { label: 'AnchorBox Base', query: 'AnchorBox Base', badge: 'Dung tích 45L / 75L' },
-      { label: 'AnchorBox Solar Max', query: 'AnchorBox Solar', badge: 'Tấm pin mặt trời tự sạc' },
-      { label: 'Chân đế ngoài trời AnchorMount', query: 'Chân đế ngoài trời', badge: 'Thép chống ẩm 15cm' },
-      { label: 'Camera an ninh mini AI 2K', query: 'Camera an ninh', badge: 'Gắn nóc khoang tủ 2K' },
-      { label: 'Bàn phím mã số cảm ứng & Thẻ từ NFC', query: 'Bàn phím mã số', badge: 'Phụ kiện mở khóa Pro' },
-      { label: 'Đèn UV-C khử trùng bưu kiện', query: 'UV-C', badge: 'Khử trùng tự động' },
-    ];
+  const productItems: Item[] = products.slice(0, 6).map((product) => {
+    const price = minPrice(product);
+    const inStock = product.variants?.some(canBuy);
+    const variants = product.variants?.filter((v) => v.isActive) || [];
+    const hit = needle && !fold(product.name).includes(needle) ? variants.find((v) => fold(`${v.sku} ${v.variantName}`).includes(needle)) : undefined;
+    const look = hit || variants[0];
+    return {
+      key: `p-${product.id}`,
+      to: `/products/${product.id}`,
+      node: (
+        <>
+          <span className="ab-search-thumb"><BoxThumb colorHex={look?.colorHex} capacity={look?.capacityLiter} /></span>
+          <span className="ab-search-info">
+            <span className="ab-search-name"><Highlight text={product.name} query={query} /></span>
+            {hit && <span className="ab-search-sub"><Highlight text={hit.variantName} query={query} /></span>}
+            <span className="ab-search-sub">{price != null ? `Từ ${money(price)}` : 'Liên hệ'} · <span className={inStock ? 'is-in' : ''}>{inStock ? 'Còn hàng' : 'Đặt trước'}</span></span>
+          </span>
+        </>
+      ),
+    };
+  });
+  const linkItems: Item[] = links.map((link) => ({
+    key: `l-${link.to}`,
+    to: link.to,
+    node: <><ArrowRight size={15} className="ab-search-arrow" aria-hidden /><span className="ab-search-name"><Highlight text={link.label} query={query} /></span></>,
+  }));
+  const items = [...productItems, ...linkItems];
 
-    storeProducts.forEach(item => {
-      if (!suggestions.some(s => s.query.toLowerCase() === item.query.toLowerCase()) && suggestions.length < 8) {
-        suggestions.push(item);
-      }
-    });
+  useEffect(() => setActive(-1), [needle]);
 
-    return suggestions.slice(0, 7);
-  }, [catalog.data]);
+  const go = (to: string) => { onClose?.(); navigate(to); };
 
-  // Filter products in real time based on query and category
-  const results = useMemo(() => {
-    const trimmed = query.trim();
-    if (!trimmed) return [];
-
-    const normQuery = normalizeText(trimmed);
-    const products = catalog.data || [];
-
-    return products.filter(product => {
-      // Category filter
-      if (category && product.categoryId !== category && product.categorySlug !== category) {
-        return false;
-      }
-
-      // Match name
-      if (normalizeText(product.name || '').includes(normQuery)) return true;
-
-      // Match SKU
-      if (normalizeText(product.sku || '').includes(normQuery)) return true;
-
-      // Match category name
-      if (normalizeText(product.categoryName || '').includes(normQuery)) return true;
-
-      // Match description
-      if (normalizeText(product.description || '').includes(normQuery)) return true;
-
-      // Match variants SKU or name
-      if (product.variants?.some(v => 
-        normalizeText(v.sku || '').includes(normQuery) || 
-        normalizeText(v.variantName || '').includes(normQuery)
-      )) {
-        return true;
-      }
-
-      return false;
-    });
-  }, [query, category, catalog.data]);
-
-  // Debounced search indicator
-  useEffect(() => {
-    if (query.trim()) {
-      setIsSearching(true);
-      const timer = setTimeout(() => setIsSearching(false), 120);
-      return () => clearTimeout(timer);
-    } else {
-      setIsSearching(false);
-    }
-  }, [query]);
-
-  function executeSearch(targetQuery: string, targetCategory: string) {
-    onClose?.();
-    const params = new URLSearchParams();
-    if (targetQuery.trim()) params.set('q', targetQuery.trim());
-    if (targetCategory) params.set('category', targetCategory);
-    navigate(`/products${params.size ? `?${params}` : ''}`);
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: FormEvent) {
     event.preventDefault();
-    if (activeIndex >= 0 && activeIndex < results.length) {
-      const selected = results[activeIndex];
-      onClose?.();
-      navigate(`/products/${selected.id}`);
-      return;
-    }
-    executeSearch(query, category);
+    if (active >= 0 && items[active]) return go(items[active].to);
+    const q = query.trim();
+    go(q ? `/products?q=${encodeURIComponent(q)}` : '/products');
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Escape') {
-      onClose?.();
-      return;
-    }
-
-    if (results.length === 0) return;
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setActiveIndex(prev => (prev < results.length - 1 ? prev + 1 : 0));
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setActiveIndex(prev => (prev > 0 ? prev - 1 : results.length - 1));
-    }
+  function onKey(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Escape') { event.preventDefault(); onClose?.(); return; }
+    if (!items.length || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) return;
+    event.preventDefault();
+    setActive((i) => (event.key === 'ArrowDown' ? (i + 1) % items.length : (i <= 0 ? items.length - 1 : i - 1)));
   }
 
-  function clearQuery() {
-    setQuery('');
-    setActiveIndex(-1);
-    inputRef.current?.focus();
-  }
+  const renderGroup = (title: string, group: Item[], offset: number) => group.length > 0 && (
+    <div className="ab-search-group" role="group" aria-label={title}>
+      <p className="ab-search-heading">{title}</p>
+      {group.map((item, i) => (
+        <a key={item.key} id={`${listId}-${offset + i}`} role="option" aria-selected={active === offset + i} href={item.to}
+          className={`ab-search-item ${active === offset + i ? 'is-active' : ''}`}
+          onMouseEnter={() => setActive(offset + i)}
+          onClick={(e) => { e.preventDefault(); go(item.to); }}>
+          {item.node}
+        </a>
+      ))}
+    </div>
+  );
+
+  const top = topOffset != null ? { top: `${topOffset}px` } : undefined;
+  const loading = catalog.loading && !catalog.data;
+  const empty = needle && !items.length && !loading;
 
   return (
     <>
-      {/* 1. Search Drawer Panel Placed Directly Below Header (zero layout shift) */}
-      <div
-        className="apple-search-subbar-drawer"
-        ref={containerRef}
-        style={topOffset != null ? { top: `${topOffset}px` } : undefined}
-      >
-        <div className="apple-search-subbar-header">
-          <div className="apple-search-subbar-pill">
-            {isSearching ? (
-              <Loader2 size={16} className="search-spin apple-search-subbar-icon" />
-            ) : (
-              <Search size={16} strokeWidth={1.8} className="apple-search-subbar-icon" />
-            )}
-
-            <form className="apple-search-subbar-form" onSubmit={handleSubmit} role="search">
-              <input
-                ref={inputRef}
-                type="search"
-                className="apple-search-subbar-input"
-                placeholder="Tìm kiếm tủ AnchorBox, phụ kiện, camera AI, mã SKU..."
-                value={query}
-                autoComplete="off"
-                onChange={event => {
-                  setQuery(event.target.value);
-                  setActiveIndex(-1);
-                }}
-                onKeyDown={handleKeyDown}
-                maxLength={150}
-              />
-            </form>
-
-            {query.trim().length > 0 && (
-              <button
-                type="button"
-                className="apple-search-subbar-clear-btn"
-                aria-label="Xóa từ khóa"
-                onClick={clearQuery}
-                title="Xóa từ khóa"
-              >
-                <X size={13} strokeWidth={2} />
+      <div className="ab-search" ref={panelRef} style={top}>
+        <div className="ab-search-inner">
+          <form className="ab-search-field" role="search" onSubmit={submit}>
+            {loading && needle ? <Loader2 size={22} className="ab-search-icon ab-search-spin" aria-hidden /> : <Search size={22} className="ab-search-icon" aria-hidden />}
+            <input
+              ref={inputRef}
+              type="search"
+              value={query}
+              maxLength={120}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="Tìm kiếm trên Anchor Box"
+              aria-label="Tìm kiếm sản phẩm và trang"
+              role="combobox"
+              aria-expanded
+              aria-controls={listId}
+              aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onKey}
+            />
+            {query && (
+              <button type="button" className="ab-search-clear" aria-label="Xóa từ khóa" onClick={() => { setQuery(''); inputRef.current?.focus(); }}>
+                <X size={14} strokeWidth={2.4} />
               </button>
             )}
+          </form>
 
-            <button
-              type="button"
-              className="apple-search-subbar-close-btn"
-              onClick={onClose}
-              aria-label="Đóng tìm kiếm"
-            >
-              Đóng
-            </button>
+          <div id={listId} role="listbox" aria-label="Gợi ý tìm kiếm" className="ab-search-results">
+            {renderGroup(needle ? `Sản phẩm (${products.length})` : 'Sản phẩm nổi bật', productItems, 0)}
+            {renderGroup(needle ? 'Trang liên quan' : 'Liên kết nhanh', linkItems, productItems.length)}
+            {loading && <p className="ab-search-state">Đang tải danh mục sản phẩm…</p>}
+            {catalog.error && !catalog.data && (
+              <p className="ab-search-state">Chưa tải được sản phẩm. <button type="button" onClick={catalog.retry}>Thử lại</button></p>
+            )}
+            {empty && (
+              <p className="ab-search-state">Không tìm thấy kết quả cho “{query.trim()}”. Thử tên phiên bản (Base, Pro, Solar) hoặc dung tích như “75 L”.</p>
+            )}
+            {needle && products.length > 6 && (
+              <button type="button" className="ab-search-all" onClick={() => go(`/products?q=${encodeURIComponent(query.trim())}`)}>
+                Xem tất cả {products.length} sản phẩm <ArrowRight size={14} aria-hidden />
+              </button>
+            )}
           </div>
         </div>
-
-        {/* 2. Drawer Body: Actual Store Product Chips OR Realtime Search Results */}
-        <div className="apple-search-subbar-body" ref={dropdownRef} role="region" aria-label="Kết quả gợi ý tìm kiếm">
-          {query.trim().length === 0 ? (
-            /* Quick Popular Suggestions based on actual AnchorBox store products */
-            <div className="apple-search-quick-panel">
-              <span className="apple-search-quick-eyebrow">GỢI Ý TÌM KIẾM THEO SẢN PHẨM ANCHORBOX</span>
-              <div className="apple-search-quick-chips">
-                {suggestedKeywords.map((item, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    className="apple-search-product-chip"
-                    onClick={() => executeSearch(item.query, '')}
-                  >
-                    <Search size={13} className="apple-chip-icon" />
-                    <span className="apple-chip-text">{item.label}</span>
-                    {item.badge && <span className="apple-chip-badge">({item.badge})</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            /* Realtime Matching Catalog Products */
-            <div className="commerce-search-dropdown-list">
-              <div className="apple-search-results-meta">
-                <span>Sản phẩm gợi ý</span>
-                <span>{results.length > 0 ? `Tìm thấy ${results.length} sản phẩm` : 'Không có kết quả'}</span>
-              </div>
-
-              {results.slice(0, 6).map((product, index) => {
-                const minPrice = getProductMinPrice(product);
-                const hasStock = product.variants?.some(v => v.isActive && v.stockQuantity > 0);
-                const imageSrc = product.images?.[0];
-                const isSelected = activeIndex === index;
-
-                return (
-                  <Link
-                    key={product.id}
-                    to={`/products/${product.id}`}
-                    className={`search-result-item ${isSelected ? 'is-selected' : ''}`}
-                    onClick={() => {
-                      onClose?.();
-                    }}
-                    onMouseEnter={() => setActiveIndex(index)}
-                  >
-                    <div className="search-result-thumb">
-                      {imageSrc ? (
-                        <img src={imageSrc} alt="" loading="lazy" />
-                      ) : (
-                        <Package size={22} className="search-result-fallback-icon" />
-                      )}
-                    </div>
-
-                    <div className="search-result-info">
-                      {product.categoryName && (
-                        <span className="search-result-category">{product.categoryName}</span>
-                      )}
-                      <h4 className="search-result-title">
-                        {highlightMatch(product.name, query)}
-                      </h4>
-                      {product.sku && (
-                        <span className="search-result-sku">SKU: {product.sku}</span>
-                      )}
-                    </div>
-
-                    <div className="search-result-meta">
-                      <span className="search-result-price">
-                        {minPrice != null ? (
-                          <>
-                            <small>Từ </small>
-                            {money(minPrice)}
-                          </>
-                        ) : (
-                          'Liên hệ'
-                        )}
-                      </span>
-                      <span className={`search-result-stock ${hasStock ? 'in-stock' : 'out-of-stock'}`}>
-                        {hasStock ? 'Còn hàng' : 'Hết hàng'}
-                      </span>
-                    </div>
-
-                    <ChevronRight size={16} className="search-result-arrow" />
-                  </Link>
-                );
-              })}
-
-              {results.length === 0 && (
-                <div className="search-result-empty">
-                  <Package size={32} strokeWidth={1.5} />
-                  <p>
-                    Không tìm thấy sản phẩm phù hợp với <strong>"{query}"</strong>
-                  </p>
-                  <span>Thử tìm kiếm với tên sản phẩm khác hoặc duyệt danh mục của chúng tôi.</span>
-                  <button
-                    type="button"
-                    className="search-view-all-btn"
-                    onClick={() => {
-                      onClose?.();
-                      executeSearch('', '');
-                    }}
-                  >
-                    Xem tất cả sản phẩm <ArrowUpRight size={15} />
-                  </button>
-                </div>
-              )}
-
-              {results.length > 0 && (
-                <div className="commerce-search-dropdown-footer">
-                  <button
-                    type="button"
-                    className="search-view-all-link"
-                    onClick={() => executeSearch(query, category)}
-                  >
-                    Xem tất cả {results.length} kết quả cho "{query}" →
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
-
-      {/* 3. Apple Full-screen Dimmed Backdrop (below header) */}
-      <div
-        className="apple-nav-backdrop-dim"
-        style={topOffset != null ? { top: `${topOffset}px` } : undefined}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="ab-search-dim" style={top} onClick={onClose} aria-hidden="true" />
     </>
   );
 }
