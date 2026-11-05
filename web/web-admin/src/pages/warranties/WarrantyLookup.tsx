@@ -15,7 +15,12 @@ import {
   RefreshCw,
   ArrowLeft,
   Calendar,
-  Box
+  Box,
+  Camera,
+  X,
+  Upload,
+  Flashlight,
+  Sparkles
 } from 'lucide-react';
 
 export const WarrantyLookupPage: React.FC = () => {
@@ -23,6 +28,165 @@ export const WarrantyLookupPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // QR / Barcode Scanner Modal State
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const [detectorSupported, setDetectorSupported] = useState(true);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const streamRef = React.useRef<MediaStream | null>(null);
+  const scanIntervalRef = React.useRef<any>(null);
+
+  // Stop camera stream safely
+  const stopCamera = React.useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  // Trigger search with given serial code
+  const executeLookup = React.useCallback(async (rawSerial: string) => {
+    let value = rawSerial.trim();
+    try {
+      const url = new URL(value);
+      value = url.searchParams.get('serial') || url.pathname.split('/').pop() || value;
+    } catch {
+      /* Plain serial string */
+    }
+
+    if (!value) return;
+    setSerial(value);
+    setLoading(true);
+    setData(null);
+    setError('');
+
+    try {
+      const res = await adminRequest<any>(`/warranties/lookup?${new URLSearchParams({ serial: value })}`);
+      setData(res);
+    } catch (e: any) {
+      setError(e.message || 'Không tìm thấy thông tin bảo hành.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Handle detected barcode/QR string
+  const handleDetectedCode = React.useCallback((detectedVal: string) => {
+    if (!detectedVal) return;
+    try {
+      if (navigator.vibrate) navigator.vibrate(80);
+    } catch {
+      // ignore
+    }
+    stopCamera();
+    setScannerOpen(false);
+    void executeLookup(detectedVal);
+  }, [stopCamera, executeLookup]);
+
+  // Open Scanner Modal and initialize Camera
+  const handleOpenScanner = async () => {
+    setScannerOpen(true);
+    setCameraError('');
+    setCameraLoading(true);
+
+    const hasDetector = typeof window !== 'undefined' && 'BarcodeDetector' in window;
+    setDetectorSupported(hasDetector);
+
+    try {
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      setCameraLoading(false);
+
+      // Start Barcode detection loop if supported
+      if (hasDetector) {
+        const formats = ['qr_code', 'code_128', 'code_39', 'ean_13', 'data_matrix'];
+        const detector = new (window as any).BarcodeDetector({ formats });
+
+        scanIntervalRef.current = setInterval(async () => {
+          if (!videoRef.current || videoRef.current.readyState < 2) return;
+          try {
+            const barcodes = await detector.detect(videoRef.current);
+            if (barcodes && barcodes.length > 0) {
+              const detected = barcodes[0].rawValue;
+              if (detected) {
+                handleDetectedCode(detected);
+              }
+            }
+          } catch {
+            // keep searching
+          }
+        }, 220);
+      }
+    } catch (err: any) {
+      setCameraLoading(false);
+      setCameraError(
+        err.name === 'NotAllowedError'
+          ? 'Trình duyệt chưa được cấp quyền truy cập Camera. Vui lòng cho phép quyền Camera trong cài đặt trình duyệt.'
+          : 'Không thể kết nối máy ảnh: ' + (err.message || 'Lỗi thiết bị')
+      );
+    }
+  };
+
+  // Close scanner and cleanup
+  const handleCloseScanner = () => {
+    stopCamera();
+    setScannerOpen(false);
+  };
+
+  // Handle Photo Upload fallback for scanning
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await img.decode();
+
+      if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+        const formats = ['qr_code', 'code_128', 'code_39', 'ean_13', 'data_matrix'];
+        const detector = new (window as any).BarcodeDetector({ formats });
+        const barcodes = await detector.detect(img);
+        if (barcodes && barcodes.length > 0) {
+          handleDetectedCode(barcodes[0].rawValue);
+          return;
+        }
+      }
+      // If detector not available or not found in file
+      setCameraError('Không tìm thấy mã Barcode hoặc QR trong ảnh vừa chọn. Vui lòng thử lại với ảnh rõ nét hơn.');
+    } catch (err: any) {
+      setCameraError('Lỗi đọc ảnh: ' + (err.message || 'Vui lòng thử lại'));
+    }
+  };
+
+  React.useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,23 +242,49 @@ export const WarrantyLookupPage: React.FC = () => {
           <label style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             Mã Serial thiết bị hoặc Đường dẫn quét QR
           </label>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <div className="fpt-search-input" style={{ maxWidth: 'none' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'stretch' }}>
+            <div className="fpt-search-input" style={{ maxWidth: 'none', flex: '1 1 320px' }}>
               <Search size={18} className="fpt-search-icon" />
               <input
                 required
                 maxLength={1000}
-                placeholder="Ví dụ: SB-PRO-2026-X8921 hoặc https://smartbox.vn/qr?serial=..."
+                placeholder="Ví dụ: SB-PRO-2026-X8921 hoặc dán link quét QR..."
                 value={serial}
                 onChange={e => setSerial(e.target.value)}
                 style={{ height: '44px', fontSize: '0.95rem' }}
               />
             </div>
+
+            <button
+              type="button"
+              onClick={handleOpenScanner}
+              style={{
+                height: '44px',
+                padding: '0 16px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                borderRadius: '12px',
+                border: '1.5px solid var(--apple-blue, #007aff)',
+                color: 'var(--apple-blue, #007aff)',
+                background: 'rgba(0, 122, 255, 0.08)',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease'
+              }}
+              title="Quét Barcode hoặc QR Code trên thiết bị bằng Camera"
+            >
+              <Camera size={18} />
+              <span>Quét Barcode / QR</span>
+            </button>
+
             <button
               type="submit"
               className="btn btn-primary"
               disabled={loading || !serial.trim()}
-              style={{ height: '44px', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{ height: '44px', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
             >
               {loading ? <RefreshCw size={16} className="spin" /> : <Search size={16} />}
               <span>{loading ? 'Đang tra cứu…' : 'Tra cứu ngay'}</span>
@@ -111,6 +301,162 @@ export const WarrantyLookupPage: React.FC = () => {
         <div className="card" style={{ padding: '14px 18px', background: 'var(--fpt-rose-soft)', borderColor: 'var(--fpt-rose)', color: 'var(--fpt-rose)', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <AlertCircle size={18} />
           <span>{error}</span>
+        </div>
+      )}
+
+      {/* Camera QR & Barcode Scanner Modal */}
+      {scannerOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.78)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={handleCloseScanner}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              background: '#1c1c1e',
+              color: '#ffffff',
+              borderRadius: '24px',
+              overflow: 'hidden',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Camera size={20} style={{ color: '#007aff' }} />
+                <span style={{ fontWeight: 700, fontSize: '15px' }}>Quét mã Barcode / QR tem thiết bị</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseScanner}
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  border: 'none',
+                  color: '#fff',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Video Viewport & Scanning Reticle */}
+            <div style={{ position: 'relative', width: '100%', height: '340px', background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+
+              {/* Scanning Reticle Box */}
+              {!cameraError && !cameraLoading && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: '240px',
+                    height: '240px',
+                    border: '2px solid rgba(0, 122, 255, 0.8)',
+                    borderRadius: '20px',
+                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {/* Laser line animation */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: 10,
+                      right: 10,
+                      height: '2px',
+                      background: 'linear-gradient(90deg, transparent, #007aff, transparent)',
+                      boxShadow: '0 0 10px #007aff',
+                      animation: 'scanLaser 2s ease-in-out infinite'
+                    }}
+                  />
+                  <style>{`
+                    @keyframes scanLaser {
+                      0% { top: 15%; opacity: 0.8; }
+                      50% { top: 85%; opacity: 1; }
+                      100% { top: 15%; opacity: 0.8; }
+                    }
+                  `}</style>
+                </div>
+              )}
+
+              {/* Loading Indicator */}
+              {cameraLoading && (
+                <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', color: '#fff' }}>
+                  <RefreshCw size={28} className="spin" style={{ color: '#007aff' }} />
+                  <span style={{ fontSize: '13px' }}>Đang khởi động camera...</span>
+                </div>
+              )}
+
+              {/* Camera Error Display */}
+              {cameraError && (
+                <div style={{ position: 'absolute', inset: '20px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '10px' }}>
+                  <AlertCircle size={32} style={{ color: '#ef4444' }} />
+                  <p style={{ margin: 0, fontSize: '13px', color: '#fca5a5' }}>{cameraError}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer with Instructions & Alternative Upload */}
+            <div style={{ padding: '16px 20px', background: '#242426', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', maxWidth: '300px' }}>
+                Hướng camera vào tem mã vạch Barcode (Code-128) hoặc mã QR dán trên tủ Anchor Box.
+              </div>
+
+              {/* Fallback upload button */}
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.12)',
+                  color: '#fff',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                <Upload size={14} />
+                <span>Tải ảnh tem</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoUpload}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+          </div>
         </div>
       )}
 

@@ -304,6 +304,15 @@ public class DeliveryInstallationService {
             "Bạn vừa được phân công phụ trách đơn hàng #" + orderCode + " vào lúc " + timeStr + " [job:" + id + "]", now());
         db.update("INSERT INTO public.push_outbox(id, notification_id, status, attempts, next_attempt_at) VALUES(?, ?, 'PENDING', 0, ?)",
             UUID.randomUUID(), notifId, now());
+        try {
+            var orderRow = db.list("SELECT user_id FROM public.orders WHERE id=?", orderId);
+            if (!orderRow.isEmpty() && orderRow.getFirst().get("user_id") != null) {
+                UUID customerId = uuid(orderRow.getFirst().get("user_id"));
+                db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,?,?,false,?)",
+                    UUID.randomUUID(), customerId, "DELIVERY_SCHEDULED", "Lên lịch giao & lắp đặt",
+                    "Đơn hàng #" + orderId + " đã được lên lịch giao và lắp đặt vào lúc " + timeStr + " [job:" + id + "]", now());
+            }
+        } catch (Exception ignored) {}
         return remember(key,hash,id,view(job));
     }
 
@@ -359,7 +368,10 @@ public class DeliveryInstallationService {
             }
             case "INSTALL" -> {
                 stage(job, "DELIVERED");
-                reason = text(((Installation) request).installationNote(), true);
+                reason = request instanceof Installation inst ? text(inst.installationNote(), false) : null;
+                if (reason == null || reason.isBlank()) {
+                    reason = "Hoàn tất thi công lắp ráp và đấu nối thiết bị";
+                }
                 if (!serialComplete(job)) {
                     throw new ConflictException("DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE");
                 }
@@ -392,6 +404,15 @@ public class DeliveryInstallationService {
                 reason = text(((Failure) request).failureReason(), true);
                 db.update("UPDATE public.delivery_installations SET status='FAILED', failure_reason=? WHERE id=?", reason, id);
                 outbox.enqueue("INSTALLATION_DELAYED", orderId, "installation-failed:" + id + ":" + job.get("attempt"), "Lịch giao/lắp cần điều chỉnh. Bộ phận hỗ trợ sẽ liên hệ.");
+                try {
+                    var orderRow = db.list("SELECT user_id FROM public.orders WHERE id=?", orderId);
+                    if (!orderRow.isEmpty() && orderRow.getFirst().get("user_id") != null) {
+                        UUID customerId = uuid(orderRow.getFirst().get("user_id"));
+                        db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,?,?,false,?)",
+                            UUID.randomUUID(), customerId, "DELIVERY_DELAYED", "Điều chỉnh tiến độ giao lắp",
+                            "Đơn hàng #" + orderId + " cần điều chỉnh tiến độ giao lắp: " + (reason != null ? reason : "Bộ phận hỗ trợ sẽ liên hệ sớm."), now());
+                    }
+                } catch (Exception ignored) {}
             }
             case "REASSIGN" -> {
                 stage(job, "ASSIGNED", "FAILED", "WAITING_PO_CONFIRMATION");
@@ -413,6 +434,15 @@ public class DeliveryInstallationService {
                     "Bạn vừa được phân công lại phụ trách đơn hàng #" + orderCode + " vào lúc " + timeStr + " [job:" + id + "]", now());
                 db.update("INSERT INTO public.push_outbox(id, notification_id, status, attempts, next_attempt_at) VALUES(?, ?, 'PENDING', 0, ?)",
                     UUID.randomUUID(), reNotifId, now());
+                try {
+                    var orderRow = db.list("SELECT user_id FROM public.orders WHERE id=?", orderId);
+                    if (!orderRow.isEmpty() && orderRow.getFirst().get("user_id") != null) {
+                        UUID customerId = uuid(orderRow.getFirst().get("user_id"));
+                        db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,?,?,false,?)",
+                            UUID.randomUUID(), customerId, "DELIVERY_RESCHEDULED", "Cập nhật lịch hẹn giao & lắp đặt",
+                            "Đơn hàng #" + orderId + " đã được hẹn lại vào lúc " + timeStr + " [job:" + id + "]", now());
+                    }
+                } catch (Exception ignored) {}
             }
             default -> throw new BadRequestException("INVALID_INSTALLATION_ACTION");
         }

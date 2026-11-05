@@ -29,6 +29,9 @@ import { adminRequest } from '../../services/adminRequest';
 import { ordersService } from '../../services/api';
 import { deliveryApi, Job, Checks } from '../../services/deliveryInstallation';
 import { toast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { SalesInvoiceModal } from '../../components/SalesInvoiceModal';
+import { Printer } from 'lucide-react';
 import './order-detail.css';
 
 interface OrderItem {
@@ -130,6 +133,8 @@ function formatEventLabel(source?: string, action?: string): { title: string; de
 export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const backListPath = profile?.role === 'product_manager' ? '/po/orders' : '/admin/orders';
 
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -145,6 +150,7 @@ export const OrderDetail: React.FC = () => {
 
   // Acceptance Proof Modal
   const [showProofModal, setShowProofModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [checksData, setChecksData] = useState<Checks | null>(null);
   const [loadingProof, setLoadingProof] = useState(false);
 
@@ -350,9 +356,9 @@ export const OrderDetail: React.FC = () => {
       {/* 1. Unified Top Header Strip */}
       <div className="order-header-strip">
         <div className="order-header-left">
-          <button type="button" className="btn-back-compact" onClick={() => navigate('/orders')}>
+          <button type="button" className="btn-back-compact" onClick={() => navigate(backListPath)}>
             <ArrowLeft size={13} />
-            <span>Đơn hàng</span>
+            <span>Quay lại</span>
           </button>
 
           <span className="order-code-text">
@@ -385,6 +391,51 @@ export const OrderDetail: React.FC = () => {
             <span>Tổng thanh toán:</span>
             <strong>{totalAmount.toLocaleString('vi-VN')} ₫</strong>
           </div>
+
+          <Link
+            to={profile?.role === 'product_manager' ? `/po/approvals/${order.id}` : `/orders/approvals/${order.id}`}
+            className="btn-back-compact"
+            title="Xem vé thẩm định PO của đơn hàng"
+            style={{
+              padding: '5px 12px',
+              borderRadius: 999,
+              textDecoration: 'none',
+              background: 'rgba(245, 158, 11, 0.08)',
+              color: '#d97706',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              fontWeight: 600,
+              fontSize: '12px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            <FileCheck size={13} />
+            <span>Vé thẩm định PO</span>
+          </Link>
+
+          <button
+            type="button"
+            className="btn-back-compact"
+            onClick={() => setShowInvoiceModal(true)}
+            title="Xem trước bản in A4 / Hóa đơn bán hàng"
+            style={{
+              padding: '5px 12px',
+              borderRadius: 999,
+              background: 'rgba(0, 122, 255, 0.08)',
+              border: '1px solid rgba(0, 122, 255, 0.25)',
+              color: 'var(--apple-blue, #007aff)',
+              fontWeight: 600,
+              fontSize: '12px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              cursor: 'pointer'
+            }}
+          >
+            <Printer size={13} />
+            <span>In A4 / Hóa đơn</span>
+          </button>
 
           <button
             type="button"
@@ -819,6 +870,13 @@ export const OrderDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {showInvoiceModal && (
+        <SalesInvoiceModal
+          orderId={order.id}
+          onClose={() => setShowInvoiceModal(false)}
+          documentTitle="Hóa đơn bán hàng & Nghiệm thu A4"
+        />
       )}
     </div>
   );

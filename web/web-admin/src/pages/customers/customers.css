@@ -75,6 +75,23 @@
   transform: translateY(-1px);
 }
 
+.customer-kpi-card.interactive {
+  cursor: pointer;
+  user-select: none;
+}
+
+.customer-kpi-card.interactive:hover {
+  border-color: var(--accent-primary, #3b82f6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.customer-kpi-card.active {
+  border-color: var(--accent-primary, #3b82f6);
+  background: color-mix(in srgb, var(--accent-primary, #3b82f6) 6%, var(--bg-surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, #3b82f6) 22%, transparent);
+}
+
 .customer-kpi-bubble {
   width: 42px;
   height: 42px;
@@ -342,9 +359,9 @@
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-glass);
-  border-radius: 16px;
+  border-radius: 20px;
   width: 100%;
-  max-width: 840px;
+  max-width: 1040px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 24px 60px -8px rgba(0, 0, 0, 0.6);
@@ -576,3 +593,366 @@
   justify-content: space-between;
   background: rgba(255, 255, 255, 0.02);
 }
+
+/* ==========================================================================
+   APPLE HIG CUSTOMER 360 - ORDERS, DEVICES & WARRANTIES CARDS
+   ========================================================================== */
+
+.c360-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.c360-order-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.c360-order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 122, 255, 0.35);
+}
+
+[data-theme="dark"] .c360-order-card {
+  background: rgba(28, 28, 30, 0.8);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .c360-order-card:hover {
+  border-color: rgba(10, 132, 255, 0.45);
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.6);
+}
+
+.c360-order-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.c360-order-id-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.c360-order-code {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", ui-monospace, Menlo, monospace;
+  font-size: 1rem;
+  font-weight: 750;
+  color: #007aff;
+  letter-spacing: 0.02em;
+}
+
+[data-theme="dark"] .c360-order-code {
+  color: #0a84ff;
+}
+
+.c360-status-pill {
+  font-size: 0.72rem;
+  font-weight: 650;
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.c360-status-pill.success {
+  background: rgba(52, 199, 89, 0.12);
+  color: #248a3d;
+  border: 1px solid rgba(52, 199, 89, 0.25);
+}
+
+[data-theme="dark"] .c360-status-pill.success {
+  background: rgba(48, 209, 88, 0.2);
+  color: #30d158;
+}
+
+.c360-status-pill.warning {
+  background: rgba(255, 149, 0, 0.12);
+  color: #c97200;
+  border: 1px solid rgba(255, 149, 0, 0.25);
+}
+
+[data-theme="dark"] .c360-status-pill.warning {
+  background: rgba(255, 159, 10, 0.2);
+  color: #ff9f0a;
+}
+
+.c360-status-pill.info {
+  background: rgba(0, 122, 255, 0.12);
+  color: #007aff;
+  border: 1px solid rgba(0, 122, 255, 0.25);
+}
+
+[data-theme="dark"] .c360-status-pill.info {
+  background: rgba(10, 132, 255, 0.2);
+  color: #0a84ff;
+}
+
+.c360-status-pill.danger {
+  background: rgba(255, 59, 48, 0.12);
+  color: #d70015;
+  border: 1px solid rgba(255, 59, 48, 0.25);
+}
+
+[data-theme="dark"] .c360-status-pill.danger {
+  background: rgba(255, 69, 58, 0.2);
+  color: #ff453a;
+}
+
+.c360-status-pill.neutral {
+  background: rgba(142, 142, 147, 0.12);
+  color: var(--text-secondary);
+  border: 1px solid rgba(142, 142, 147, 0.2);
+}
+
+.c360-payment-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.c360-payment-pill.paid {
+  background: rgba(52, 199, 89, 0.1);
+  color: #248a3d;
+}
+
+.c360-payment-pill.unpaid {
+  background: rgba(255, 149, 0, 0.1);
+  color: #c97200;
+}
+
+.c360-order-date {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.c360-order-card-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 20px;
+  padding: 12px 16px;
+  background: var(--bg-surface, rgba(0, 0, 0, 0.02));
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+}
+
+@media (max-width: 680px) {
+  .c360-order-card-body {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.c360-order-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.c360-order-label {
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--text-secondary, #6e6e73);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.c360-order-value-text {
+  font-size: 0.88rem;
+  font-weight: 550;
+  color: var(--text-primary);
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.c360-order-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.c360-order-total-group {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.c360-order-total-label {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.c360-order-total-val {
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.c360-view-order-btn {
+  background: rgba(0, 122, 255, 0.1) !important;
+  color: #007aff !important;
+  border: 1px solid rgba(0, 122, 255, 0.22) !important;
+  font-size: 0.76rem !important;
+  font-weight: 650 !important;
+  border-radius: 999px !important;
+  padding: 5px 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+  box-shadow: none !important;
+}
+
+.c360-view-order-btn:hover {
+  background: rgba(0, 122, 255, 0.18) !important;
+  border-color: rgba(0, 122, 255, 0.35) !important;
+  transform: translateY(-0.5px);
+}
+
+[data-theme="dark"] .c360-view-order-btn {
+  background: rgba(10, 132, 255, 0.18) !important;
+  color: #0a84ff !important;
+  border-color: rgba(10, 132, 255, 0.3) !important;
+}
+
+/* Devices Grid */
+.c360-devices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.c360-device-card {
+  background: var(--bg-surface, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.c360-device-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(52, 199, 89, 0.12);
+  color: #34c759;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.c360-device-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.c360-device-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.c360-device-serial {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.88rem;
+  font-weight: 750;
+  color: var(--text-primary);
+}
+
+.c360-device-model {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.c360-device-date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Warranties List */
+.c360-warranties-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.c360-warranty-card {
+  background: var(--bg-surface, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.c360-warranty-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.c360-warranty-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.c360-warranty-serial {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.c360-warranty-serial code {
+  color: #007aff;
+  font-weight: 600;
+}
+
+.c360-warranty-desc {
+  color: var(--text-primary);
+  font-weight: 550;
+}
+
+.c360-warranty-footer {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+

@@ -150,6 +150,31 @@ public class OutboxService {
         );
     }
 
+    @Transactional
+    public Map<String, Object> processPendingQueue() {
+        actors.get().requireRoles("super_admin", "product_manager");
+        var list = db.list("SELECT id, recipient, template FROM public.email_outbox WHERE status='PENDING' ORDER BY created_at ASC LIMIT 50");
+        int count = list.size();
+        CompletableFuture.runAsync(() -> {
+            for (var row : list) {
+                UUID id = (UUID) row.get("id");
+                try {
+                    if (outboxWorker != null) {
+                        outboxWorker.processSingle(id);
+                    }
+                } catch (Exception ex) {
+                    db.update("UPDATE public.email_outbox SET status='FAILED',attempts=attempts+1,last_error=? WHERE id=?",
+                            ex.getMessage() != null ? ex.getMessage().substring(0, Math.min(ex.getMessage().length(), 1000)) : "QUEUE_DISPATCH_FAILED", id);
+                }
+            }
+        });
+        return Map.of(
+                "queued", true,
+                "processedCount", count,
+                "message", "Đã kích hoạt xử lý gửi " + count + " email trong hàng đợi chờ xử lý."
+        );
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> getStatus(UUID id) {
         actors.get().requireRoles("super_admin", "product_manager");

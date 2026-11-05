@@ -24,7 +24,9 @@ import {
   Ticket,
   Edit3,
   Truck,
-  FolderTree
+  FolderTree,
+  FileCheck,
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -49,7 +51,9 @@ const icons = {
   permissions: KeyRound,
   email: Mail,
   reports: FileBarChart,
-  settings: Settings
+  settings: Settings,
+  approvals: FileCheck,
+  audit: ShieldAlert
 };
 
 export const WorkspaceTabs: React.FC<{ group: string }> = ({ group }) => {

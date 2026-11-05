@@ -184,6 +184,12 @@ public class OrderWorkflowService {
             }
         }
 
+        // Notify customer
+        try {
+            db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,?,?,false,?)",
+                    UUID.randomUUID(), user, "ORDER_CREATED", "Đặt hàng thành công", "Đơn hàng #" + id + " đã được tạo thành công và đang chờ duyệt.", now());
+        } catch (Exception ignored) {}
+
         history(id, null, "pending", user.toString(), "ORDER_CREATED");
         return view(id);
     }
@@ -425,6 +431,57 @@ public class OrderWorkflowService {
         }
         history(id, from, target, actor, reason);
         order.put("status", target);
+        notifyCustomerStatus(id, uuid(order.get("user_id")), target, reason);
+    }
+
+    private void notifyCustomerStatus(UUID orderId, UUID customerId, String target, String reason) {
+        if (customerId == null) return;
+        String title = null;
+        String body = null;
+        String type = "ORDER_STATUS_CHANGED";
+        switch (target) {
+            case "awaiting_payment" -> {
+                type = "ORDER_AWAITING_PAYMENT";
+                title = "Đơn hàng đã được duyệt";
+                body = "Đơn hàng #" + orderId + " đã được phê duyệt. Vui lòng thanh toán để đơn hàng được chuẩn bị và giao lắp.";
+            }
+            case "paid" -> {
+                type = "ORDER_PAID";
+                title = "Thanh toán thành công";
+                body = "Đơn hàng #" + orderId + " đã được thanh toán thành công.";
+            }
+            case "confirmed" -> {
+                type = "ORDER_CONFIRMED";
+                title = "Đơn hàng đã được xác nhận";
+                body = "Đơn hàng #" + orderId + " đã được xác nhận và đang chuẩn bị giao hàng.";
+            }
+            case "shipping", "delivering" -> {
+                type = "DELIVERY_IN_PROGRESS";
+                title = "Đơn hàng đang giao";
+                body = "Đơn hàng #" + orderId + " đang trên đường vận chuyển đến địa chỉ của bạn.";
+            }
+            case "delivered" -> {
+                type = "DELIVERY_ARRIVED";
+                title = "Thiết bị đã giao đến nơi";
+                body = "Đơn hàng #" + orderId + " đã giao đến địa chỉ. Kỹ thuật viên sẽ hoàn thiện lắp đặt thiết bị.";
+            }
+            case "completed" -> {
+                type = "ORDER_COMPLETED";
+                title = "Đơn hàng hoàn tất";
+                body = "Đơn hàng #" + orderId + " đã hoàn tất nghiệm thu và bàn giao thành công. Cảm ơn quý khách!";
+            }
+            case "cancelled" -> {
+                type = "ORDER_CANCELLED";
+                title = "Đơn hàng đã bị hủy";
+                body = "Đơn hàng #" + orderId + " đã bị hủy." + (reason != null && !reason.isBlank() ? " Lý do: " + reason : "");
+            }
+        }
+        if (title != null) {
+            try {
+                db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,?,?,false,?)",
+                        UUID.randomUUID(), customerId, type, title, body, now());
+            } catch (Exception ignored) {}
+        }
     }
 
     private void history(UUID id, String from, String to, String actor, String reason) {

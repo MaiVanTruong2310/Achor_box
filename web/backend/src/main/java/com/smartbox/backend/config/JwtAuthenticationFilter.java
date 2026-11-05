@@ -93,7 +93,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 "/api/auth/reset-password",
                 "/api/payments/callback",
                 "/api/pricing/calculate",
-                "/api/orders/lookup"
+                "/api/orders/lookup",
+                "/api/promotions/validate"
         ).contains(path))) {
             return true;
         }
@@ -229,6 +230,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Set<String> allowed;
         if (path.startsWith("/api/users") && (path.endsWith("/role") || path.equals("/api/users/staff"))) {
             allowed = Set.of("super_admin");
+        } else if (path.equals("/api/users/paged") && read) {
+            allowed = Set.of("super_admin", "product_manager");
         } else if (path.startsWith("/api/users")) {
             allowed = Set.of("super_admin");
         } else if (path.startsWith("/api/audit-logs")) {
@@ -237,8 +240,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             allowed = read || path.endsWith("/test-send") ? Set.of("super_admin", "product_manager") : Set.of("super_admin");
         } else if (path.startsWith("/api/products")) {
             allowed = Set.of("super_admin", "product_manager");
+        } else if (path.equals("/api/promotions/validate")) {
+            return;
         } else if (path.startsWith("/api/promotions")) {
-            allowed = Set.of("super_admin", "product_manager");
+            allowed = Set.of("super_admin");
         } else if (path.startsWith("/api/warranties")) {
             allowed = Set.of("super_admin", "product_manager", "technician");
         } else if ((path.equals("/api/orders") && read) || path.equals("/api/orders/paged")) {

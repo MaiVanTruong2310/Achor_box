@@ -35,4 +35,22 @@ public class ProductCategory implements Serializable {
 
     @Column(name = "manager_id")
     private UUID managerId;
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("managerName")
+    private String managerName;
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("managerEmail")
+    private String managerEmail;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("manager_name")
+    public String getManagerNameSnake() {
+        return managerName;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("manager_email")
+    public String getManagerEmailSnake() {
+        return managerEmail;
+    }
 }

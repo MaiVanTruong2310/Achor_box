@@ -196,7 +196,7 @@ export const PoAcceptanceReview: React.FC<PoAcceptanceReviewProps> = ({
         }}>
           <ShieldCheck size={20} color="#2563eb" style={{ flexShrink: 0 }} />
           <span>
-            <strong>Chế độ giám sát:</strong> Quản trị viên chỉ theo dõi biên bản và minh chứng nghiệm thu. Quyền phê duyệt hoàn tất đơn hàng hoặc yêu cầu kỹ thuật viên xử lý lại thuộc về <strong>Quản lý Sản phẩm (PO)</strong>.
+            <strong>Chế độ giám sát:</strong> Quản lý cửa hàng chỉ theo dõi biên bản và minh chứng nghiệm thu. Quyền phê duyệt hoàn tất đơn hàng hoặc yêu cầu nhân viên kỹ thuật xử lý lại thuộc về <strong>Nhân viên bán hàng</strong>.
           </span>
         </div>
       ) : isWaitingPo && (

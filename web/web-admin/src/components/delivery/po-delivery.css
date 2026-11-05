@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  box-shadow: none;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
   margin-top: 16px;
 }
 
@@ -87,8 +87,8 @@
 }
 
 .po-tech-card {
-  border: 2px solid var(--border-subtle);
-  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
   padding: 14px;
   background: var(--bg-card);
   cursor: pointer;
@@ -181,7 +181,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  box-shadow: none;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
   margin-top: 16px;
 }
 
@@ -213,17 +213,17 @@
 .po-proof-item {
   position: relative;
   aspect-ratio: 4 / 3;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
   transition: all 0.2s ease;
 }
 
 .po-proof-item:hover {
   transform: scale(1.03);
-  box-shadow: none;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
 }
 
 .po-proof-item img {
@@ -247,7 +247,7 @@
 .po-acceptance-notes {
   background: var(--bg-secondary, rgba(0, 0, 0, 0.02));
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -273,13 +273,13 @@
   font-size: 0.94rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
   transition: all 0.15s ease;
 }
 
 .po-btn-approve:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: none;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
 }
 
 .po-btn-rework {
@@ -322,8 +322,8 @@
 .po-lightbox-content img {
   max-width: 100%;
   max-height: 85vh;
-  border-radius: 12px;
-  box-shadow: none;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
 }
 
 .po-lightbox-close {

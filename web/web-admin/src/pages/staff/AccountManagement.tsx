@@ -315,11 +315,11 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
       case 'super_admin':
-        return <span className="fpt-badge fpt-badge-admin"><Shield size={12} /> Quản trị viên</span>;
+        return <span className="fpt-badge fpt-badge-admin"><Shield size={12} /> Quản lý cửa hàng</span>;
       case 'product_manager':
-        return <span className="fpt-badge fpt-badge-manager"><Box size={12} /> Quản lý Kho & SP</span>;
+        return <span className="fpt-badge fpt-badge-manager"><Box size={12} /> Nhân viên bán hàng & Sản phẩm (PO)</span>;
       case 'technician':
-        return <span className="fpt-badge fpt-badge-tech"><Wrench size={12} /> Kỹ thuật viên</span>;
+        return <span className="fpt-badge fpt-badge-tech"><Wrench size={12} /> Nhân viên kỹ thuật</span>;
       default:
         return <span className="fpt-badge fpt-badge-customer">{role}</span>;
     }
@@ -341,9 +341,9 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
   const getRoleScopeDescription = (role: UserRole) => {
     switch (role) {
       case 'super_admin':
-        return 'Toàn quyền cấu hình hệ thống, cấp tài khoản nhân viên, phân quyền và kiểm toán nhật ký.';
+        return 'Toàn quyền quản lý cửa hàng, cấu hình hệ thống, cấp tài khoản nhân viên, phân quyền và kiểm toán nhật ký.';
       case 'product_manager':
-        return 'Quản lý danh mục, biến thể sản phẩm, định mức tồn kho, quản lý đơn hàng, phê duyệt PO và xuất báo cáo doanh thu.';
+        return 'Tư vấn bán hàng, quản lý danh mục, biến thể sản phẩm, định mức tồn kho, quản lý đơn hàng và phê duyệt bán lẻ.';
       case 'technician':
         return 'Tiếp nhận phân công giao hàng & lắp đặt tủ Anchor Box, kiểm tra kỹ thuật tại hiện trường và xử lý yêu cầu bảo hành.';
       default:
@@ -362,7 +362,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
           <div>
             <h1 className="staff-header-title">Quản Lý Nhân Sự</h1>
             <p className="staff-header-desc">
-              Quản lý danh sách cán bộ nhân viên nội bộ, cấp tài khoản và phân quyền cho 3 vị trí nghiệp vụ (Admin, Quản lý Kho & SP, Kỹ thuật viên).
+              Quản lý danh sách cán bộ nhân viên nội bộ, cấp tài khoản và phân quyền cho 3 vị trí nghiệp vụ (Quản lý cửa hàng, Nhân viên bán hàng, Nhân viên kỹ thuật).
             </p>
           </div>
         </div>
@@ -402,7 +402,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
             <Shield size={20} />
           </div>
           <div className="staff-kpi-meta">
-            <span className="staff-kpi-label">Quản trị viên (Admin)</span>
+            <span className="staff-kpi-label">Quản lý cửa hàng</span>
             <div className="staff-kpi-value" style={{ color: '#8b5cf6' }}>{countAdmin}</div>
             <span className="staff-kpi-sub">Toàn quyền hệ thống & nhân sự</span>
           </div>
@@ -413,7 +413,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
             <Box size={20} />
           </div>
           <div className="staff-kpi-meta">
-            <span className="staff-kpi-label">Quản lý Kho & SP (PO)</span>
+            <span className="staff-kpi-label">Nhân viên bán hàng & Sản phẩm (PO)</span>
             <div className="staff-kpi-value" style={{ color: '#3b82f6' }}>{countManager}</div>
             <span className="staff-kpi-sub">Quản lý sản phẩm, đơn hàng & phê duyệt</span>
           </div>
@@ -424,7 +424,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
             <Wrench size={20} />
           </div>
           <div className="staff-kpi-meta">
-            <span className="staff-kpi-label">Kỹ thuật viên</span>
+            <span className="staff-kpi-label">Nhân viên kỹ thuật</span>
             <div className="staff-kpi-value" style={{ color: 'var(--accent-primary)' }}>{countTechnician}</div>
             <span className="staff-kpi-sub">Giao hàng, lắp đặt tủ & bảo hành</span>
           </div>
@@ -481,9 +481,9 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
             }}
           >
             <option value="all_staff">Tất cả nhân sự</option>
-            <option value="super_admin">Quản trị viên (Super Admin)</option>
-            <option value="product_manager">Quản lý Kho & SP (PO)</option>
-            <option value="technician">Kỹ thuật viên (Technician)</option>
+            <option value="super_admin">Quản lý cửa hàng</option>
+            <option value="product_manager">Nhân viên bán hàng & Sản phẩm (PO)</option>
+            <option value="technician">Nhân viên kỹ thuật</option>
           </select>
 
           <select
@@ -596,9 +596,9 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
                             })
                           }
                         >
-                          <option value="super_admin">Quản trị viên (Super Admin)</option>
-                          <option value="product_manager">Quản lý Kho & SP (PO)</option>
-                          <option value="technician">Kỹ thuật viên (Technician)</option>
+                          <option value="super_admin">Quản lý cửa hàng</option>
+                          <option value="product_manager">Nhân viên bán hàng & Sản phẩm (PO)</option>
+                          <option value="technician">Nhân viên kỹ thuật</option>
                         </select>
 
                         {hasPendingRole && (
@@ -761,21 +761,21 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
                     {[
                       {
                         role: 'super_admin' as const,
-                        label: 'Quản trị viên',
+                        label: 'Quản lý cửa hàng',
                         icon: <Shield size={18} />,
                         desc: 'Toàn quyền cấu hình, nhân sự và kiểm toán.',
                         color: 'var(--fpt-purple)',
                       },
                       {
                         role: 'product_manager' as const,
-                        label: 'Quản lý Kho & SP',
+                        label: 'Nhân viên bán hàng & Sản phẩm (PO)',
                         icon: <Box size={18} />,
-                        desc: 'Quản lý sản phẩm, tồn kho, đơn hàng và phê duyệt.',
+                        desc: 'Tư vấn bán hàng, quản lý sản phẩm, tồn kho và đơn hàng.',
                         color: 'var(--fpt-blue)',
                       },
                       {
                         role: 'technician' as const,
-                        label: 'Kỹ thuật viên',
+                        label: 'Nhân viên kỹ thuật',
                         icon: <Wrench size={18} />,
                         desc: 'Giao hàng, lắp đặt tủ và bảo hành tại hiện trường.',
                         color: 'var(--fpt-orange)',

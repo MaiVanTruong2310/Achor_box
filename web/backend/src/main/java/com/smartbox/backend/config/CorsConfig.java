@@ -25,7 +25,7 @@ public class CorsConfig {
         config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         config.setAllowedHeaders(Arrays.asList(
                 "Origin", "Content-Type", "Accept", "Authorization", "Idempotency-Key", "If-Match", "X-Trace-Id",
-                "X-Requested-With", "Access-Control-Request-Method", "Access-Control-Request-Headers"
+                "X-Requested-With", "Access-Control-Request-Method", "Access-Control-Request-Headers", "Cache-Control", "Pragma", "Expires"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setExposedHeaders(Arrays.asList("X-Trace-Id","Retry-After","Content-Disposition"));

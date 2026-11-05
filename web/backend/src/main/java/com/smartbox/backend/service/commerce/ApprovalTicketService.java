@@ -62,7 +62,7 @@ public class ApprovalTicketService {
                 throw new ConflictException("TICKET_ALREADY_REVIEWED");
             }
             if (!"super_admin".equals(actor.role())) {
-                var foreignItems = db.list("SELECT 1 FROM public.order_item_approvals WHERE ticket_id=? AND (manager_id IS NULL OR manager_id != ?)", ticketId, actor.id());
+                var foreignItems = db.list("SELECT 1 FROM public.order_item_approvals a JOIN public.products p ON p.id=a.product_id LEFT JOIN public.product_categories c ON c.id=p.category_id WHERE a.ticket_id=? AND (COALESCE(a.manager_id, c.manager_id, p.manager_id) IS NULL OR COALESCE(a.manager_id, c.manager_id, p.manager_id) != ?)", ticketId, actor.id());
                 if (!foreignItems.isEmpty()) {
                     throw new ConflictException("CANNOT_REVIEW_ENTIRE_TICKET: Đơn hàng chứa sản phẩm thuộc danh mục bạn không quản lý. Bạn chỉ được duyệt từng sản phẩm mình phụ trách.");
                 }
@@ -119,6 +119,16 @@ public class ApprovalTicketService {
                 default -> "TICKET_RESUBMITTED";
             };
             outbox.enqueue(template, orderId, "ticket:" + event, reason);
+            if ("RETURN".equals(action)) {
+                try {
+                    UUID customerId = uuid(order.get("user_id"));
+                    if (customerId != null) {
+                        db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,?,?,false,?)",
+                            UUID.randomUUID(), customerId, "ORDER_RETURNED", "Đơn hàng cần bổ sung thông tin",
+                            "Đơn hàng #" + orderId + " được yêu cầu bổ sung thông tin: " + (reason != null ? reason : "Vui lòng kiểm tra lại đơn hàng."), now());
+                    }
+                } catch (Exception ignored) {}
+            }
         }
         return detail(ticketId);
     }
@@ -135,12 +145,13 @@ public class ApprovalTicketService {
         if (!Set.of("pending", "customer_decision_pending").contains(order.get("status"))) {
             throw new ConflictException("TICKET_ORDER_NOT_IN_REVIEW: Đơn hàng không ở trạng thái chờ duyệt");
         }
-        var itemApproval = db.one("SELECT * FROM public.order_item_approvals WHERE ticket_id=? AND order_item_id=? FOR UPDATE", ticketId, orderItemId);
+        var itemApproval = db.one("SELECT a.*, COALESCE(a.manager_id, c.manager_id, p.manager_id) AS effective_manager_id FROM public.order_item_approvals a JOIN public.products p ON p.id=a.product_id LEFT JOIN public.product_categories c ON c.id=p.category_id WHERE a.ticket_id=? AND a.order_item_id=? FOR UPDATE", ticketId, orderItemId);
         if (itemApproval == null) {
             throw new BadRequestException("ITEM_APPROVAL_NOT_FOUND");
         }
         if (!"super_admin".equals(actor.role())) {
-            if (itemApproval.get("manager_id") == null || !actor.id().equals(uuid(itemApproval.get("manager_id")))) {
+            UUID effManager = uuid(itemApproval.get("effective_manager_id"));
+            if (effManager == null || !actor.id().equals(effManager)) {
                 throw new ConflictException("PO_NOT_AUTHORIZED_FOR_ITEM: Bạn không phải PO quản lý sản phẩm này");
             }
         }
@@ -280,7 +291,7 @@ public class ApprovalTicketService {
             return t != null ? t : now();
         }));
         result.put("history", history);
-        result.put("itemApprovals", db.list("SELECT a.id, a.ticket_id AS \"ticketId\", a.order_id AS \"orderId\", a.order_item_id AS \"orderItemId\", a.product_id AS \"productId\", a.manager_id AS \"managerId\", a.status, a.reason, a.reviewed_by AS \"reviewedBy\", a.reviewed_at AS \"reviewedAt\", a.created_at AS \"createdAt\", p.name AS \"productName\", v.sku, v.variant_name AS \"variantName\", i.quantity, i.unit_price AS price, (i.quantity * i.unit_price) AS subtotal FROM public.order_item_approvals a JOIN public.products p ON p.id=a.product_id JOIN public.order_items i ON i.id=a.order_item_id JOIN public.product_variants v ON v.id=i.variant_id WHERE a.ticket_id=? ORDER BY a.created_at, a.id", id));
+        result.put("itemApprovals", db.list("SELECT a.id, a.ticket_id AS \"ticketId\", a.order_id AS \"orderId\", a.order_item_id AS \"orderItemId\", a.product_id AS \"productId\", COALESCE(a.manager_id, c.manager_id, p.manager_id) AS \"managerId\", c.name AS \"categoryName\", a.status, a.reason, a.reviewed_by AS \"reviewedBy\", a.reviewed_at AS \"reviewedAt\", a.created_at AS \"createdAt\", p.name AS \"productName\", v.sku, v.variant_name AS \"variantName\", i.quantity, i.unit_price AS price, (i.quantity * i.unit_price) AS subtotal FROM public.order_item_approvals a JOIN public.products p ON p.id=a.product_id LEFT JOIN public.product_categories c ON c.id=p.category_id JOIN public.order_items i ON i.id=a.order_item_id JOIN public.product_variants v ON v.id=i.variant_id WHERE a.ticket_id=? ORDER BY a.created_at, a.id", id));
         var payments = db.list("SELECT id, provider, status, amount, transaction_ref, paid_at FROM public.payments WHERE order_id=? ORDER BY created_at DESC", ticket.get("order_id"));
         result.put("payments", payments);
         return result;

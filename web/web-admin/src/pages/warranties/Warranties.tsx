@@ -272,7 +272,11 @@ export const Warranties: React.FC = () => {
   const countInProgress = counts.in_progress;
   const countResolved = counts.resolved;
   const countRejected = counts.rejected;
-  const lookupPath = profile?.role === 'product_manager' ? '/po/warranties/lookup' : '/admin/warranties/lookup';
+  const lookupPath = profile?.role === 'product_manager'
+    ? '/po/warranties/lookup'
+    : profile?.role === 'technician'
+    ? '/technician/lookup'
+    : '/admin/warranties/lookup';
 
   return (
     <div className="warranty-page-container">

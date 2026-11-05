@@ -2,9 +2,9 @@ package com.smartbox.backend.service.storage;
 
 public enum ImageBucket {
     AVATARS("avatars"),
-    PRODUCTS("product-images"),
-    WARRANTY_CLAIMS("warranty-claims"),
-    DELIVERY_PROOFS("delivery-proofs");
+    PRODUCTS("brand"),
+    WARRANTY_CLAIMS("warranty_nghiemthu"),
+    DELIVERY_PROOFS("warranty_nghiemthu");
 
     private final String id;
 

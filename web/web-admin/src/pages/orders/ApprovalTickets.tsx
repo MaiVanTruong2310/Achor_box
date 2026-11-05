@@ -337,7 +337,7 @@ export const ApprovalTickets: React.FC = () => {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => navigate(isPO ? '/po/products' : '/orders')}
+            onClick={() => navigate(isPO ? '/po/products' : '/admin/products')}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '10px' }}
           >
             <ShoppingBag size={15} />
@@ -372,7 +372,7 @@ export const ApprovalTickets: React.FC = () => {
         }}>
           <ShieldCheck size={20} color="#2563eb" style={{ flexShrink: 0 }} />
           <span>
-            <strong>Chế độ Giám sát Vận hành (Audit Mode):</strong> Thẩm quyền thẩm định đơn hàng và phê duyệt PO thuộc trách nhiệm chuyên trách của <strong>Quản lý Sản phẩm & Kho (PO)</strong>. Quản trị viên theo dõi nhật ký và tiến trình để phục vụ kiểm toán và báo cáo, không trực tiếp duyệt PO.
+            <strong>Chế độ Giám sát Vận hành (Audit Mode):</strong> Thẩm quyền thẩm định đơn hàng và phê duyệt thuộc trách nhiệm chuyên trách của <strong>Nhân viên bán hàng</strong>. Quản lý cửa hàng theo dõi nhật ký và tiến trình để phục vụ kiểm toán và báo cáo, không trực tiếp duyệt đơn.
           </span>
         </div>
       )}

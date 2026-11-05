@@ -260,6 +260,12 @@ public class CommerceController {
         return ResponseEntity.ok(outbox.getStatus(id));
     }
 
+    @PostMapping("/api/admin/emails/process-queue")
+    @Operation(summary = "Kích hoạt xử lý toàn bộ hàng đợi email chờ gửi", description = "Duyệt qua tất cả các email có trạng thái PENDING và kích hoạt gửi ngay trong nền")
+    public ResponseEntity<Map<String, Object>> processPendingQueue() {
+        return ResponseEntity.ok(outbox.processPendingQueue());
+    }
+
     @PostMapping("/api/admin/emails/test-send")
     @Operation(summary = "Gửi email kiểm thử trực tiếp qua SMTP trong nền và lưu nhật ký giao dịch", description = "Gửi email kiểm tra cấu hình SMTP trực tiếp trong nền và ghi nhật ký giao dịch thử nghiệm")
     public ResponseEntity<Map<String, Object>> sendTestEmail(

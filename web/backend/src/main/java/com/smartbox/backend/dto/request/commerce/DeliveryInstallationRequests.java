@@ -48,11 +48,14 @@ public final class DeliveryInstallationRequests {
 
     @Schema(description = "Ghi chú nghiệm thu lắp đặt")
     public record Installation(
-            @NotBlank
             @Size(max = 2000)
             @Schema(description = "Chi tiết nghiệm thu lắp ráp và đấu nối")
             String installationNote
-    ) {}
+    ) {
+        public Installation() {
+            this(null);
+        }
+    }
 
     @Schema(description = "Liên kết mã Serial thiết bị với dòng đơn hàng")
     public record Serial(

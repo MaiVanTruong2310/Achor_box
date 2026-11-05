@@ -13,7 +13,7 @@ import {
   ChevronRight,
   BellOff,
 } from 'lucide-react';
-import { request } from '../api/shop';
+import { request, session } from '../api/shop';
 import { useResource } from './ShopUi';
 import {
   groupActivities,
@@ -43,6 +43,7 @@ export function NotificationCenter() {
 
   const resource = useResource(
     async signal => {
+      if (!session()?.accessToken) return [];
       const result: ActivityNotification[] = [];
       for (let page = 0; ; page++) {
         const batch = await request<ActivityNotification[]>(
@@ -53,7 +54,7 @@ export function NotificationCenter() {
         if (batch.length < 100) return result;
       }
     },
-    String(version)
+    `${version}-${session()?.userId || 'guest'}`
   );
 
   const groups = groupActivities(resource.data || []);
@@ -81,11 +82,15 @@ export function NotificationCenter() {
     const refresh = () => {
       if (document.visibilityState === 'visible') setVersion(v => v + 1);
     };
-    const timer = setInterval(refresh, 60000);
+    const timer = setInterval(refresh, 25000);
     window.addEventListener('focus', refresh);
+    window.addEventListener('smartbox-session', refresh);
+    window.addEventListener('smartbox-notifications-refresh', refresh);
     return () => {
       clearInterval(timer);
       window.removeEventListener('focus', refresh);
+      window.removeEventListener('smartbox-session', refresh);
+      window.removeEventListener('smartbox-notifications-refresh', refresh);
     };
   }, []);
 
@@ -250,7 +255,35 @@ export function NotificationCenter() {
               </div>
             )}
 
-            {!resource.loading && !resource.error && !visible.length && (
+            {!session()?.accessToken && (
+              <div className="commerce-notif-empty">
+                <div className="empty-icon-wrap">
+                  <BellOff size={26} />
+                </div>
+                <h4>Bạn chưa đăng nhập</h4>
+                <p>Vui lòng đăng nhập để theo dõi trạng thái đơn hàng và lịch giao lắp.</p>
+                <Link
+                  to="/login"
+                  style={{
+                    marginTop: 12,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '6px 16px',
+                    borderRadius: 999,
+                    background: '#0071e3',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    textDecoration: 'none'
+                  }}
+                  onClick={() => setOpen(false)}
+                >
+                  Đăng nhập ngay
+                </Link>
+              </div>
+            )}
+
+            {!!session()?.accessToken && !resource.loading && !resource.error && !visible.length && (
               <div className="commerce-notif-empty">
                 <div className="empty-icon-wrap">
                   <BellOff size={26} />

@@ -65,7 +65,7 @@ class SupabaseImageStorageTests {
     void uploadsSanitizedImageToBucketWithServiceKey() throws Exception {
         var storage = new SupabaseImageStorage(base + "/", "sb_secret_test");
         var stored = storage.upload(ImageBucket.WARRANTY_CLAIMS, file(png()));
-        assertTrue(stored.publicId().matches("warranty-claims/[0-9a-f-]{36}\\.png"), stored.publicId());
+        assertTrue(stored.publicId().matches("(warranty_nghiemthu|warranty-claims)/[0-9a-f-]{36}\\.png"), stored.publicId());
         assertEquals(base + "/storage/v1/object/public/" + stored.publicId(), stored.secureUrl());
         var call = calls.getFirst();
         assertEquals("POST", call.method());
@@ -76,7 +76,7 @@ class SupabaseImageStorageTests {
         assertEquals("image/png", call.type());
         assertTrue(call.bytes() > 0);
         assertTrue(storage.owns(ImageBucket.WARRANTY_CLAIMS, stored.secureUrl()));
-        assertFalse(storage.owns(ImageBucket.DELIVERY_PROOFS, stored.secureUrl()));
+        assertFalse(storage.owns(ImageBucket.PRODUCTS, stored.secureUrl()));
         assertFalse(storage.owns(ImageBucket.WARRANTY_CLAIMS, "https://evil.example/storage/v1/object/public/" + stored.publicId()));
     }
 

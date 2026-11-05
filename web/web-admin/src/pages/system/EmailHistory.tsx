@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { adminRequest } from '../../services/adminRequest';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../contexts/ToastContext';
@@ -57,6 +57,27 @@ export const EmailHistoryPage: React.FC = () => {
   const [revision, setRevision] = useState<number>(0);
   const [message, setMessage] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [processingQueue, setProcessingQueue] = useState<boolean>(false);
+
+  const handleProcessQueue = async () => {
+    if (processingQueue) return;
+    setProcessingQueue(true);
+    try {
+      const res = await adminRequest<{ queued: boolean; processedCount: number; message: string }>(
+        '/admin/emails/process-queue',
+        { method: 'POST' }
+      );
+      toast.success(res?.message || 'Đã kích hoạt gửi toàn bộ hàng đợi email trong nền!', 'Hàng đợi Email');
+      setTimeout(() => {
+        setRevision(r => r + 1);
+        setProcessingQueue(false);
+      }, 1500);
+    } catch (err: any) {
+      toast.error(err?.message || 'Không thể kích hoạt gửi hàng đợi.', 'Lỗi');
+      setProcessingQueue(false);
+    }
+  };
+
 
   // Test Email Modal State
   const { profile } = useAuth();
@@ -66,37 +87,50 @@ export const EmailHistoryPage: React.FC = () => {
   const [testSending, setTestSending] = useState<boolean>(false);
   const [testFeedback, setTestFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
-  // Background poller for email status (checks status every 1.5s up to 14 times)
+  // Ref to hold active poll intervals for cleanup on unmount
+  const activePollersRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    return () => {
+      activePollersRef.current.forEach(id => window.clearInterval(id));
+      activePollersRef.current.clear();
+    };
+  }, []);
+
+  // Background poller for email status (checks status every 1.5s up to 10 times)
   const trackEmailDelivery = (emailId: string, recipientEmail: string, actionLabel: string = 'Gửi email') => {
     let attempts = 0;
-    const maxAttempts = 14;
+    const maxAttempts = 10;
     const interval = window.setInterval(async () => {
       attempts++;
       try {
         const res = await adminRequest<{ id: string; status: string; lastError?: string; sentAt?: string }>(
-          `/admin/emails/${emailId}/status`,
-          { headers: { 'Cache-Control': 'no-cache' } }
+          `/admin/emails/${emailId}/status?_t=${Date.now()}`
         );
 
         if (res && res.status === 'SENT') {
           window.clearInterval(interval);
+          activePollersRef.current.delete(interval);
           toast.success(`Đã gửi email thành công tới ${recipientEmail}!`, `${actionLabel} thành công`);
           setRevision(r => r + 1);
         } else if (res && res.status === 'FAILED') {
           window.clearInterval(interval);
+          activePollersRef.current.delete(interval);
           toast.error(`Gửi email tới ${recipientEmail} thất bại: ${res.lastError || 'Lỗi máy chủ gửi mail'}`, `${actionLabel} thất bại`);
           setRevision(r => r + 1);
         } else if (attempts >= maxAttempts) {
           window.clearInterval(interval);
+          activePollersRef.current.delete(interval);
           toast.warning(`Email gửi tới ${recipientEmail} đang nằm trong hàng đợi hệ thống.`, 'Đang xử lý');
           setRevision(r => r + 1);
         }
       } catch {
         if (attempts >= maxAttempts) {
           window.clearInterval(interval);
+          activePollersRef.current.delete(interval);
         }
       }
     }, 1500);
+    activePollersRef.current.add(interval);
   };
 
   const handleSendTestEmail = async (e?: React.FormEvent) => {
@@ -207,6 +241,18 @@ export const EmailHistoryPage: React.FC = () => {
 
   const handleRetry = async (mail: MailRecord) => {
     try {
+      if ((mail.status || '').toUpperCase() === 'PENDING') {
+        toast.info(`Đang kích hoạt gửi email tới ${mail.recipient} trong nền...`, 'Gửi email');
+        if (selectedMail && selectedMail.id === mail.id) {
+          setSelectedMail(null);
+        }
+        await adminRequest<{ queued: boolean }>('/admin/emails/process-queue', { method: 'POST' });
+        setMessage(`Đã kích hoạt gửi email tới ${mail.recipient}.`);
+        setRevision(r => r + 1);
+        trackEmailDelivery(mail.id, mail.recipient, 'Gửi email');
+        return;
+      }
+
       toast.info(`Đang xử lý gửi lại email tới ${mail.recipient} trong nền...`, 'Gửi lại email');
       if (selectedMail && selectedMail.id === mail.id) {
         setSelectedMail(null);
@@ -288,6 +334,28 @@ export const EmailHistoryPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {counts.PENDING > 0 && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={loading || processingQueue}
+              onClick={handleProcessQueue}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                borderColor: '#d97706',
+                color: '#fff',
+                fontWeight: 700
+              }}
+              title="Kích hoạt xử lý và gửi toàn bộ các email đang trong hàng đợi ngay lập tức"
+            >
+              <Send size={15} className={processingQueue ? 'spin' : ''} />
+              <span>{processingQueue ? 'Đang gửi...' : `Gửi toàn bộ hàng đợi (${counts.PENDING})`}</span>
+            </button>
+          )}
+
           <button
             type="button"
             className="btn btn-primary"
@@ -448,6 +516,55 @@ export const EmailHistoryPage: React.FC = () => {
       </div>
 
       {/* 5. Table */}
+      {status === 'PENDING' && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.12) 100%)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          borderRadius: '14px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Clock size={20} />
+            </div>
+            <div>
+              <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)', display: 'block', marginBottom: '2px' }}>
+                Hàng đợi đang có {counts.PENDING || rows.length} email chờ tiến trình gửi
+              </strong>
+              <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                Các email này đang trong hàng đợi Outbox. Bạn có thể kích hoạt gửi tức thì tới khách hàng mà không cần chờ tiến trình định kỳ.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={loading || processingQueue || (counts.PENDING === 0 && rows.length === 0)}
+            onClick={handleProcessQueue}
+            style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              borderColor: '#d97706',
+              color: '#fff',
+              fontWeight: 700,
+              padding: '8px 18px',
+              borderRadius: '9999px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <Send size={15} className={processingQueue ? 'spin' : ''} />
+            <span>{processingQueue ? 'Đang gửi...' : `Kích hoạt gửi toàn bộ hàng đợi ngay (${counts.PENDING || rows.length})`}</span>
+          </button>
+        </div>
+      )}
+
       <div className="email-table-card">
         {loading ? (
           <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -544,15 +661,30 @@ export const EmailHistoryPage: React.FC = () => {
                         <span>Chi tiết</span>
                       </button>
 
-                      {mail.status === 'FAILED' && (
+                      {(mail.status || '').toUpperCase() === 'FAILED' && (
                         <button
                           type="button"
                           className="email-btn primary"
                           disabled={busy === mail.id}
                           onClick={() => handleRetry(mail)}
+                          title="Gửi lại email thất bại này"
                         >
                           <RotateCcw size={12} className={busy === mail.id ? 'spin' : ''} />
                           <span>{busy === mail.id ? 'Đang gửi…' : 'Gửi lại'}</span>
+                        </button>
+                      )}
+
+                      {(mail.status || '').toUpperCase() === 'PENDING' && (
+                        <button
+                          type="button"
+                          className="email-btn primary"
+                          disabled={busy === mail.id}
+                          onClick={() => handleRetry(mail)}
+                          style={{ background: '#f59e0b', borderColor: '#d97706', color: '#fff' }}
+                          title="Kích hoạt gửi email này ngay lập tức"
+                        >
+                          <Send size={12} className={busy === mail.id ? 'spin' : ''} />
+                          <span>{busy === mail.id ? 'Đang gửi…' : 'Gửi ngay'}</span>
                         </button>
                       )}
                     </div>
@@ -760,7 +892,20 @@ export const EmailHistoryPage: React.FC = () => {
                 Đóng
               </button>
 
-              {selectedMail.status === 'FAILED' && (
+              {(selectedMail.status || '').toUpperCase() === 'PENDING' && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={busy === selectedMail.id}
+                  onClick={() => handleRetry(selectedMail)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f59e0b', borderColor: '#d97706', color: '#fff' }}
+                >
+                  <Send size={14} className={busy === selectedMail.id ? 'spin' : ''} />
+                  <span>{busy === selectedMail.id ? 'Đang gửi...' : 'Kích hoạt gửi email này ngay'}</span>
+                </button>
+              )}
+
+              {(selectedMail.status || '').toUpperCase() === 'FAILED' && (
                 <button
                   type="button"
                   className="btn btn-primary"

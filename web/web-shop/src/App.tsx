@@ -108,8 +108,8 @@ function Shell() {
       <Route path="/account/devices/:id" element={<Guard><CustomerDevices /></Guard>} />
       <Route path="/account/notifications" element={<Guard><Navigate to="/account?notifications=open" replace /></Guard>} />
       <Route path="/warranty" element={<Warranty />} />
-      <Route path="/account/warranty" element={<Navigate to="/warranty" replace />} />
-      <Route path="/account/warranties" element={<Navigate to="/warranty" replace />} />
+      <Route path="/account/warranty" element={<Guard><AccountHome defaultTab="warranty" /></Guard>} />
+      <Route path="/account/warranties" element={<Guard><AccountHome defaultTab="warranty" /></Guard>} />
       <Route path="/account/warranty/claims/new" element={<Guard><Warranty claim /></Guard>} />
       <Route path="/account/addresses" element={<Guard><AccountHome defaultTab="addresses" /></Guard>} />
       <Route path="/demo-payment/:paymentId" element={<Guard><DemoPayment /></Guard>} />

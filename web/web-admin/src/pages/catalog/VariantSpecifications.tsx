@@ -301,17 +301,17 @@ export const VariantSpecificationsPage: React.FC = () => {
             </h1>
             {isSuperAdmin && (
               <span className="fpt-badge fpt-badge-purple" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                🛡️ Toàn quyền Admin
+                🛡️ Quản lý cửa hàng
               </span>
             )}
             {isProductManager && (
               <span className="fpt-badge fpt-badge-success" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                📦 Quản lý Kho & SP
+                📦 Nhân viên bán hàng & Sản phẩm (PO)
               </span>
             )}
             {isTechnician && (
               <span className="fpt-badge fpt-badge-info" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                🔧 Kỹ thuật viên (Tra cứu quy cách & kích thước)
+                🔧 Nhân viên kỹ thuật (Tra cứu quy cách & kích thước)
               </span>
             )}
           </div>

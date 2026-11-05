@@ -530,16 +530,16 @@ const TechnicianTimetableWidget: React.FC = () => {
   }, []);
 
   const shifts = [
-    { id: 'morning' as const, title: 'Ca Sáng', range: '08:00 – 12:00', icon: '🌅', color: '#0284c7' },
-    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: 'var(--accent-primary)' },
-    { id: 'evening' as const, title: 'Ca Tối', range: '18:00 – 21:00', icon: '🌙', color: '#8b5cf6' },
+    { id: 'morning' as const, title: 'Ca Sáng', range: '08:00 – 12:00', icon: '🌅', color: 'var(--apple-blue, #0071e3)' },
+    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: 'var(--apple-orange, #ff9500)' },
+    { id: 'evening' as const, title: 'Ca Tối', range: '18:00 – 21:00', icon: '🌙', color: 'var(--apple-purple, #af52de)' },
   ];
 
   return (
     <div className="fpt-panel">
       <div className="fpt-panel-header">
         <h3 className="fpt-panel-title">
-          <Calendar size={18} style={{ color: '#4f46e5' }} />
+          <Calendar size={18} style={{ color: 'var(--apple-blue, #0071e3)' }} />
           <span>Thời khóa biểu công việc hôm nay</span>
           <span className="fpt-badge-pill blue">{tasks.length} ca hẹn</span>
         </h3>
@@ -601,8 +601,8 @@ const TechnicianTimetableWidget: React.FC = () => {
                       style={{
                         background: 'var(--bg-surface, #ffffff)',
                         border: '1px solid var(--border-subtle)',
-                        borderLeft: `4px solid ${t.type === 'DELIVERY_INSTALLATION' ? '#4f46e5' : '#f59e0b'}`,
-                        borderRadius: 8,
+                        borderLeft: `3px solid ${t.type === 'DELIVERY_INSTALLATION' ? 'var(--apple-blue, #0071e3)' : 'var(--apple-orange, #ff9500)'}`,
+                        borderRadius: 12,
                         padding: '10px 12px',
                         textDecoration: 'none',
                         color: 'inherit',
@@ -613,7 +613,7 @@ const TechnicianTimetableWidget: React.FC = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
-                        <b style={{ color: '#4f46e5' }}>{t.timeSlot}</b>
+                        <b style={{ color: 'var(--apple-blue, #0071e3)' }}>{t.timeSlot}</b>
                         <span className="fpt-sku-pill">{t.orderCode}</span>
                       </div>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>

@@ -2,6 +2,7 @@ package com.smartbox.backend.service.storage;
 
 import com.smartbox.backend.exception.AppException;
 import com.smartbox.backend.exception.BadRequestException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -12,14 +13,16 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
 /** Server-side uploads to Supabase Storage with the service key; the key never reaches a browser. */
 @Service
+@Slf4j
 public class SupabaseImageStorage implements ImageStorage {
 
-    private static final Pattern PUBLIC_ID = Pattern.compile("(avatars|product-images|warranty-claims|delivery-proofs)/[0-9a-fA-F-]{36}(/avatar)?\\.(jpg|png)");
+    private static final Pattern PUBLIC_ID = Pattern.compile("(avatars|brand|warranty_nghiemthu|product-images|warranty-claims|delivery-proofs)/[0-9a-fA-F-]{36}(/avatar)?\\.(jpg|png)");
     private static final Pattern OBJECT_NAME = Pattern.compile("[0-9a-fA-F-]{36}\\.(jpg|png)");
 
     private final String baseUrl;
@@ -94,7 +97,7 @@ public class SupabaseImageStorage implements ImageStorage {
                     .retrieve()
                     .toBodilessEntity();
         } catch (Exception ex) {
-            // Provider errors can echo request details; return a fixed message.
+            log.error("Supabase storage upload error for {}: {}", publicId, ex.getMessage(), ex);
             throw new AppException(502, "STORAGE_UPLOAD_FAILED");
         }
         return new StoredImage(publicId, publicUrl(publicId));
@@ -111,9 +114,22 @@ public class SupabaseImageStorage implements ImageStorage {
 
     @Override
     public boolean owns(ImageBucket bucket, String url) {
-        String prefix = publicUrl(bucket.id() + "/");
-        return url != null && !baseUrl.isBlank() && url.startsWith(prefix)
-                && OBJECT_NAME.matcher(url.substring(prefix.length())).matches();
+        if (url == null || baseUrl.isBlank()) {
+            return false;
+        }
+        List<String> allowedBucketIds = switch (bucket) {
+            case AVATARS -> List.of("avatars");
+            case PRODUCTS -> List.of(bucket.id(), "product-images", "brand");
+            case DELIVERY_PROOFS, WARRANTY_CLAIMS -> List.of(bucket.id(), "warranty_nghiemthu", "delivery-proofs", "warranty-claims");
+        };
+
+        for (String bId : allowedBucketIds) {
+            String prefix = baseUrl + "/storage/v1/object/public/" + bId + "/";
+            if (url.startsWith(prefix) && OBJECT_NAME.matcher(url.substring(prefix.length())).matches()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void requireConfigured() {

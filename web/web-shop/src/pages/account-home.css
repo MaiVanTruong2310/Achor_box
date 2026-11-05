@@ -520,12 +520,385 @@
   border-color: #0071e3;
 }
 
-/* Apple Orders Table */
+/* ==========================================================================
+   APPLE ORDERS DESIGN SYSTEM (CARDS & RESPONSIVE TABLE)
+   ========================================================================== */
+
+/* 1. Status Filter Segmented Pills */
+.apple-status-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.apple-status-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.apple-filter-tab {
+  border: none;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6e6e73;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.apple-filter-tab:hover {
+  background: rgba(0, 0, 0, 0.07);
+  color: #1d1d1f;
+}
+
+.apple-filter-tab.active {
+  background: #1d1d1f;
+  color: #ffffff;
+}
+
+.apple-filter-count {
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+
+/* View Mode Switcher */
+.apple-view-toggle {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 3px;
+  border-radius: 10px;
+  gap: 2px;
+}
+
+.apple-view-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 9px;
+  border-radius: 7px;
+  color: #6e6e73;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.apple-view-btn:hover {
+  color: #1d1d1f;
+}
+
+.apple-view-btn.active {
+  background: #ffffff;
+  color: #0071e3;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* 2. Apple Consumer Order Cards */
+.apple-order-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.apple-order-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.apple-order-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 113, 227, 0.28);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+/* Card Header */
+.apple-order-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.apple-order-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.apple-order-id-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.apple-order-code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0071e3;
+  background: rgba(0, 113, 227, 0.08);
+  padding: 2px 8px;
+  border-radius: 7px;
+}
+
+.apple-copy-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  color: #86868b;
+  transition: color 0.15s ease;
+}
+
+.apple-copy-btn:hover {
+  color: #1d1d1f;
+}
+
+.apple-order-dot {
+  color: #c7c7cc;
+  font-size: 14px;
+}
+
+.apple-order-date {
+  color: #6e6e73;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+}
+
+.apple-order-payment-method {
+  font-size: 12px;
+  color: #5856d6;
+  background: rgba(88, 86, 214, 0.08);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* 3. Order Progress Stepper */
+.apple-order-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  position: relative;
+  padding: 10px 14px;
+  background: #fbfbfd;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.apple-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.apple-step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e5e5ea;
+  color: #8e8e93;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.apple-step-item.completed .apple-step-dot {
+  background: #30d158;
+  color: #ffffff;
+}
+
+.apple-step-item.active .apple-step-dot {
+  background: #0071e3;
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+}
+
+.apple-step-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8e8e93;
+}
+
+.apple-step-item.completed .apple-step-label {
+  color: #1a7f37;
+}
+
+.apple-step-item.active .apple-step-label {
+  color: #0071e3;
+  font-weight: 700;
+}
+
+/* 4. Order Items List */
+.apple-order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.apple-order-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.apple-order-item-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.apple-order-item-thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.apple-order-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.apple-order-item-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apple-order-item-variant {
+  font-size: 12.5px;
+  color: #6e6e73;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.apple-order-item-qty {
+  font-size: 12px;
+  color: #86868b;
+}
+
+.apple-order-item-price {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.apple-order-unit-price {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.apple-order-item-subtotal {
+  font-size: 11.5px;
+  color: #86868b;
+}
+
+/* 5. Card Footer */
+.apple-order-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.apple-order-total-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.apple-order-total-label {
+  font-size: 13px;
+  color: #6e6e73;
+}
+
+.apple-order-total-amount {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0071e3;
+  letter-spacing: -0.02em;
+}
+
+.apple-order-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 6. Responsive Table (No Horizontal Overflow) */
 .apple-table-wrap {
   width: 100%;
   overflow-x: auto;
   border-radius: 18px;
   border: 1px solid rgba(0, 0, 0, 0.08);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+.apple-table-wrap::-webkit-scrollbar {
+  height: 5px;
+}
+
+.apple-table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
 }
 
 .apple-table {
@@ -546,7 +919,7 @@
 }
 
 .apple-table td {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   vertical-align: middle;
 }
@@ -964,4 +1337,1241 @@
     padding: 24px 20px;
     border-radius: 22px;
   }
+}
+
+/* ==========================================================================
+   WARRANTY & CLAIMS CARDS (B?O H�NH & KHI?U N?I)
+   ========================================================================== */
+
+.apple-claims-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.apple-claim-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  padding: 22px 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.apple-claim-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 113, 227, 0.2);
+}
+
+.claim-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.claim-id-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.claim-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(0, 113, 227, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.claim-code-badge {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", monospace;
+  font-size: 14px;
+  font-weight: 750;
+  color: #1d1d1f;
+  background: #f5f5f7;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.claim-copy-btn {
+  background: none;
+  border: none;
+  color: #86868b;
+  cursor: pointer;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.claim-copy-btn:hover {
+  color: #0071e3;
+  background: #f0f0f4;
+}
+
+.claim-date-sub {
+  font-size: 12px;
+  color: #86868b;
+  display: block;
+  margin-top: 2px;
+}
+
+.claim-device-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.claim-device-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #1d1d1f;
+  background: #fbfbfd;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.claim-desc-box {
+  background: #fbfbfd;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.claim-desc-label {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: #86868b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.claim-desc-text {
+  margin: 0;
+  font-size: 13.5px;
+  color: #1d1d1f;
+  line-height: 1.5;
+}
+
+.claim-photos-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claim-photos-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #86868b;
+}
+
+.claim-photos-gallery {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.claim-photo-thumb-btn {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  padding: 0;
+  background: #f0f0f4;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.claim-photo-thumb-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-zoom-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.claim-photo-thumb-btn:hover {
+  transform: scale(1.05);
+  border-color: #0071e3;
+}
+
+.claim-photo-thumb-btn:hover .thumb-zoom-overlay {
+  opacity: 1;
+}
+
+.claim-rejection-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.claim-resolved-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #15803d;
+  font-size: 13px;
+}
+
+.claim-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.claim-hotline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #0071e3;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.claim-hotline-link:hover {
+  text-decoration: underline;
+}
+
+/* Stepper Timeline inside Detail Modal */
+.claim-timeline-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  background: #fbfbfd;
+  padding: 18px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .claim-timeline-stepper {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.timeline-step-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+.timeline-step-node.is-done {
+  opacity: 1;
+}
+
+.timeline-step-node.is-rejected {
+  opacity: 1;
+  color: #dc2626;
+}
+
+.step-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e5e5ea;
+  color: #6e6e73;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.timeline-step-node.is-done .step-circle {
+  background: #30d158;
+  color: #ffffff;
+}
+
+.timeline-step-node.is-rejected .step-circle {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.step-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.step-sub {
+  font-size: 11px;
+  color: #86868b;
+}
+
+.claim-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claim-modal-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.06);
+  font-size: 13px;
+}
+
+.claim-modal-detail-row .detail-key {
+  color: #86868b;
+}
+
+.claim-modal-detail-row .detail-val {
+  color: #1d1d1f;
+}
+
+.apple-claims-empty-state {
+  text-align: center;
+  padding: 44px 20px;
+  background: #fbfbfd;
+  border-radius: 20px;
+  border: 1.5px dashed rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.empty-claim-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: #f0f0f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.apple-claims-empty-state h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 750;
+  color: #1d1d1f;
+}
+
+.apple-claims-empty-state p {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  color: #6e6e73;
+  max-width: 460px;
+  line-height: 1.5;
+}
+
+
+
+/* ==========================================================================
+   ANCHORCARE WARRANTY HUB & APPLE CLAIM SHEET DESIGN SYSTEM
+   ========================================================================== */
+
+/* Apple Warranty Segmented Control */
+.apple-warranty-segment-bar {
+  margin-bottom: 24px;
+}
+
+.apple-warranty-segmented {
+  display: inline-flex;
+  background: #f0f0f4;
+  padding: 4px;
+  border-radius: 999px;
+  gap: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.apple-wtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #6e6e73;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-wtab:hover {
+  color: #1d1d1f;
+}
+
+.apple-wtab.is-active {
+  background: #ffffff;
+  color: #1d1d1f;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0.5px 1px rgba(0, 0, 0, 0.04);
+}
+
+.apple-wtab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #6e6e73;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.apple-wtab.is-active .apple-wtab-count {
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+}
+
+/* Apple Care Warranty Cards Grid */
+.apple-warranty-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.apple-warranty-card {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.apple-warranty-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.apple-warranty-card.is-active {
+  border-color: rgba(48, 209, 88, 0.28);
+}
+
+.war-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.war-card-device {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.war-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.08) 0%, rgba(94, 92, 230, 0.08) 100%);
+  border: 1px solid rgba(0, 113, 227, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.war-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.01em;
+}
+
+.war-serial-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.war-serial-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0071e3;
+  background: rgba(0, 113, 227, 0.08);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.war-copy-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #86868b;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.war-copy-btn:hover {
+  color: #1d1d1f;
+}
+
+.war-progress-section {
+  background: #fbfbfd;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.war-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #e5e5ea;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.war-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #30d158 0%, #0071e3 100%);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.war-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: #86868b;
+}
+
+.war-remaining-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  background: rgba(48, 209, 88, 0.12);
+  color: #15803d;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.war-perks-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.war-perk-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #4b5563;
+  background: #f5f5f7;
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.war-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Apple Protection Peace Reassurance Card */
+.apple-warranty-peace-card {
+  background: linear-gradient(135deg, rgba(48, 209, 88, 0.04) 0%, rgba(0, 113, 227, 0.04) 100%);
+  border: 1px solid rgba(48, 209, 88, 0.2);
+  border-radius: 24px;
+  padding: 32px 28px;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.peace-card-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(48, 209, 88, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.peace-card-body {
+  flex: 1;
+}
+
+.peace-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #16a34a;
+  background: rgba(48, 209, 88, 0.12);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.peace-card-body h3 {
+  margin: 0 0 6px 0;
+  font-size: 20px;
+  font-weight: 750;
+  color: #1d1d1f;
+  letter-spacing: -0.02em;
+}
+
+.peace-card-body p {
+  margin: 0 0 18px 0;
+  font-size: 14px;
+  color: #6e6e73;
+  line-height: 1.5;
+  max-width: 560px;
+}
+
+.peace-perks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.peace-perk {
+  background: #ffffff;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.peace-perk strong {
+  font-size: 13px;
+  color: #1d1d1f;
+}
+
+.peace-perk span {
+  font-size: 11.5px;
+  color: #86868b;
+}
+
+.peace-card-action {
+  align-self: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .apple-warranty-peace-card {
+    flex-direction: column;
+    padding: 24px 20px;
+    gap: 16px;
+  }
+  .peace-card-action {
+    align-self: stretch;
+  }
+  .peace-card-action button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Apple Claim Sheet Dialog */
+.apple-claim-sheet {
+  max-width: 640px !important;
+  border-radius: 28px !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 32px !important;
+}
+
+.claim-sheet-header {
+  margin-bottom: 22px;
+}
+
+.claim-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #0071e3;
+  background: rgba(0, 113, 227, 0.08);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.claim-sheet-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 750;
+  color: #1d1d1f;
+  letter-spacing: -0.02em;
+}
+
+.claim-sheet-header p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #6e6e73;
+}
+
+.claim-sheet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.claim-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claim-field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.claim-field-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.claim-field-hint {
+  font-size: 12px;
+  color: #86868b;
+}
+
+/* Device Selection Cards */
+.claim-device-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #fbfbfd;
+  border: 1.5px solid #0071e3;
+  box-shadow: 0 2px 10px rgba(0, 113, 227, 0.08);
+}
+
+.claim-device-card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.claim-dev-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(0, 113, 227, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.claim-dev-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.claim-dev-sn-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.claim-dev-sn {
+  font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #0071e3;
+}
+
+.claim-dev-date {
+  font-size: 11.5px;
+  color: #86868b;
+}
+
+.claim-dev-badge-active {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #16a34a;
+  background: rgba(48, 209, 88, 0.12);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.claim-device-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.claim-device-card-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f5f5f7;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.claim-device-card-btn:hover {
+  background: #ebebee;
+}
+
+.claim-device-card-btn.is-selected {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 2px 12px rgba(0, 113, 227, 0.12);
+}
+
+.claim-dev-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid #c7c7cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.claim-device-card-btn.is-selected .claim-dev-radio {
+  background: #0071e3;
+  border-color: #0071e3;
+}
+
+.claim-dev-selected-tag {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0071e3;
+  background: rgba(0, 113, 227, 0.1);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* Category Grid */
+.claim-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.claim-cat-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f5f5f7;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.claim-cat-card:hover {
+  background: #ededf0;
+}
+
+.claim-cat-card.is-active {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 2px 12px rgba(0, 113, 227, 0.12);
+}
+
+.cat-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.claim-cat-card.is-active .cat-card-icon {
+  background: rgba(0, 113, 227, 0.08);
+}
+
+.cat-card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cat-card-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.cat-card-desc {
+  font-size: 11px;
+  color: #86868b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cat-card-check {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Symptom Suggestions */
+.claim-symptom-suggestions {
+  background: rgba(0, 113, 227, 0.04);
+  border: 1px dashed rgba(0, 113, 227, 0.25);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.suggestions-headline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0071e3;
+  margin-bottom: 8px;
+}
+
+.suggestions-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.suggestion-pill-chip {
+  background: #ffffff;
+  border: 1px solid rgba(0, 113, 227, 0.16);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1d1d1f;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.suggestion-pill-chip:hover {
+  background: #0071e3;
+  color: #ffffff;
+  border-color: #0071e3;
+  transform: translateY(-1px);
+}
+
+/* Smart Textarea */
+.claim-smart-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fbfbfd;
+  color: #1d1d1f;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 84px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.claim-smart-textarea:focus {
+  outline: none;
+  border-color: #0071e3;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+.claim-length-tag {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.claim-length-tag.is-valid {
+  color: #16a34a;
+}
+
+/* Dropzone */
+.claim-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1.5px dashed rgba(0, 0, 0, 0.15);
+  background: #fbfbfd;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.claim-dropzone:hover {
+  border-color: #0071e3;
+  background: rgba(0, 113, 227, 0.03);
+}
+
+.dropzone-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(0, 113, 227, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dropzone-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dropzone-text strong {
+  font-size: 13.5px;
+  color: #1d1d1f;
+}
+
+.dropzone-text span {
+  font-size: 11.5px;
+  color: #86868b;
+}
+
+.claim-thumbs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.thumb-item-box {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.thumb-item-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb-remove-x {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.thumb-remove-x:hover {
+  background: #ef4444;
+}
+
+/* SLA Banner */
+.claim-sla-banner {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #f0f7ff;
+  border: 1px solid rgba(0, 113, 227, 0.15);
+}
+
+.sla-banner-content {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #1d1d1f;
+}
+
+.sla-banner-content strong {
+  display: block;
+  font-size: 12.5px;
+  color: #0071e3;
+  margin-bottom: 2px;
+}
+
+.sla-banner-content p {
+  margin: 0;
+  color: #4b5563;
+}
+
+/* Actions */
+.claim-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.claim-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Success Card */
+.claim-success-card {
+  padding: 24px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.success-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: rgba(48, 209, 88, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.claim-success-card h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 750;
+  color: #1d1d1f;
+  letter-spacing: -0.02em;
+}
+
+.success-claim-code-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f5f7;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #6e6e73;
+}
+
+.success-claim-code-pill strong {
+  font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+  color: #0071e3;
+  font-size: 13.5px;
+}
+
+.success-reassurance {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.success-actions {
+  margin-top: 8px;
 }

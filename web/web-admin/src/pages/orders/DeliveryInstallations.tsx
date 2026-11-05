@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   Truck,
   RefreshCw,
@@ -29,7 +29,8 @@ import {
   ChevronDown,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Upload
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../contexts/ToastContext';
@@ -93,7 +94,26 @@ const formatTimeDate = (val: string | null | undefined) => {
   }
 };
 
-const errorText = (e: unknown) => (e instanceof Error ? e.message : 'Không xử lý được yêu cầu.');
+const errorMessages: Record<string, string> = {
+  DEVICE_SERIAL_ASSIGNMENT_INCOMPLETE: 'Chưa gán đủ mã Serial cho tất cả sản phẩm trong đơn hàng. Vui lòng gán đủ serial cho các thiết bị còn lại trước khi hoàn tất thi công!',
+  DEVICE_VARIANT_MISMATCH: 'Mã Serial này không đúng phiên bản / kích cỡ sản phẩm mà khách đặt mua!',
+  DEVICE_ALREADY_SOLD: 'Thiết bị này đã được bán hoặc đã gán cho đơn hàng khác!',
+  ITEM_DEVICE_LIMIT: 'Đã gán đủ số lượng thiết bị cho dòng sản phẩm này!',
+  SERIAL_NOT_UNIQUE: 'Mã Serial này bị trùng lặp trong hệ thống!',
+  INSTALLATION_REASON_OR_NOTE_REQUIRED: 'Vui lòng nhập ghi chú thi công lắp đặt!',
+  PROOF_PHOTOS_REQUIRED: 'Cần tải lên ít nhất 1 ảnh minh chứng nghiệm thu!',
+  INVALID_PROOF_PHOTOS: 'Ảnh minh chứng nghiệm thu không hợp lệ!',
+};
+
+const errorText = (e: unknown) => {
+  if (e instanceof Error) {
+    for (const [code, msg] of Object.entries(errorMessages)) {
+      if (e.message.includes(code)) return msg;
+    }
+    return e.message;
+  }
+  return 'Không xử lý được yêu cầu.';
+};
 
 const getJobActionInfo = (action: string) => {
   const act = (action || '').toUpperCase();
@@ -121,10 +141,14 @@ export const DeliveryInstallations: React.FC = () => {
     : '/admin/orders/delivery';
 
   // List states
+  const [searchParams] = useSearchParams();
+  const queryStatus = searchParams.get('status') || '';
+  const defaultStatus = queryStatus || (profile?.role === 'product_manager' ? 'WAITING_PO_CONFIRMATION' : '');
+
   const [list, setList] = useState<Page<JobSummary> | null>(null);
   const [summary, setSummary] = useState<SummaryCounts | null>(null);
   const [page, setPage] = useState(0);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState(defaultStatus);
   const [searchTerm, setSearchTerm] = useState('');
   const [loadingList, setLoadingList] = useState(true);
   const [sortField, setSortField] = useState<DeliverySortField>('scheduledAt');
@@ -155,6 +179,93 @@ export const DeliveryInstallations: React.FC = () => {
   const [serialInput, setSerialInput] = useState('');
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [busy, setBusy] = useState(false);
+  const [inStockDevices, setInStockDevices] = useState<any[]>([]);
+
+  // Tải danh sách thiết bị tồn kho sẵn sàng gán
+  useEffect(() => {
+    if (job && job.status !== 'COMPLETED') {
+      backendRequest<any[]>('/devices')
+        .then(res => {
+          if (Array.isArray(res)) {
+            const available = res.filter((d: any) => !d.ownerId);
+            setInStockDevices(available);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [job?.id, job?.status]);
+
+  // Photo upload & completion state
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [submittingProof, setSubmittingProof] = useState(false);
+  const [pendingPhotos, setPendingPhotos] = useState<string[]>([]);
+  const [completionNoteInput, setCompletionNoteInput] = useState('');
+  const proofFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setPendingPhotos([]);
+    if (job) {
+      setCompletionNoteInput(job.completionNote || '');
+    }
+  }, [job?.id]);
+
+  const handleUploadProofPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploadingProof(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await deliveryApi.uploadProof(file);
+        if (res?.url) {
+          uploadedUrls.push(res.url);
+        }
+      }
+      setPendingPhotos(prev => [...prev, ...uploadedUrls]);
+      toast.success(`Đã tải lên ${uploadedUrls.length} ảnh minh chứng.`);
+    } catch (err: any) {
+      toast.error(errorText(err) || 'Không thể tải ảnh minh chứng.');
+    } finally {
+      setUploadingProof(false);
+      if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemovePendingPhoto = (index: number) => {
+    setPendingPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmitProof = async () => {
+    if (!job || submittingProof) return;
+    const allPhotos = [...(job.completionPhotos || []), ...pendingPhotos];
+    if (allPhotos.length === 0) {
+      toast.error('Bắt buộc phải chụp hoặc tải lên ít nhất 1 ảnh minh chứng nghiệm thu!');
+      return;
+    }
+    setSubmittingProof(true);
+    try {
+      const idempotencyKey = crypto.randomUUID();
+      const updated = await deliveryApi.submitCompletion(
+        job.id,
+        {
+          proofPhotos: allPhotos,
+          completionNote: completionNoteInput.trim() || undefined
+        },
+        job.version,
+        idempotencyKey
+      );
+      setJob(updated);
+      setPendingPhotos([]);
+      await fetchJobDetail(job.id);
+      await fetchSummary();
+      toast.success('Đã nộp báo cáo nghiệm thu kèm ảnh thành công! Đang chờ PO duyệt.');
+    } catch (err: any) {
+      toast.error(errorText(err) || 'Không thể gửi báo cáo nghiệm thu.');
+    } finally {
+      setSubmittingProof(false);
+    }
+  };
 
   // Copy helper
   const handleCopy = (text: string, id: string, label: string = 'Đã sao chép') => {
@@ -406,34 +517,46 @@ export const DeliveryInstallations: React.FC = () => {
         {/* 2. 4 Thẻ thống kê (Chờ tiếp nhận, Đang làm, Chờ nghiệm thu, Hoàn tất) */}
         <div className="di-metrics-strip">
           <div
-            className={`di-stat-tile ${statusFilter === 'ASSIGNED' ? 'active' : ''}`}
+            className={`di-stat-tile unassigned ${statusFilter === 'ASSIGNED' ? 'active' : ''}`}
             onClick={() => setStatusFilter(statusFilter === 'ASSIGNED' ? '' : 'ASSIGNED')}
           >
-            <span className="di-stat-label">Chờ tiếp nhận</span>
+            <div className="di-stat-top">
+              <span className="di-stat-label">Chưa nhận</span>
+              <div className="di-stat-icon-wrap unassigned"><Clock size={16} /></div>
+            </div>
             <span className="di-stat-num">{unassignedCount}</span>
           </div>
 
           <div
-            className={`di-stat-tile ${statusFilter === 'IN_PROGRESS' ? 'active' : ''}`}
+            className={`di-stat-tile in-progress ${statusFilter === 'IN_PROGRESS' ? 'active' : ''}`}
             onClick={() => setStatusFilter(statusFilter === 'IN_PROGRESS' ? '' : 'IN_PROGRESS')}
           >
-            <span className="di-stat-label">Đang làm</span>
+            <div className="di-stat-top">
+              <span className="di-stat-label">Đang làm</span>
+              <div className="di-stat-icon-wrap in-progress"><Play size={16} /></div>
+            </div>
             <span className="di-stat-num">{inProgressCount}</span>
           </div>
 
           <div
-            className={`di-stat-tile ${statusFilter === 'WAITING_PO_CONFIRMATION' ? 'active' : ''}`}
+            className={`di-stat-tile waiting ${statusFilter === 'WAITING_PO_CONFIRMATION' ? 'active' : ''}`}
             onClick={() => setStatusFilter(statusFilter === 'WAITING_PO_CONFIRMATION' ? '' : 'WAITING_PO_CONFIRMATION')}
           >
-            <span className="di-stat-label">Chờ nghiệm thu</span>
+            <div className="di-stat-top">
+              <span className="di-stat-label">Chờ nghiệm thu</span>
+              <div className="di-stat-icon-wrap waiting"><Camera size={16} /></div>
+            </div>
             <span className="di-stat-num">{waitingPoCount}</span>
           </div>
 
           <div
-            className={`di-stat-tile ${statusFilter === 'COMPLETED' ? 'active' : ''}`}
+            className={`di-stat-tile completed ${statusFilter === 'COMPLETED' ? 'active' : ''}`}
             onClick={() => setStatusFilter(statusFilter === 'COMPLETED' ? '' : 'COMPLETED')}
           >
-            <span className="di-stat-label">Hoàn tất</span>
+            <div className="di-stat-top">
+              <span className="di-stat-label">Hoàn tất</span>
+              <div className="di-stat-icon-wrap completed"><CheckCircle2 size={16} /></div>
+            </div>
             <span className="di-stat-num">{completedCount}</span>
           </div>
         </div>
@@ -889,6 +1012,231 @@ export const DeliveryInstallations: React.FC = () => {
         {/* CỘT TRÁI: TIẾN TRÌNH & THÔNG TIN CÔNG VIỆC CHÍNH (~62%) */}
         {/* ======================================================== */}
         <div className="di-detail-main-col">
+          {/* ======================================================== */}
+          {/* BẢNG ĐỐI SOÁT NGHIỆM THU DÀNH CHO PO & ADMIN */}
+          {/* ======================================================== */}
+          {manager && job.status === 'WAITING_PO_CONFIRMATION' && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.06) 100%)',
+                border: '1.5px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '20px',
+                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.08)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: '#059669',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Đối soát Thẩm định Nghiệm thu (PO Verification)
+                    </h3>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      Kỹ thuật viên đã hoàn thành thi công tại chỗ. Vui lòng đối soát Serial thực tế với Đơn hàng trước khi phê duyệt kích hoạt bảo hành.
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    background: 'rgba(245, 158, 11, 0.12)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    color: '#d97706',
+                    fontSize: '11.5px',
+                    fontWeight: 700
+                  }}
+                >
+                  ⏳ Chờ PO thẩm định 1-click
+                </span>
+              </div>
+
+              {/* Bảng đối chiếu 2 cột: Model khách mua vs Serial đã quét */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px', marginBottom: '16px' }}>
+                {/* Cột 1: Thông tin đơn hàng */}
+                <div
+                  style={{
+                    background: 'var(--bg-card, #ffffff)',
+                    border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))',
+                    borderRadius: '12px',
+                    padding: '14px'
+                  }}
+                >
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>
+                    📦 Thiết bị trong đơn hàng #{shortOrderCode}
+                  </div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {job.items && job.items.length > 0 ? job.items.map(it => `${it.productName || 'Anchor Box'}${it.variantName ? ' - ' + it.variantName : ''} (x${it.quantity})`).join(', ') : (job as any).orderSummary || 'Hộp thông minh Anchor Box'}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Khách hàng: <strong>{job.customerName}</strong> • {job.customerPhone}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Địa chỉ: {job.shippingAddress}
+                  </div>
+                </div>
+
+                {/* Cột 2: Thiết bị thực tế KTV đã quét ngoài hiện trường */}
+                <div
+                  style={{
+                    background: 'var(--bg-card, #ffffff)',
+                    border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))',
+                    borderRadius: '12px',
+                    padding: '14px'
+                  }}
+                >
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>
+                    🔧 Thực tế kỹ thuật viên thi công
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Mã Serial:</span>
+                    <code
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 800,
+                        color: allSerialsLinked ? '#059669' : '#d97706',
+                        background: allSerialsLinked ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        padding: '2px 8px',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      {devices[0]?.serialNumber || 'Chưa có Serial thiết bị'}
+                    </code>
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                    Kỹ thuật viên: <strong>{job.technicianName || 'Chưa gán'}</strong> ({job.technicianPhone || '-'})
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: allSerialsLinked ? '#059669' : '#ef4444',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {allSerialsLinked ? '✓ Đã quét & khớp cấu hình thiết bị' : '⚠️ Cần kiểm tra lại mã Serial'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Minh chứng ảnh thực tế */}
+              {photos.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Camera size={14} style={{ color: '#059669' }} />
+                    <span>Ảnh minh chứng nghiệm thu thực tế ({photos.length} ảnh):</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    {photos.map((pUrl, pIdx) => (
+                      <div
+                        key={pIdx}
+                        onClick={() => setActiveLightboxImg(pUrl)}
+                        style={{
+                          width: '84px',
+                          height: '84px',
+                          borderRadius: '10px',
+                          overflow: 'hidden',
+                          border: '1.5px solid rgba(0,0,0,0.1)',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          position: 'relative'
+                        }}
+                        title="Bấm để xem ảnh phóng to"
+                      >
+                        <img src={pUrl} alt={`Nghiệm thu ${pIdx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div
+                          style={{
+                            position: 'absolute',
+                            bottom: 2,
+                            right: 2,
+                            background: 'rgba(0,0,0,0.6)',
+                            color: '#fff',
+                            borderRadius: '4px',
+                            padding: '1px 4px',
+                            fontSize: '9px',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <ZoomIn size={10} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Nút thao tác 1-click */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid rgba(16, 185, 129, 0.2)', paddingTop: '14px' }}>
+                <button
+                  type="button"
+                  className="btn-tkd-approve"
+                  disabled={busy}
+                  onClick={handleApproveCompletion}
+                  style={{
+                    padding: '9px 20px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    borderRadius: '10px',
+                    background: '#10b981',
+                    color: '#fff',
+                    border: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>Duyệt nghiệm thu & Kích hoạt bảo hành</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-tkd-reject"
+                  disabled={busy}
+                  onClick={() => setShowReworkDialog(true)}
+                  style={{
+                    padding: '9px 16px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    borderRadius: '10px',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    color: '#dc2626',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  <span>Yêu cầu xử lý lại (Rework)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Thông tin công việc thi công (GỌN GÀNG) */}
           <div className="di-section-box">
             <div className="di-section-box-header">
@@ -1089,33 +1437,67 @@ export const DeliveryInstallations: React.FC = () => {
 
             {/* Form gán serial nếu chưa hoàn tất */}
             {job.status !== 'COMPLETED' && (
-              <div className="di-serial-input-form">
-                <input
-                  type="text"
-                  className="di-serial-input"
-                  value={serialInput}
-                  onChange={(e) => setSerialInput(e.target.value)}
-                  placeholder="Nhập mã Serial (VD: SBX-2026-0001)..."
-                />
-                <button
-                  type="button"
-                  className="di-btn-view-detail"
-                  disabled={busy || !serialInput.trim()}
-                  onClick={() => {
-                    const target = selectedDeviceId || (devices[0] && ((devices[0] as any).orderItemId || (devices[0] as any).deviceId)) || (job.items && job.items[0]?.id);
-                    if (!target) {
-                      toast.error('Vui lòng chọn thiết bị để gắn serial');
-                      return;
-                    }
-                    void performMutation('devices', {
-                      orderItemId: target,
-                      serialNumber: serialInput.trim()
-                    });
-                  }}
-                >
-                  <Check size={13} />
-                  <span>Gắn Serial</span>
-                </button>
+              <div>
+                <div className="di-serial-input-form">
+                  <input
+                    type="text"
+                    className="di-serial-input"
+                    value={serialInput}
+                    onChange={(e) => setSerialInput(e.target.value)}
+                    placeholder="Nhập hoặc quét mã Serial (VD: DBX-98C377AD9D60)..."
+                  />
+                  <button
+                    type="button"
+                    className="di-btn-view-detail"
+                    disabled={busy || !serialInput.trim()}
+                    onClick={() => {
+                      const target = selectedDeviceId || (devices[0] && ((devices[0] as any).orderItemId || (devices[0] as any).deviceId)) || (job.items && job.items[0]?.id);
+                      if (!target) {
+                        toast.error('Vui lòng chọn thiết bị để gắn serial');
+                        return;
+                      }
+                      void performMutation('devices', {
+                        orderItemId: target,
+                        serialNumber: serialInput.trim()
+                      });
+                    }}
+                  >
+                    <Check size={13} />
+                    <span>Gắn Serial</span>
+                  </button>
+                </div>
+
+                {inStockDevices.length > 0 && (
+                  <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, background: 'color-mix(in srgb, var(--accent-primary) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-primary) 18%, transparent)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      <Package size={13} style={{ color: 'var(--accent-primary)' }} />
+                      <span>Gợi ý mã Serial thiết bị đang có sẵn trong kho ({inStockDevices.length} máy):</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {inStockDevices.map((dev: any) => (
+                        <button
+                          key={dev.id || dev.serialNumber}
+                          type="button"
+                          onClick={() => setSerialInput(dev.serialNumber)}
+                          style={{
+                            padding: '3px 8px',
+                            fontSize: '0.75rem',
+                            fontFamily: 'monospace',
+                            borderRadius: 6,
+                            background: serialInput === dev.serialNumber ? 'var(--accent-primary)' : 'var(--bg-surface)',
+                            color: serialInput === dev.serialNumber ? '#fff' : 'var(--text-primary)',
+                            border: '1px solid var(--border-subtle)',
+                            cursor: 'pointer',
+                            fontWeight: 600
+                          }}
+                          title={`Bấm để chọn mã ${dev.serialNumber}`}
+                        >
+                          {dev.serialNumber}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1133,10 +1515,11 @@ export const DeliveryInstallations: React.FC = () => {
             </div>
 
             <div className="di-acceptance-content">
-              {photos.length > 0 ? (
+              {/* Ảnh đã lưu trên hệ thống */}
+              {photos.length > 0 && (
                 <div>
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-                    <strong>{photos.length} ảnh minh chứng hiện trường</strong> (Bấm ảnh để phóng to):
+                    <strong>{photos.length} ảnh minh chứng đã xác nhận</strong> (Bấm ảnh để phóng to):
                   </div>
                   <div className="di-photos-preview-strip">
                     {photos.map((url, idx) => (
@@ -1155,9 +1538,131 @@ export const DeliveryInstallations: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              ) : (
-                <div style={{ padding: '16px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              )}
+
+              {/* Ảnh vừa tải lên chưa nộp */}
+              {pendingPhotos.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.82rem', color: '#0284c7', marginBottom: 8, fontWeight: 700 }}>
+                    Ảnh mới tải lên ({pendingPhotos.length} ảnh) — Hãy bấm "Gửi báo cáo nghiệm thu" bên dưới để hoàn tất:
+                  </div>
+                  <div className="di-photos-preview-strip">
+                    {pendingPhotos.map((url, idx) => (
+                      <div key={idx} className="di-photo-thumb-box" style={{ borderColor: '#0284c7', position: 'relative' }}>
+                        <img src={url} alt={`Ảnh mới ${idx + 1}`} onClick={() => setActiveLightboxImg(url)} />
+                        <button
+                          type="button"
+                          className="tech-proof-remove"
+                          onClick={(e) => { e.stopPropagation(); handleRemovePendingPhoto(idx); }}
+                          title="Xóa ảnh này"
+                          style={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            background: 'rgba(239, 68, 68, 0.9)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: 20,
+                            height: 20,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            padding: 0
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {photos.length === 0 && pendingPhotos.length === 0 && (
+                <div style={{ padding: '12px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                   Chưa có ảnh minh chứng nghiệm thu nào được tải lên.
+                </div>
+              )}
+
+              {/* Nút upload ảnh & ghi chú khi chưa hoàn tất */}
+              {job.status !== 'COMPLETED' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
+                  <input
+                    type="file"
+                    ref={proofFileInputRef}
+                    accept="image/*"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={handleUploadProofPhoto}
+                  />
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '0.84rem',
+                        background: 'var(--accent-primary)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontWeight: 600
+                      }}
+                      disabled={uploadingProof || busy}
+                      onClick={() => proofFileInputRef.current?.click()}
+                    >
+                      <Camera size={16} />
+                      <span>{uploadingProof ? 'Đang tải ảnh...' : 'Chụp / Tải ảnh nghiệm thu'}</span>
+                    </button>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      Tải lên ảnh chụp thực tế tủ đã lắp, tem bảo hành, biên bản nghiệm thu…
+                    </span>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-primary)' }}>
+                      Ghi chú hoàn thành thi công &amp; bàn giao:
+                    </label>
+                    <textarea
+                      placeholder="VD: Đã lắp đặt hoàn tất tại vị trí cửa chính, kiểm tra cảm biến tải trọng và khóa điện tử hoạt động tốt, đã hướng dẫn khách hàng quét app."
+                      value={completionNoteInput}
+                      onChange={e => setCompletionNoteInput(e.target.value)}
+                      disabled={busy || submittingProof}
+                      rows={2}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        fontSize: '0.84rem',
+                        borderRadius: 8,
+                        border: '1px solid var(--border-subtle)',
+                        background: 'var(--bg-canvas, var(--bg-surface))',
+                        color: 'var(--text-primary)',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+
+                  {(pendingPhotos.length > 0 || (photos.length > 0 && (job.status === 'DELIVERED' || job.status === 'INSTALLED'))) && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn-tkd-approve"
+                        style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                        disabled={submittingProof || busy}
+                        onClick={handleSubmitProof}
+                      >
+                        <Upload size={15} />
+                        <span>{submittingProof ? 'Đang gửi...' : 'Nộp báo cáo nghiệm thu & Ảnh minh chứng'}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1319,10 +1824,40 @@ export const DeliveryInstallations: React.FC = () => {
               type="button"
               className="btn-tkd-approve"
               disabled={busy}
-              onClick={() => void performMutation('confirm-installation', {})}
+              onClick={() => {
+                const totalRequired = job.items?.reduce((acc: number, it: any) => acc + (it.quantity || 1), 0) || 1;
+                const totalLinked = devices.length;
+                if (totalLinked < totalRequired) {
+                  toast.error(`Đơn hàng yêu cầu ${totalRequired} thiết bị nhưng hiện mới gán ${totalLinked} mã Serial. Vui lòng gán đủ mã Serial cho các thiết bị còn lại trước khi xác nhận hoàn tất!`);
+                  return;
+                }
+                void performMutation('confirm-installation', {
+                  installationNote: completionNoteInput.trim() || 'Hoàn tất thi công lắp ráp và đấu nối thiết bị tại nhà khách hàng'
+                });
+              }}
             >
               <Wrench size={14} />
               <span>Hoàn tất thi công lắp đặt</span>
+            </button>
+          )}
+
+          {/* Đã hoàn tất lắp đặt -> Nộp biên bản nghiệm thu */}
+          {job.status === 'INSTALLED' && (
+            <button
+              type="button"
+              className="btn-tkd-approve"
+              disabled={busy || submittingProof}
+              onClick={() => {
+                if (photos.length === 0 && pendingPhotos.length === 0) {
+                  toast.error('Vui lòng chụp hoặc tải lên ít nhất 1 ảnh minh chứng nghiệm thu phía trên');
+                  proofFileInputRef.current?.click();
+                  return;
+                }
+                void handleSubmitProof();
+              }}
+            >
+              <Upload size={14} />
+              <span>Gửi báo cáo nghiệm thu &amp; Ảnh</span>
             </button>
           )}
 

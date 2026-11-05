@@ -197,7 +197,7 @@ const TimetableCard: React.FC<{
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              style={{ color: '#4f46e5', marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '0.76rem', textDecoration: 'none' }}
+              style={{ color: 'var(--apple-blue, #0071e3)', marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '0.76rem', textDecoration: 'none' }}
               title="Mở Google Maps chỉ đường"
             >
               <ExternalLink size={12} />
@@ -247,7 +247,7 @@ const TimetableCard: React.FC<{
           <button
             type="button"
             className="fpt-btn fpt-btn-primary"
-            style={{ padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+            style={{ padding: '5px 12px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 'var(--apple-radius-pill, 980px)', background: 'var(--apple-blue, #0071e3)', color: '#fff' }}
             onClick={(e) => onStart(e, task)}
             disabled={submitting}
           >
@@ -257,7 +257,7 @@ const TimetableCard: React.FC<{
           <button
             type="button"
             className="fpt-btn"
-            style={{ padding: '4px 10px', fontSize: '11px', background: '#10b981', color: '#fff', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 6 }}
+            style={{ padding: '5px 12px', fontSize: '11px', background: 'var(--apple-green, #34c759)', color: '#fff', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 'var(--apple-radius-pill, 980px)' }}
             onClick={(e) => {
               e.stopPropagation();
               onOpen(task);
@@ -517,9 +517,9 @@ export const TechnicianDailyTasks: React.FC = () => {
 
   // Shifts definition for daily timetable
   const shifts = [
-    { id: 'morning' as const, title: 'Ca Sáng', range: '08:00 – 12:00', icon: '🌅', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.08)' },
-    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)' },
-    { id: 'evening' as const, title: 'Ca Tối / Tăng ca', range: '18:00 – 21:00', icon: '🌙', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.08)' },
+    { id: 'morning' as const, title: 'Ca Sáng', range: '08:00 – 12:00', icon: '🌅', color: 'var(--apple-blue, #0071e3)', bg: 'var(--apple-blue-soft, rgba(0, 113, 227, 0.08))' },
+    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: 'var(--apple-orange, #ff9500)', bg: 'var(--apple-orange-soft, rgba(255, 149, 0, 0.08))' },
+    { id: 'evening' as const, title: 'Ca Tối / Tăng ca', range: '18:00 – 21:00', icon: '🌙', color: 'var(--apple-purple, #af52de)', bg: 'var(--apple-purple-soft, rgba(175, 82, 222, 0.08))' },
   ];
 
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
@@ -547,7 +547,7 @@ export const TechnicianDailyTasks: React.FC = () => {
       <header className="tech-header">
         <div className="tech-header-info">
           <h1>
-            <Truck size={24} color="#4f46e5" />
+            <Truck size={22} color="var(--apple-blue, #0071e3)" />
             Lịch làm việc & Nhiệm vụ trong ngày
           </h1>
           <p>
@@ -598,7 +598,7 @@ export const TechnicianDailyTasks: React.FC = () => {
             </button>
 
             <div className="tech-date-picker-wrap">
-              <Calendar size={17} color="#4f46e5" />
+              <Calendar size={16} color="var(--apple-blue, #0071e3)" />
               <input
                 type="date"
                 value={selectedDate}
@@ -638,6 +638,27 @@ export const TechnicianDailyTasks: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Mobile Horizontal 7-Day Swipe Strip (< 768px touch screen) */}
+      <nav className="tech-mobile-week-strip" aria-label="Thanh chọn ngày tuần cho di động">
+        <div className="tech-mobile-week-scroll">
+          {weekDays.map((d) => {
+            const isSelected = d.dateStr === selectedDate;
+            return (
+              <button
+                key={d.dateStr}
+                type="button"
+                className={`tech-mobile-day-pill ${isSelected ? 'active' : ''} ${d.isToday ? 'is-today' : ''}`}
+                onClick={() => setSelectedDate(d.dateStr)}
+              >
+                <span className="tech-pill-day-name">{d.dayName}</span>
+                <span className="tech-pill-day-num">{d.dayNumber.split('/')[0]}</span>
+                {d.isToday && <span className="tech-pill-today-dot" title="Hôm nay" />}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* Upcoming / Live Urgent Task Reminder Banner */}
       {upcomingUrgentTasks.length > 0 && (
@@ -697,7 +718,7 @@ export const TechnicianDailyTasks: React.FC = () => {
             <span className="tech-metric-label">Tổng nhiệm vụ</span>
             <div className="tech-metric-count">{data?.summary.total || 0}</div>
           </div>
-          <Calendar size={22} color="#6366f1" />
+          <Calendar size={22} color="var(--apple-blue, #0071e3)" />
         </div>
 
         <div
@@ -706,11 +727,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Mới giao</span>
-            <div className="tech-metric-count" style={{ color: '#0284c7' }}>
+            <div className="tech-metric-count" style={{ color: 'var(--apple-blue, #0071e3)' }}>
               {data?.summary.pending || 0}
             </div>
           </div>
-          <Clock size={22} color="#0284c7" />
+          <Clock size={22} color="var(--apple-blue, #0071e3)" />
         </div>
 
         <div
@@ -719,11 +740,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Đang thực hiện</span>
-            <div className="tech-metric-count" style={{ color: '#4f46e5' }}>
+            <div className="tech-metric-count" style={{ color: 'var(--apple-indigo, #5856d6)' }}>
               {data?.summary.inProgress || 0}
             </div>
           </div>
-          <Play size={22} color="#4f46e5" />
+          <Play size={22} color="var(--apple-indigo, #5856d6)" />
         </div>
 
         <div
@@ -732,11 +753,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Chờ PO duyệt</span>
-            <div className="tech-metric-count" style={{ color: 'var(--accent-primary)' }}>
+            <div className="tech-metric-count" style={{ color: 'var(--apple-orange, #ff9500)' }}>
               {data?.summary.waitingConfirmation || 0}
             </div>
           </div>
-          <Camera size={22} color="var(--accent-primary)" />
+          <Camera size={22} color="var(--apple-orange, #ff9500)" />
         </div>
 
         <div
@@ -745,11 +766,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Đã hoàn thành</span>
-            <div className="tech-metric-count" style={{ color: '#059669' }}>
+            <div className="tech-metric-count" style={{ color: 'var(--apple-green, #34c759)' }}>
               {data?.summary.completed || 0}
             </div>
           </div>
-          <CheckCircle2 size={22} color="#059669" />
+          <CheckCircle2 size={22} color="var(--apple-green, #34c759)" />
         </div>
       </section>
 
@@ -760,7 +781,7 @@ export const TechnicianDailyTasks: React.FC = () => {
         <section className="timetable-day-container">
           {loading && (
             <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-secondary)' }}>
-              <RefreshCw size={24} className="spin" style={{ marginBottom: 10, color: '#4f46e5' }} />
+              <RefreshCw size={24} className="spin" style={{ marginBottom: 10, color: 'var(--apple-blue, #0071e3)' }} />
               <div>Đang tải thời khóa biểu ngày...</div>
             </div>
           )}
@@ -840,7 +861,7 @@ export const TechnicianDailyTasks: React.FC = () => {
         <section className="weekly-timetable-card">
           <div className="weekly-timetable-header">
             <div className="weekly-timetable-title">
-              <CalendarDays size={20} color="#4f46e5" />
+              <CalendarDays size={20} color="var(--apple-blue, #0071e3)" />
               <span>
                 Thời khóa biểu tuần: {weekDays[0].dayNumber} – {weekDays[6].dayNumber}
               </span>
@@ -1000,7 +1021,7 @@ export const TechnicianDailyTasks: React.FC = () => {
             <div className="tech-modal-header">
               <div>
                 <h3 className="tech-modal-title">
-                  {selectedTask.type === 'DELIVERY_INSTALLATION' ? <Truck size={20} color="#4f46e5" /> : <Wrench size={20} color="#f59e0b" />}
+                  {selectedTask.type === 'DELIVERY_INSTALLATION' ? <Truck size={20} color="var(--apple-blue, #0071e3)" /> : <Wrench size={20} color="var(--apple-orange, #ff9500)" />}
                   Chi tiết {selectedTask.typeLabel} · {selectedTask.orderCode}
                 </h3>
                 <span className={getStatusBadgeClass(selectedTask.status, selectedTask.reworkNotes)}>
@@ -1031,7 +1052,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                     <User size={18} />
                     <span>{selectedTask.customerName}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#4f46e5', fontWeight: 600 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--apple-blue, #0071e3)', fontWeight: 600 }}>
                     <Clock size={15} />
                     <span>{formatTaskTimeSlot(selectedTask)}</span>
                   </div>
@@ -1091,7 +1112,7 @@ export const TechnicianDailyTasks: React.FC = () => {
 
               {/* Start Task Action if New */}
               {(selectedTask.status === 'ASSIGNED' || selectedTask.status === 'NEW') && (
-                <div style={{ background: 'rgba(99, 102, 241, 0.06)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                <div style={{ background: 'var(--apple-blue-soft)', padding: '16px', borderRadius: 'var(--apple-radius-item, 12px)', border: '1px solid var(--apple-blue-border)' }}>
                   <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem' }}>
                     {selectedTask.type === 'WARRANTY_MAINTENANCE'
                       ? 'Phiếu bảo hành đang ở trạng thái mới tiếp nhận. Hãy bấm bắt đầu khi bắt đầu di chuyển hoặc tiến hành sửa chữa.'
@@ -1101,7 +1122,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                     className="btn btn-primary"
                     disabled={submitting}
                     onClick={() => void handleStartTask()}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 'var(--apple-radius-pill, 980px)', background: 'var(--apple-blue, #0071e3)', padding: '8px 18px', fontWeight: 600, border: 'none', color: '#fff' }}
                   >
                     <Play size={16} /> {selectedTask.type === 'WARRANTY_MAINTENANCE' ? 'Bắt đầu xử lý bảo hành' : 'Bắt đầu ca làm việc'}
                   </button>
@@ -1110,20 +1131,20 @@ export const TechnicianDailyTasks: React.FC = () => {
 
               {/* Status Banner for Waiting Confirmation (Only Delivery) */}
               {selectedTask.type !== 'WARRANTY_MAINTENANCE' && selectedTask.status === 'WAITING_PO_CONFIRMATION' && (
-                <div style={{ background: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)', padding: '16px', borderRadius: '12px', border: '1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent)', color: 'var(--accent-hover)' }}>
+                <div style={{ background: 'var(--apple-orange-soft)', padding: '16px', borderRadius: 'var(--apple-radius-item, 12px)', border: '1px solid var(--apple-orange-border)', color: 'var(--apple-orange)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '0.95rem' }}>
                     <Clock size={18} />
                     <span>Đang chờ PO duyệt nghiệm thu</span>
                   </div>
                   <p style={{ margin: '6px 0 0 0', fontSize: '0.88rem' }}>
-                    Báo cáo hoàn thành và ảnh minh chứng đã được gửi tới Quản lý Kho & SP (PO). Đơn hàng chưa kết thúc ngay mà sẽ chính thức hoàn thành khi PO phê duyệt nghiệm thu.
+                    Báo cáo hoàn thành và ảnh minh chứng đã được gửi tới Nhân viên bán hàng. Đơn hàng chưa kết thúc ngay mà sẽ chính thức hoàn thành khi Nhân viên bán hàng phê duyệt nghiệm thu.
                   </p>
                 </div>
               )}
 
               {/* Status Banner for Completed / Resolved */}
               {(selectedTask.status === 'COMPLETED' || selectedTask.status === 'RESOLVED') && (
-                <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#047857' }}>
+                <div style={{ background: 'var(--apple-green-soft)', padding: '16px', borderRadius: 'var(--apple-radius-item, 12px)', border: '1px solid var(--apple-green-border)', color: 'var(--apple-green)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '0.95rem' }}>
                     <CheckCircle2 size={18} />
                     <span>{selectedTask.type === 'WARRANTY_MAINTENANCE' ? 'Phiếu bảo hành đã xử lý thành công' : 'Công việc đã hoàn thành & Được PO nghiệm thu'}</span>
@@ -1140,7 +1161,7 @@ export const TechnicianDailyTasks: React.FC = () => {
               <div className="tech-proof-section">
                 <div className="tech-proof-title">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Camera size={18} color="#4f46e5" />
+                    <Camera size={18} color="var(--apple-blue, #0071e3)" />
                     <span>Ảnh minh chứng nghiệm thu (Proof of Work)</span>
                   </div>
                   <span style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 600 }}>

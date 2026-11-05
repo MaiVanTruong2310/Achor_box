@@ -18,9 +18,12 @@ import {
 } from 'lucide-react';
 import { ProductCategory } from '../../types/database';
 import { productsService } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import './products.css';
 
 export const Categories: React.FC = () => {
+  const { profile } = useAuth();
+  const isSuperAdmin = profile?.role === 'super_admin';
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [productManagers, setProductManagers] = useState<{ id: string; fullName: string; email: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +97,7 @@ export const Categories: React.FC = () => {
   };
 
   const openCreateModal = () => {
+    if (!isSuperAdmin) return;
     setModalMode('create');
     setEditingId(null);
     setName('');
@@ -105,6 +109,7 @@ export const Categories: React.FC = () => {
   };
 
   const openEditModal = (cat: ProductCategory) => {
+    if (!isSuperAdmin) return;
     setModalMode('edit');
     setEditingId(cat.id);
     setName(cat.name);
@@ -117,7 +122,7 @@ export const Categories: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || !isSuperAdmin) return;
 
     const cleanName = name.trim();
     if (!cleanName) {
@@ -164,13 +169,14 @@ export const Categories: React.FC = () => {
   };
 
   const openDeleteModal = (cat: ProductCategory) => {
+    if (!isSuperAdmin) return;
     setCategoryToDelete(cat);
     setDeleteError('');
     setDeleteModalOpen(true);
   };
 
   const handleDelete = async () => {
-    if (!categoryToDelete || deleting) return;
+    if (!categoryToDelete || deleting || !isSuperAdmin) return;
     setDeleting(true);
     setDeleteError('');
     try {
@@ -264,14 +270,35 @@ export const Categories: React.FC = () => {
             <RefreshCw size={15} className={loading ? 'spin' : ''} />
           </button>
 
-          <button
-            type="button"
-            className="btn-primary-compact"
-            onClick={openCreateModal}
-          >
-            <Plus size={16} />
-            <span>Thêm danh mục</span>
-          </button>
+          {isSuperAdmin ? (
+            <button
+              type="button"
+              className="btn-primary-compact"
+              onClick={openCreateModal}
+            >
+              <Plus size={16} />
+              <span>Thêm danh mục</span>
+            </button>
+          ) : (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '999px',
+                background: 'rgba(0, 122, 255, 0.08)',
+                border: '1px solid rgba(0, 122, 255, 0.22)',
+                color: 'var(--apple-blue, #007aff)',
+                fontSize: '12px',
+                fontWeight: 600
+              }}
+              title="Quyền hạn: Chỉ xem. Quản lý cửa hàng (Admin) chịu trách nhiệm cấu hình danh mục."
+            >
+              <ShieldAlert size={14} />
+              <span>Chế độ xem (PO)</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -407,7 +434,7 @@ export const Categories: React.FC = () => {
               <th style={{ width: '18%' }}>Đường dẫn (Slug)</th>
               <th style={{ width: '24%' }}>Quản lý phụ trách (PO)</th>
               <th>Mô tả chi tiết</th>
-              <th style={{ width: '110px', textAlign: 'center' }}>Thao tác</th>
+              <th style={{ width: '110px', textAlign: 'center' }}>{isSuperAdmin ? 'Thao tác' : 'Quyền hạn'}</th>
             </tr>
           </thead>
           <tbody>
@@ -489,7 +516,13 @@ export const Categories: React.FC = () => {
                     {(() => {
                       const mId = cat.manager_id || cat.managerId;
                       const assignedPo = productManagers.find((pm) => pm.id === mId);
-                      const poName = assignedPo ? assignedPo.fullName : cat.manager_name;
+                      const poName = (cat as any).managerName || cat.manager_name || (assignedPo ? assignedPo.fullName : null);
+                      const catEmail = (cat as any).managerEmail || (assignedPo ? assignedPo.email : null);
+                      const isMe = Boolean(profile && (
+                        (mId && profile.id && mId === profile.id) ||
+                        (catEmail && profile.email && catEmail.toLowerCase() === profile.email.toLowerCase()) ||
+                        (poName && profile.full_name && poName.toLowerCase() === profile.full_name.toLowerCase())
+                      ));
                       if (!poName) {
                         return (
                           <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
@@ -505,15 +538,16 @@ export const Categories: React.FC = () => {
                             gap: '6px',
                             padding: '4px 10px',
                             borderRadius: '6px',
-                            background: 'rgba(59, 130, 246, 0.08)',
-                            border: '1px solid rgba(59, 130, 246, 0.22)',
-                            color: '#2563eb',
+                            background: isMe ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.08)',
+                            border: isMe ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(59, 130, 246, 0.22)',
+                            color: isMe ? '#059669' : '#2563eb',
                             fontSize: '12px',
                             fontWeight: 600
                           }}
+                          title={isMe ? 'Danh mục được phân công cho bạn quản lý' : undefined}
                         >
                           <User size={13} />
-                          <span>{poName}</span>
+                          <span>{poName} {isMe ? '(Bạn)' : ''}</span>
                         </div>
                       );
                     })()}
@@ -526,24 +560,40 @@ export const Categories: React.FC = () => {
                   </td>
 
                   <td style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      <button
-                        type="button"
-                        className="action-icon-btn"
-                        onClick={() => openEditModal(cat)}
-                        title="Chỉnh sửa danh mục"
+                    {isSuperAdmin ? (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          type="button"
+                          className="action-icon-btn"
+                          onClick={() => openEditModal(cat)}
+                          title="Chỉnh sửa danh mục"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="action-icon-btn danger"
+                          onClick={() => openDeleteModal(cat)}
+                          title="Xóa danh mục"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          fontSize: '11.5px',
+                          fontWeight: 600,
+                          color: 'var(--text-muted, #86868b)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          background: 'rgba(0, 0, 0, 0.04)'
+                        }}
                       >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        className="action-icon-btn danger"
-                        onClick={() => openDeleteModal(cat)}
-                        title="Xóa danh mục"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                        Chỉ xem
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))

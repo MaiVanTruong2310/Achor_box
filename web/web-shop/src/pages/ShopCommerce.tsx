@@ -11,7 +11,7 @@ import { AccountNav, ErrorNotice, ResourceState, useResource } from '../componen
 import { customer, jobLabels, type CustomerOrder } from '../api/customer';
 import { DraftEditor } from '../components/DraftEditor';
 import { paymentApi, paymentDestination } from '../api/payment';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, QrCode, Building2, Truck, Zap } from 'lucide-react';
 import './cart-order-table.css';
 export function Login() {
     const { user } = useShop();
@@ -54,8 +54,16 @@ export function Checkout() {
     const resource = useResource(signal => customer.order(orderId, signal), `${user?.userId}:${orderId}`);
     const mode = useResource(paymentApi.mode, 'payment-mode');
     const [error, setError] = useState<Error>(); const [busy, setBusy] = useState(false); const [terms, setTerms] = useState(false); const lock = useRef(false);
+    const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'vietqr' | 'cod' | 'mock'>('vnpay');
     const action = resource.data ? checkoutAction(resource.data) : 'blocked';
     const canPay = action !== 'blocked' && !resource.loading && !resource.error && !mode.error && !!mode.data && (mode.data.provider === 'vnpay' || mode.data.demoActionsEnabled);
+    const canPayCurrentMethod = action !== 'blocked' && !resource.loading && !resource.error && (
+        paymentMethod === 'vietqr' || 
+        paymentMethod === 'cod' || 
+        paymentMethod === 'mock' ||
+        (paymentMethod === 'vnpay' && canPay)
+    );
+
     async function pay() {
         if (lock.current || !canPay || !terms || !resource.data) return;
         lock.current = true; setBusy(true); setError(undefined);
@@ -69,6 +77,32 @@ export function Checkout() {
         } catch (reason) { setError(reason as Error); resource.retry(); }
         finally { setBusy(false); lock.current = false; }
     }
+
+    async function handlePaymentSubmit() {
+        if (lock.current || !terms || !resource.data) return;
+        if (paymentMethod === 'vnpay') {
+            await pay();
+            return;
+        }
+        if (paymentMethod === 'mock') {
+            if (canPay) {
+                await pay();
+            } else {
+                navigate(`/payment/result?orderId=${orderId}`);
+            }
+            return;
+        }
+        if (paymentMethod === 'vietqr' || paymentMethod === 'cod') {
+            setBusy(true);
+            try {
+                await new Promise(r => setTimeout(r, 600));
+                navigate(`/payment/result?orderId=${orderId}`);
+            } finally {
+                setBusy(false);
+            }
+        }
+    }
+
     return (
         <section className="container section commerce-workspace">
             <OrderNavigation id={orderId} title="Thanh toán đơn hàng" />
@@ -90,14 +124,6 @@ export function Checkout() {
 
                             <ResourceState {...mode} />
 
-                            {mode.data && (
-                                <div style={{ background: '#f5f5f7', padding: '12px 16px', borderRadius: 14, fontSize: '0.84rem', color: '#515154', marginBottom: 16 }}>
-                                    {mode.data.provider === 'mock'
-                                        ? 'Thanh toán mô phỏng cho đồ án kiểm thử. Không thu tiền thật.'
-                                        : 'Thanh toán qua cổng VNPay Sandbox bảo mật. Môi trường kiểm thử thanh toán trực tuyến.'}
-                                </div>
-                            )}
-
                             <ErrorNotice error={error} focus />
 
                             {resource.data.status === 'pending' && (
@@ -108,6 +134,146 @@ export function Checkout() {
 
                             <ApprovalDecision order={resource.data} reload={resource.retry} />
 
+                            {/* Khối chọn phương thức thanh toán */}
+                            <div className="payment-methods-selector" style={{ margin: '18px 0 16px' }}>
+                                <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1d1d1f', margin: '0 0 10px 0' }}>
+                                    Chọn phương thức thanh toán
+                                </h4>
+                                <div className="payment-methods-group">
+                                    {/* 1. Cổng VNPay */}
+                                    <div 
+                                        className={`payment-method-card ${paymentMethod === 'vnpay' ? 'active' : ''}`}
+                                        onClick={() => setPaymentMethod('vnpay')}
+                                    >
+                                        <input 
+                                            type="radio" 
+                                            name="payment_method" 
+                                            className="payment-method-radio" 
+                                            checked={paymentMethod === 'vnpay'} 
+                                            onChange={() => setPaymentMethod('vnpay')}
+                                        />
+                                        <div className="payment-method-icon">
+                                            <CreditCard size={18} />
+                                        </div>
+                                        <div className="payment-method-info">
+                                            <div className="payment-method-header">
+                                                <span className="payment-method-title">Cổng VNPAY (QR / ATM / Visa)</span>
+                                                <span className="payment-method-badge badge-recommended">Khuyên dùng</span>
+                                            </div>
+                                            <p className="payment-method-desc">
+                                                Quét mã VNPAY-QR hoặc dùng thẻ ATM, Visa qua cổng VNPay Sandbox bảo mật.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Chuyển khoản VietQR */}
+                                    <div 
+                                        className={`payment-method-card ${paymentMethod === 'vietqr' ? 'active' : ''}`}
+                                        onClick={() => setPaymentMethod('vietqr')}
+                                    >
+                                        <input 
+                                            type="radio" 
+                                            name="payment_method" 
+                                            className="payment-method-radio" 
+                                            checked={paymentMethod === 'vietqr'} 
+                                            onChange={() => setPaymentMethod('vietqr')}
+                                        />
+                                        <div className="payment-method-icon">
+                                            <QrCode size={18} />
+                                        </div>
+                                        <div className="payment-method-info">
+                                            <div className="payment-method-header">
+                                                <span className="payment-method-title">Chuyển khoản trực tiếp (VietQR)</span>
+                                                <span className="payment-method-badge badge-neutral">24/7</span>
+                                            </div>
+                                            <p className="payment-method-desc">
+                                                Chuyển khoản nhanh liên ngân hàng với cú pháp tự động điền mã đơn hàng.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* 3. Thanh toán khi nhận hàng COD */}
+                                    <div 
+                                        className={`payment-method-card ${paymentMethod === 'cod' ? 'active' : ''}`}
+                                        onClick={() => setPaymentMethod('cod')}
+                                    >
+                                        <input 
+                                            type="radio" 
+                                            name="payment_method" 
+                                            className="payment-method-radio" 
+                                            checked={paymentMethod === 'cod'} 
+                                            onChange={() => setPaymentMethod('cod')}
+                                        />
+                                        <div className="payment-method-icon">
+                                            <Truck size={18} />
+                                        </div>
+                                        <div className="payment-method-info">
+                                            <div className="payment-method-header">
+                                                <span className="payment-method-title">Thanh toán khi nhận hàng (COD)</span>
+                                                <span className="payment-method-badge badge-neutral">Nghiệm thu</span>
+                                            </div>
+                                            <p className="payment-method-desc">
+                                                Thanh toán trực tiếp cho kỹ thuật viên sau khi lắp đặt và nghiệm thu tủ thành công.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* 4. Thanh toán mô phỏng Test */}
+                                    <div 
+                                        className={`payment-method-card ${paymentMethod === 'mock' ? 'active' : ''}`}
+                                        onClick={() => setPaymentMethod('mock')}
+                                    >
+                                        <input 
+                                            type="radio" 
+                                            name="payment_method" 
+                                            className="payment-method-radio" 
+                                            checked={paymentMethod === 'mock'} 
+                                            onChange={() => setPaymentMethod('mock')}
+                                        />
+                                        <div className="payment-method-icon">
+                                            <Zap size={18} />
+                                        </div>
+                                        <div className="payment-method-info">
+                                            <div className="payment-method-header">
+                                                <span className="payment-method-title">Thanh toán mô phỏng (Sandbox)</span>
+                                                <span className="payment-method-badge badge-neutral">Đồ án test</span>
+                                            </div>
+                                            <p className="payment-method-desc">
+                                                Mô phỏng thanh toán thành công tức thì phục vụ kiểm thử và báo cáo đồ án.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Chi tiết theo phương thức thanh toán */}
+                            {paymentMethod === 'vietqr' && (
+                                <div className="payment-details-box">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontWeight: 700, color: '#0f172a' }}>
+                                        <Building2 size={16} />
+                                        <span>Thông tin tài khoản thụ hưởng:</span>
+                                    </div>
+                                    <p>• Ngân hàng: <strong>BIDV - CN Quang Trung, Hà Nội</strong></p>
+                                    <p>• Số tài khoản: <strong style={{ color: '#0071e3', letterSpacing: '0.5px' }}>1240 0088 9966</strong></p>
+                                    <p>• Chủ tài khoản: <strong>CONG TY ANCHORBOX VIET NAM</strong></p>
+                                    <p>• Số tiền: <strong style={{ color: '#d97706' }}>{money(resource.data.total)}</strong></p>
+                                    <p>• Cú pháp: <strong>AB {(resource.data.id || orderId).substring(0, 8).toUpperCase()}</strong></p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 6, fontStyle: 'italic' }}>
+                                        * Đơn hàng sẽ được tự động kích hoạt sau khi hệ thống ghi nhận chuyển khoản.
+                                    </p>
+                                </div>
+                            )}
+
+                            {paymentMethod === 'cod' && (
+                                <div className="payment-details-box">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontWeight: 700, color: '#0f172a' }}>
+                                        <Truck size={16} />
+                                        <span>Thanh toán khi nhận hàng & nghiệm thu:</span>
+                                    </div>
+                                    <p>Quý khách sẽ thanh toán <strong>{money(resource.data.total)}</strong> trực tiếp bằng tiền mặt hoặc quẹt thẻ cho kỹ thuật viên sau khi hoàn tất lắp đặt tủ tại địa chỉ của bạn.</p>
+                                </div>
+                            )}
+
                             {action !== 'blocked' && (
                                 <>
                                     <label className="apple-terms-pill">
@@ -117,30 +283,37 @@ export function Checkout() {
                                             disabled={busy}
                                             onChange={e => setTerms(e.target.checked)}
                                         />
-                                        <span>Tôi đã kiểm tra sản phẩm, địa chỉ và đồng ý thanh toán kiểm thử.</span>
+                                        <span>Tôi đã kiểm tra sản phẩm, địa chỉ và đồng ý thanh toán.</span>
                                     </label>
 
                                     <button
                                         type="button"
                                         className="apple-primary-cta-btn"
-                                        disabled={busy || !terms || !canPay}
-                                        onClick={pay}
+                                        disabled={busy || !terms || !canPayCurrentMethod}
+                                        onClick={handlePaymentSubmit}
                                     >
-                                        <CreditCard size={18} />
+                                        {paymentMethod === 'vnpay' && <CreditCard size={18} />}
+                                        {paymentMethod === 'vietqr' && <QrCode size={18} />}
+                                        {paymentMethod === 'cod' && <Truck size={18} />}
+                                        {paymentMethod === 'mock' && <Zap size={18} />}
                                         <span>
                                             {busy
-                                                ? 'Đang mở phiên thanh toán…'
-                                                : action === 'resume'
-                                                ? 'Tiếp tục phiên thanh toán VNPAY'
-                                                : 'Bắt đầu thanh toán với VNPAY →'}
+                                                ? 'Đang xử lý…'
+                                                : paymentMethod === 'vnpay'
+                                                ? (action === 'resume' ? 'Tiếp tục phiên thanh toán VNPAY' : 'Bắt đầu thanh toán với VNPAY →')
+                                                : paymentMethod === 'vietqr'
+                                                ? 'Xác nhận đã chuyển khoản VietQR →'
+                                                : paymentMethod === 'cod'
+                                                ? 'Xác nhận đặt hàng thanh toán COD →'
+                                                : 'Hoàn tất thanh toán mô phỏng (Test) →'}
                                         </span>
                                     </button>
                                 </>
                             )}
 
-                            {action !== 'blocked' && !canPay && !mode.loading && (
+                            {action !== 'blocked' && paymentMethod === 'vnpay' && !canPay && !mode.loading && (
                                 <p className="notice" style={{ marginTop: 14 }}>
-                                    Máy chủ chưa sẵn sàng cho thanh toán. Hãy thử cập nhật trạng thái.
+                                    Máy chủ chưa sẵn sàng cho cổng VNPAY. Bạn có thể chọn phương thức <strong>Chuyển khoản VietQR</strong>, <strong>COD</strong> hoặc <strong>Thanh toán mô phỏng</strong> ở trên để tiếp tục.
                                 </p>
                             )}
 

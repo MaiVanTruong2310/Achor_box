@@ -3,7 +3,10 @@ package com.smartbox.backend.security;
 import com.smartbox.backend.exception.AppException;
 import com.smartbox.backend.exception.ConflictException;
 import com.smartbox.backend.exception.UnauthorizedException;
+import com.smartbox.backend.service.admin.EmailService;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -32,6 +35,10 @@ public class SupabaseAuthGateway {
     private final String key;
     private final String url;
     private final String serviceKey;
+
+    @Autowired(required = false)
+    @Lazy
+    private EmailService emailService;
 
     public SupabaseAuthGateway(
             @Value("${smartbox.supabase.url:}") String url,
@@ -368,20 +375,55 @@ public class SupabaseAuthGateway {
                     .body(Map.of("email", email, "create_user", false))
                     .retrieve()
                     .toBodilessEntity();
+            return;
         } catch (RestClientResponseException ex) {
             int status = ex.getStatusCode().value();
-            if (status == 429) {
-                throw new AppException(429, "AUTH_RATE_LIMITED");
-            }
             // Unknown email (signups disabled for OTP): stay silent so accounts cannot be enumerated.
             if (status == 400 || status == 404 || status == 422) {
-                log.info("Password recovery requested for an email without an account");
+                log.info("Password recovery requested for an email without an account: {}", email);
                 return;
             }
-            log.error("Supabase OTP email failed: status={}, body={}", status, ex.getResponseBodyAsString());
-            throw new AppException(503, "AUTH_RECOVERY_UNAVAILABLE");
-        } catch (ResourceAccessException ex) {
-            throw new AppException(503, "AUTH_PROVIDER_UNAVAILABLE");
+            log.warn("Supabase standard /otp failed (status={}: {}), chuyen sang admin generate_link fallback...",
+                    status, ex.getResponseBodyAsString());
+        } catch (Exception ex) {
+            log.warn("Supabase standard /otp gap loi mang ({}), chuyen sang admin generate_link fallback...", ex.getMessage());
         }
+
+        // FALLBACK: Dung Supabase Admin API generate_link de sinh ma OTP
+        if (serviceKey != null && !serviceKey.isBlank()) {
+            try {
+                Map<?, ?> resp = client.post()
+                        .uri("/admin/generate_link")
+                        .header("apikey", serviceKey)
+                        .header("Authorization", "Bearer " + serviceKey)
+                        .body(Map.of("type", "recovery", "email", email))
+                        .retrieve()
+                        .body(Map.class);
+                if (resp != null) {
+                    Object otp = resp.get("email_otp");
+                    String actionLink = java.util.Objects.toString(resp.get("action_link"), "");
+                    String fullName = "";
+                    if (resp.get("user_metadata") instanceof Map<?, ?> meta && meta.get("full_name") != null) {
+                        fullName = meta.get("full_name").toString();
+                    }
+                    log.info("✅ [SUPABASE AUTH RECOVERY] Da phat sinh ma OTP thanh cong cho {}: [OTP={}] [Link={}]", email, otp, actionLink);
+                    if (otp != null && emailService != null) {
+                        emailService.sendResetPasswordOtpEmail(email, fullName, otp.toString());
+                    }
+                    return;
+                }
+            } catch (RestClientResponseException adminEx) {
+                int status = adminEx.getStatusCode().value();
+                if (status == 400 || status == 404 || status == 422) {
+                    log.info("Password recovery requested for email not found in admin: {}", email);
+                    return;
+                }
+                log.error("Supabase Admin generate_link that bai: status={}, body={}", status, adminEx.getResponseBodyAsString());
+            } catch (Exception adminEx) {
+                log.error("Loi khi goi Supabase Admin generate_link: {}", adminEx.getMessage());
+            }
+        }
+
+        throw new AppException(503, "AUTH_RECOVERY_UNAVAILABLE");
     }
 }

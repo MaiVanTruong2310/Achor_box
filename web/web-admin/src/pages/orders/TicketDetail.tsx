@@ -15,6 +15,7 @@ import {
   MapPin,
   CreditCard,
   Package,
+  ShoppingBag,
   Calendar,
   ShieldCheck,
   AlertTriangle,
@@ -33,6 +34,8 @@ import { toast } from '../../contexts/ToastContext';
 import { adminRequest } from '../../services/adminRequest';
 import { deliveryApi, Job } from '../../services/deliveryInstallation';
 import { PoDeliveryDispatch } from '../../components/delivery/PoDeliveryDispatch';
+import { SalesInvoiceModal } from '../../components/SalesInvoiceModal';
+import { Printer } from 'lucide-react';
 import './ticket-detail.css';
 
 interface TicketItemApproval {
@@ -175,6 +178,7 @@ const formatDateTime = (iso?: string | null) => {
 };
 
 export const TicketDetail: React.FC = () => {
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -640,6 +644,35 @@ export const TicketDetail: React.FC = () => {
             <span>{formatDateTime(ticket.created_at)}</span>
           </div>
 
+          <Link
+            to={isPO ? `/po/orders/${ticket.order_id || ticket.order?.id || id}` : `/orders/${ticket.order_id || ticket.order?.id || id}`}
+            className="tkd-refresh-btn"
+            style={{
+              textDecoration: 'none',
+              background: 'rgba(120, 120, 128, 0.08)',
+              color: 'var(--text-secondary)'
+            }}
+            title="Xem hồ sơ đơn hàng chi tiết"
+          >
+            <ShoppingBag size={13} />
+            <span>Hồ sơ đơn hàng</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setShowInvoiceModal(true)}
+            className="tkd-refresh-btn"
+            title="Xem trước bản in A4 / Hóa đơn bán hàng & Nghiệm thu"
+            style={{
+              background: 'rgba(0, 122, 255, 0.08)',
+              color: 'var(--apple-blue, #007aff)',
+              borderColor: 'rgba(0, 122, 255, 0.25)'
+            }}
+          >
+            <Printer size={13} />
+            <span>In A4 / Hóa đơn</span>
+          </button>
+
           <button
             type="button"
             onClick={() => void loadTicket()}
@@ -779,7 +812,7 @@ export const TicketDetail: React.FC = () => {
 
               {ticket.itemApprovals && ticket.itemApprovals.length > 0 ? (
                 ticket.itemApprovals.map((item) => {
-                  const isManagerOfItem = isPO && item.managerId === profile?.id;
+                  const isManagerOfItem = (isPO && item.managerId === profile?.id) || profile?.role === 'super_admin';
                   const itemStatus = item.status || 'PENDING';
                   return (
                     <div key={item.id} className="tkd-product-row">
@@ -795,6 +828,19 @@ export const TicketDetail: React.FC = () => {
                             {item.variantName ? `${item.variantName} · ` : ''}
                             <code>SKU: {item.sku || 'SBK-PRO-85L-METALLIC'}</code>
                           </div>
+                          {isPO && (
+                            <div style={{ marginTop: 4 }}>
+                              {item.managerId === profile?.id ? (
+                                <span style={{ fontSize: '11px', color: '#059669', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '4px', fontWeight: 650 }}>
+                                  ✓ Sản phẩm bạn phụ trách
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '11px', color: '#d97706', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                                  ⚠️ Thuộc PO khác quản lý
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -881,11 +927,11 @@ export const TicketDetail: React.FC = () => {
           {/* KHU VỰC 3: QUYẾT ĐỊNH THẨM ĐỊNH PO TICKET (Chỉ hiện khi chờ thẩm định) */}
           {ticket.status === 'PENDING' && (
             <div className="tkd-action-box">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                 <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>Quyết định thẩm định PO Ticket</span>
-                {hasForeignItems && (
-                  <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 600 }}>
-                    ⚠️ Có mặt hàng thuộc PO khác
+                {hasForeignItems && isPO && (
+                  <span style={{ fontSize: '0.76rem', color: '#d97706', fontWeight: 600, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '3px 10px', borderRadius: 6 }}>
+                    ⚠️ Đơn có sản phẩm của PO khác · Vui lòng bấm Duyệt từng món bạn phụ trách ở trên
                   </span>
                 )}
               </div>
@@ -1591,6 +1637,13 @@ export const TicketDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {showInvoiceModal && ticket?.order_id && (
+        <SalesInvoiceModal
+          orderId={ticket.order_id}
+          onClose={() => setShowInvoiceModal(false)}
+          documentTitle="Hóa đơn & Nghiệm thu PO Ticket"
+        />
       )}
     </div>
   );

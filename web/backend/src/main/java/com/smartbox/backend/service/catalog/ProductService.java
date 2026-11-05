@@ -16,6 +16,7 @@ import com.smartbox.backend.repository.CommerceRepository;
 import com.smartbox.backend.repository.ProductCategoryRepository;
 import com.smartbox.backend.repository.ProductRepository;
 import com.smartbox.backend.repository.ProductVariantRepository;
+import com.smartbox.backend.repository.ProfileRepository;
 import com.smartbox.backend.security.CurrentActor;
 import com.smartbox.backend.service.commerce.OrderWorkflowService;
 import com.smartbox.backend.service.warranty.AcceptanceWarrantyService;
@@ -54,6 +55,7 @@ public class ProductService {
     private final AcceptanceWarrantyService warranties;
     private final CurrentActor actors;
     private final ProductVariantRepository variantRepository;
+    private final ProfileRepository profileRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional(readOnly = true)
@@ -111,15 +113,7 @@ public class ProductService {
         }
 
         String trimmedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
-
-        Page<Product> productPage;
-        if (trimmedSearch != null) {
-            productPage = productRepository.searchProducts(effectiveCategoryId, trimmedSearch, pageable);
-        } else if (effectiveCategoryId != null) {
-            productPage = productRepository.findByCategoryId(effectiveCategoryId, pageable);
-        } else {
-            productPage = productRepository.findAll(pageable);
-        }
+        Page<Product> productPage = productRepository.searchProducts(effectiveCategoryId, null, trimmedSearch, pageable);
 
         List<ProductResponse> responses = mapProductsToResponses(productPage.getContent());
         Page<ProductResponse> pageResult = new org.springframework.data.domain.PageImpl<>(responses, pageable, productPage.getTotalElements());
@@ -128,9 +122,17 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "categories", key = "'all'")
     public List<ProductCategory> getAllCategories() {
-        return categoryRepository.findAllByOrderByNameAsc();
+        List<ProductCategory> list = categoryRepository.findAllByOrderByNameAsc();
+        for (ProductCategory cat : list) {
+            if (cat.getManagerId() != null) {
+                profileRepository.findById(cat.getManagerId()).ifPresent(p -> {
+                    cat.setManagerName(p.getFullName());
+                    cat.setManagerEmail(p.getEmail());
+                });
+            }
+        }
+        return list;
     }
 
     @Transactional(readOnly = true)
@@ -153,7 +155,7 @@ public class ProductService {
             @CacheEvict(value = "system_settings", allEntries = true)
     })
     public ProductCategory createCategory(com.smartbox.backend.dto.request.catalog.ProductCategoryRequest request) {
-        actors.get().requireRoles("super_admin", "product_manager");
+        actors.get().requireRoles("super_admin");
         String name = request.getName().trim();
         String slug = request.getSlug() != null && !request.getSlug().isBlank()
                 ? request.getSlug().trim().toLowerCase(java.util.Locale.ROOT)
@@ -179,7 +181,7 @@ public class ProductService {
             @CacheEvict(value = "system_settings", allEntries = true)
     })
     public ProductCategory updateCategory(UUID id, com.smartbox.backend.dto.request.catalog.ProductCategoryRequest request) {
-        actors.get().requireRoles("super_admin", "product_manager");
+        actors.get().requireRoles("super_admin");
         ProductCategory category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Loại sản phẩm", "id", id));
 
@@ -200,7 +202,14 @@ public class ProductService {
         }
         category.setManagerId(request.getManagerId());
 
-        return categoryRepository.save(category);
+        ProductCategory saved = categoryRepository.save(category);
+        if (request.getManagerId() != null) {
+            productRepository.findByCategoryIdOrderByCreatedAtDesc(id).forEach(p -> {
+                p.setManagerId(request.getManagerId());
+                productRepository.save(p);
+            });
+        }
+        return saved;
     }
 
     @Transactional
@@ -209,7 +218,7 @@ public class ProductService {
             @CacheEvict(value = "system_settings", allEntries = true)
     })
     public void deleteCategory(UUID id) {
-        actors.get().requireRoles("super_admin", "product_manager");
+        actors.get().requireRoles("super_admin");
         ProductCategory category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Loại sản phẩm", "id", id));
 
@@ -509,6 +518,7 @@ public class ProductService {
         } else if (p.getCategoryId() != null) {
             var catOpt = categoryRepository.findById(p.getCategoryId());
             if (catOpt.isPresent()) {
+                cat = catOpt.get();
                 catName = catOpt.get().getName();
                 catSlug = catOpt.get().getSlug();
             }

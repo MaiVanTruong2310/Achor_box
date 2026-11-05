@@ -37,11 +37,20 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     @EntityGraph(attributePaths = {"category"})
     @Query("SELECT p FROM Product p WHERE (:categoryId IS NULL OR p.categoryId = :categoryId) " +
+           "AND (:managerId IS NULL OR p.managerId = :managerId OR p.category.managerId = :managerId) " +
            "AND (:query IS NULL OR :query = '' " +
            "OR LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(COALESCE(p.description, '')) LIKE LOWER(CONCAT('%', :query, '%')))")
-    Page<Product> searchProducts(@Param("categoryId") UUID categoryId, @Param("query") String query, Pageable pageable);
+    Page<Product> searchProducts(
+            @Param("categoryId") UUID categoryId,
+            @Param("managerId") UUID managerId,
+            @Param("query") String query,
+            Pageable pageable);
+
+    default Page<Product> searchProducts(UUID categoryId, String query, Pageable pageable) {
+        return searchProducts(categoryId, null, query, pageable);
+    }
 
     @EntityGraph(attributePaths = {"category"})
     Optional<Product> findBySku(String sku);

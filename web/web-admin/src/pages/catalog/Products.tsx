@@ -240,18 +240,10 @@ export const Products: React.FC = () => {
         categoryId: cat !== 'all' ? cat : undefined,
         search: query.trim() || undefined
       });
-      // Nếu là PO (product_manager): Chỉ hiển thị các sản phẩm thuộc danh mục hoặc sản phẩm được giao quản lý
-      let loaded = res.content;
-      if (isProductManager && profile?.id) {
-        loaded = loaded.filter(p => {
-          const cat = categories.find(c => c.id === p.category_id);
-          const effectiveManagerId = cat?.manager_id || cat?.managerId || p.manager_id;
-          return effectiveManagerId === profile.id;
-        });
-      }
-      setProducts(loaded);
-      setTotalProducts(isProductManager ? loaded.length : res.totalElements);
-      setTotalPages(Math.max(1, isProductManager ? Math.ceil(loaded.length / size) : res.totalPages));
+      // Danh sách sản phẩm từ backend (backend đã lọc chính xác theo PO nếu là product_manager)
+      setProducts(res.content);
+      setTotalProducts(res.totalElements);
+      setTotalPages(Math.max(1, res.totalPages));
     } catch (err: any) {
       setOperationError(err.message || 'Không thể tải danh sách sản phẩm.');
     } finally {
@@ -309,16 +301,9 @@ export const Products: React.FC = () => {
   // Client-side stock status filter applied to current page results
   const paginatedProducts = useMemo(() => {
     let list = products;
-    if (isProductManager && profile?.id) {
-      list = list.filter((p) => {
-        const cat = categories.find((c) => c.id === p.category_id);
-        const effectiveManagerId = cat?.manager_id || cat?.managerId || p.manager_id;
-        return effectiveManagerId === profile.id;
-      });
-    }
     if (stockFilter === 'all') return list;
     return list.filter((p) => productStockLevel(p) === stockFilter);
-  }, [products, stockFilter, isProductManager, profile?.id, categories]);
+  }, [products, stockFilter]);
 
   // Overall KPI metrics
   const totalSKUs = useMemo(() => {
@@ -494,22 +479,17 @@ export const Products: React.FC = () => {
       setAdjustError('Số lượng điều chỉnh kho phải lớn hơn 0 và không vượt quá 100.000 sản phẩm');
       return;
     }
+    const hasVariants = Boolean(adjustProduct.variants && adjustProduct.variants.length > 0);
+    if (hasVariants && !adjustVariantId) {
+      setAdjustError('Sản phẩm này có biến thể, vui lòng chọn biến thể (kích cỡ/dung tích) cần điều chỉnh tồn kho.');
+      return;
+    }
     setAdjustError('');
     setAdjustSubmitting(true);
 
-    // Với tài khoản PO: Luôn chuyển thành yêu cầu gửi Admin phê duyệt
-    if (isProductManager) {
-      setTimeout(() => {
-        setAdjustSubmitting(false);
-        setAdjustModalOpen(false);
-        showSuccess(`Đã gửi yêu cầu ${adjustType === 'in' ? 'nhập thêm' : 'xuất kho'} ${adjustQuantity} sản phẩm (${adjustProduct.name}) tới Quản trị viên (Admin) phê duyệt!`);
-      }, 400);
-      return;
-    }
-
     const delta = adjustType === 'in' ? adjustQuantity : -adjustQuantity;
     try {
-      if (adjustVariantId) {
+      if (hasVariants && adjustVariantId) {
         await productsService.adjustVariantStock(adjustProduct.id, adjustVariantId, delta, adjustReason);
       } else {
         await productsService.updateStock(adjustProduct.id, delta, adjustReason);
@@ -519,7 +499,14 @@ export const Products: React.FC = () => {
       await loadProducts();
       if (activeTab === 'movements') void loadMovements();
     } catch (err: any) {
-      setAdjustError('Lỗi điều chỉnh tồn kho: ' + (err.message || 'Không thể thực hiện'));
+      const msg = err?.message || '';
+      if (msg.includes('USE_VARIANT_STOCK')) {
+        setAdjustError('Sản phẩm này có biến thể, bắt buộc phải chọn biến thể cụ thể để điều chỉnh tồn kho.');
+      } else if (msg.includes('INSUFFICIENT_STOCK')) {
+        setAdjustError('Tồn kho hiện tại không đủ để xuất số lượng yêu cầu.');
+      } else {
+        setAdjustError('Lỗi điều chỉnh tồn kho: ' + (err.message || 'Không thể thực hiện'));
+      }
     } finally {
       setAdjustSubmitting(false);
     }
@@ -683,17 +670,17 @@ export const Products: React.FC = () => {
             </h1>
             {isSuperAdmin && (
               <span className="fpt-badge fpt-badge-purple" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                🛡️ Quản trị viên (Toàn quyền)
+                🛡️ Quản lý cửa hàng (Toàn quyền)
               </span>
             )}
             {isProductManager && (
               <span className="fpt-badge fpt-badge-success" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                📦 Quản lý Kho & SP
+                📦 Nhân viên bán hàng & Sản phẩm (PO)
               </span>
             )}
             {isTechnician && (
               <span className="fpt-badge fpt-badge-info" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                🔧 Kỹ thuật viên (Tra cứu vật tư & Tồn kho)
+                🔧 Nhân viên kỹ thuật (Tra cứu vật tư & Tồn kho)
               </span>
             )}
           </div>
@@ -1584,21 +1571,55 @@ export const Products: React.FC = () => {
                 </div>
               </div>
 
-              {/* Variant Selector (if any) */}
+              {/* Variant Selector (if any) - Apple HIG Segmented Cards */}
               {adjustProduct.variants && adjustProduct.variants.length > 0 && (
                 <div className="clean-form-row">
-                  <label>Chọn kích cỡ / biến thể cần chỉnh</label>
-                  <select
-                    className="clean-form-select"
-                    value={adjustVariantId}
-                    onChange={(e) => setAdjustVariantId(e.target.value)}
-                  >
-                    {adjustProduct.variants.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.variant_name || v.name} ({v.sku}) — Tồn: {v.stock_quantity}
-                      </option>
-                    ))}
-                  </select>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <label style={{ margin: 0, fontWeight: 700, fontSize: '0.85rem' }}>
+                      Chọn biến thể kích cỡ / màu sắc cần chỉnh <span style={{ color: 'var(--fpt-rose)' }}>*</span>
+                    </label>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                      {adjustProduct.variants.length} mã SKU biến thể
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px', marginBottom: '8px' }}>
+                    {adjustProduct.variants.map((v) => {
+                      const isSelected = adjustVariantId === v.id;
+                      const vStock = v.stock_quantity ?? 0;
+                      return (
+                        <div
+                          key={v.id}
+                          onClick={() => setAdjustVariantId(v.id)}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '10px',
+                            border: isSelected ? '2px solid var(--apple-blue, #007aff)' : '1px solid var(--border-subtle, rgba(0,0,0,0.1))',
+                            background: isSelected ? 'rgba(0, 122, 255, 0.08)' : 'var(--bg-card, #fff)',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontWeight: 700, fontSize: '12.5px', color: isSelected ? 'var(--apple-blue, #007aff)' : 'var(--text-primary)' }}>
+                              {v.variant_name || v.name || (v as any).size || 'Biến thể'}
+                            </span>
+                            {isSelected && (
+                              <span style={{ fontSize: '11px', color: 'var(--apple-blue, #007aff)', fontWeight: 800 }}>✓</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                            <code>{v.sku}</code>
+                          </div>
+                          <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px dashed var(--border-subtle, rgba(0,0,0,0.08))', paddingTop: 4 }}>
+                            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Tồn kho:</span>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: vStock <= 0 ? 'var(--fpt-rose, #ef4444)' : 'var(--fpt-emerald, #10b981)' }}>
+                              {vStock}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 

@@ -772,3 +772,1159 @@
   gap: 12px;
   flex-wrap: wrap;
 }
+
+
+/* ==========================================================================
+   READ-ONLY DEVICES & SHARED MEMBERS (MOBILE APP PARITY)
+   ========================================================================== */
+
+.device-security-banner {
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.06) 0%, rgba(94, 92, 230, 0.06) 100%);
+  border: 1px solid rgba(0, 113, 227, 0.22);
+  border-radius: 18px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.device-security-banner-text {
+  font-size: 13.5px;
+  color: #1d1d1f;
+  line-height: 1.5;
+}
+
+.device-security-banner-text strong {
+  display: block;
+  font-size: 14px;
+  color: #0071e3;
+  margin-bottom: 4px;
+}
+
+.apple-lock-readonly-indicator {
+  background: #f8f8fa;
+  border-radius: 20px;
+  padding: 16px 18px;
+  border: 1.5px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: default;
+  user-select: none;
+}
+
+.apple-lock-readonly-indicator.is-locked {
+  background: rgba(48, 209, 88, 0.06);
+  border-color: rgba(48, 209, 88, 0.35);
+  box-shadow: 0 2px 14px rgba(48, 209, 88, 0.08);
+}
+
+.apple-lock-readonly-indicator.is-unlocked {
+  background: rgba(255, 159, 10, 0.08);
+  border-color: rgba(255, 159, 10, 0.4);
+  box-shadow: 0 4px 18px rgba(255, 159, 10, 0.15);
+}
+
+.lock-app-only-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(0, 113, 227, 0.08);
+  color: #0071e3;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid rgba(0, 113, 227, 0.2);
+  white-space: nowrap;
+}
+
+.tile-members-section {
+  background: #fbfbfd;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tile-members-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.tile-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tile-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tile-member-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tile-member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0071e3 0%, #5e5ce6 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tile-member-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tile-member-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d1d1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile-member-email {
+  font-size: 11.5px;
+  color: #86868b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile-member-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tile-member-badge.badge-full {
+  background: rgba(48, 209, 88, 0.1);
+  color: #1a7f37;
+  border: 1px solid rgba(48, 209, 88, 0.25);
+}
+
+.tile-member-badge.badge-view {
+  background: rgba(0, 113, 227, 0.08);
+  color: #0071e3;
+  border: 1px solid rgba(0, 113, 227, 0.2);
+}
+
+.tile-members-empty {
+  padding: 10px 12px;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   APPLE PRO COMMAND CENTER DASHBOARD (DUAL-COLUMN BALANCED SUITE)
+   Eliminates empty void when viewing single or focused device
+   ========================================================================== */
+
+.apple-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: #f0f0f4;
+  padding: 3px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.apple-view-toggle .toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6e6e73;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-view-toggle .toggle-btn.active {
+  background: #ffffff;
+  color: #1d1d1f;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.apple-device-switcher-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.switcher-label {
+  font-size: 13px;
+  font-weight: 650;
+  color: #86868b;
+}
+
+.switcher-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.device-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.device-pill-btn:hover {
+  border-color: #0071e3;
+  color: #0071e3;
+  transform: translateY(-1px);
+}
+
+.device-pill-btn.is-selected {
+  background: #0071e3;
+  color: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.28);
+}
+
+/* ==========================================================================
+   SPLIT PRO DASHBOARD 2-COLUMN LAYOUT
+   ========================================================================== */
+
+.apple-pro-split-dashboard {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 28px;
+  margin-bottom: 52px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .apple-pro-split-dashboard {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+.apple-pro-col-hero,
+.apple-pro-col-info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Visual 3D Showcase Card (Luxury Dark-Tech Style) */
+.apple-pro-visual-card {
+  background: linear-gradient(155deg, #1b2436 0%, #0c101b 100%);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 28px 28px 20px;
+  color: #ffffff;
+  box-shadow: 0 16px 40px rgba(12, 16, 27, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.visual-card-top-identity {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 8px;
+}
+
+.device-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.device-brand-pill {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.device-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.device-live-badge.is-live {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.device-live-badge.is-off {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.live-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  animation: pulseDot 2s infinite;
+}
+
+.device-hero-title {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  line-height: 1.2;
+}
+
+.device-hero-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.device-serial-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: #f1f5f9;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.device-serial-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #38bdf8;
+}
+
+.device-meta-sep {
+  color: #475569;
+}
+
+.device-location-badge,
+.device-fw-badge {
+  color: #cbd5e1;
+  font-size: 12.5px;
+}
+
+/* 3D Box Illustration Container */
+.visual-box-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0 20px;
+  position: relative;
+}
+
+.iso-box-canvas {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.iso-box-svg {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.iso-box-canvas:hover .iso-box-svg {
+  transform: translateY(-4px) scale(1.02);
+}
+
+.iso-floating-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  margin-top: -10px;
+}
+
+.iso-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.iso-status-dot.online {
+  background: #34d399;
+  box-shadow: 0 0 6px #34d399;
+}
+
+.iso-status-dot.offline {
+  background: #f87171;
+}
+
+.iso-status-sep {
+  color: #64748b;
+}
+
+/* Visual Card Bottom Bar */
+.visual-card-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+}
+
+.bottom-bar-warranty {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.bottom-bar-warranty strong {
+  color: #ffffff;
+}
+
+.bottom-bar-specs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bottom-bar-specs-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* Apple Pro Lock Security Banner */
+.apple-pro-lock-banner {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 22px 24px;
+  border: 1.5px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.apple-pro-lock-banner.is-locked {
+  background: #fcfdfa;
+  border-color: rgba(48, 209, 88, 0.3);
+  box-shadow: 0 6px 24px rgba(48, 209, 88, 0.06);
+}
+
+.lock-banner-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: rgba(48, 209, 88, 0.12);
+  color: #1a7f37;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.is-unlocked .lock-banner-icon-circle {
+  background: rgba(255, 159, 10, 0.12);
+  color: #b26b00;
+}
+
+.lock-banner-info {
+  flex: 1;
+}
+
+.lock-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.lock-banner-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+}
+
+.lock-banner-force-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0, 113, 227, 0.08);
+  color: #0071e3;
+  border: 1px solid rgba(0, 113, 227, 0.2);
+}
+
+.lock-banner-desc {
+  font-size: 13.5px;
+  color: #515154;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.lock-security-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f5f7;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  color: #1d1d1f;
+  line-height: 1.45;
+}
+
+/* Live Telemetry Gauges Grid */
+.apple-pro-telemetry-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.telemetry-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.apple-pro-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .apple-pro-telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pro-telemetry-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pro-telemetry-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.pro-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.pro-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pro-icon-box.temp {
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+}
+
+.pro-icon-box.battery {
+  background: rgba(48, 209, 88, 0.12);
+  color: #1a7f37;
+}
+
+.pro-icon-box.weight {
+  background: rgba(175, 82, 222, 0.12);
+  color: #af52de;
+}
+
+.pro-icon-box.door {
+  background: rgba(255, 159, 10, 0.12);
+  color: #b26b00;
+}
+
+.pro-card-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #86868b;
+  background: #f5f5f7;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.pro-card-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #86868b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.pro-card-val-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pro-card-main-val {
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+}
+
+.pro-card-status-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.pro-card-status-pill.green {
+  background: rgba(48, 209, 88, 0.12);
+  color: #1a7f37;
+}
+
+.pro-card-status-pill.blue {
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+}
+
+.pro-card-status-pill.amber {
+  background: rgba(255, 159, 10, 0.14);
+  color: #b26b00;
+}
+
+.pro-card-status-pill.gray {
+  background: #f0f0f4;
+  color: #6e6e73;
+}
+
+.pro-temp-gauge-bar,
+.pro-battery-track,
+.pro-scale-bar {
+  height: 6px;
+  background: #e5e5ea;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.pro-temp-gauge-bar .gauge-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8 0%, #34d399 100%);
+  border-radius: 9999px;
+}
+
+.pro-battery-fill {
+  height: 100%;
+  background: #30d158;
+  border-radius: 9999px;
+}
+
+.pro-scale-fill {
+  height: 100%;
+  background: #af52de;
+  border-radius: 9999px;
+}
+
+.pro-door-gauge {
+  background: rgba(48, 209, 88, 0.08);
+  padding: 5px 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.door-status-text {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: #1a7f37;
+}
+
+.pro-card-sub {
+  font-size: 11.5px;
+  color: #86868b;
+  display: block;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   RIGHT COLUMN CARDS (ECOSYSTEM, SPECS & WARRANTY)
+   ========================================================================== */
+
+.apple-pro-card {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+}
+
+.pro-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.pro-card-heading {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+}
+
+.pro-card-badge {
+  font-size: 12px;
+  font-weight: 650;
+  color: #86868b;
+  background: #f5f5f7;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.pro-card-description {
+  font-size: 13px;
+  color: #6e6e73;
+  margin: 0 0 16px 0;
+  line-height: 1.45;
+}
+
+/* Shared Members Pro List */
+.pro-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.pro-member-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fbfbfd;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 14px;
+}
+
+.pro-member-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0071e3 0%, #5e5ce6 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pro-member-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.pro-member-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.pro-member-email {
+  font-size: 12px;
+  color: #86868b;
+}
+
+.pro-member-role-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.pro-member-role-badge.is-full {
+  background: rgba(48, 209, 88, 0.12);
+  color: #1a7f37;
+}
+
+.pro-member-role-badge.is-view {
+  background: rgba(0, 113, 227, 0.08);
+  color: #0071e3;
+}
+
+.pro-members-empty-box {
+  background: #fbfbfd;
+  border: 1.5px dashed rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  padding: 24px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.empty-box-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #f0f0f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.empty-box-title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.empty-box-desc {
+  margin: 0 0 8px 0;
+  font-size: 12.5px;
+  color: #6e6e73;
+  line-height: 1.45;
+  max-width: 320px;
+}
+
+.pro-card-footer-action {
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.pro-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0071e3;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: gap 0.2s ease;
+}
+
+.pro-link-btn:hover {
+  text-decoration: underline;
+  gap: 6px;
+}
+
+.pro-subtle-btn {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0071e3;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.pro-subtle-btn:hover {
+  text-decoration: underline;
+}
+
+/* Specs Compact Table */
+.pro-specs-compact-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.compact-spec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+}
+
+.compact-spec-row:nth-child(even) {
+  background: #fbfbfd;
+}
+
+.compact-spec-row:last-child {
+  border-bottom: none;
+}
+
+.c-key {
+  color: #6e6e73;
+  font-weight: 550;
+}
+
+.c-val {
+  color: #1d1d1f;
+  font-weight: 650;
+  text-align: right;
+}
+
+/* Warranty Provenance Card */
+.warranty-status-chip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.warranty-status-chip.active {
+  background: rgba(48, 209, 88, 0.12);
+  color: #1a7f37;
+  border: 1px solid rgba(48, 209, 88, 0.25);
+}
+
+.warranty-status-chip.expired {
+  background: #f0f0f4;
+  color: #6e6e73;
+}
+
+.warranty-summary-box {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  background: #fbfbfd;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.warranty-date-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.w-label {
+  font-size: 11.5px;
+  color: #86868b;
+  font-weight: 550;
+}
+
+.w-val {
+  font-size: 13px;
+  color: #1d1d1f;
+}
+
+.warranty-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.apple-pill-btn.btn-sm {
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+
+.apple-pill-btn.subtle {
+  background: #f5f5f7;
+  color: #1d1d1f;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.apple-pill-btn.subtle:hover {
+  background: #e8e8ed;
+}
+
+/* Companion App Card */
+.companion-app-card {
+  background: linear-gradient(145deg, #f8f9fa 0%, #eef2f6 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.companion-content-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.companion-text-col {
+  flex: 1;
+}
+
+.companion-tag {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  color: #0071e3;
+  margin-bottom: 4px;
+}
+
+.companion-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 750;
+  color: #1d1d1f;
+}
+
+.companion-desc {
+  font-size: 12.5px;
+  color: #515154;
+  margin: 0 0 10px 0;
+  line-height: 1.45;
+}
+
+.companion-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #ffffff;
+  color: #1d1d1f;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.companion-qr-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.qr-wrapper {
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.qr-caption {
+  font-size: 11px;
+  font-weight: 600;
+  color: #86868b;
+}
+

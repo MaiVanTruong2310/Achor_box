@@ -64,12 +64,30 @@ public class CustomerDirectoryService {
         if (!Set.of("all", "with", "without").contains(account) || !Set.of("active", "archived", "all").contains(state)) {
             throw new BadRequestException("INVALID_CUSTOMER_FILTER");
         }
-        String where = " WHERE (?='all' OR (?='with' AND c.profile_id IS NOT NULL) OR (?='without' AND c.profile_id IS NULL)) AND (?='all' OR c.archived=?) AND (?='' OR lower(c.full_name) LIKE ? ESCAPE '\\' OR lower(COALESCE(c.email,'')) LIKE ? ESCAPE '\\' OR COALESCE(c.phone,'') LIKE ? ESCAPE '\\')";
+        String where = " WHERE (p.role IS NULL OR p.role = 'customer') AND (?='all' OR (?='with' AND c.profile_id IS NOT NULL) OR (?='without' AND c.profile_id IS NULL)) AND (?='all' OR c.archived=?) AND (?='' OR lower(c.full_name) LIKE ? ESCAPE '\\' OR lower(COALESCE(c.email,'')) LIKE ? ESCAPE '\\' OR COALESCE(c.phone,'') LIKE ? ESCAPE '\\')";
         List<Object> params = new ArrayList<>(Arrays.asList(account, account, account, state, "archived".equals(state), term, AdminSearch.like(term), AdminSearch.like(term), AdminSearch.like(term)));
-        long total = ((Number) db.one("SELECT count(*) AS n FROM public.customers c" + where, params.toArray()).get("n")).longValue();
+        long total = ((Number) db.one("SELECT count(*) AS n FROM public.customers c LEFT JOIN public.profiles p ON p.id=c.profile_id" + where, params.toArray()).get("n")).longValue();
         params.add(size);
         params.add((long) page * size);
-        return Map.of("content", db.list(VIEW + where + " ORDER BY c.created_at DESC,c.id DESC LIMIT ? OFFSET ?", params.toArray()), "page", page, "size", size, "totalElements", total, "totalPages", (total + size - 1) / size);
+        var content = db.list(VIEW + where + " ORDER BY c.created_at DESC,c.id DESC LIMIT ? OFFSET ?", params.toArray());
+
+        var summary = db.one(
+                "SELECT " +
+                "COUNT(*) FILTER (WHERE p.role IS NULL OR p.role = 'customer') AS \"totalAll\", " +
+                "COUNT(*) FILTER (WHERE (p.role IS NULL OR p.role = 'customer') AND c.profile_id IS NOT NULL) AS \"withAccount\", " +
+                "COUNT(*) FILTER (WHERE (p.role IS NULL OR p.role = 'customer') AND c.profile_id IS NULL) AS \"withoutAccount\", " +
+                "COUNT(*) FILTER (WHERE (p.role IS NULL OR p.role = 'customer') AND NOT c.archived) AS \"activeCount\" " +
+                "FROM public.customers c LEFT JOIN public.profiles p ON p.id=c.profile_id"
+        );
+
+        return Map.of(
+                "content", content,
+                "page", page,
+                "size", size,
+                "totalElements", total,
+                "totalPages", (total + size - 1) / size,
+                "summary", summary != null ? summary : Map.of()
+        );
     }
 
     @Transactional(readOnly = true)

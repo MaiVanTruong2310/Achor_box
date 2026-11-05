@@ -5,7 +5,7 @@
 device/firmware/include/device_secrets.h
 app/lib/core/constants/supabase_config.dart
 app/supabase/.temp/
-
+tests/
 # --- Build outputs & logs ---
 .pio
 **/.pio/

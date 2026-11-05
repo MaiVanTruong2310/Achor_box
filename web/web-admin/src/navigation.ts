@@ -1,9 +1,9 @@
 import type { UserRole } from './types/database';
 
 export const roleLabels: Record<UserRole, string> = {
-  super_admin: 'Quản trị viên (Admin)',
-  product_manager: 'Quản lý Kho & SP (PO)',
-  technician: 'Kỹ thuật viên',
+  super_admin: 'Quản lý cửa hàng',
+  product_manager: 'Nhân viên bán hàng & Sản phẩm (PO)',
+  technician: 'Nhân viên kỹ thuật',
   customer: 'Khách hàng',
 };
 
@@ -28,16 +28,17 @@ export const roleNavigation: Record<UserRole, NavigationItem[]> = {
     { path: '/admin/reports', label: 'Báo cáo doanh thu', description: 'Xuất PDF / Excel', icon: 'reports', roles: ['super_admin'], dividerBefore: true },
     { path: '/admin/users', label: 'Quản lý Nhân sự', description: 'Cán bộ & phân quyền', icon: 'permissions', roles: ['super_admin'] },
     { path: '/admin/emails', label: 'Nhật ký Email', description: 'Thông báo gửi khách', icon: 'email', roles: ['super_admin'] },
-    { path: '/admin/system', label: 'Cấu hình hệ thống', description: 'Thiết lập & Audit logs', icon: 'settings', roles: ['super_admin'] },
+    { path: '/admin/audit-logs', label: 'Nhật ký kiểm toán', description: 'Giám sát an ninh & radar bất thường', icon: 'audit', roles: ['super_admin'] },
+    { path: '/admin/system', label: 'Cấu hình hệ thống', description: 'Thiết lập thanh toán & hạ tầng', icon: 'settings', roles: ['super_admin'] },
   ],
   product_manager: [
-    { path: '/po/dashboard', label: 'Tổng quan', description: 'Chỉ số kinh doanh & tồn kho', icon: 'dashboard', roles: ['product_manager'] },
-    { path: '/po/approvals', label: 'Quản lý đơn hàng', description: 'Xét duyệt đơn hàng & thẩm định PO', icon: 'orders', roles: ['product_manager'] },
+    { path: '/po/dashboard', label: 'Tổng quan', description: 'Chỉ số hàng hóa & thẩm định', icon: 'dashboard', roles: ['product_manager'] },
+    { path: '/po/approvals', label: 'Xét duyệt đơn hàng', description: 'Thẩm định đơn hàng mới & PO approvals', icon: 'approvals', roles: ['product_manager'] },
+    { path: '/po/orders', label: 'Quản lý đơn hàng', description: 'Tra cứu, theo dõi tiến độ & hóa đơn đơn hàng', icon: 'orders', roles: ['product_manager'] },
     { path: '/po/delivery', label: 'Điều phối & Nghiệm thu', description: 'Phân công kỹ thuật & duyệt nghiệm thu', icon: 'delivery', roles: ['product_manager'] },
     { path: '/po/products', label: 'Sản phẩm & Kho', description: 'Danh mục, biến thể & tồn kho', icon: 'products', roles: ['product_manager'] },
     { path: '/po/categories', label: 'Danh mục sản phẩm', description: 'Phân loại & nhóm sản phẩm', icon: 'categories', roles: ['product_manager'] },
-    { path: '/po/warranties', label: 'Quản lý Bảo hành', description: 'Yêu cầu, tra cứu & phân công KTV', icon: 'warranty', roles: ['product_manager'] },
-    { path: '/po/coupons', label: 'Khuyến mãi & Coupon', description: 'Mã giảm giá & Voucher', icon: 'coupons', roles: ['product_manager'] },
+    { path: '/po/warranties', label: 'Quản lý Bảo hành', description: 'Yêu cầu, tra cứu & phân công nhân viên kỹ thuật', icon: 'warranty', roles: ['product_manager'] },
     { path: '/po/reports', label: 'Báo cáo hàng hóa', description: 'Báo cáo Jasper loại hàng quản lý', icon: 'reports', roles: ['product_manager'], dividerBefore: true },
   ],
   technician: [

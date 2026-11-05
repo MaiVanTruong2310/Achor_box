@@ -1499,3 +1499,135 @@ textarea.apple-form-control {
   }
 }
 
+
+
+/* ==========================================================================
+   PAYMENT METHODS SELECTOR COMPONENT
+   ========================================================================== */
+
+.payment-methods-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.payment-method-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 15px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  text-align: left;
+}
+
+.payment-method-card:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.payment-method-card.active {
+  border-color: #0071e3;
+  background: #f4f8ff;
+  box-shadow: 0 0 0 1px #0071e3, 0 4px 12px rgba(0, 113, 227, 0.08);
+}
+
+.payment-method-radio {
+  margin-top: 3px;
+  accent-color: #0071e3;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.payment-method-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  color: #475569;
+  transition: all 0.2s;
+}
+
+.payment-method-card.active .payment-method-icon {
+  background: #0071e3;
+  color: #ffffff;
+}
+
+.payment-method-info {
+  flex: 1;
+}
+
+.payment-method-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.payment-method-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.payment-method-card.active .payment-method-title {
+  color: #0071e3;
+}
+
+.payment-method-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badge-recommended {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-neutral {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.payment-method-desc {
+  font-size: 0.77rem;
+  color: #64748b;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.payment-details-box {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 0.8125rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.payment-details-box p {
+  margin: 3px 0;
+}
+
+.payment-details-box strong {
+  color: #0f172a;
+}

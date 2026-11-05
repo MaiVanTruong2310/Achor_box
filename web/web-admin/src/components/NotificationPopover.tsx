@@ -289,7 +289,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ onClos
           {unread > 0 && (
             <button
               type="button"
-              className="notification-tool-btn primary"
+              className="notification-mark-all-pill"
               onClick={markRead}
               title="Đánh dấu tất cả thông báo là đã đọc"
             >
@@ -409,7 +409,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ onClos
 
                   <div className="notification-item-meta">
                     <span className="notification-ref-pill">
-                      #{event.referenceId.slice(0, 8)}
+                      #{event.referenceId.slice(0, 8).toUpperCase()}
                     </span>
                     <span>·</span>
                     <span className="notification-item-time" title={new Date(event.occurredAt).toLocaleString('vi-VN')}>

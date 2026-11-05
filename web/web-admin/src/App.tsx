@@ -37,6 +37,7 @@ const AccountManagement = lazy(() => import('./pages/staff/AccountManagement').t
 
 // System & Operation Pages
 const Dashboard = lazy(() => import('./pages/system/Dashboard').then(m => ({ default: m.Dashboard })));
+const PoDashboard = lazy(() => import('./pages/dashboard/PoDashboard').then(m => ({ default: m.PoDashboard })));
 const ReportsPage = lazy(() => import('./pages/system/Reports').then(m => ({ default: m.ReportsPage })));
 const PoReports = lazy(() => import('./pages/reports/PoReports').then(m => ({ default: m.PoReports })));
 const EmailHistoryPage = lazy(() => import('./pages/system/EmailHistory').then(m => ({ default: m.EmailHistoryPage })));
@@ -144,10 +145,12 @@ export const App: React.FC = () => (
 
                 <Route path="/admin/emails" element={<EmailHistoryPage />} />
                 <Route path="/admin/reports" element={<ReportsPage />} />
+                <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+                <Route path="/admin/audit" element={<Navigate to="/admin/audit-logs" replace />} />
 
                 <Route path="/admin/system" element={<WorkspaceGroup group="admin-system" />}>
                   <Route index element={<SettingsPage />} />
-                  <Route path="audit" element={<AuditLogsPage />} />
+                  <Route path="audit" element={<Navigate to="/admin/audit-logs" replace />} />
                 </Route>
               </Route>
 
@@ -156,7 +159,7 @@ export const App: React.FC = () => (
               {/* ============================================================== */}
               <Route element={protect(['product_manager'], <AdminLayout />)}>
                 <Route path="/po" element={<Navigate to="/po/dashboard" replace />} />
-                <Route path="/po/dashboard" element={<Dashboard />} />
+                <Route path="/po/dashboard" element={<PoDashboard />} />
 
                 <Route path="/po/products" element={<WorkspaceGroup group="po-products" />}>
                   <Route index element={<Products />} />
@@ -169,8 +172,8 @@ export const App: React.FC = () => (
 
                 <Route path="/po/approvals" element={<ApprovalTickets />} />
                 <Route path="/po/approvals/:id" element={<TicketDetail />} />
-                <Route path="/po/orders" element={<ApprovalTickets />} />
-                <Route path="/po/orders/:id" element={<TicketDetail />} />
+                <Route path="/po/orders" element={<Orders />} />
+                <Route path="/po/orders/:id" element={<OrderDetail />} />
                 <Route path="/po/delivery" element={<DeliveryInstallations />} />
                 <Route path="/po/delivery/:jobId" element={<DeliveryInstallations />} />
                 <Route path="/po/warranties" element={<WorkspaceGroup group="po-warranties" />}>
@@ -178,7 +181,7 @@ export const App: React.FC = () => (
                   <Route path="lookup" element={<WarrantyLookupPage />} />
                   <Route path="claims" element={<Navigate to="/po/warranties" replace />} />
                 </Route>
-                <Route path="/po/coupons" element={<CouponsPage />} />
+                <Route path="/po/coupons" element={<Navigate to="/po/dashboard" replace />} />
                 <Route path="/po/reports" element={<PoReports />} />
               </Route>
 

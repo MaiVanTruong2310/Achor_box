@@ -59,6 +59,33 @@ const emptyDraft: CustomerDraft = {
   archived: false,
 };
 
+const getOrderStatusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    pending: 'Chờ duyệt',
+    customer_decision_pending: 'Chờ khách xác nhận',
+    awaiting_payment: 'Chờ thanh toán',
+    paid: 'Đã thanh toán',
+    confirmed: 'Đã xác nhận',
+    preparing: 'Đang chuẩn bị',
+    shipping: 'Đang vận chuyển',
+    delivering: 'Đang giao hàng',
+    delivered: 'Đã giao hàng',
+    completed: 'Đã hoàn tất',
+    cancelled: 'Đã hủy',
+    refunded: 'Đã hoàn tiền'
+  };
+  return map[status] || status;
+};
+
+const getOrderStatusClass = (status: string): string => {
+  const s = (status || '').toLowerCase();
+  if (['completed', 'paid', 'delivered'].includes(s)) return 'success';
+  if (['pending', 'awaiting_payment', 'customer_decision_pending', 'preparing'].includes(s)) return 'warning';
+  if (['shipping', 'delivering', 'confirmed'].includes(s)) return 'info';
+  if (['cancelled', 'refunded'].includes(s)) return 'danger';
+  return 'neutral';
+};
+
 export const CustomersPage: React.FC = () => {
   const { profile } = useAuth();
   const isSuperAdmin = profile?.role === 'super_admin';
@@ -70,6 +97,7 @@ export const CustomersPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [pages, setPages] = useState(0);
   const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<{ totalAll?: number; withAccount?: number; withoutAccount?: number; activeCount?: number } | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -109,6 +137,9 @@ export const CustomersPage: React.FC = () => {
             setRows(data.content);
             setPages(data.totalPages);
             setTotal(data.totalElements);
+            if (data.summary) {
+              setSummary(data.summary);
+            }
           }
         })
         .catch(e => {
@@ -235,9 +266,10 @@ export const CustomersPage: React.FC = () => {
   };
 
   // KPI calculations
-  const countWithAccount = useMemo(() => rows.filter(r => !!r.profileId).length, [rows]);
-  const countWithoutAccount = useMemo(() => rows.filter(r => !r.profileId).length, [rows]);
-  const countActive = useMemo(() => rows.filter(r => !r.archived).length, [rows]);
+  const countTotal = summary?.totalAll ?? total;
+  const countWithAccount = summary?.withAccount ?? rows.filter(r => !!r.profileId).length;
+  const countWithoutAccount = summary?.withoutAccount ?? rows.filter(r => !r.profileId).length;
+  const countActive = summary?.activeCount ?? rows.filter(r => !r.archived).length;
 
   return (
     <div className="customer-page-container">
@@ -280,18 +312,26 @@ export const CustomersPage: React.FC = () => {
 
       {/* 2. Executive 4-Card Metric Grid */}
       <div className="customer-kpi-grid">
-        <div className="customer-kpi-card">
+        <div 
+          className={`customer-kpi-card interactive ${account === 'all' && state === 'all' ? 'active' : ''}`}
+          onClick={() => { setAccount('all'); setState('all'); setPage(0); }}
+          title="Bấm để xem tất cả hồ sơ khách hàng"
+        >
           <div className="customer-kpi-bubble" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}>
             <Users size={20} />
           </div>
           <div className="customer-kpi-meta">
             <span className="customer-kpi-label">Tổng khách hàng</span>
-            <div className="customer-kpi-value">{total}</div>
-            <div className="customer-kpi-sub">Hồ sơ trong hệ thống</div>
+            <div className="customer-kpi-value">{countTotal}</div>
+            <div className="customer-kpi-sub">Tất cả khách hàng</div>
           </div>
         </div>
 
-        <div className="customer-kpi-card">
+        <div 
+          className={`customer-kpi-card interactive ${account === 'with' ? 'active' : ''}`}
+          onClick={() => { setAccount('with'); setPage(0); }}
+          title="Bấm để lọc khách hàng đã có tài khoản Web/App"
+        >
           <div className="customer-kpi-bubble" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
             <UserCheck size={20} />
           </div>
@@ -302,18 +342,26 @@ export const CustomersPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="customer-kpi-card">
+        <div 
+          className={`customer-kpi-card interactive ${account === 'without' ? 'active' : ''}`}
+          onClick={() => { setAccount('without'); setPage(0); }}
+          title="Bấm để lọc hồ sơ khách mua lẻ (chưa tạo tài khoản)"
+        >
           <div className="customer-kpi-bubble" style={{ background: 'rgba(148, 163, 184, 0.12)', color: '#94a3b8' }}>
             <FileText size={20} />
           </div>
           <div className="customer-kpi-meta">
             <span className="customer-kpi-label">Hồ sơ mua lẻ</span>
             <div className="customer-kpi-value" style={{ color: 'var(--text-secondary)' }}>{countWithoutAccount}</div>
-            <div className="customer-kpi-sub">Chưa tạo tài khoản</div>
+            <div className="customer-kpi-sub">Chưa có tài khoản</div>
           </div>
         </div>
 
-        <div className="customer-kpi-card">
+        <div 
+          className={`customer-kpi-card interactive ${state === 'active' && account === 'all' ? 'active' : ''}`}
+          onClick={() => { setState('active'); setAccount('all'); setPage(0); }}
+          title="Bấm để lọc hồ sơ khách hàng đang quản lý"
+        >
           <div className="customer-kpi-bubble" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' }}>
             <ShieldCheck size={20} />
           </div>
@@ -363,9 +411,9 @@ export const CustomersPage: React.FC = () => {
               setPage(0);
             }}
           >
-            <option value="all">Mọi loại khách hàng</option>
-            <option value="with">Đã có tài khoản đăng nhập</option>
-            <option value="without">Chưa có tài khoản</option>
+            <option value="all">Tất cả khách hàng (Có / Chưa có TK)</option>
+            <option value="with">Đã có tài khoản Web/App</option>
+            <option value="without">Chưa có tài khoản (Mua lẻ)</option>
           </select>
 
           <select
@@ -804,53 +852,69 @@ export const CustomersPage: React.FC = () => {
                         <div style={{ fontSize: '0.78rem' }}>Khách hàng chưa có lịch sử mua sắm nào trên hệ thống.</div>
                       </div>
                     ) : (
-                      <div className="customer-table-card" style={{ boxShadow: 'none' }}>
-                        <table className="customer-table">
-                          <thead>
-                            <tr>
-                              <th>Mã đơn</th>
-                              <th>Ngày tạo</th>
-                              <th>Trạng thái</th>
-                              <th>Tổng thanh toán</th>
-                              <th style={{ textAlign: 'right' }}>Chi tiết</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {customerOrdersData.orders.map((o: any) => (
-                              <tr key={o.id} className="customer-table-row">
-                                <td>
-                                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-primary)' }}>
-                                    #{o.id.slice(0, 8).toUpperCase()}
+                      <div className="c360-orders-list">
+                        {customerOrdersData.orders.map((o: any) => (
+                          <div key={o.id} className="c360-order-card">
+                            <div className="c360-order-card-header">
+                              <div className="c360-order-id-group">
+                                <span className="c360-order-code">#{o.id.slice(0, 8).toUpperCase()}</span>
+                                <span className={`c360-status-pill ${getOrderStatusClass(o.status)}`}>
+                                  {getOrderStatusLabel(o.status)}
+                                </span>
+                                {o.paymentStatus && (
+                                  <span className={`c360-payment-pill ${o.paymentStatus === 'paid' ? 'paid' : 'unpaid'}`}>
+                                    {o.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
                                   </span>
-                                </td>
-                                <td style={{ color: 'var(--text-secondary)', fontSize: '0.775rem' }}>
-                                  {o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '—'}
-                                </td>
-                                <td>
-                                  <span className="customer-account-tag active" style={{ fontSize: '0.7rem' }}>
-                                    {o.status}
+                                )}
+                              </div>
+                              <div className="c360-order-date">
+                                <Clock size={12} />
+                                <span>
+                                  {o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  }) : '—'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="c360-order-card-body">
+                              <div className="c360-order-info-item">
+                                <span className="c360-order-label">Mặt hàng:</span>
+                                <span className="c360-order-value-text">{o.itemsSummary || 'Bộ thiết bị Anchor Box'}</span>
+                              </div>
+                              {o.shippingAddress && (
+                                <div className="c360-order-info-item">
+                                  <span className="c360-order-label">Giao đến:</span>
+                                  <span className="c360-order-value-text" title={o.shippingAddress}>
+                                    <MapPin size={11} style={{ verticalAlign: -1, marginRight: 4 }} />
+                                    {o.shippingAddress}
                                   </span>
-                                </td>
-                                <td>
-                                  <strong style={{ color: 'var(--text-primary)' }}>
-                                    {Number(o.total || o.totalAmount || 0).toLocaleString('vi-VN')} ₫
-                                  </strong>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                  <Link
-                                    to={`/orders/${o.id}`}
-                                    className="customer-action-btn primary"
-                                    style={{ padding: '3px 8px', fontSize: '0.72rem' }}
-                                    title="Xem chi tiết đơn hàng này"
-                                  >
-                                    <span>Xem đơn</span>
-                                    <ExternalLink size={10} />
-                                  </Link>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="c360-order-card-footer">
+                              <div className="c360-order-total-group">
+                                <span className="c360-order-total-label">Tổng thanh toán:</span>
+                                <span className="c360-order-total-val">
+                                  {Number(o.total || o.totalAmount || 0).toLocaleString('vi-VN')} ₫
+                                </span>
+                              </div>
+                              <Link
+                                to={`/orders/${o.id}`}
+                                className="c360-view-order-btn"
+                                title="Xem chi tiết đơn hàng này"
+                              >
+                                <span>Xem chi tiết</span>
+                                <ExternalLink size={12} />
+                              </Link>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )
                   ) : c360ActiveTab === 'devices' ? (
@@ -862,37 +926,24 @@ export const CustomersPage: React.FC = () => {
                         <div style={{ fontSize: '0.78rem' }}>Khách hàng chưa kích hoạt tủ Anchor Box nào trên tài khoản.</div>
                       </div>
                     ) : (
-                      <div className="customer-table-card" style={{ boxShadow: 'none' }}>
-                        <table className="customer-table">
-                          <thead>
-                            <tr>
-                              <th>Mã Serial</th>
-                              <th>Model thiết bị</th>
-                              <th>Trạng thái</th>
-                              <th>Ngày kích hoạt</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {customerOrdersData.devices.map((d: any) => (
-                              <tr key={d.id} className="customer-table-row">
-                                <td>
-                                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                    {d.serialNumber || 'SBX-SER-001'}
-                                  </span>
-                                </td>
-                                <td>{d.modelName || 'Anchor Box IoT Standard'}</td>
-                                <td>
-                                  <span className="customer-account-tag active" style={{ fontSize: '0.7rem' }}>
-                                    {d.status || 'Hoạt động'}
-                                  </span>
-                                </td>
-                                <td style={{ color: 'var(--text-secondary)', fontSize: '0.775rem' }}>
-                                  {d.activatedAt ? new Date(d.activatedAt).toLocaleDateString('vi-VN') : '—'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div className="c360-devices-grid">
+                        {customerOrdersData.devices.map((d: any) => (
+                          <div key={d.id} className="c360-device-card">
+                            <div className="c360-device-avatar">
+                              <Cpu size={22} />
+                            </div>
+                            <div className="c360-device-content">
+                              <div className="c360-device-title-row">
+                                <span className="c360-device-serial">{d.serialNumber || 'SBX-SER-001'}</span>
+                                <span className="c360-status-pill success">{d.status || 'Hoạt động'}</span>
+                              </div>
+                              <div className="c360-device-model">{d.modelName || 'Anchor Box IoT Standard'}</div>
+                              <div className="c360-device-date">
+                                Kích hoạt: {d.activatedAt ? new Date(d.activatedAt).toLocaleDateString('vi-VN') : 'Chưa kích hoạt'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )
                   ) : (
@@ -904,43 +955,25 @@ export const CustomersPage: React.FC = () => {
                         <div style={{ fontSize: '0.78rem' }}>Khách hàng chưa gửi yêu cầu hỗ trợ hoặc bảo hành kỹ thuật nào.</div>
                       </div>
                     ) : (
-                      <div className="customer-table-card" style={{ boxShadow: 'none' }}>
-                        <table className="customer-table">
-                          <thead>
-                            <tr>
-                              <th>Mã yêu cầu</th>
-                              <th>Serial</th>
-                              <th>Mô tả sự cố</th>
-                              <th>Trạng thái</th>
-                              <th>Ngày gửi</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {customerOrdersData.warrantyClaims.map((w: any) => (
-                              <tr key={w.id} className="customer-table-row">
-                                <td>
-                                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                                    #{w.id.slice(0, 8).toUpperCase()}
-                                  </span>
-                                </td>
-                                <td>
-                                  <code style={{ color: 'var(--accent-primary)' }}>{w.serialNumber}</code>
-                                </td>
-                                <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {w.description}
-                                </td>
-                                <td>
-                                  <span className="customer-account-tag active" style={{ fontSize: '0.7rem' }}>
-                                    {w.status}
-                                  </span>
-                                </td>
-                                <td style={{ color: 'var(--text-secondary)', fontSize: '0.775rem' }}>
-                                  {w.createdAt ? new Date(w.createdAt).toLocaleDateString('vi-VN') : '—'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div className="c360-warranties-list">
+                        {customerOrdersData.warrantyClaims.map((w: any) => (
+                          <div key={w.id} className="c360-warranty-card">
+                            <div className="c360-warranty-header">
+                              <div className="c360-order-id-group">
+                                <span className="c360-order-code">#{w.id.slice(0, 8).toUpperCase()}</span>
+                                <span className="c360-status-pill warning">{w.status || 'Đang xử lý'}</span>
+                              </div>
+                              <div className="c360-order-date">
+                                <Clock size={12} />
+                                <span>{w.createdAt ? new Date(w.createdAt).toLocaleDateString('vi-VN') : '—'}</span>
+                              </div>
+                            </div>
+                            <div className="c360-warranty-body">
+                              <div className="c360-warranty-serial">Mã serial thiết bị: <code>{w.serialNumber}</code></div>
+                              <div className="c360-warranty-desc">{w.description}</div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )
                   )}

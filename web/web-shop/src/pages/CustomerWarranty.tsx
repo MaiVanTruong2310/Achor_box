@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   BadgeCheck,
@@ -12,14 +12,20 @@ import {
   ClipboardList,
   Cpu,
   ImagePlus,
+  Lock,
   Package,
   PhoneCall,
   RefreshCw,
+  Scale,
   Search,
   ShieldCheck,
+  Sparkles,
+  Terminal,
   UserCog,
+  Wifi,
   Wrench,
   X,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { useShop } from '../ShopContext';
@@ -33,7 +39,96 @@ import { EventTimeline, CommerceStatus, EmptyState } from '../components/Commerc
 import { consultationPhone } from '../contact';
 import { CtaBand, InfoPage, PageHero, SubNav } from './info/InfoChrome';
 
-const ISSUE_CATEGORIES = ['Khóa / cửa hộp', 'Cảm biến cân', 'Nguồn điện', 'Wi-Fi & ứng dụng', 'Bàn phím / màn hình', 'Khác'];
+export interface IssueCategoryConfig {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  color: string;
+  desc: string;
+  suggestions: string[];
+}
+
+export const ISSUE_CONFIGS: IssueCategoryConfig[] = [
+  {
+    id: 'Khóa / cửa hộp',
+    label: 'Khóa & Cửa hộp',
+    icon: Lock,
+    color: '#0071e3',
+    desc: 'Chốt điện, motor, nắp IP65',
+    suggestions: [
+      'Chốt Solenoid bị kẹt không mở được khi nhập mã PIN',
+      'Cửa đã đóng kín nhưng ứng dụng di động vẫn báo đang mở',
+      'Khóa phát tiếng kêu lạ hoặc servo không gài chốt được',
+      'Nắp bưu kiện IP65 bị kẹt bản lề khó kéo mở',
+    ],
+  },
+  {
+    id: 'Cảm biến cân',
+    label: 'Cảm biến cân',
+    icon: Scale,
+    color: '#34c759',
+    desc: 'Loadcell, cân nặng bưu phẩm',
+    suggestions: [
+      'Đặt kiện hàng vào nhưng cảm biến không nhận (báo 0.00 kg)',
+      'Cân báo sai lệch trọng lượng lớn so với thực tế kiện hàng',
+      'Trọng lượng hiển thị nhảy số liên tục khi lòng hộp trống',
+      'Không nhận được thông báo biến động cân nặng khi shipper giao',
+    ],
+  },
+  {
+    id: 'Nguồn điện',
+    label: 'Nguồn & Pin sạc',
+    icon: Zap,
+    color: '#ff9500',
+    desc: 'Pin dự phòng, adapter 12V',
+    suggestions: [
+      'Hộp mất nguồn hoàn toàn, màn hình và LED không sáng',
+      'Pin dự phòng LiFePO4 sạc không tích điện',
+      'Hệ thống cảnh báo pin yếu liên tục trong ứng dụng',
+      'Adapter cấp nguồn 12V bị nóng bất thường',
+    ],
+  },
+  {
+    id: 'Wi-Fi & ứng dụng',
+    label: 'Wi-Fi & App',
+    icon: Wifi,
+    color: '#5856d6',
+    desc: 'Đồng bộ đám mây, Bluetooth',
+    suggestions: [
+      'Hộp bị mất kết nối Wi-Fi và không tự kết nối lại được',
+      'Ứng dụng di động báo thiết bị ngoại tuyến (Offline)',
+      'Không tìm thấy sóng Bluetooth để cấu hình hộp',
+      'Lệnh mở khóa từ xa trên app phản hồi rất chậm hoặc thất bại',
+    ],
+  },
+  {
+    id: 'Bàn phím / màn hình',
+    label: 'Màn hình & Phím',
+    icon: Terminal,
+    color: '#af52de',
+    desc: 'Bàn phím cảm ứng, còi báo, LCD',
+    suggestions: [
+      'Bàn phím cảm ứng không nhận một số phím số',
+      'Màn hình LCD bị sọc, mờ hoặc mất nét hiển thị',
+      'Còi báo động không phát âm thanh khi bấm phím',
+      'Đèn LED trợ sáng bên trong khoang chứa hàng bị tắt',
+    ],
+  },
+  {
+    id: 'Khác',
+    label: 'Vấn đề khác',
+    icon: Wrench,
+    color: '#64748b',
+    desc: 'Bảo dưỡng định kỳ, tư vấn',
+    suggestions: [
+      'Cần kỹ thuật viên hỗ trợ kiểm tra và bảo dưỡng định kỳ',
+      'Vỏ hộp có dấu hiệu trầy xước sơn hoặc ngấm nước mưa',
+      'Cần hỗ trợ hướng dẫn chuyển quyền quản trị thiết bị',
+    ],
+  },
+];
+
+export const ISSUE_CATEGORIES = ISSUE_CONFIGS.map((c) => c.id);
 const DESCRIPTION_MAX = 4800;
 const MAX_IMAGES = 5;
 
@@ -74,12 +169,12 @@ const FAQ = [
   { q: 'Bán nhà thì phiếu bảo hành có chuyển được không?', a: 'Phiếu gắn với thiết bị và tài khoản đã mua. Hãy liên hệ hỗ trợ để được hướng dẫn chuyển quyền quản lý thiết bị.' },
 ];
 
-const vietnamToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+export const vietnamToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const normalizeSerial = (value: string) => value.trim().toUpperCase().replace(/\s+/g, '');
 const SERIAL_PATTERN = /^[A-Z0-9][A-Z0-9-]{3,63}$/;
 const dayNumber = (value: string) => Date.parse(`${value.slice(0, 10)}T00:00:00Z`) / 86_400_000;
 
-function usage(record: WarrantyRecord, today: string) {
+export function usage(record: WarrantyRecord, today: string) {
   const start = dayNumber(record.startDate);
   const end = dayNumber(record.endDate);
   const now = dayNumber(today);
@@ -118,6 +213,7 @@ const CLAIM_ERRORS: Record<string, string> = {
 
 export function Warranty({ claim = false }: { claim?: boolean }) {
   const { user } = useShop();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const isCustomer = user?.role === 'customer';
   const today = vietnamToday();
@@ -371,8 +467,15 @@ export function Warranty({ claim = false }: { claim?: boolean }) {
           eligible={eligible}
           loading={warranties.loading}
           initialWarrantyId={sheet.warrantyId}
-          onClose={() => setSheet(null)}
-          onSubmitted={claims.retry}
+          onClose={() => {
+            setSheet(null);
+            if (claim) navigate('/account/warranty');
+          }}
+          onSubmitted={() => {
+            claims.retry();
+            warranties.retry();
+            if (claim) navigate('/account/warranty');
+          }}
         />
       )}
     </InfoPage>
@@ -517,7 +620,7 @@ function discardImages(warrantyId: string, images: { id: string }[]) {
   void Promise.allSettled(images.map((image) => customer.deleteImage(warrantyId, image.id)));
 }
 
-function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted }: {
+export function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted }: {
   eligible: WarrantyRecord[];
   loading: boolean;
   initialWarrantyId: string;
@@ -525,7 +628,7 @@ function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted
   onSubmitted: () => void;
 }) {
   const [warrantyId, setWarrantyId] = useState(initialWarrantyId);
-  const [category, setCategory] = useState(ISSUE_CATEGORIES[0]);
+  const [category, setCategory] = useState(ISSUE_CONFIGS[0].id);
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<{ id: string; url: string }[]>([]);
   const [busy, setBusy] = useState(false);
@@ -541,7 +644,9 @@ function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted
   pendingRef.current = { warrantyId, images, done: !!doneId };
 
   useEffect(() => {
-    if (!eligible.some((item) => item.id === warrantyId) && eligible.length > 0) setWarrantyId(eligible[0].id);
+    if (!eligible.some((item) => item.id === warrantyId) && eligible.length > 0) {
+      setWarrantyId(eligible[0].id);
+    }
   }, [eligible, warrantyId]);
 
   useEffect(() => {
@@ -565,6 +670,7 @@ function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted
   const resetKey = () => { keyRef.current = ''; };
   const trimmed = description.trim();
   const canSubmit = !busy && !!warrantyId && trimmed.length >= 10;
+  const currentConfig = ISSUE_CONFIGS.find((c) => c.id === category) || ISSUE_CONFIGS[0];
 
   function changeWarranty(next: string) {
     if (next === warrantyId) return;
@@ -581,8 +687,12 @@ function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted
     setNotice('');
     const selected = Array.from(files);
     if (selected.length + images.length > MAX_IMAGES) return setError(new Error(`Tối đa ${MAX_IMAGES} ảnh cho mỗi yêu cầu.`));
-    if (selected.some((file) => !['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024)) return setError(new Error('Chỉ nhận ảnh JPG hoặc PNG, mỗi ảnh dưới 5 MB.'));
-    if (!eligible.some((item) => item.id === warrantyId)) return setError(new Error('Chọn thiết bị còn hạn bảo hành trước khi tải ảnh.'));
+    if (selected.some((file) => !['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      return setError(new Error('Chỉ nhận ảnh JPG hoặc PNG, mỗi ảnh dưới 5 MB.'));
+    }
+    if (!eligible.some((item) => item.id === warrantyId)) {
+      return setError(new Error('Chọn thiết bị còn hạn bảo hành trước khi tải ảnh.'));
+    }
 
     lockedRef.current = true;
     setBusy(true);
@@ -628,100 +738,291 @@ function ClaimSheet({ eligible, loading, initialWarrantyId, onClose, onSubmitted
   }
 
   return createPortal(
-    <div className="ab-landing ab-info ab-sheet-root"><div className="ab-sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-      <div className="ab-sheet" role="dialog" aria-modal="true" aria-labelledby="claim-title" tabIndex={-1} ref={dialogRef}>
-        <button type="button" className="ab-sheet-close" onClick={onClose} disabled={busy} aria-label="Đóng"><X size={18} aria-hidden /></button>
+    <div className="ab-landing ab-info ab-sheet-root">
+      <div className="ab-sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+        <div className="ab-sheet apple-claim-sheet" role="dialog" aria-modal="true" aria-labelledby="claim-title" tabIndex={-1} ref={dialogRef}>
+          <button type="button" className="ab-sheet-close" onClick={onClose} disabled={busy} aria-label="Đóng">
+            <X size={18} aria-hidden />
+          </button>
 
-        {doneId ? (
-          <div className="ab-success">
-            <CheckCircle2 size={48} aria-hidden />
-            <h2 id="claim-title">Đã gửi yêu cầu.</h2>
-            <p>Mã yêu cầu {doneId}. Bạn theo dõi trạng thái trong mục “Yêu cầu đã gửi”.</p>
-            <button type="button" className="ab-btn ab-btn-primary ab-btn-sm" onClick={onClose} style={{ marginTop: 12 }}>Xong</button>
-          </div>
-        ) : (
-          <>
-            <h2 id="claim-title">Yêu cầu hỗ trợ bảo hành</h2>
-            <p>Mô tả càng rõ, kỹ thuật viên xử lý càng nhanh.</p>
-
-            {loading ? (
-              <p className="ab-footnote">Đang tải danh sách thiết bị…</p>
-            ) : eligible.length === 0 ? (
-              <div className="ab-empty" style={{ marginTop: 22 }}>
-                <h3>Không có thiết bị còn hạn.</h3>
-                <p>Bạn vẫn có thể gọi {consultationPhone.display} để được hỗ trợ sửa chữa có tính phí.</p>
-                <a href={consultationPhone.href} className="ab-btn ab-btn-primary ab-btn-sm">Gọi hỗ trợ</a>
+          {doneId ? (
+            <div className="claim-success-card">
+              <div className="success-icon-wrap">
+                <CheckCircle2 size={48} color="#30d158" />
               </div>
-            ) : (
-              <form onSubmit={submit} noValidate>
-                <ErrorNotice error={error} focus />
-                {notice && <p className="notice" role="status">{notice}</p>}
-
-                <label className="ab-field">
-                  <span>Thiết bị</span>
-                  <select value={warrantyId} onChange={(event) => changeWarranty(event.target.value)} disabled={busy}>
-                    {eligible.map((item) => <option key={item.id} value={item.id}>{item.serialNumber} · hạn đến {date(item.endDate, true)}</option>)}
-                  </select>
-                </label>
-
-                <div className="ab-field" role="group" aria-labelledby="claim-category">
-                  <span id="claim-category">Vấn đề gặp phải</span>
-                  <div className="ab-segment">
-                    {ISSUE_CATEGORIES.map((item) => (
-                      <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); resetKey(); }} disabled={busy}>{item}</button>
-                    ))}
-                  </div>
+              <h2 id="claim-title">Đã tiếp nhận yêu cầu bảo hành</h2>
+              <div className="success-claim-code-pill">
+                <span>Mã yêu cầu:</span>
+                <strong>#CLM-{doneId.slice(0, 8).toUpperCase()}</strong>
+              </div>
+              <p className="success-reassurance">
+                Kỹ thuật viên chuyên trách khu vực của bạn đã nhận được thông tin sự cố. Chúng tôi sẽ liên hệ qua số điện thoại đã đăng ký trong vòng <strong>2 giờ</strong> để hỗ trợ xử lý hoặc đặt lịch hẹn tại nhà.
+              </p>
+              <div className="success-actions">
+                <button type="button" className="apple-pill-btn primary" onClick={onClose}>
+                  <span>Hoàn tất &amp; Quay lại danh sách</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="claim-sheet-header">
+                <div className="claim-header-badge">
+                  <Wrench size={13} color="#0071e3" />
+                  <span>Dịch vụ hỗ trợ chính hãng AnchorCare</span>
                 </div>
+                <h2 id="claim-title">Yêu cầu hỗ trợ bảo hành</h2>
+                <p>Mô tả chi tiết sự cố để kỹ thuật viên chuẩn bị sẵn linh kiện và hỗ trợ nhanh nhất.</p>
+              </div>
 
-                <label className="ab-field">
-                  <span>Mô tả sự cố</span>
-                  <textarea
-                    value={description}
-                    onChange={(event) => { setDescription(event.target.value); resetKey(); }}
-                    maxLength={DESCRIPTION_MAX}
-                    placeholder="Ví dụ: Cửa đóng nhưng hộp không tự khóa, màn hình báo DA DONG CUA nhưng ứng dụng vẫn hiện đang mở."
-                    disabled={busy}
-                  />
-                  <small>{trimmed.length < 10 ? `Cần thêm ${10 - trimmed.length} ký tự` : `${description.length}/${DESCRIPTION_MAX}`}</small>
-                </label>
+              {loading ? (
+                <div style={{ padding: '32px 0', textAlign: 'center', color: '#6e6e73' }}>
+                  <RefreshCw size={24} className="claim-spin" style={{ margin: '0 auto 12px' }} />
+                  <p>Đang kiểm tra danh sách thiết bị của bạn…</p>
+                </div>
+              ) : eligible.length === 0 ? (
+                <div className="ab-empty" style={{ marginTop: 22 }}>
+                  <AlertTriangle size={36} color="#ff9500" style={{ margin: '0 auto 12px' }} />
+                  <h3>Không tìm thấy thiết bị còn hạn bảo hành</h3>
+                  <p>Tất cả thiết bị trong tài khoản của bạn hiện đã hết hạn bảo hành hoặc chưa kích hoạt. Bạn vẫn có thể liên hệ hotline để được kỹ thuật viên sửa chữa có tính phí.</p>
+                  <a href={consultationPhone.href} className="apple-pill-btn primary" style={{ marginTop: 14 }}>
+                    <PhoneCall size={14} />
+                    <span>Gọi tư vấn sửa chữa: {consultationPhone.display}</span>
+                  </a>
+                </div>
+              ) : (
+                <form onSubmit={submit} noValidate className="claim-sheet-form">
+                  <ErrorNotice error={error} focus />
+                  {notice && <p className="notice" role="status">{notice}</p>}
 
-                <div className="ab-field">
-                  <span>Ảnh sự cố (không bắt buộc)</span>
-                  <label className="ab-upload" aria-disabled={busy || images.length >= MAX_IMAGES}>
-                    <ImagePlus size={26} aria-hidden />
-                    <strong>{busy ? 'Đang tải ảnh…' : 'Chọn ảnh'}</strong>
-                    <span>JPG hoặc PNG, tối đa {MAX_IMAGES} ảnh, mỗi ảnh dưới 5 MB · {images.length}/{MAX_IMAGES}</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png"
-                      multiple
-                      hidden
-                      disabled={busy || images.length >= MAX_IMAGES}
-                      onChange={(event) => { void upload(event.target.files); event.target.value = ''; }}
-                    />
-                  </label>
-                  {images.length > 0 && (
-                    <div className="ab-thumbs">
-                      {images.map((image, index) => (
-                        <div key={image.id}>
-                          <img src={image.url} alt={`Ảnh sự cố ${index + 1}`} />
-                          <button type="button" onClick={() => { discardImages(warrantyId, [image]); setImages((previous) => previous.filter((item) => item.id !== image.id)); resetKey(); }} disabled={busy} aria-label={`Bỏ ảnh ${index + 1}`}><X size={12} aria-hidden /></button>
+                  {/* 1. Thiết bị áp dụng */}
+                  <div className="claim-form-field">
+                    <div className="claim-field-label-row">
+                      <label className="claim-field-title">Thiết bị bảo hành</label>
+                      <span className="claim-field-hint">{eligible.length} thiết bị đủ điều kiện</span>
+                    </div>
+
+                    {eligible.length === 1 ? (
+                      <div className="claim-device-card is-selected">
+                        <div className="claim-device-card-left">
+                          <div className="claim-dev-icon-box">
+                            <Package size={20} color="#0071e3" />
+                          </div>
+                          <div>
+                            <div className="claim-dev-name">AnchorBox Smart Lock</div>
+                            <div className="claim-dev-sn-row">
+                              <span className="claim-dev-sn">SN: {eligible[0].serialNumber}</span>
+                              <span className="claim-dev-date">• Hạn đến {date(eligible[0].endDate, true)}</span>
+                            </div>
+                          </div>
                         </div>
-                      ))}
+                        <div className="claim-dev-badge-active">
+                          <CheckCircle2 size={14} color="#30d158" />
+                          <span>AnchorCare 24T</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="claim-device-cards-grid">
+                        {eligible.map((item) => {
+                          const isSelected = item.id === warrantyId;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={`claim-device-card-btn ${isSelected ? 'is-selected' : ''}`}
+                              onClick={() => changeWarranty(item.id)}
+                              disabled={busy}
+                            >
+                              <div className="claim-dev-radio">
+                                {isSelected ? <Check size={12} color="#ffffff" /> : null}
+                              </div>
+                              <div className="claim-dev-details">
+                                <div className="claim-dev-name">AnchorBox Smart Lock</div>
+                                <div className="claim-dev-sn-row">
+                                  <span className="claim-dev-sn">SN: {item.serialNumber}</span>
+                                  <span className="claim-dev-date">Hạn đến: {date(item.endDate, true)}</span>
+                                </div>
+                              </div>
+                              {isSelected && (
+                                <span className="claim-dev-selected-tag">Đang chọn</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. Vấn đề gặp phải */}
+                  <div className="claim-form-field" role="group" aria-labelledby="claim-category">
+                    <label id="claim-category" className="claim-field-title">Vấn đề gặp phải</label>
+                    <div className="claim-categories-grid">
+                      {ISSUE_CONFIGS.map((cfg) => {
+                        const isSelected = category === cfg.id;
+                        const Icon = cfg.icon;
+                        return (
+                          <button
+                            key={cfg.id}
+                            type="button"
+                            aria-pressed={isSelected}
+                            className={`claim-cat-card ${isSelected ? 'is-active' : ''}`}
+                            onClick={() => { setCategory(cfg.id); resetKey(); }}
+                            disabled={busy}
+                          >
+                            <div className="cat-card-icon" style={{ color: isSelected ? cfg.color : '#6e6e73' }}>
+                              <Icon size={16} />
+                            </div>
+                            <div className="cat-card-text">
+                              <span className="cat-card-label">{cfg.label}</span>
+                              <span className="cat-card-desc">{cfg.desc}</span>
+                            </div>
+                            {isSelected && (
+                              <div className="cat-card-check" style={{ color: cfg.color }}>
+                                <Check size={12} />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 2.1 Gợi ý sự cố nhanh */}
+                  {currentConfig?.suggestions && currentConfig.suggestions.length > 0 && (
+                    <div className="claim-symptom-suggestions">
+                      <div className="suggestions-headline">
+                        <Sparkles size={13} color="#0071e3" />
+                        <span>Gợi ý sự cố thường gặp (Bấm để điền nhanh):</span>
+                      </div>
+                      <div className="suggestions-chips-wrap">
+                        {currentConfig.suggestions.map((sug, sIdx) => (
+                          <button
+                            key={sIdx}
+                            type="button"
+                            className="suggestion-pill-chip"
+                            onClick={() => {
+                              if (!description.trim()) {
+                                setDescription(sug);
+                              } else if (!description.includes(sug)) {
+                                setDescription((prev) => `${prev.trim()}, ${sug}`);
+                              }
+                              resetKey();
+                            }}
+                            disabled={busy}
+                          >
+                            <span>+ {sug}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </div>
 
-                <div className="ab-sheet-actions">
-                  <button type="button" className="ab-btn ab-btn-secondary" onClick={onClose} disabled={busy}>Hủy</button>
-                  <button type="submit" className="ab-btn ab-btn-primary" disabled={!canSubmit}>{busy ? 'Đang gửi…' : 'Gửi yêu cầu'}</button>
-                </div>
-              </form>
-            )}
-          </>
-        )}
+                  {/* 3. Mô tả sự cố */}
+                  <div className="claim-form-field">
+                    <div className="claim-field-label-row">
+                      <label htmlFor="claim-desc" className="claim-field-title">Mô tả sự cố</label>
+                      <span className={`claim-length-tag ${trimmed.length >= 10 ? 'is-valid' : ''}`}>
+                        {trimmed.length < 10 ? `Cần thêm ${10 - trimmed.length} ký tự` : `✓ Đủ thông tin (${trimmed.length}/${DESCRIPTION_MAX})`}
+                      </span>
+                    </div>
+                    <textarea
+                      id="claim-desc"
+                      value={description}
+                      onChange={(event) => { setDescription(event.target.value); resetKey(); }}
+                      maxLength={DESCRIPTION_MAX}
+                      rows={3}
+                      placeholder="Mô tả cụ thể biểu hiện bất thường của thiết bị, thời điểm xảy ra sự cố, hoặc bấm chọn gợi ý ở trên..."
+                      disabled={busy}
+                      className="claim-smart-textarea"
+                    />
+                  </div>
+
+                  {/* 4. Tải ảnh sự cố */}
+                  <div className="claim-form-field">
+                    <div className="claim-field-label-row">
+                      <label className="claim-field-title">Ảnh chụp hiện trường sự cố (Không bắt buộc)</label>
+                      <span className="claim-field-hint">{images.length}/{MAX_IMAGES} ảnh</span>
+                    </div>
+
+                    <label className="claim-dropzone" aria-disabled={busy || images.length >= MAX_IMAGES}>
+                      <div className="dropzone-icon-circle">
+                        <ImagePlus size={20} color="#0071e3" />
+                      </div>
+                      <div className="dropzone-text">
+                        <strong>{busy ? 'Đang tải ảnh lên…' : 'Bấm để chọn ảnh hoặc chụp trực tiếp'}</strong>
+                        <span>Định dạng JPG, PNG · Tối đa 5 ảnh · Dung lượng &lt; 5MB/ảnh</span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        multiple
+                        hidden
+                        disabled={busy || images.length >= MAX_IMAGES}
+                        onChange={(event) => { void upload(event.target.files); event.target.value = ''; }}
+                      />
+                    </label>
+
+                    {images.length > 0 && (
+                      <div className="claim-thumbs-row">
+                        {images.map((image, index) => (
+                          <div key={image.id} className="thumb-item-box">
+                            <img src={image.url} alt={`Minh chứng ${index + 1}`} />
+                            <button
+                              type="button"
+                              className="thumb-remove-x"
+                              onClick={() => {
+                                discardImages(warrantyId, [image]);
+                                setImages((previous) => previous.filter((item) => item.id !== image.id));
+                                resetKey();
+                              }}
+                              disabled={busy}
+                              title="Bỏ ảnh này"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 5. Cam kết dịch vụ AnchorCare */}
+                  <div className="claim-sla-banner">
+                    <ShieldCheck size={18} color="#0071e3" style={{ flexShrink: 0, marginTop: 1 }} />
+                    <div className="sla-banner-content">
+                      <strong>Cam kết chất lượng dịch vụ bảo hành AnchorCare</strong>
+                      <p>
+                        Kỹ thuật viên phản hồi trong <strong>2 giờ</strong> • Hỗ trợ kiểm tra tận nhà trong <strong>24 giờ</strong> • 100% linh kiện chính hãng được thay mới miễn phí.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 6. Action Buttons */}
+                  <div className="claim-form-actions">
+                    <button type="button" className="apple-pill-btn secondary" onClick={onClose} disabled={busy}>
+                      Hủy bỏ
+                    </button>
+                    <button type="submit" className="apple-pill-btn primary" disabled={!canSubmit}>
+                      {busy ? (
+                        <>
+                          <RefreshCw size={14} className="claim-spin" />
+                          <span>Đang gửi yêu cầu…</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck size={14} />
+                          <span>Gửi yêu cầu bảo hành</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div></div>,
+    </div>,
     document.body,
   );
 }
