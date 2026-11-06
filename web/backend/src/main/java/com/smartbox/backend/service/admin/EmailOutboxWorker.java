@@ -60,22 +60,51 @@ public class EmailOutboxWorker {
     @Value("${smartbox.shop-url:}")
     private String shopUrl;
 
+    @Value("${spring.mail.username:}")
+    private String smtpUsername;
+
+    // Without this, a missing mail block in .env leaves every outbox row PENDING with no trace.
+    @jakarta.annotation.PostConstruct
+    void reportConfiguration() {
+        if (!enabled) {
+            log.warn("Email outbox worker is OFF (MAIL_ENABLED=false): order/installation emails stay PENDING in public.email_outbox. Set the MAIL_* / SPRING_MAIL_* variables in web/backend/.env.");
+        } else if (from.isBlank() || smtpUsername.isBlank() || senderProvider.getIfAvailable() == null) {
+            log.warn("Email outbox worker is ON but SMTP is incomplete (MAIL_SENDER_ADDRESS / SPRING_MAIL_USERNAME / SPRING_MAIL_PASSWORD): sends will fail and retry.");
+        } else {
+            log.info("Email outbox worker enabled, sending as {}", from);
+        }
+    }
+
     @Scheduled(fixedDelayString = "${smartbox.mail.worker-delay-ms:10000}")
     public void run() {
-        if (!enabled) return;
+        drainNow();
+    }
+
+    /** Admin "send now": same claim + backoff rules as the scheduler, so a mail is never sent twice. */
+    public int drainNow() {
+        if (!enabled) return 0;
+        int dispatched = 0;
         UUID token = UUID.randomUUID();
         for (var row : outbox.claim(token, lease)) {
-            UUID id = uuid(row.get("id"));
-            dispatch(id, token, row);
+            dispatch(uuid(row.get("id")), token, row);
+            dispatched++;
         }
+        return dispatched;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public boolean processSingle(UUID id) {
         if (db == null) return false;
         UUID token = UUID.randomUUID();
-        var rows = db.list("SELECT * FROM public.email_outbox WHERE id=? AND status='PENDING' FOR UPDATE", id);
+        // One atomic UPDATE is the claim: callers run outside a transaction, so SELECT ... FOR UPDATE held no lock.
+        int claimed = db.update("UPDATE public.email_outbox SET claim_token=?,claimed_until=? WHERE id=? AND status='PENDING' AND (claimed_until IS NULL OR claimed_until<?)",
+                token, now().plusSeconds(lease), id, now());
+        if (claimed == 0) return false;
+        var rows = db.list("SELECT * FROM public.email_outbox WHERE id=? AND claim_token=?", id, token);
         if (rows.isEmpty()) return false;
-        db.update("UPDATE public.email_outbox SET claim_token=?,claimed_until=? WHERE id=?", token, now().plusSeconds(lease), id);
         return dispatch(id, token, rows.getFirst());
     }
 

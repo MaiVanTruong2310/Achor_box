@@ -101,10 +101,16 @@ class AppLockService {
 
   static const _secureWindow = MethodChannel('anchor_box/secure_window');
 
+  /// Opt-in for capturing report screenshots of a debug build only:
+  /// `flutter run --dart-define=ALLOW_SCREENSHOTS=true`. Ignored in release.
+  static const _allowScreenshots =
+      kDebugMode && bool.fromEnvironment('ALLOW_SCREENSHOTS');
+
   /// Hides the app from the recent-apps preview and blocks screenshots
   /// (Android FLAG_SECURE). No-op on other platforms.
   static Future<void> setSecureWindow(bool secure) async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    if (_allowScreenshots) secure = false;
     try {
       await _secureWindow.invokeMethod<void>('setSecure', secure);
     } catch (error) {

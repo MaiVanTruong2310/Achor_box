@@ -40,6 +40,9 @@ class CustomerAuthGatewayTests {
         status=403;response="{\"msg\":\"expired\"}";assertThrows(UnauthorizedException.class,()->gateway.verifyRecovery("expired"));
         status=429;assertEquals(429,assertThrows(AppException.class,()->gateway.register("a@b.test","password-123","Khách","","http://localhost/login")).getCode());
         status=503;assertEquals(503,assertThrows(AppException.class,()->gateway.recovery("a@b.test","http://localhost/reset-password")).getCode());
+        // A rate-limited recovery must surface 429, never fall back to minting OTPs with the admin key.
+        status=429;assertEquals(429,assertThrows(AppException.class,()->gateway.recovery("a@b.test","http://localhost/reset-password")).getCode());
+        assertTrue(route.get().startsWith("POST /auth/v1/otp"));
     }
     @Test void recoveryRequestUsesConfiguredRedirect(){gateway.recovery("a@b.test","http://localhost:5174/reset-password");assertTrue(route.get().startsWith("POST /auth/v1/otp?redirect_to="));assertEquals(Map.of("email","a@b.test","create_user",false),body.get());}
     @Test void recoveryOtpVerifiesAsEmailOtpLikeTheApp(){

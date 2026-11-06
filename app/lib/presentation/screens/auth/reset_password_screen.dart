@@ -40,7 +40,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     final saved = await SupabaseService.updateUserPassword(
-      email: widget.email,
       newPassword: _passwordController.text,
     );
     if (!mounted) return;

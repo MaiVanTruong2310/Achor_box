@@ -191,15 +191,15 @@ class SupabaseService {
           .select()
           .eq('id', userId)
           .maybeSingle();
-      final profile = <String, dynamic>{
-        ...?response,
-        ...metadata,
-      };
-      final databaseAvatar = profile['avatar_url'] as String?;
-      final metadataAvatar = metadata['avatar_url'] as String?;
-      if (databaseAvatar == null || databaseAvatar.isEmpty) {
-        profile['avatar_url'] = metadataAvatar;
-      }
+      // public.profiles is the source of truth; Auth metadata only fills gaps.
+      // Letting metadata win showed stale or empty values (e.g. phone: "" from
+      // web sign-up), and saving the form then wrote those blanks back.
+      final profile = <String, dynamic>{...metadata};
+      response?.forEach((key, value) {
+        if (value != null && !(value is String && value.trim().isEmpty)) {
+          profile[key] = value;
+        }
+      });
 
       _cachedProfile = profile;
       userNameNotifier.value = profile['full_name'] as String?;
@@ -235,26 +235,13 @@ class SupabaseService {
     await client!.auth.signOut();
   }
 
-  /// Update User Password
-  static Future<bool> updateUserPassword({
-    required String email,
-    required String newPassword,
-  }) async {
-    if (!_isInitialized || client == null) return false;
+  /// Sets a new password for the session created by a verified recovery OTP.
+  /// Without that session there is no proof of email ownership, so it fails.
+  static Future<bool> updateUserPassword({required String newPassword}) async {
+    if (!_isInitialized || client == null || currentUser == null) return false;
     try {
-      if (currentUser != null) {
-        await client!.auth.updateUser(
-          UserAttributes(password: newPassword),
-        );
-        return true;
-      }
-
-      final rpcResult = await client!.rpc('reset_password_by_email', params: {
-        'p_email': email.trim().toLowerCase(),
-        'p_new_password': newPassword,
-      });
-
-      return rpcResult == true;
+      await client!.auth.updateUser(UserAttributes(password: newPassword));
+      return true;
     } catch (e) {
       debugPrint("Supabase Update Password Error: $e");
       return false;
@@ -833,29 +820,36 @@ class SupabaseService {
       'full_name': fullName.trim(),
       'phone': phone.trim(),
     };
-    var savedToAuth = false;
-    var savedToProfile = false;
 
+    // Write public.profiles first: it is what the web, staff and shared-box
+    // members read. `.select()` returns the updated rows, because PostgREST
+    // reports no error when RLS or a failing trigger leaves 0 rows changed.
     try {
-      await client!.auth.updateUser(UserAttributes(data: values));
-      savedToAuth = true;
-    } catch (error) {
-      debugPrint('Error updating profile auth metadata: $error');
-    }
-
-    try {
-      await client!.from('profiles').update(values).eq('id', currentUser!.id);
-      savedToProfile = true;
+      final rows = await client!
+          .from('profiles')
+          .update(values)
+          .eq('id', currentUser!.id)
+          .select('id');
+      if (rows.isEmpty) {
+        debugPrint('Profile update matched no row');
+        return false;
+      }
     } catch (error) {
       debugPrint('Error updating profiles row: $error');
+      return false;
     }
 
-    if (savedToAuth || savedToProfile) {
-      _cachedProfile ??= {};
-      _cachedProfile!.addAll(values);
-      userNameNotifier.value = fullName.trim();
-      return true;
+    // Keep Auth metadata in step so it never disagrees with the profile row.
+    try {
+      await client!.auth.updateUser(UserAttributes(data: values));
+    } catch (error) {
+      debugPrint('Error updating profile auth metadata: $error');
+      return false;
     }
-    return false;
+
+    _cachedProfile ??= {};
+    _cachedProfile!.addAll(values);
+    userNameNotifier.value = fullName.trim();
+    return true;
   }
 }

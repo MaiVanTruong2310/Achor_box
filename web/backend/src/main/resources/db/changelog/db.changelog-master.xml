@@ -30,5 +30,6 @@
     <include file="db/changelog/changesets/022_profiles_email_index.xml"/>
     <include file="db/changelog/changesets/023_category_manager.xml"/>
     <include file="db/changelog/changesets/024_variant_color_and_warranty_plans.xml"/>
+    <include file="db/changelog/changesets/025_customer_profile_sync_definer.xml"/>
 
 </databaseChangeLog>

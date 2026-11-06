@@ -518,7 +518,6 @@ alter table public.device_commands enable row level security;
 -- get_pending_device_pairing(p_device_token, p_serial_number)
 -- report_device_event(p_description, p_device_token, p_event_type, p_payload, p_serial_number)
 -- report_device_telemetry(p_device_state, p_device_token, p_door_status, p_lock_status, p_package_detected, p_scale_ready, p_serial_number, p_weight_kg)
--- reset_password_by_email(p_email, p_new_password)
 -- set_device_access_pin(p_device_id, p_pin)
 -- start_device_pairing(p_serial_number)
 -- unbind_device_by_owner(p_device_id)

@@ -378,52 +378,63 @@ public class SupabaseAuthGateway {
             return;
         } catch (RestClientResponseException ex) {
             int status = ex.getStatusCode().value();
+            // Rate limit is a deliberate refusal: never route around it with the admin key.
+            if (status == 429) {
+                throw new AppException(429, "AUTH_RATE_LIMITED");
+            }
             // Unknown email (signups disabled for OTP): stay silent so accounts cannot be enumerated.
             if (status == 400 || status == 404 || status == 422) {
-                log.info("Password recovery requested for an email without an account: {}", email);
+                log.info("Password recovery requested for an email without an account");
                 return;
             }
-            log.warn("Supabase standard /otp failed (status={}: {}), chuyen sang admin generate_link fallback...",
-                    status, ex.getResponseBodyAsString());
-        } catch (Exception ex) {
-            log.warn("Supabase standard /otp gap loi mang ({}), chuyen sang admin generate_link fallback...", ex.getMessage());
+            log.warn("Supabase /otp failed with status {}, trying backend SMTP fallback", status);
+        } catch (ResourceAccessException ex) {
+            log.warn("Supabase /otp unreachable ({}), trying backend SMTP fallback", ex.getClass().getSimpleName());
         }
+        sendRecoveryOtpViaBackendSmtp(email);
+    }
 
-        // FALLBACK: Dung Supabase Admin API generate_link de sinh ma OTP
-        if (serviceKey != null && !serviceKey.isBlank()) {
-            try {
-                Map<?, ?> resp = client.post()
-                        .uri("/admin/generate_link")
-                        .header("apikey", serviceKey)
-                        .header("Authorization", "Bearer " + serviceKey)
-                        .body(Map.of("type", "recovery", "email", email))
-                        .retrieve()
-                        .body(Map.class);
-                if (resp != null) {
-                    Object otp = resp.get("email_otp");
-                    String actionLink = java.util.Objects.toString(resp.get("action_link"), "");
-                    String fullName = "";
-                    if (resp.get("user_metadata") instanceof Map<?, ?> meta && meta.get("full_name") != null) {
-                        fullName = meta.get("full_name").toString();
-                    }
-                    log.info("✅ [SUPABASE AUTH RECOVERY] Da phat sinh ma OTP thanh cong cho {}: [OTP={}] [Link={}]", email, otp, actionLink);
-                    if (otp != null && emailService != null) {
-                        emailService.sendResetPasswordOtpEmail(email, fullName, otp.toString());
-                    }
-                    return;
-                }
-            } catch (RestClientResponseException adminEx) {
-                int status = adminEx.getStatusCode().value();
-                if (status == 400 || status == 404 || status == 422) {
-                    log.info("Password recovery requested for email not found in admin: {}", email);
-                    return;
-                }
-                log.error("Supabase Admin generate_link that bai: status={}, body={}", status, adminEx.getResponseBodyAsString());
-            } catch (Exception adminEx) {
-                log.error("Loi khi goi Supabase Admin generate_link: {}", adminEx.getMessage());
+    /**
+     * Fallback only for Supabase-side failures (5xx / network), e.g. its SMTP is down:
+     * mint the OTP with the admin API and mail it through the backend SMTP.
+     * The OTP lands in recovery_token, which /verify type=email accepts (see verifyRecoveryOtp).
+     * Never log the OTP, the action link or the address: logs must not grant account access.
+     */
+    private void sendRecoveryOtpViaBackendSmtp(String email) {
+        if (serviceKey == null || serviceKey.isBlank() || emailService == null) {
+            throw new AppException(503, "AUTH_RECOVERY_UNAVAILABLE");
+        }
+        Map<?, ?> resp;
+        try {
+            resp = client.post()
+                    .uri("/admin/generate_link")
+                    .header("apikey", serviceKey)
+                    .header("Authorization", "Bearer " + serviceKey)
+                    .body(Map.of("type", "recovery", "email", email))
+                    .retrieve()
+                    .body(Map.class);
+        } catch (RestClientResponseException ex) {
+            int status = ex.getStatusCode().value();
+            if (status == 400 || status == 404 || status == 422) {
+                log.info("Password recovery requested for an email without an account");
+                return;
             }
+            log.error("Supabase admin generate_link failed with status {}", status);
+            throw new AppException(503, "AUTH_RECOVERY_UNAVAILABLE");
+        } catch (ResourceAccessException ex) {
+            throw new AppException(503, "AUTH_PROVIDER_UNAVAILABLE");
         }
-
-        throw new AppException(503, "AUTH_RECOVERY_UNAVAILABLE");
+        Object otp = resp == null ? null : resp.get("email_otp");
+        if (otp == null || otp.toString().isBlank()) {
+            log.error("Supabase admin generate_link returned no email_otp");
+            throw new AppException(503, "AUTH_RECOVERY_UNAVAILABLE");
+        }
+        String fullName = resp.get("user_metadata") instanceof Map<?, ?> meta && meta.get("full_name") != null
+                ? meta.get("full_name").toString() : "";
+        // Report failure instead of telling the user a code is on its way when nothing was sent.
+        if (!emailService.sendResetPasswordOtpEmail(email, fullName, otp.toString())) {
+            throw new AppException(503, "AUTH_RECOVERY_UNAVAILABLE");
+        }
+        log.info("Password recovery OTP sent through backend SMTP fallback");
     }
 }

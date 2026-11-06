@@ -118,21 +118,21 @@ public class EmailService {
 
             helper.setFrom(mailSenderAddress, senderName);
             helper.setTo(toEmail);
-            helper.setSubject("🔒 [SmartBox] Mã OTP đặt lại mật khẩu: " + otpCode);
+            // Keep the code out of the subject: it would show on lock-screen notifications.
+            helper.setSubject("[Anchor Box] Mã đặt lại mật khẩu");
 
             String htmlBody = buildOtpEmailTemplate(customerName, otpCode);
             helper.setText(htmlBody, true);
 
             mailSender.send(mimeMessage);
-            log.info("[EMAIL SERVICE] ✅ Đã gửi email OTP THẬT thành công tới '{}' cho khách hàng '{}'", toEmail, customerName);
+            log.info("[EMAIL SERVICE] Password reset OTP email sent");
             return true;
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().toLowerCase().contains("authentication")) {
-                log.error("[EMAIL SERVICE] ❌ Lỗi xác thực SMTP khi gửi email tới '{}': {}. "
-                        + "(Tài khoản '{}' bị Gmail từ chối xác thực. Vui lòng kiểm tra lại Google App Password 16 ký tự trong backend/.env)",
-                        toEmail, e.getMessage(), mailSenderAddress);
+                log.error("[EMAIL SERVICE] SMTP authentication failed for sender '{}'. Check the 16-char Gmail App Password in web/backend/.env",
+                        mailSenderAddress);
             } else {
-                log.error("[EMAIL SERVICE] ❌ Lỗi khi gửi email SMTP tới '{}': {}", toEmail, e.getMessage());
+                log.error("[EMAIL SERVICE] Password reset OTP email failed: {}", e.getClass().getSimpleName());
             }
             return false;
         }
@@ -317,22 +317,22 @@ public class EmailService {
                   <div class="content">
                     <div class="greeting">Xin chào %s,</div>
                     <div class="description">
-                      Chúng tôi nhận được yêu cầu hỗ trợ <strong>đặt lại mật khẩu tài khoản</strong> của bạn thông qua Tổng đài Chăm sóc khách hàng Hotline SmartBox.
+                      Chúng tôi nhận được yêu cầu <strong>đặt lại mật khẩu</strong> cho tài khoản Anchor Box của bạn.
                       <br><br>
-                      Vui lòng đọc mã xác thực OTP dưới đây cho nhân viên tổng đài đang hỗ trợ bạn:
+                      Nhập mã dưới đây vào trang đặt lại mật khẩu để tạo mật khẩu mới:
                     </div>
 
                     <!-- Hộp hiển thị mã OTP -->
                     <div class="otp-card">
                       <div class="otp-label">MÃ XÁC THỰC OTP 6 CHỮ SỐ</div>
                       <div class="otp-number">%s</div>
-                      <div class="otp-expire">⏳ Mã có hiệu lực trong vòng 05 phút</div>
+                      <div class="otp-expire">Mã chỉ dùng được một lần và sẽ hết hạn sau ít phút</div>
                     </div>
 
                     <!-- Khuyến cáo an toàn -->
                     <div class="warning-box">
                       <strong>⚠️ LƯU Ý BẢO MẬT:</strong>
-                      Tuyệt đối không chia sẻ mã này cho người lạ. Nhân viên SmartBox chỉ hỏi mã này khi bạn chủ động gọi lên Hotline yêu cầu hỗ trợ. Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email hoặc liên hệ ngay hotline để khóa tài khoản.
+                      Không chia sẻ mã này với bất kỳ ai, kể cả người tự xưng là nhân viên Anchor Box. Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này; tài khoản của bạn vẫn an toàn.
                     </div>
 
                     <div style="font-size: 13.5px; color: #475569;">
