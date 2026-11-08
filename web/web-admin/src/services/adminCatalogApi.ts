@@ -17,6 +17,24 @@ export const adminCatalogApi = {
     const result=await adminRequest<Page<any>>(`/orders/paged?${q}`);
     return {...result,content:result.content.map(o=>({id:o.id,user_id:o.userId,promotion_id:o.promotionId,status:o.status,shipping_address:o.shippingAddress,tracking_number:o.trackingNumber,total:o.total,payment_method:o.paymentMethod,payment_status:o.paymentStatus,transaction_ref:o.transactionRef,items_summary:o.itemsSummary,created_at:o.createdAt,updated_at:o.updatedAt,customer:{id:o.userId,full_name:o.customerName,phone:o.customerPhone,avatar_url:null,default_address:o.shippingAddress,role:'customer',is_locked:false,is_2fa_enabled:false,created_at:o.createdAt,updated_at:o.updatedAt}}))};
   },
+  /**
+   * Status counts + KPIs in one request. Falls back to the two older endpoints when the backend
+   * has not been restarted with /orders/overview yet.
+   */
+  async orderOverview(): Promise<{ counts: Record<string, number>; summary: OrderSummary | null }> {
+    try {
+      const r = await adminRequest<{ counts: Record<string, number>; summary: Record<string, number | string> }>('/orders/overview');
+      const n = (v: unknown) => Number(v) || 0;
+      const x = r.summary || {};
+      return {
+        counts: r.counts || {},
+        summary: { total: n(x.total), completed: n(x.completed), paidCount: n(x.paidCount), paidRevenue: n(x.paidRevenue), awaitingPaymentCount: n(x.awaitingPaymentCount), awaitingPaymentRevenue: n(x.awaitingPaymentRevenue) }
+      };
+    } catch {
+      const [counts, summary] = await Promise.all([this.orderCounts(), this.orderSummary()]);
+      return { counts, summary };
+    }
+  },
   /** System-wide KPIs; null when the backend does not expose /orders/summary yet. */
   async orderSummary(): Promise<OrderSummary | null> {
     try {

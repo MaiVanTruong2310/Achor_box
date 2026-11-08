@@ -20,6 +20,12 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
 
+    @GetMapping("/customers")
+    @Operation(summary = "Thống kê khách hàng mới và doanh thu theo khách hàng")
+    public ResponseEntity<java.util.Map<String, Object>> getCustomerInsights() {
+        return ResponseEntity.ok(dashboardService.getCustomerInsights());
+    }
+
     @GetMapping("/stats")
     @Operation(summary = "Lấy dữ liệu thống kê tổng quan Dashboard", description = "Trả về tổng doanh thu, số đơn hàng, số thiết bị online, ticket bảo hành và biểu đồ doanh thu theo khoảng thời gian (7d, 30d, 6m). Hỗ trợ cache tự động.")
     public ResponseEntity<DashboardStatsResponse> getDashboardStats(

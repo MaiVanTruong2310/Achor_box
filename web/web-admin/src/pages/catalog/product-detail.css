@@ -72,7 +72,7 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 15%, transparent), rgba(245, 124, 0, 0.08));
+  background: var(--accent-primary);
   color: var(--accent-primary);
   display: flex;
   align-items: center;
@@ -266,7 +266,6 @@
 .spec-box .spec-lbl {
   font-size: 0.68rem;
   color: var(--text-muted);
-  text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.03em;
 }
@@ -302,7 +301,6 @@
   padding: 8px 12px;
   font-size: 0.7rem;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-subtle);
@@ -340,7 +338,6 @@
   padding: 8px 12px;
   font-size: 0.68rem;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-subtle);

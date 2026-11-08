@@ -41,7 +41,7 @@ export const Forbidden403: React.FC = () => {
         width: '450px',
         height: '450px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(239, 68, 68, 0.12) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-rose) 12%, transparent) 0%, transparent 70%)',
         filter: 'blur(60px)',
         pointerEvents: 'none'
       }} />
@@ -52,7 +52,7 @@ export const Forbidden403: React.FC = () => {
         width: '400px',
         height: '400px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-primary) 10%, transparent) 0%, transparent 70%)',
         filter: 'blur(60px)',
         pointerEvents: 'none'
       }} />

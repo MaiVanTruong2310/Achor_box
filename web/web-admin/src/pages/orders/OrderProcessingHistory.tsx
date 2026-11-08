@@ -44,21 +44,21 @@ interface Timeline {
 }
 
 const sourceConfigs: Record<string, { label: string; color: string; bg: string }> = {
-  ORDER: { label: 'Đơn hàng', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
-  PO_TICKET: { label: 'Phê duyệt PO', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.1)' },
+  ORDER: { label: 'Đơn hàng', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)' },
+  PO_TICKET: { label: 'Phê duyệt PO', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)' },
   DELIVERY_INSTALLATION: { label: 'Giao & Lắp đặt', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)' }
 };
 
 const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Chờ xử lý', color: '#d97706', bg: 'rgba(245, 158, 11, 0.1)' },
-  awaiting_payment: { label: 'Chờ thanh toán', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.1)' },
-  paid: { label: 'Đã thanh toán', color: '#059669', bg: 'rgba(16, 185, 129, 0.1)' },
-  confirmed: { label: 'Đã duyệt PO', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
-  completed: { label: 'Đã nghiệm thu', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.1)' },
-  cancelled: { label: 'Đã hủy', color: '#dc2626', bg: 'rgba(239, 68, 68, 0.1)' },
-  processing: { label: 'Chuẩn bị hàng', color: '#d97706', bg: 'rgba(245, 158, 11, 0.1)' },
-  shipping: { label: 'Đang giao hàng', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.1)' },
-  delivered: { label: 'Đã giao hàng', color: '#059669', bg: 'rgba(16, 185, 129, 0.1)' }
+  pending: { label: 'Chờ xử lý', color: 'var(--accent-amber-text)', bg: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)' },
+  awaiting_payment: { label: 'Chờ thanh toán', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)' },
+  paid: { label: 'Đã thanh toán', color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)' },
+  confirmed: { label: 'Đã duyệt PO', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)' },
+  completed: { label: 'Đã nghiệm thu', color: 'var(--accent-primary)', bg: 'rgba(2, 132, 199, 0.1)' },
+  cancelled: { label: 'Đã hủy', color: 'var(--accent-rose-text)', bg: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)' },
+  processing: { label: 'Chuẩn bị hàng', color: 'var(--accent-amber-text)', bg: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)' },
+  shipping: { label: 'Đang giao hàng', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)' },
+  delivered: { label: 'Đã giao hàng', color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)' }
 };
 
 export const OrderProcessingHistory: React.FC = () => {
@@ -253,11 +253,11 @@ export const OrderProcessingHistory: React.FC = () => {
         <div
           role="alert"
           style={{
-            background: 'rgba(239, 68, 68, 0.08)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
+            background: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)',
             borderRadius: '8px',
             padding: '12px 16px',
-            color: '#dc2626',
+            color: 'var(--accent-rose-text)',
             fontSize: '13px',
             display: 'flex',
             alignItems: 'center',
@@ -294,7 +294,7 @@ export const OrderProcessingHistory: React.FC = () => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
                   <div>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.5px', fontWeight: 600 }}>
                       Mã đơn hàng
                     </span>
                     <h3 style={{ margin: '4px 0 0', fontSize: '1.2rem', fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
@@ -396,7 +396,7 @@ export const OrderProcessingHistory: React.FC = () => {
                 }}
               >
                 <h4 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <User size={16} style={{ color: '#0284c7' }} />
+                  <User size={16} style={{ color: 'var(--accent-primary)' }} />
                   <span>Thông tin người nhận &amp; Giao hàng</span>
                 </h4>
 
@@ -466,7 +466,7 @@ export const OrderProcessingHistory: React.FC = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
                 <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Clock size={17} style={{ color: '#0ea5e9' }} />
+                  <Clock size={17} style={{ color: 'var(--accent-primary)' }} />
                   <span>Tiến trình xử lý đơn hàng (Timeline)</span>
                 </h4>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
@@ -494,7 +494,7 @@ export const OrderProcessingHistory: React.FC = () => {
                   />
 
                   {timeline.events.map((event, index) => {
-                    const cfg = sourceConfigs[event.source] || { label: event.source, color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
+                    const cfg = sourceConfigs[event.source] || { label: event.source, color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 10%, transparent)' };
                     const isLast = index === timeline.events.length - 1;
 
                     return (
@@ -515,7 +515,7 @@ export const OrderProcessingHistory: React.FC = () => {
                             width: '32px',
                             height: '32px',
                             borderRadius: '50%',
-                            background: isLast ? cfg.color : 'var(--bg-card)',
+                            background: isLast ? cfg.color: 'var(--bg-card)',
                             border: `2px solid ${cfg.color}`,
                             display: 'flex',
                             alignItems: 'center',
@@ -549,7 +549,6 @@ export const OrderProcessingHistory: React.FC = () => {
                               style={{
                                 fontSize: '11px',
                                 fontWeight: 700,
-                                textTransform: 'uppercase',
                                 padding: '2px 7px',
                                 borderRadius: '4px',
                                 color: cfg.color,
@@ -627,7 +626,7 @@ export const OrderProcessingHistory: React.FC = () => {
                 filteredOrders.map((ord) => {
                   const custName = ord.customer?.full_name || 'Khách hàng';
                   const phone = ord.customer?.phone || '';
-                  const st = statusLabels[ord.status] || { label: ord.status, color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
+                  const st = statusLabels[ord.status] || { label: ord.status, color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 10%, transparent)' };
 
                   return (
                     <tr key={ord.id}>

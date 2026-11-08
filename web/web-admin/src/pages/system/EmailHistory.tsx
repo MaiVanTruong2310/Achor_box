@@ -326,7 +326,7 @@ export const EmailHistoryPage: React.FC = () => {
             <Mail size={22} />
           </div>
           <div>
-            <h1 className="email-header-title">Nhật Ký Email Giao Dịch</h1>
+            <h1 className="email-header-title">Nhật ký email giao dịch</h1>
             <p className="email-header-desc">
               Giám sát hệ thống gửi email tự động (xác nhận đơn hàng, OTP, hóa đơn điện tử) và kích hoạt gửi lại các email thất bại.
             </p>
@@ -344,8 +344,8 @@ export const EmailHistoryPage: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                borderColor: '#d97706',
+                background: 'var(--accent-amber)',
+                borderColor: 'var(--accent-amber)',
                 color: '#fff',
                 fontWeight: 700
               }}
@@ -358,7 +358,7 @@ export const EmailHistoryPage: React.FC = () => {
 
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-secondary"
             onClick={() => {
               setTestModalOpen(true);
               setTestFeedback(null);
@@ -395,12 +395,12 @@ export const EmailHistoryPage: React.FC = () => {
             setPage(0);
           }}
         >
-          <div className="email-kpi-bubble" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' }}>
+          <div className="email-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)', color: 'var(--accent-rose-text)' }}>
             <AlertCircle size={20} />
           </div>
           <div className="email-kpi-meta">
             <span className="email-kpi-label">Gửi thất bại</span>
-            <div className="email-kpi-value" style={{ color: '#ef4444' }}>
+            <div className="email-kpi-value" style={{ color: 'var(--accent-rose-text)' }}>
               {counts.FAILED}
             </div>
             <span className="email-kpi-sub">Cần kiểm tra lỗi hoặc gửi lại</span>
@@ -415,12 +415,12 @@ export const EmailHistoryPage: React.FC = () => {
             setPage(0);
           }}
         >
-          <div className="email-kpi-bubble" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' }}>
+          <div className="email-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)', color: 'var(--accent-amber-text)' }}>
             <Clock size={20} />
           </div>
           <div className="email-kpi-meta">
             <span className="email-kpi-label">Hàng đợi chờ gửi</span>
-            <div className="email-kpi-value" style={{ color: '#f59e0b' }}>
+            <div className="email-kpi-value" style={{ color: 'var(--accent-amber-text)' }}>
               {counts.PENDING}
             </div>
             <span className="email-kpi-sub">Đang trong tiến trình scheduler</span>
@@ -435,12 +435,12 @@ export const EmailHistoryPage: React.FC = () => {
             setPage(0);
           }}
         >
-          <div className="email-kpi-bubble" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
+          <div className="email-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)', color: 'var(--accent-emerald-text)' }}>
             <CheckCircle2 size={20} />
           </div>
           <div className="email-kpi-meta">
             <span className="email-kpi-label">Đã gửi thành công</span>
-            <div className="email-kpi-value" style={{ color: '#10b981' }}>
+            <div className="email-kpi-value" style={{ color: 'var(--accent-emerald-text)' }}>
               {counts.SENT}
             </div>
             <span className="email-kpi-sub">Khách hàng đã nhận được thư</span>
@@ -448,12 +448,12 @@ export const EmailHistoryPage: React.FC = () => {
         </div>
 
         <div className="email-kpi-card" style={{ cursor: 'default' }}>
-          <div className="email-kpi-bubble" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}>
+          <div className="email-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)', color: 'var(--accent-primary)' }}>
             <Send size={20} />
           </div>
           <div className="email-kpi-meta">
             <span className="email-kpi-label">Tỷ lệ thành công</span>
-            <div className="email-kpi-value" style={{ color: '#3b82f6' }}>
+            <div className="email-kpi-value" style={{ color: 'var(--accent-primary)' }}>
               {successRate}%
             </div>
             <span className="email-kpi-sub">Tổng cộng {grandTotal} giao dịch email</span>
@@ -463,13 +463,13 @@ export const EmailHistoryPage: React.FC = () => {
 
       {/* 3. Alerts */}
       {message && (
-        <div className="card" style={{ padding: '12px 16px', background: 'rgba(16, 185, 129, 0.12)', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="card" style={{ padding: '12px 16px', background: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-emerald) 30%, transparent)', color: 'var(--accent-emerald-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <CheckCircle2 size={16} />
           <span>{message}</span>
         </div>
       )}
       {error && (
-        <div className="card" style={{ padding: '12px 16px', background: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="card" style={{ padding: '12px 16px', background: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-rose) 30%, transparent)', color: 'var(--accent-rose-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <AlertCircle size={16} />
           <span>{error}</span>
         </div>
@@ -518,8 +518,8 @@ export const EmailHistoryPage: React.FC = () => {
       {/* 5. Table */}
       {status === 'PENDING' && (
         <div style={{
-          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.12) 100%)',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
+          background: 'var(--bg-surface)',
+          border: '1px solid color-mix(in srgb, var(--accent-amber) 30%, transparent)',
           borderRadius: '14px',
           padding: '16px 20px',
           marginBottom: '20px',
@@ -530,7 +530,7 @@ export const EmailHistoryPage: React.FC = () => {
           flexWrap: 'wrap'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--accent-amber)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Clock size={20} />
             </div>
             <div>
@@ -548,8 +548,8 @@ export const EmailHistoryPage: React.FC = () => {
             disabled={loading || processingQueue || (counts.PENDING === 0 && rows.length === 0)}
             onClick={handleProcessQueue}
             style={{
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              borderColor: '#d97706',
+              background: 'var(--accent-amber)',
+              borderColor: 'var(--accent-amber)',
               color: '#fff',
               fontWeight: 700,
               padding: '8px 18px',
@@ -600,7 +600,7 @@ export const EmailHistoryPage: React.FC = () => {
                   {/* Người nhận */}
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div className="email-kpi-bubble" style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', width: 34, height: 34, color: '#fff', borderRadius: '8px' }}>
+                      <div className="email-kpi-bubble" style={{ background: 'var(--bg-surface)', width: 34, height: 34, color: '#fff', borderRadius: '8px' }}>
                         <Mail size={16} />
                       </div>
                       <div>
@@ -680,7 +680,7 @@ export const EmailHistoryPage: React.FC = () => {
                           className="email-btn primary"
                           disabled={busy === mail.id}
                           onClick={() => handleRetry(mail)}
-                          style={{ background: '#f59e0b', borderColor: '#d97706', color: '#fff' }}
+                          style={{ background: 'var(--accent-amber)', borderColor: 'var(--accent-amber)', color: '#fff' }}
                           title="Kích hoạt gửi email này ngay lập tức"
                         >
                           <Send size={12} className={busy === mail.id ? 'spin' : ''} />
@@ -751,7 +751,7 @@ export const EmailHistoryPage: React.FC = () => {
           <div className="fpt-modal-box" style={{ maxWidth: '640px' }} onClick={e => e.stopPropagation()}>
             <div className="fpt-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div className="fpt-avatar" style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', width: 38, height: 38 }}>
+                <div className="fpt-avatar" style={{ background: 'var(--bg-surface)', width: 38, height: 38 }}>
                   <Mail size={18} />
                 </div>
                 <div>
@@ -775,7 +775,7 @@ export const EmailHistoryPage: React.FC = () => {
               {/* Header card with status */}
               <div style={{ background: 'var(--bg-surface)', padding: '14px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block' }}>
                     Trạng thái chuyển phát
                   </span>
                   <div style={{ marginTop: '4px' }}>{getStatusBadge(selectedMail.status)}</div>
@@ -898,7 +898,7 @@ export const EmailHistoryPage: React.FC = () => {
                   className="btn btn-primary"
                   disabled={busy === selectedMail.id}
                   onClick={() => handleRetry(selectedMail)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f59e0b', borderColor: '#d97706', color: '#fff' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--accent-amber)', borderColor: 'var(--accent-amber)', color: '#fff' }}
                 >
                   <Send size={14} className={busy === selectedMail.id ? 'spin' : ''} />
                   <span>{busy === selectedMail.id ? 'Đang gửi...' : 'Kích hoạt gửi email này ngay'}</span>
@@ -928,7 +928,7 @@ export const EmailHistoryPage: React.FC = () => {
           <div className="fpt-modal-box" style={{ maxWidth: '580px' }} onClick={e => e.stopPropagation()}>
             <div className="fpt-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                   <Send size={18} />
                 </div>
                 <div>

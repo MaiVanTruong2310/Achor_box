@@ -114,23 +114,23 @@ interface Ticket {
 const statusConfig: Record<string, { label: string; bg: string; color: string; border: string; icon: React.ReactNode }> = {
   PENDING: {
     label: 'Chờ thẩm định',
-    bg: 'rgba(245, 158, 11, 0.12)',
-    color: '#d97706',
-    border: 'rgba(245, 158, 11, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)',
+    color: 'var(--accent-amber-text)',
+    border: 'color-mix(in srgb, var(--accent-amber) 28%, transparent)',
     icon: <Clock size={13} />
   },
   APPROVED: {
     label: 'Đã phê duyệt',
-    bg: 'rgba(16, 185, 129, 0.12)',
-    color: '#10b981',
-    border: 'rgba(16, 185, 129, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)',
+    color: 'var(--accent-emerald-text)',
+    border: 'color-mix(in srgb, var(--accent-emerald) 28%, transparent)',
     icon: <CheckCircle2 size={13} />
   },
   RETURNED: {
     label: 'Chờ giải trình',
-    bg: 'rgba(14, 165, 233, 0.12)',
-    color: '#0ea5e9',
-    border: 'rgba(14, 165, 233, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+    color: 'var(--accent-primary)',
+    border: 'color-mix(in srgb, var(--accent-primary) 28%, transparent)',
     icon: <RotateCcw size={13} />
   },
   PARTIALLY_REJECTED: {
@@ -142,16 +142,16 @@ const statusConfig: Record<string, { label: string; bg: string; color: string; b
   },
   REJECTED: {
     label: 'Đã từ chối',
-    bg: 'rgba(239, 68, 68, 0.12)',
-    color: '#ef4444',
-    border: 'rgba(239, 68, 68, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)',
+    color: 'var(--accent-rose-text)',
+    border: 'color-mix(in srgb, var(--accent-rose) 28%, transparent)',
     icon: <XCircle size={13} />
   },
   CANCELLED: {
     label: 'Đã hủy đơn',
-    bg: 'rgba(100, 116, 139, 0.12)',
-    color: '#64748b',
-    border: 'rgba(100, 116, 139, 0.28)',
+    bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
+    color: 'var(--text-muted)',
+    border: 'color-mix(in srgb, var(--text-muted) 28%, transparent)',
     icon: <XCircle size={13} />
   }
 };
@@ -401,24 +401,24 @@ export const TicketDetail: React.FC = () => {
   // Translate audit actions
   const getAuditActionInfo = (action: string) => {
     const act = (action || '').toUpperCase();
-    if (act === 'ITEM_APPROVE') return { label: 'Duyệt từng món', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' };
-    if (act === 'ITEM_REJECT') return { label: 'Từ chối món', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
-    if (act === 'APPROVE' || act === 'TICKET_APPROVE') return { label: 'Phê duyệt PO', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' };
-    if (act === 'REJECT' || act === 'TICKET_REJECT') return { label: 'Từ chối phiếu', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' };
-    if (act === 'RETURN') return { label: 'Yêu cầu giải trình', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' };
-    if (act === 'CREATED') return { label: 'Khởi tạo đơn', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
-    if (act === 'PARTIALLY_REJECTED' || act === 'PARTIAL_APPROVAL_PROMPT') return { label: 'Duyệt một phần', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
-    if (act.includes('CUSTOMER_DECISION') || act.includes('CUSTOMER_ACCEPTED')) return { label: 'Khách xác nhận', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
-    if (act.includes('ASSIGN')) return { label: 'Phân công KTV', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
-    if (act.includes('START')) return { label: 'KTV di chuyển', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' };
-    if (act.includes('DELIVER')) return { label: 'Đã đến địa chỉ', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
-    if (act.includes('LINK_SERIAL')) return { label: 'Gán Serial thiết bị', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' };
-    if (act.includes('INSTALL')) return { label: 'Lắp đặt hoàn tất', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    if (act === 'ITEM_APPROVE') return { label: 'Duyệt từng món', color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)' };
+    if (act === 'ITEM_REJECT') return { label: 'Từ chối món', color: 'var(--accent-rose-text)', bg: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)' };
+    if (act === 'APPROVE' || act === 'TICKET_APPROVE') return { label: 'Phê duyệt PO', color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald) 15%, transparent)' };
+    if (act === 'REJECT' || act === 'TICKET_REJECT') return { label: 'Từ chối phiếu', color: 'var(--accent-rose-text)', bg: 'color-mix(in srgb, var(--accent-rose) 15%, transparent)' };
+    if (act === 'RETURN') return { label: 'Yêu cầu giải trình', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' };
+    if (act === 'CREATED') return { label: 'Khởi tạo đơn', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' };
+    if (act === 'PARTIALLY_REJECTED' || act === 'PARTIAL_APPROVAL_PROMPT') return { label: 'Duyệt một phần', color: 'var(--accent-amber-text)', bg: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)' };
+    if (act.includes('CUSTOMER_DECISION') || act.includes('CUSTOMER_ACCEPTED')) return { label: 'Khách xác nhận', color: 'var(--accent-primary)', bg: 'rgba(6, 182, 212, 0.12)' };
+    if (act.includes('ASSIGN')) return { label: 'Phân công KTV', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' };
+    if (act.includes('START')) return { label: 'KTV di chuyển', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' };
+    if (act.includes('DELIVER')) return { label: 'Đã đến địa chỉ', color: 'var(--accent-primary)', bg: 'rgba(6, 182, 212, 0.12)' };
+    if (act.includes('LINK_SERIAL')) return { label: 'Gán Serial thiết bị', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' };
+    if (act.includes('INSTALL')) return { label: 'Lắp đặt hoàn tất', color: 'var(--accent-amber-text)', bg: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)' };
     if (act.includes('SUBMIT_COMPLETION')) return { label: 'Nộp hồ sơ nghiệm thu', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)' };
-    if (act.includes('APPROVE_COMPLETION')) return { label: 'PO duyệt nghiệm thu', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' };
-    if (act.includes('ACCEPT')) return { label: 'Nghiệm thu hoàn tất', color: '#10b981', bg: 'rgba(16, 185, 129, 0.16)' };
-    if (act.includes('FAIL')) return { label: 'Yêu cầu xử lý lại', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
-    return { label: action.replace(/^TECH_/, ''), color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
+    if (act.includes('APPROVE_COMPLETION')) return { label: 'PO duyệt nghiệm thu', color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)' };
+    if (act.includes('ACCEPT')) return { label: 'Nghiệm thu hoàn tất', color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald) 16%, transparent)' };
+    if (act.includes('FAIL')) return { label: 'Yêu cầu xử lý lại', color: 'var(--accent-rose-text)', bg: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)' };
+    return { label: action.replace(/^TECH_/, ''), color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 10%, transparent)' };
   };
 
   const formatAuditNote = (reason?: string | null) => {
@@ -589,9 +589,9 @@ export const TicketDetail: React.FC = () => {
 
   const currentStatusCfg = statusConfig[ticket.status] || {
     label: ticket.status,
-    bg: 'rgba(100, 116, 139, 0.12)',
-    color: '#64748b',
-    border: 'rgba(100, 116, 139, 0.28)',
+    bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
+    color: 'var(--text-muted)',
+    border: 'color-mix(in srgb, var(--text-muted) 28%, transparent)',
     icon: <Clock size={13} />
   };
 
@@ -664,9 +664,9 @@ export const TicketDetail: React.FC = () => {
             className="tkd-refresh-btn"
             title="Xem trước bản in A4 / Hóa đơn bán hàng & Nghiệm thu"
             style={{
-              background: 'rgba(0, 122, 255, 0.08)',
-              color: 'var(--apple-blue, #007aff)',
-              borderColor: 'rgba(0, 122, 255, 0.25)'
+              background: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)',
+              color: 'var(--apple-blue, var(--accent-primary))',
+              borderColor: 'color-mix(in srgb, var(--accent-primary) 25%, transparent)'
             }}
           >
             <Printer size={13} />
@@ -831,12 +831,12 @@ export const TicketDetail: React.FC = () => {
                           {isPO && (
                             <div style={{ marginTop: 4 }}>
                               {item.managerId === profile?.id ? (
-                                <span style={{ fontSize: '11px', color: '#059669', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '4px', fontWeight: 650 }}>
+                                <span style={{ fontSize: '11px', color: 'var(--accent-emerald-text)', background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald) 20%, transparent)', padding: '2px 8px', borderRadius: '4px', fontWeight: 650 }}>
                                   ✓ Sản phẩm bạn phụ trách
                                 </span>
                               ) : (
-                                <span style={{ fontSize: '11px', color: '#d97706', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-                                  ⚠️ Thuộc PO khác quản lý
+                                <span style={{ fontSize: '11px', color: 'var(--accent-amber-text)', background: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber) 20%, transparent)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                                  Thuộc PO khác quản lý
                                 </span>
                               )}
                             </div>
@@ -915,7 +915,7 @@ export const TicketDetail: React.FC = () => {
                       <div className="tkd-product-price">{formatVnd(ticket.order_total || ticket.order?.total)}</div>
                       <div className="tkd-product-qty">SL: 1</div>
                     </div>
-                    <span className="tkd-product-status" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
+                    <span className="tkd-product-status" style={{ background: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)', color: 'var(--accent-emerald-text)' }}>
                       Đã duyệt
                     </span>
                   </div>
@@ -930,8 +930,8 @@ export const TicketDetail: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                 <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>Quyết định thẩm định PO Ticket</span>
                 {hasForeignItems && isPO && (
-                  <span style={{ fontSize: '0.76rem', color: '#d97706', fontWeight: 600, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '3px 10px', borderRadius: 6 }}>
-                    ⚠️ Đơn có sản phẩm của PO khác · Vui lòng bấm Duyệt từng món bạn phụ trách ở trên
+                  <span style={{ fontSize: '0.76rem', color: 'var(--accent-amber-text)', fontWeight: 600, background: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent)', padding: '3px 10px', borderRadius: 6 }}>
+                    Đơn có sản phẩm của PO khác · Vui lòng bấm Duyệt từng món bạn phụ trách ở trên
                   </span>
                 )}
               </div>
@@ -1088,7 +1088,7 @@ export const TicketDetail: React.FC = () => {
                       </p>
                       <div className="tkd-locked-card-footer">
                         <span className="tkd-locked-card-hint">
-                          💡 Chức năng sẽ tự động kích hoạt ngay sau khi khách hàng hoàn tất thanh toán.
+                          Chức năng sẽ tự động kích hoạt ngay sau khi khách hàng hoàn tất thanh toán.
                         </span>
                         <button
                           type="button"
@@ -1127,7 +1127,7 @@ export const TicketDetail: React.FC = () => {
             <div className="tkd-acceptance-quick-box">
               <div className="tkd-quick-box-main">
                 <div className="tkd-quick-box-title">
-                  <Truck size={14} style={{ color: '#10b981' }} />
+                  <Truck size={14} style={{ color: 'var(--accent-emerald-text)' }} />
                   <span>Nghiệm thu & bàn giao</span>
                   <span
                     className="tkd-mini-badge"
@@ -1291,7 +1291,7 @@ export const TicketDetail: React.FC = () => {
         <div className="tkd-modal-overlay" onClick={() => setReworkDialogOpen(false)}>
           <div className="tkd-modal-box" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--accent-rose-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <RotateCcw size={16} />
                 <span>Yêu cầu Kỹ thuật viên xử lý lại</span>
               </h3>
@@ -1334,7 +1334,7 @@ export const TicketDetail: React.FC = () => {
         <div className="tkd-modal-overlay" onClick={() => setItemRejectDialog({ open: false, orderItemId: null, productName: '' })}>
           <div className="tkd-modal-box" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--accent-rose-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <XCircle size={16} />
                 <span>Từ chối mặt hàng xuất kho</span>
               </h3>
@@ -1516,7 +1516,7 @@ export const TicketDetail: React.FC = () => {
               {/* Card 3: Ảnh minh chứng nghiệm thu */}
               <div className="tkd-accmodal-card">
                 <div className="tkd-accmodal-card-title">
-                  <Camera size={14} style={{ color: '#10b981' }} />
+                  <Camera size={14} style={{ color: 'var(--accent-emerald-text)' }} />
                   <span>Ảnh minh chứng kỹ thuật viên ({photos.length} ảnh)</span>
                 </div>
 
@@ -1552,7 +1552,7 @@ export const TicketDetail: React.FC = () => {
               {/* Card 4: Biên bản bàn giao & Tiêu chí kỹ thuật */}
               <div className="tkd-accmodal-card">
                 <div className="tkd-accmodal-card-title">
-                  <ShieldCheck size={14} style={{ color: '#0ea5e9' }} />
+                  <ShieldCheck size={14} style={{ color: 'var(--accent-primary)' }} />
                   <span>Kiểm định tiêu chuẩn Anchor Box (4 tiêu chí)</span>
                 </div>
 

@@ -45,6 +45,15 @@ public class RedisAuthService {
     private final Map<UUID, java.util.Set<String>> memoryUserTokens = new ConcurrentHashMap<>();
     private final Map<UUID, Long> memoryUserRevoked = new ConcurrentHashMap<>();
 
+    // Short negative cache of "not revoked" answers. Redis may be remote (Upstash): without this every
+    // authenticated request pays two sequential network round trips. Revocations made on this instance
+    // are visible immediately (the in-memory maps above are checked first); other instances see them
+    // within NEGATIVE_TTL_MS.
+    private static final long NEGATIVE_TTL_MS = 5_000L;
+    private static final int NEGATIVE_CACHE_MAX = 20_000;
+    private final Map<String, Long> notBlacklistedUntil = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> notRevokedUntil = new ConcurrentHashMap<>();
+
     // L1 In-Memory Auth Cache để tăng tốc xác thực mọi HTTP request (<0.01ms)
     private final Map<String, CachedUserSession> memoryAuthCache = new ConcurrentHashMap<>();
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
@@ -334,6 +343,7 @@ public class RedisAuthService {
         }
 
         memoryBlacklist.put(tokenHash, Instant.now().plusSeconds(ttl));
+        notBlacklistedUntil.remove(tokenHash);
     }
 
     /**
@@ -343,25 +353,38 @@ public class RedisAuthService {
         if (!enabled || token == null || token.isBlank()) return false;
         String tokenHash = hashToken(token);
 
+        Instant expiry = memoryBlacklist.get(tokenHash);
+        if (expiry != null) {
+            if (Instant.now().isBefore(expiry)) {
+                return true;
+            }
+            memoryBlacklist.remove(tokenHash);
+        }
+
+        long now = System.currentTimeMillis();
+        Long okUntil = notBlacklistedUntil.get(tokenHash);
+        if (okUntil != null && okUntil > now) {
+            return false;
+        }
+
+        boolean redisAnswered = redis == null;
         try {
             if (redis != null) {
-                String blacklistKey = "auth:blacklist:" + tokenHash;
-                Boolean exists = redis.hasKey(blacklistKey);
+                Boolean exists = redis.hasKey("auth:blacklist:" + tokenHash);
                 if (Boolean.TRUE.equals(exists)) {
                     return true;
                 }
+                redisAnswered = true;
             }
         } catch (Exception ex) {
             log.debug("Redis không khả dụng khi kiểm tra token blacklist: {}", ex.getMessage());
         }
 
-        Instant expiry = memoryBlacklist.get(tokenHash);
-        if (expiry != null) {
-            if (Instant.now().isBefore(expiry)) {
-                return true;
-            } else {
-                memoryBlacklist.remove(tokenHash);
+        if (redisAnswered) {
+            if (notBlacklistedUntil.size() > NEGATIVE_CACHE_MAX) {
+                notBlacklistedUntil.clear();
             }
+            notBlacklistedUntil.put(tokenHash, now + NEGATIVE_TTL_MS);
         }
         return false;
     }
@@ -372,6 +395,7 @@ public class RedisAuthService {
     public void clearUserRevocation(UUID userId) {
         if (userId == null) return;
         memoryUserRevoked.remove(userId);
+        notRevokedUntil.remove(userId);
         try {
             if (redis != null) {
                 redis.delete("auth:user_revoked:" + userId);
@@ -389,10 +413,21 @@ public class RedisAuthService {
         if (memoryUserRevoked.containsKey(userId)) {
             return true;
         }
+        long now = System.currentTimeMillis();
+        Long okUntil = notRevokedUntil.get(userId);
+        if (okUntil != null && okUntil > now) {
+            return false;
+        }
         try {
             if (redis != null) {
-                Boolean hasKey = redis.hasKey("auth:user_revoked:" + userId);
-                return Boolean.TRUE.equals(hasKey);
+                boolean revoked = Boolean.TRUE.equals(redis.hasKey("auth:user_revoked:" + userId));
+                if (!revoked) {
+                    if (notRevokedUntil.size() > NEGATIVE_CACHE_MAX) {
+                        notRevokedUntil.clear();
+                    }
+                    notRevokedUntil.put(userId, now + NEGATIVE_TTL_MS);
+                }
+                return revoked;
             }
         } catch (Exception ex) {
             log.debug("Không thể kiểm tra user revoked trên Redis: {}", ex.getMessage());
@@ -466,6 +501,7 @@ public class RedisAuthService {
             if (th == null || th.isBlank()) continue;
             memoryAuthCache.remove(th);
             memoryBlacklist.put(th, Instant.now().plusSeconds(ttl));
+            notBlacklistedUntil.remove(th);
 
             try {
                 if (redis != null) {

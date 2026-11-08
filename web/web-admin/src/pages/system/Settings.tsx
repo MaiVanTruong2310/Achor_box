@@ -59,65 +59,38 @@ export const SettingsPage: React.FC = () => {
           marginBottom: '14px'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(14, 165, 233, 0.15))',
-              border: '1px solid rgba(37, 99, 235, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent-primary)'
-            }}
-          >
-            <SettingsIcon size={17} />
-          </div>
-          <h1 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-            Cấu hình hệ thống & Dịch vụ
-          </h1>
-        </div>
-
-        {/* Global environment badge - Compact */}
+        <h1 style={{ fontSize: 34, lineHeight: '41px', fontWeight: 700, letterSpacing: '-0.022em', margin: 0 }}>
+          Cấu hình hệ thống
+        </h1>
         <span
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '5px',
-            padding: '3px 10px',
-            borderRadius: '999px',
-            fontSize: '0.75rem',
+            gap: 6,
+            padding: '2px 10px',
+            borderRadius: 999,
+            fontSize: 13,
             fontWeight: 600,
-            background: 'rgba(16, 185, 129, 0.1)',
-            color: 'var(--accent-emerald)',
-            border: '1px solid rgba(16, 185, 129, 0.25)'
+            background: 'var(--accent-amber-soft)',
+            color: 'var(--accent-amber-text)'
           }}
         >
-          <span
-            style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: 'var(--accent-emerald)',
-              boxShadow: '0 0 6px rgba(16, 185, 129, 0.6)'
-            }}
-          />
-          Sandbox
+          Môi trường thử nghiệm
         </span>
       </div>
 
-      {/* 2. Compact Single-Row Tab Navigation */}
+      {/* Segmented control */}
       <div
+        role="tablist"
         style={{
           display: 'flex',
-          gap: '6px',
-          padding: '4px',
-          background: 'var(--bg-card)',
-          borderRadius: '10px',
-          border: '1px solid var(--border-subtle)',
-          marginBottom: '16px',
+          gap: 2,
+          padding: 2,
+          width: 'fit-content',
+          maxWidth: '100%',
+          background: 'var(--bg-input)',
+          borderRadius: 12,
+          marginBottom: 24,
           overflowX: 'auto'
         }}
       >
@@ -125,21 +98,23 @@ export const SettingsPage: React.FC = () => {
           <button
             key={t.id}
             type="button"
+            role="tab"
+            aria-selected={tab === t.id}
             onClick={() => setTab(t.id)}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
-              borderRadius: '8px',
+              gap: 6,
+              minHeight: 40,
+              padding: '0 14px',
+              borderRadius: 10,
               border: 'none',
-              fontSize: '0.8125rem',
-              fontWeight: tab === t.id ? 600 : 500,
+              fontSize: 15,
+              fontWeight: tab === t.id ? 600 : 400,
               cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              background: tab === t.id ? 'var(--accent-primary)' : 'transparent',
-              color: tab === t.id ? '#ffffff' : 'var(--text-secondary)',
-              boxShadow: tab === t.id ? '0 2px 8px rgba(37, 99, 235, 0.25)' : 'none',
+              background: tab === t.id ? 'var(--bg-card)' : 'transparent',
+              color: 'var(--text-primary)',
+              boxShadow: tab === t.id ? '0 1px 2px rgba(0, 0, 0, 0.1)' : 'none',
               whiteSpace: 'nowrap'
             }}
           >
@@ -215,7 +190,7 @@ export const SettingsPage: React.FC = () => {
                       width: '36px',
                       height: '36px',
                       borderRadius: '10px',
-                      background: 'rgba(37, 99, 235, 0.1)',
+                      background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
                       color: 'var(--accent-primary)',
                       display: 'flex',
                       alignItems: 'center',
@@ -237,9 +212,9 @@ export const SettingsPage: React.FC = () => {
                     borderRadius: '999px',
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    background: 'rgba(16, 185, 129, 0.1)',
+                    background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)',
                     color: 'var(--accent-emerald)',
-                    border: '1px solid rgba(16, 185, 129, 0.25)'
+                    border: '1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent)'
                   }}
                 >
                   Đang hoạt động
@@ -286,7 +261,7 @@ export const SettingsPage: React.FC = () => {
                       width: '36px',
                       height: '36px',
                       borderRadius: '10px',
-                      background: 'rgba(14, 165, 233, 0.1)',
+                      background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
                       color: 'var(--accent-sky)',
                       display: 'flex',
                       alignItems: 'center',
@@ -308,9 +283,9 @@ export const SettingsPage: React.FC = () => {
                     borderRadius: '999px',
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    background: 'rgba(16, 185, 129, 0.1)',
+                    background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)',
                     color: 'var(--accent-emerald)',
-                    border: '1px solid rgba(16, 185, 129, 0.25)'
+                    border: '1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent)'
                   }}
                 >
                   Hoạt động 100%
@@ -357,7 +332,7 @@ export const SettingsPage: React.FC = () => {
                       width: '36px',
                       height: '36px',
                       borderRadius: '10px',
-                      background: 'rgba(245, 158, 11, 0.1)',
+                      background: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)',
                       color: 'var(--accent-amber)',
                       display: 'flex',
                       alignItems: 'center',
@@ -379,9 +354,9 @@ export const SettingsPage: React.FC = () => {
                     borderRadius: '999px',
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    background: 'rgba(16, 185, 129, 0.1)',
+                    background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)',
                     color: 'var(--accent-emerald)',
-                    border: '1px solid rgba(16, 185, 129, 0.25)'
+                    border: '1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent)'
                   }}
                 >
                   Sẵn sàng

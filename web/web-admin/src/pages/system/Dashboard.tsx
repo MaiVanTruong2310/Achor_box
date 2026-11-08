@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminNotifications, noticeStatusLabel } from '../../contexts/AdminNotificationsContext';
 import { InstallationBacklog } from '../../components/InstallationBacklog';
+import { CustomerInsightsPanel } from '../../components/CustomerInsightsPanel';
 import { getConcurrentDashboard, type ConcurrentDashboard } from '../../services/concurrentDashboardApi';
 import { deliveryApi, DailyTask } from '../../services/deliveryInstallation';
 import { LOW_STOCK_THRESHOLD, splitAlertRows } from '../../services/stock';
@@ -30,12 +31,12 @@ interface StatusConfig {
 }
 
 const statusConfigs: Record<string, StatusConfig> = {
-  PENDING: { label: 'Chờ xử lý', color: '#f59e0b', filterKey: 'pending' },
-  AWAITING_PAYMENT: { label: 'Chờ thanh toán', color: '#3b82f6', filterKey: 'awaiting_payment' },
-  PAID: { label: 'Đã thanh toán', color: '#10b981', filterKey: 'paid' },
-  CONFIRMED: { label: 'Đã duyệt', color: '#6366f1', filterKey: 'confirmed' },
-  COMPLETED: { label: 'Hoàn tất', color: '#0ea5e9', filterKey: 'completed' },
-  CANCELLED: { label: 'Đã hủy', color: '#ef4444', filterKey: 'cancelled' },
+  PENDING: { label: 'Chờ xử lý', color: 'var(--accent-amber-text)', filterKey: 'pending' },
+  AWAITING_PAYMENT: { label: 'Chờ thanh toán', color: 'var(--accent-primary)', filterKey: 'awaiting_payment' },
+  PAID: { label: 'Đã thanh toán', color: 'var(--accent-emerald-text)', filterKey: 'paid' },
+  CONFIRMED: { label: 'Đã duyệt', color: 'var(--accent-primary)', filterKey: 'confirmed' },
+  COMPLETED: { label: 'Hoàn tất', color: 'var(--accent-primary)', filterKey: 'completed' },
+  CANCELLED: { label: 'Đã hủy', color: 'var(--accent-rose-text)', filterKey: 'cancelled' },
 };
 
 const money = (value: number) => Number(value).toLocaleString('vi-VN') + ' ₫';
@@ -530,9 +531,9 @@ const TechnicianTimetableWidget: React.FC = () => {
   }, []);
 
   const shifts = [
-    { id: 'morning' as const, title: 'Ca Sáng', range: '08:00 – 12:00', icon: '🌅', color: 'var(--apple-blue, #0071e3)' },
-    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: 'var(--apple-orange, #ff9500)' },
-    { id: 'evening' as const, title: 'Ca Tối', range: '18:00 – 21:00', icon: '🌙', color: 'var(--apple-purple, #af52de)' },
+    { id: 'morning' as const, title: 'Ca sáng', range: '08:00 – 12:00', icon: '', color: 'var(--text-primary)' },
+    { id: 'afternoon' as const, title: 'Ca chiều', range: '13:30 – 17:30', icon: '', color: 'var(--text-primary)' },
+    { id: 'evening' as const, title: 'Ca tối', range: '18:00 – 21:00', icon: '', color: 'var(--text-primary)' },
   ];
 
   return (
@@ -544,16 +545,15 @@ const TechnicianTimetableWidget: React.FC = () => {
           <span className="fpt-badge-pill blue">{tasks.length} ca hẹn</span>
         </h3>
         <Link to="/technician/tasks" className="fpt-panel-link">
-          <span>Xem thời khóa biểu đầy đủ</span>
-          <ArrowUpRight size={14} />
+          <span>Xem đầy đủ</span>
         </Link>
       </div>
 
       {loading && <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>Đang tải lịch làm việc…</p>}
 
       {!loading && tasks.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-          ☕ Hôm nay bạn chưa có lịch hẹn giao lắp hay bảo hành nào. Sẵn sàng nhận đơn!
+        <div style={{ padding: '4px 0 8px', color: 'var(--text-muted)', fontSize: 15 }}>
+          Hôm nay chưa có lịch giao lắp hoặc bảo hành. Công việc mới sẽ xuất hiện ở đây.
         </div>
       )}
 
@@ -572,8 +572,7 @@ const TechnicianTimetableWidget: React.FC = () => {
               <div
                 key={shift.id}
                 style={{
-                  background: 'var(--bg-canvas, #f8fafc)',
-                  border: '1px solid var(--border-subtle)',
+                  background: 'rgba(120,120,128,.08)',
                   borderRadius: 12,
                   padding: 14,
                   display: 'flex',
@@ -581,8 +580,8 @@ const TechnicianTimetableWidget: React.FC = () => {
                   gap: 10,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-subtle)', paddingBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, color: shift.color }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, fontSize: 15, color: shift.color }}>
                     <span>{shift.icon}</span>
                     <span>{shift.title}</span>
                   </div>
@@ -599,11 +598,9 @@ const TechnicianTimetableWidget: React.FC = () => {
                       key={t.id}
                       to="/technician/tasks"
                       style={{
-                        background: 'var(--bg-surface, #ffffff)',
-                        border: '1px solid var(--border-subtle)',
-                        borderLeft: `3px solid ${t.type === 'DELIVERY_INSTALLATION' ? 'var(--apple-blue, #0071e3)' : 'var(--apple-orange, #ff9500)'}`,
-                        borderRadius: 12,
-                        padding: '10px 12px',
+                        background: 'var(--bg-card, #ffffff)',
+                        borderRadius: 10,
+                        padding: '12px 14px',
                         textDecoration: 'none',
                         color: 'inherit',
                         display: 'flex',
@@ -620,7 +617,7 @@ const TechnicianTimetableWidget: React.FC = () => {
                         {t.items?.[0]?.productName || t.typeLabel}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                        👤 {t.customerName} · 📍 {t.shortAddress || t.shippingAddress}
+                        {t.customerName} · {t.shortAddress || t.shippingAddress}
                       </div>
                     </Link>
                   ))
@@ -996,6 +993,7 @@ export const Dashboard: React.FC = () => {
         {/* Left Column: Installation Backlog */}
         <div>
           <InstallationBacklog revision={revision} />
+          <CustomerInsightsPanel revision={revision} />
         </div>
 
         {/* Right Column: Low Stock Alerts & Activity Feed */}

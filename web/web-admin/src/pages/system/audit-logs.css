@@ -48,12 +48,12 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #ff3b30 0%, #ff9500 100%);
+  background: var(--bg-surface);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 4px 16px rgba(255, 59, 48, 0.35);
+  box-shadow: none;
   flex-shrink: 0;
 }
 
@@ -89,7 +89,7 @@
   align-items: center;
   gap: 16px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  box-shadow: none;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -97,18 +97,18 @@
 
 .audit-kpi-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(0, 122, 255, 0.28);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  border-color: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+  box-shadow: none;
 }
 
 .audit-kpi-card.has-danger {
   border-color: rgba(255, 59, 48, 0.35);
-  background: linear-gradient(180deg, var(--bg-card, #ffffff) 0%, rgba(255, 59, 48, 0.03) 100%);
+  background: var(--bg-surface);
 }
 
 .audit-kpi-card.has-danger:hover {
   border-color: #ff3b30;
-  box-shadow: 0 8px 24px rgba(255, 59, 48, 0.15);
+  box-shadow: none;
 }
 
 .audit-kpi-bubble {
@@ -135,7 +135,6 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-secondary, #6e6e73);
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
@@ -164,7 +163,7 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  box-shadow: none;
 }
 
 .audit-segmented-group {
@@ -199,7 +198,7 @@
 .audit-segment-btn.active {
   background: var(--bg-card, #ffffff);
   color: var(--text-primary, #1d1d1f);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .audit-segment-btn.active.is-critical {
@@ -229,7 +228,7 @@
 }
 
 .audit-search-box input:focus {
-  border-color: #007aff;
+  border-color: var(--accent-primary);
   background: var(--bg-card, #ffffff);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.18);
 }
@@ -249,7 +248,7 @@
   border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  box-shadow: none;
 }
 
 .audit-table {
@@ -265,7 +264,6 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-secondary, #6e6e73);
-  text-transform: uppercase;
   letter-spacing: 0.06em;
   border-bottom: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
 }
@@ -321,13 +319,13 @@
 
 .audit-risk-warning {
   background: rgba(255, 149, 0, 0.12);
-  color: #d97706;
+  color: var(--accent-amber-text);
   border: 1px solid rgba(255, 149, 0, 0.28);
 }
 
 .audit-risk-normal {
   background: rgba(52, 199, 89, 0.1);
-  color: #16a34a;
+  color: var(--accent-emerald-text);
   border: 1px solid rgba(52, 199, 89, 0.25);
 }
 
@@ -349,19 +347,19 @@
 
 .audit-action-orange {
   background: rgba(255, 149, 0, 0.1);
-  color: #ea580c;
+  color: var(--accent-amber-text);
   border: 1px solid rgba(255, 149, 0, 0.25);
 }
 
 .audit-action-blue {
-  background: rgba(0, 122, 255, 0.1);
-  color: #007aff;
-  border: 1px solid rgba(0, 122, 255, 0.25);
+  background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+  color: var(--accent-primary);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent);
 }
 
 .audit-action-purple {
   background: rgba(175, 82, 222, 0.1);
-  color: #9333ea;
+  color: var(--accent-primary);
   border: 1px solid rgba(175, 82, 222, 0.25);
 }
 
@@ -394,7 +392,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   background: rgba(255, 59, 48, 0.08);
-  color: #dc2626;
+  color: var(--accent-rose-text);
   border: 1px solid rgba(255, 59, 48, 0.2);
   margin-top: 4px;
 }
@@ -466,3 +464,49 @@
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* ==========================================================================
+   Apple HIG overrides
+   ========================================================================== */
+.audit-page-container { gap: 24px; max-width: 1440px; margin: 0 auto; }
+.audit-header-title { font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: -0.022em; }
+.audit-header-desc { font-size: 15px; line-height: 20px; color: var(--text-secondary); max-width: 70ch; }
+
+.audit-kpi-grid { gap: 0 !important; background: var(--bg-card); border-radius: var(--radius-lg); overflow: hidden; }
+.audit-kpi-card { background: none !important; border: 0 !important; border-radius: 0 !important; padding: 20px 24px !important; box-shadow: none !important; }
+.audit-kpi-card + .audit-kpi-card { box-shadow: -1px 0 0 var(--border-subtle) !important; }
+.audit-kpi-card.has-danger { background: var(--accent-rose-soft) !important; }
+.audit-kpi-bubble { display: none !important; }
+.audit-kpi-label { font-size: 13px !important; }
+.audit-kpi-value { font-size: 28px !important; line-height: 34px; font-weight: 700 !important; letter-spacing: -0.022em; }
+.audit-kpi-sub { font-size: 13px !important; }
+
+.audit-toolbar, .audit-table-card { border: 0 !important; border-radius: var(--radius-lg) !important; background: var(--bg-card) !important; }
+.audit-toolbar { padding: 16px 24px !important; gap: 12px; }
+.audit-segmented-group { background: var(--bg-input) !important; border: 0 !important; border-radius: var(--radius-md) !important; padding: 2px !important; }
+.audit-segment-btn { min-height: 40px; padding: 0 14px !important; border: 0 !important; border-radius: 10px !important; font-size: 15px !important; font-weight: 400 !important; color: var(--text-primary) !important; background: none; }
+.audit-segment-btn.active { background: var(--bg-card) !important; font-weight: 600 !important; box-shadow: 0 1px 2px rgba(0,0,0,.1) !important; color: var(--text-primary) !important; }
+.audit-segment-btn.active.is-critical { color: var(--accent-rose-text) !important; }
+.audit-search-box input { min-height: 44px; border: 0 !important; border-radius: var(--radius-md) !important; background: var(--bg-input) !important; font-size: 15px !important; }
+
+/* Rows: only critical rows are tinted; warnings are marked by the badge alone */
+.audit-table thead th { padding: 12px 16px !important; background: none !important; border-bottom: 1px solid var(--border-subtle) !important; }
+.audit-table td { padding: 16px !important; font-size: 15px !important; border-bottom: 1px solid var(--border-subtle) !important; vertical-align: top; }
+.audit-table tbody tr.row-anomaly-warning { background: none !important; }
+.audit-table tbody tr.row-anomaly-critical { background: var(--accent-rose-soft) !important; }
+.audit-table tbody tr:hover td { background: var(--bg-surface); }
+.audit-table tbody tr.row-anomaly-critical:hover td { background: transparent; }
+
+.audit-risk-badge { border: 0 !important; border-radius: 999px !important; padding: 2px 10px !important; font-size: 13px !important; font-weight: 600; white-space: nowrap; }
+.audit-risk-critical { background: var(--accent-rose-soft) !important; color: var(--accent-rose-text) !important; }
+.audit-risk-warning { background: var(--accent-amber-soft) !important; color: var(--accent-amber-text) !important; }
+.audit-risk-normal { background: var(--accent-emerald-soft) !important; color: var(--accent-emerald-text) !important; }
+.audit-action-badge { border: 0 !important; border-radius: 8px !important; padding: 2px 8px !important; background: var(--bg-input) !important; color: var(--text-primary) !important; font-size: 12px !important; white-space: nowrap; }
+.audit-night-tag { border: 0 !important; background: none !important; padding: 0 !important; font-size: 13px !important; color: var(--text-secondary) !important; }
+
+/* Analysis: plain secondary text, readable width */
+.audit-table th:last-child, .audit-table td:last-child { min-width: 96px; }
+.audit-reason-tag { display: block; border: 0 !important; background: none !important; padding: 0 !important; margin: 0 0 4px; font-size: 13px !important; line-height: 18px; color: var(--text-secondary) !important; white-space: normal; }
+.audit-table tbody tr.row-anomaly-critical .audit-reason-tag:first-child { color: var(--accent-rose-text) !important; font-weight: 600; }
+
+@media (max-width: 900px) { .audit-kpi-card + .audit-kpi-card { box-shadow: 0 -1px 0 var(--border-subtle) !important; } }

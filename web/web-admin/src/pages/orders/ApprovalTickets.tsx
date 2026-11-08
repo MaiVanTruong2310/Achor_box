@@ -97,44 +97,44 @@ interface Ticket {
 const statusConfig: Record<string, { label: string; bg: string; color: string; border: string; icon: React.ReactNode }> = {
   PENDING: {
     label: 'Chờ thẩm định',
-    bg: 'rgba(245, 158, 11, 0.12)',
-    color: '#f59e0b',
-    border: 'rgba(245, 158, 11, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)',
+    color: 'var(--accent-amber-text)',
+    border: 'color-mix(in srgb, var(--accent-amber) 28%, transparent)',
     icon: <Clock size={12} />
   },
   APPROVED: {
     label: 'Đã phê duyệt',
-    bg: 'rgba(16, 185, 129, 0.12)',
-    color: '#10b981',
-    border: 'rgba(16, 185, 129, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)',
+    color: 'var(--accent-emerald-text)',
+    border: 'color-mix(in srgb, var(--accent-emerald) 28%, transparent)',
     icon: <CheckCircle2 size={12} />
   },
   RETURNED: {
     label: 'Chờ giải trình',
-    bg: 'rgba(14, 165, 233, 0.12)',
-    color: '#0ea5e9',
-    border: 'rgba(14, 165, 233, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+    color: 'var(--accent-primary)',
+    border: 'color-mix(in srgb, var(--accent-primary) 28%, transparent)',
     icon: <RotateCcw size={12} />
   },
   REJECTED: {
     label: 'Đã từ chối',
-    bg: 'rgba(244, 63, 94, 0.12)',
-    color: '#f43f5e',
-    border: 'rgba(244, 63, 94, 0.28)',
+    bg: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)',
+    color: 'var(--accent-rose-text)',
+    border: 'color-mix(in srgb, var(--accent-rose) 28%, transparent)',
     icon: <XCircle size={12} />
   },
   PARTIALLY_REJECTED: {
     label: 'Duyệt một phần',
     bg: 'rgba(168, 85, 247, 0.12)',
-    color: '#a855f7',
+    color: 'var(--accent-primary)',
     border: 'rgba(168, 85, 247, 0.28)',
     icon: <AlertTriangle size={12} />
   },
   CANCELLED: {
     label: 'Đã hủy',
-    bg: 'rgba(100, 116, 139, 0.12)',
-    color: '#94a3b8',
-    border: 'rgba(100, 116, 139, 0.28)',
+    bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
+    color: 'var(--text-muted)',
+    border: 'color-mix(in srgb, var(--text-muted) 28%, transparent)',
     icon: <X size={12} />
   }
 };
@@ -318,7 +318,7 @@ export const ApprovalTickets: React.FC = () => {
               <FileCheck size={26} />
             </div>
             <div>
-              <h1 className="apt-title">Phê Duyệt PO Ticket</h1>
+              <h1 className="apt-title">Phê duyệt phiếu PO</h1>
               <p className="apt-subtitle">
                 {isPO
                   ? 'Kiểm tra & thẩm định đơn hàng đối với các sản phẩm do bạn phụ trách trước khi điều phối xuất kho.'
@@ -361,13 +361,13 @@ export const ApprovalTickets: React.FC = () => {
         <div style={{
           marginBottom: 16,
           padding: '12px 18px',
-          background: 'rgba(59, 130, 246, 0.08)',
-          border: '1px solid rgba(59, 130, 246, 0.25)',
+          background: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
           borderRadius: 10,
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          color: '#1d4ed8',
+          color: 'var(--accent-primary)',
           fontSize: '0.88rem'
         }}>
           <ShieldCheck size={20} color="#2563eb" style={{ flexShrink: 0 }} />
@@ -453,7 +453,7 @@ export const ApprovalTickets: React.FC = () => {
             onClick={() => setActiveTab('PENDING')}
           >
             <span>Chờ thẩm định</span>
-            <span className="apt-tab-count" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}>
+            <span className="apt-tab-count" style={{ background: 'color-mix(in srgb, var(--accent-amber) 20%, transparent)', color: 'var(--accent-amber-text)' }}>
               {kpis.pending}
             </span>
           </button>
@@ -463,7 +463,7 @@ export const ApprovalTickets: React.FC = () => {
             onClick={() => setActiveTab('APPROVED')}
           >
             <span>Đã duyệt</span>
-            <span className="apt-tab-count" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>
+            <span className="apt-tab-count" style={{ background: 'color-mix(in srgb, var(--accent-emerald) 20%, transparent)', color: 'var(--accent-emerald-text)' }}>
               {kpis.approved}
             </span>
           </button>
@@ -473,7 +473,7 @@ export const ApprovalTickets: React.FC = () => {
             onClick={() => setActiveTab('RETURNED')}
           >
             <span>Giải trình</span>
-            <span className="apt-tab-count" style={{ background: 'rgba(14, 165, 233, 0.2)', color: '#0ea5e9' }}>
+            <span className="apt-tab-count" style={{ background: 'color-mix(in srgb, var(--accent-primary) 20%, transparent)', color: 'var(--accent-primary)' }}>
               {kpis.returned}
             </span>
           </button>
@@ -568,7 +568,7 @@ export const ApprovalTickets: React.FC = () => {
                             {copiedId === t.order_id ? <CheckCheck size={12} color="#10b981" /> : <Copy size={12} />}
                           </button>
                         </div>
-                        <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#10b981' }}>
+                        <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--accent-emerald-text)' }}>
                           {formatVnd(t.order_total)}
                         </span>
                       </div>

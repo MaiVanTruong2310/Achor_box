@@ -287,8 +287,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               gap: 8,
               padding: '10px 14px',
               borderRadius: 8,
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
+              background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)',
               color: 'var(--fpt-rose)',
               fontSize: '13px'
             }}>
@@ -304,8 +304,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               gap: 8,
               padding: '10px 14px',
               borderRadius: 8,
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
+              background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent)',
               color: 'var(--fpt-emerald)',
               fontSize: '13px',
               fontWeight: 600
@@ -657,7 +657,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 color: 'var(--text-muted)',
                 lineHeight: 1.5
               }}>
-                💡 <strong>Ghi chú:</strong> Thông tin họ tên và ảnh đại diện sẽ được đồng bộ ngay tức thì trên thanh tiêu đề và các biên bản thao tác hệ thống mà không cần đăng nhập lại.
+                <strong>Ghi chú:</strong> Thông tin họ tên và ảnh đại diện sẽ được đồng bộ ngay tức thì trên thanh tiêu đề và các biên bản thao tác hệ thống mà không cần đăng nhập lại.
               </div>
             </form>
           )}

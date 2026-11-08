@@ -144,4 +144,40 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
         )
         """, nativeQuery = true)
     List<Object[]> summarizeForPo(@Param("poId") UUID poId);
+
+    /**
+     * One round trip for both the status badges and the KPI strip:
+     * status, orders, paid orders, paid revenue, unpaid orders, unpaid revenue (one row per status).
+     */
+    @Query(value = """
+        SELECT CAST(o.status AS text), count(*),
+               count(*) FILTER (WHERE x.paid),
+               COALESCE(sum(o.total) FILTER (WHERE x.paid), 0),
+               count(*) FILTER (WHERE NOT x.paid),
+               COALESCE(sum(o.total) FILTER (WHERE NOT x.paid), 0)
+        FROM public.orders o
+        CROSS JOIN LATERAL (SELECT (o.paid_at IS NOT NULL OR EXISTS (
+            SELECT 1 FROM public.payments p WHERE p.order_id = o.id AND p.status = 'success')) AS paid) x
+        GROUP BY o.status
+        """, nativeQuery = true)
+    List<Object[]> overview();
+
+    @Query(value = """
+        SELECT CAST(o.status AS text), count(*),
+               count(*) FILTER (WHERE x.paid),
+               COALESCE(sum(o.total) FILTER (WHERE x.paid), 0),
+               count(*) FILTER (WHERE NOT x.paid),
+               COALESCE(sum(o.total) FILTER (WHERE NOT x.paid), 0)
+        FROM public.orders o
+        CROSS JOIN LATERAL (SELECT (o.paid_at IS NOT NULL OR EXISTS (
+            SELECT 1 FROM public.payments p WHERE p.order_id = o.id AND p.status = 'success')) AS paid) x
+        WHERE EXISTS (
+            SELECT 1 FROM public.order_items oi
+            JOIN public.products pr ON pr.id = oi.product_id
+            LEFT JOIN public.product_categories c ON c.id = pr.category_id
+            WHERE oi.order_id = o.id AND (c.manager_id = :poId OR pr.manager_id = :poId)
+        )
+        GROUP BY o.status
+        """, nativeQuery = true)
+    List<Object[]> overviewForPo(@Param("poId") UUID poId);
 }

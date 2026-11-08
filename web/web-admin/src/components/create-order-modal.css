@@ -57,7 +57,7 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary) 100%);
+  background: var(--accent-primary);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -236,7 +236,7 @@
 .com-trash-btn {
   background: transparent;
   border: none;
-  color: #ef4444;
+  color: var(--accent-rose-text);
   cursor: pointer;
   padding: 4px;
   border-radius: 6px;
@@ -247,7 +247,7 @@
 }
 
 .com-trash-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: color-mix(in srgb, var(--accent-rose) 10%, transparent);
 }
 
 .com-summary-bar {

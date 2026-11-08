@@ -28,7 +28,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: var(--accent-emerald);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,7 +94,6 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-secondary);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
@@ -157,8 +156,8 @@
 }
 
 .reports-preset-chip.active {
-  background: #059669;
-  border-color: #059669;
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
   color: #fff;
 }
 
@@ -191,15 +190,15 @@
 }
 
 .reports-format-btn.active.pdf {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  border-color: var(--accent-rose);
+  background: color-mix(in srgb, var(--accent-rose) 12%, transparent);
+  color: var(--accent-rose-text);
 }
 
 .reports-format-btn.active.xlsx {
-  border-color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
+  border-color: var(--accent-emerald);
+  background: color-mix(in srgb, var(--accent-emerald) 12%, transparent);
+  color: var(--accent-emerald-text);
 }
 
 /* 4. Export History Table */
@@ -224,7 +223,6 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-secondary);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   text-align: left;
 }
@@ -270,22 +268,22 @@
 }
 
 .reports-btn.primary {
-  background: #059669;
-  border-color: #059669;
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
   color: #fff;
 }
 
 .reports-btn.primary:hover {
-  background: #047857;
+  background: var(--accent-emerald);
 }
 
 .reports-btn.danger {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--accent-rose-text);
+  border-color: color-mix(in srgb, var(--accent-rose) 30%, transparent);
 }
 
 .reports-btn.danger:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: color-mix(in srgb, var(--accent-rose) 10%, transparent);
 }
 
 /* 5. PDF Preview Modal */

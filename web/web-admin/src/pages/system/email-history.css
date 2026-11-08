@@ -28,7 +28,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent-primary) 0%, #0369a1 100%);
+  background: var(--accent-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,7 +102,6 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-secondary);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
@@ -167,20 +166,20 @@
 }
 
 .email-pill-tab.active.failed {
-  background: #ef4444;
-  border-color: #ef4444;
+  background: var(--accent-rose);
+  border-color: var(--accent-rose);
   box-shadow: none;
 }
 
 .email-pill-tab.active.pending {
-  background: #f59e0b;
-  border-color: #f59e0b;
+  background: var(--accent-amber);
+  border-color: var(--accent-amber);
   box-shadow: none;
 }
 
 .email-pill-tab.active.sent {
-  background: #10b981;
-  border-color: #10b981;
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
   box-shadow: none;
 }
 
@@ -248,7 +247,6 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-secondary);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   text-align: left;
 }
@@ -301,21 +299,21 @@
 }
 
 .email-badge.success {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: color-mix(in srgb, var(--accent-emerald) 12%, transparent);
+  color: var(--accent-emerald-text);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent);
 }
 
 .email-badge.warning {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  color: var(--accent-amber-text);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent);
 }
 
 .email-badge.danger {
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--accent-rose) 12%, transparent);
+  color: var(--accent-rose-text);
+  border: 1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent);
 }
 
 .email-btn {
@@ -350,3 +348,37 @@
   background: var(--accent-primary);
 }
 
+
+/* ==========================================================================
+   Apple HIG overrides
+   ========================================================================== */
+.email-page-container { gap: 24px; max-width: 1440px; margin: 0 auto; }
+.email-header-title { font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: -0.022em; }
+.email-header-desc { font-size: 15px; line-height: 20px; color: var(--text-secondary); }
+
+.email-kpi-grid { gap: 0 !important; background: var(--bg-card); border-radius: var(--radius-lg); overflow: hidden; }
+.email-kpi-card { background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; padding: 20px 24px !important; }
+.email-kpi-card + .email-kpi-card { box-shadow: -1px 0 0 var(--border-subtle) !important; }
+.email-kpi-bubble { display: none !important; }
+.email-kpi-label, .email-kpi-sub { font-size: 13px !important; }
+.email-kpi-value { font-size: 28px !important; line-height: 34px; font-weight: 700 !important; letter-spacing: -0.022em; }
+
+.email-toolbar, .email-table-card { border: 0 !important; border-radius: var(--radius-lg) !important; background: var(--bg-card) !important; }
+.email-toolbar { padding: 16px 24px !important; }
+.email-search-box input { min-height: 44px; border: 0 !important; border-radius: var(--radius-md) !important; background: var(--bg-input) !important; font-size: 15px !important; }
+.email-pill-tabs { background: var(--bg-input) !important; border: 0 !important; border-radius: var(--radius-md) !important; padding: 2px !important; gap: 2px !important; width: fit-content; }
+.email-pill-tabs button { min-height: 40px; border: 0 !important; border-radius: 10px !important; background: none !important; color: var(--text-primary) !important; font-size: 15px !important; font-weight: 400 !important; box-shadow: none !important; }
+.email-pill-tabs button.active { background: var(--bg-card) !important; color: var(--text-primary) !important; font-weight: 600 !important; box-shadow: 0 1px 2px rgba(0,0,0,.1) !important; }
+.email-tab-badge { background: none !important; color: var(--text-secondary) !important; font-weight: 400 !important; }
+.email-table th { background: none !important; padding: 12px 16px !important; border-bottom: 1px solid var(--border-subtle) !important; }
+.email-table td { padding: 16px !important; font-size: 15px !important; border-bottom: 1px solid var(--border-subtle) !important; }
+.email-badge { border: 0 !important; border-radius: 999px !important; padding: 2px 10px !important; font-size: 13px !important; font-weight: 600; white-space: nowrap; }
+.email-badge.success { background: var(--accent-emerald-soft) !important; color: var(--accent-emerald-text) !important; }
+.email-badge.warning { background: var(--accent-amber-soft) !important; color: var(--accent-amber-text) !important; }
+.email-badge.danger { background: var(--accent-rose-soft) !important; color: var(--accent-rose-text) !important; }
+
+/* Row actions: tinted secondary, 44px */
+.email-btn { min-height: 44px; padding: 0 14px !important; border: 0 !important; border-radius: var(--radius-md) !important; background: var(--accent-primary-soft) !important; color: var(--accent-primary) !important; font-size: 15px !important; font-weight: 600 !important; box-shadow: none !important; }
+.email-btn.primary { background: var(--accent-primary-soft) !important; color: var(--accent-primary) !important; }
+
+@media (max-width: 900px) { .email-kpi-card + .email-kpi-card { box-shadow: 0 -1px 0 var(--border-subtle) !important; } }

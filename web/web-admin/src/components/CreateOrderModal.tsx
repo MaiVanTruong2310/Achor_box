@@ -455,7 +455,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
           </div>
 
           {errorMsg && (
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '12px 16px', borderRadius: '10px', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem' }}>
+            <div style={{ background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent)', padding: '12px 16px', borderRadius: '10px', color: 'var(--accent-rose-text)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem' }}>
               <AlertCircle size={18} style={{ flexShrink: 0 }} />
               <span>{errorMsg}</span>
             </div>
@@ -709,7 +709,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
               </div>
 
               {currentVariantObj && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, var(--text-muted))', display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                   <span>SKU: <b>{currentVariantObj.sku}</b></span>
                   {currentVariantObj.color_name && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -785,7 +785,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                           )}
                           <span>{item.variantName}</span>
                         </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)' }}>{item.sku}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary, var(--text-muted))' }}>{item.sku}</div>
                       </td>
                       <td>
                         <select
@@ -805,7 +805,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                       </td>
                       <td style={{ fontWeight: 700 }}>{item.quantity}</td>
                       <td>{item.price.toLocaleString('vi-VN')} ₫</td>
-                      <td style={{ fontWeight: 700, color: 'var(--accent-primary, #2563eb)' }}>
+                      <td style={{ fontWeight: 700, color: 'var(--accent-primary, var(--accent-primary))' }}>
                         {(item.price * item.quantity).toLocaleString('vi-VN')} ₫
                       </td>
                       <td>
@@ -824,7 +824,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 </tbody>
               </table>
             ) : (
-              <div style={{ padding: '18px', textAlign: 'center', background: 'var(--bg-secondary, #f8fafc)', borderRadius: 10, color: 'var(--text-secondary, #64748b)', fontSize: '0.86rem' }}>
+              <div style={{ padding: '18px', textAlign: 'center', background: 'var(--bg-secondary, #f8fafc)', borderRadius: 10, color: 'var(--text-secondary, var(--text-muted))', fontSize: '0.86rem' }}>
                 Chưa có sản phẩm nào trong đơn hàng. Vui lòng chọn sản phẩm và bấm &ldquo;Thêm&rdquo;.
               </div>
             )}
@@ -847,14 +847,14 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 
               <div className="com-summary-bar">
                 <div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #64748b)' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary, var(--text-muted))' }}>
                     Tổng tiền hàng ({selectedItems.reduce((acc, it) => acc + it.quantity, 0)} sản phẩm):
                   </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-emerald-text)' }}>
                     {subtotal.toLocaleString('vi-VN')} ₫
                   </div>
                 </div>
-                <div style={{ textAlign: 'right', fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)' }}>
+                <div style={{ textAlign: 'right', fontSize: '0.78rem', color: 'var(--text-secondary, var(--text-muted))' }}>
                   Trạng thái đơn: <strong>pending</strong>
                   <div>Chờ PO thẩm định</div>
                 </div>
@@ -886,7 +886,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
               padding: '10px 24px',
               borderRadius: 10,
               fontWeight: 700,
-              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)'
+              background: 'var(--accent-primary)'
             }}
           >
             <CheckCircle2 size={18} />

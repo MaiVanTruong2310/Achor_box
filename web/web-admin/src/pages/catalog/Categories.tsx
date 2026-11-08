@@ -217,10 +217,10 @@ export const Categories: React.FC = () => {
   // Category Icon helper
   const getCategoryIcon = (slugStr: string) => {
     if (slugStr.includes('linh-kien') || slugStr.includes('sua-chua')) {
-      return <Wrench size={16} style={{ color: '#0284c7' }} />;
+      return <Wrench size={16} style={{ color: 'var(--accent-primary)' }} />;
     }
     if (slugStr.includes('phu-kien') || slugStr.includes('tien-ich')) {
-      return <Tag size={16} style={{ color: '#8b5cf6' }} />;
+      return <Tag size={16} style={{ color: 'var(--accent-primary)' }} />;
     }
     return <Box size={16} style={{ color: 'var(--fpt-orange)' }} />;
   };
@@ -231,7 +231,7 @@ export const Categories: React.FC = () => {
       {toastMessage && (
         <div
           style={{
-            background: 'rgba(16, 185, 129, 0.95)',
+            background: 'color-mix(in srgb, var(--accent-emerald) 95%, transparent)',
             color: '#fff',
             padding: '10px 18px',
             borderRadius: '8px',
@@ -287,9 +287,9 @@ export const Categories: React.FC = () => {
                 gap: '6px',
                 padding: '6px 12px',
                 borderRadius: '999px',
-                background: 'rgba(0, 122, 255, 0.08)',
-                border: '1px solid rgba(0, 122, 255, 0.22)',
-                color: 'var(--apple-blue, #007aff)',
+                background: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--accent-primary) 22%, transparent)',
+                color: 'var(--apple-blue, var(--accent-primary))',
                 fontSize: '12px',
                 fontWeight: 600
               }}
@@ -383,11 +383,11 @@ export const Categories: React.FC = () => {
         <div
           role="alert"
           style={{
-            background: 'rgba(239, 68, 68, 0.08)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
+            background: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)',
             borderRadius: '8px',
             padding: '12px 16px',
-            color: '#dc2626',
+            color: 'var(--accent-rose-text)',
             fontSize: '13px',
             display: 'flex',
             alignItems: 'center',
@@ -621,14 +621,14 @@ export const Categories: React.FC = () => {
             <form onSubmit={handleSave}>
               <div className="clean-modal-body">
                 {modalError && (
-                  <div role="alert" style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#dc2626', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div role="alert" style={{ padding: '10px 14px', borderRadius: 6, background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)', color: 'var(--accent-rose-text)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <AlertCircle size={15} style={{ flexShrink: 0 }} />
                     <span>{modalError}</span>
                   </div>
                 )}
                 <div className="clean-form-row">
                   <label>
-                    Tên danh mục <span style={{ color: '#ef4444' }}>*</span>
+                    Tên danh mục <span style={{ color: 'var(--accent-rose-text)' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -644,7 +644,7 @@ export const Categories: React.FC = () => {
 
                 <div className="clean-form-row">
                   <label>
-                    Đường dẫn định danh (Slug) <span style={{ color: '#ef4444' }}>*</span>
+                    Đường dẫn định danh (Slug) <span style={{ color: 'var(--accent-rose-text)' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -725,7 +725,7 @@ export const Categories: React.FC = () => {
         <div className="clean-modal-overlay" onClick={() => !deleting && setDeleteModalOpen(false)}>
           <div className="clean-modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
             <div className="clean-modal-header">
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#dc2626' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-rose-text)' }}>
                 <ShieldAlert size={18} />
                 <span>Xác nhận xóa danh mục</span>
               </h3>
@@ -741,7 +741,7 @@ export const Categories: React.FC = () => {
 
             <div className="clean-modal-body">
               {deleteError && (
-                <div role="alert" style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#dc2626', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div role="alert" style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 6, background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)', color: 'var(--accent-rose-text)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <AlertCircle size={15} style={{ flexShrink: 0 }} />
                   <span>{deleteError}</span>
                 </div>
@@ -766,7 +766,7 @@ export const Categories: React.FC = () => {
               <button
                 type="button"
                 className="btn-primary-compact"
-                style={{ background: '#dc2626' }}
+                style={{ background: 'var(--accent-rose)' }}
                 disabled={deleting}
                 onClick={handleDelete}
               >

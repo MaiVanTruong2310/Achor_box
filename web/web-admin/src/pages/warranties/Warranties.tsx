@@ -284,8 +284,7 @@ export const Warranties: React.FC = () => {
       <div className="warranty-header">
         <div className="warranty-title-wrap">
           <h2>
-            <Wrench size={18} color="var(--accent-primary)" />
-            <span>Quản Lý Yêu Cầu Bảo Hành</span>
+            <span>Yêu cầu bảo hành</span>
           </h2>
           <p className="warranty-subtitle">
             {manager
@@ -315,7 +314,7 @@ export const Warranties: React.FC = () => {
       {/* 2. Executive Mini Stat Cards (KPI Strip) */}
       <div className="warranty-kpi-grid">
         <div className="warranty-kpi-card">
-          <div className="warranty-kpi-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb' }}>
+          <div className="warranty-kpi-icon" style={{ background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)', color: 'var(--accent-primary)' }}>
             <ShieldCheck size={16} />
           </div>
           <div className="warranty-kpi-body">
@@ -325,7 +324,7 @@ export const Warranties: React.FC = () => {
         </div>
 
         <div className="warranty-kpi-card">
-          <div className="warranty-kpi-icon" style={{ background: 'rgba(14, 165, 233, 0.1)', color: '#0284c7' }}>
+          <div className="warranty-kpi-icon" style={{ background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)', color: 'var(--accent-primary)' }}>
             <AlertCircle size={16} />
           </div>
           <div className="warranty-kpi-body">
@@ -335,7 +334,7 @@ export const Warranties: React.FC = () => {
         </div>
 
         <div className="warranty-kpi-card">
-          <div className="warranty-kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#d97706' }}>
+          <div className="warranty-kpi-icon" style={{ background: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)', color: 'var(--accent-amber-text)' }}>
             <Clock3 size={16} />
           </div>
           <div className="warranty-kpi-body">
@@ -345,7 +344,7 @@ export const Warranties: React.FC = () => {
         </div>
 
         <div className="warranty-kpi-card">
-          <div className="warranty-kpi-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#059669' }}>
+          <div className="warranty-kpi-icon" style={{ background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)', color: 'var(--accent-emerald-text)' }}>
             <CheckCircle2 size={16} />
           </div>
           <div className="warranty-kpi-body">
@@ -542,7 +541,7 @@ export const Warranties: React.FC = () => {
                       <td>
                         {claim.assigneeName ? (
                           <span className="warranty-tech-name">
-                            <User size={11} style={{ color: '#3b82f6' }} />
+                            <User size={11} style={{ color: 'var(--accent-primary)' }} />
                             {claim.assigneeName}
                           </span>
                         ) : (
@@ -635,7 +634,7 @@ export const Warranties: React.FC = () => {
                 {/* Body */}
                 <div className="warranty-compact-card-body">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div className="fpt-avatar" style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', width: 26, height: 26, fontSize: '0.65rem' }}>
+                    <div className="fpt-avatar" style={{ background: 'var(--bg-surface)', width: 26, height: 26, fontSize: '0.65rem' }}>
                       {(claim.customerName || 'KH').slice(0, 2).toUpperCase()}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -903,7 +902,7 @@ export const Warranties: React.FC = () => {
                 {/* Lý do từ chối hiển thị cho khách */}
                 {detailClaim.status === 'rejected' && detailClaim.rejectionReason && (
                   <div style={{ background: 'var(--fpt-rose-soft)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--fpt-rose)' }}>
-                    <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--fpt-rose)', display: 'block', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--fpt-rose)', display: 'block', marginBottom: '3px', letterSpacing: '0.03em' }}>
                       Lý do từ chối (hiển thị cho khách hàng):
                     </label>
                     <div style={{ fontSize: '0.75rem', color: 'var(--fpt-rose)', whiteSpace: 'pre-wrap', fontWeight: 600 }}>
@@ -917,7 +916,7 @@ export const Warranties: React.FC = () => {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <ImageIcon size={13} style={{ color: '#3b82f6' }} />
+                        <ImageIcon size={13} style={{ color: 'var(--accent-primary)' }} />
                         <span>Hình ảnh đính kèm ({detailClaim.images.length} ảnh):</span>
                       </label>
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Bấm vào ảnh để phóng to</span>
@@ -954,7 +953,7 @@ export const Warranties: React.FC = () => {
                 {/* Ghi chú nội bộ nếu có */}
                 {detailClaim.internalNotes && (
                   <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                    <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '3px', letterSpacing: '0.03em' }}>
                       Ghi chú nội bộ xử lý:
                     </label>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>

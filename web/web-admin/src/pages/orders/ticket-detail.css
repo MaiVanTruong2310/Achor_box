@@ -147,7 +147,7 @@
 }
 
 .tkd-refresh-btn:hover:not(:disabled) {
-  border-color: #94a3b8;
+  border-color: var(--text-muted);
   color: var(--tkd-text-main);
 }
 
@@ -205,7 +205,6 @@
   font-size: 0.72rem;
   letter-spacing: 0.5px;
   font-weight: 800;
-  text-transform: uppercase;
   padding: 4px 10px;
 }
 
@@ -223,27 +222,27 @@
 }
 
 .tkd-payment-strip.paid {
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.24);
+  background: color-mix(in srgb, var(--accent-emerald) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 24%, transparent);
   color: #065f46;
 }
 
 [data-theme="dark"] .tkd-payment-strip.paid {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #34d399;
+  background: color-mix(in srgb, var(--accent-emerald) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent-emerald) 30%, transparent);
+  color: var(--accent-emerald-text);
 }
 
 .tkd-payment-strip.pending {
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent);
   color: #92400e;
 }
 
 [data-theme="dark"] .tkd-payment-strip.pending {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #fbbf24;
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent-amber) 30%, transparent);
+  color: var(--accent-amber-text);
 }
 
 .tkd-payment-left {
@@ -263,12 +262,12 @@
 }
 
 .tkd-payment-strip.paid .tkd-payment-icon {
-  background: #10b981;
+  background: var(--accent-emerald);
   color: #ffffff;
 }
 
 .tkd-payment-strip.pending .tkd-payment-icon {
-  background: #f59e0b;
+  background: var(--accent-amber);
   color: #ffffff;
 }
 
@@ -289,19 +288,18 @@
   letter-spacing: 0.5px;
   padding: 3px 10px;
   border-radius: 6px;
-  text-transform: uppercase;
 }
 
 .tkd-payment-strip.paid .tkd-payment-tag {
-  background: rgba(16, 185, 129, 0.18);
-  color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: color-mix(in srgb, var(--accent-emerald) 18%, transparent);
+  color: var(--accent-emerald-text);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 30%, transparent);
 }
 
 .tkd-payment-strip.pending .tkd-payment-tag {
-  background: rgba(245, 158, 11, 0.18);
-  color: #d97706;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: color-mix(in srgb, var(--accent-amber) 18%, transparent);
+  color: var(--accent-amber-text);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 30%, transparent);
 }
 
 /* 2. Main Workspace Layout: 2 Columns */
@@ -370,7 +368,6 @@
 .tkd-block-label {
   font-size: 0.74rem;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--tkd-text-muted);
   margin-bottom: 6px;
@@ -407,7 +404,7 @@
 .tkd-total-amount {
   font-size: 1.45rem;
   font-weight: 800;
-  color: #10b981;
+  color: var(--accent-emerald-text);
   letter-spacing: -0.5px;
   line-height: 1.2;
 }
@@ -530,7 +527,7 @@
 .tkd-product-price {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #10b981;
+  color: var(--accent-emerald-text);
 }
 
 .tkd-product-qty {
@@ -555,13 +552,13 @@
 }
 
 .tkd-decision-strip.approved {
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: color-mix(in srgb, var(--accent-emerald) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent);
 }
 
 .tkd-decision-strip.rejected {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--accent-rose) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent);
 }
 
 .tkd-decision-strip.returned {
@@ -609,8 +606,8 @@
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: 1px solid #059669;
+  background: var(--accent-emerald);
+  border: 1px solid var(--accent-emerald);
   color: #ffffff;
   cursor: pointer;
   box-shadow: none;
@@ -649,30 +646,30 @@
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #dc2626;
+  background: color-mix(in srgb, var(--accent-rose) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent);
+  color: var(--accent-rose-text);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-tkd-reject:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.15);
+  background: color-mix(in srgb, var(--accent-rose) 15%, transparent);
 }
 
 /* Dispatch Locked Card (when online payment is pending) */
 .tkd-dispatch-locked-card {
   margin-top: 12px;
-  background: rgba(245, 158, 11, 0.06);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: color-mix(in srgb, var(--accent-amber) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 28%, transparent);
   border-radius: 12px;
   padding: 14px 16px;
   animation: fadeIn 0.2s ease-out;
 }
 
 [data-theme="dark"] .tkd-dispatch-locked-card {
-  background: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.24);
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent-amber) 24%, transparent);
 }
 
 .tkd-locked-card-body {
@@ -688,8 +685,8 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #d97706;
+  background: color-mix(in srgb, var(--accent-amber) 15%, transparent);
+  color: var(--accent-amber-text);
   flex-shrink: 0;
 }
 
@@ -701,7 +698,7 @@
 .tkd-locked-card-title {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #b45309;
+  color: var(--accent-amber-text);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -709,7 +706,7 @@
 }
 
 [data-theme="dark"] .tkd-locked-card-title {
-  color: #fbbf24;
+  color: var(--accent-amber-text);
 }
 
 .tkd-locked-card-desc {
@@ -720,11 +717,11 @@
 }
 
 .tkd-locked-card-desc strong {
-  color: #b45309;
+  color: var(--accent-amber-text);
 }
 
 [data-theme="dark"] .tkd-locked-card-desc strong {
-  color: #fbbf24;
+  color: var(--accent-amber-text);
 }
 
 .tkd-locked-card-footer {
@@ -734,7 +731,7 @@
   flex-wrap: wrap;
   gap: 8px;
   padding-top: 8px;
-  border-top: 1px dashed rgba(245, 158, 11, 0.2);
+  border-top: 1px dashed color-mix(in srgb, var(--accent-amber) 20%, transparent);
 }
 
 .tkd-locked-card-hint {
@@ -750,21 +747,21 @@
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: #b45309;
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 30%, transparent);
+  color: var(--accent-amber-text);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 [data-theme="dark"] .tkd-btn-locked-refresh {
-  background: rgba(245, 158, 11, 0.18);
-  color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.4);
+  background: color-mix(in srgb, var(--accent-amber) 18%, transparent);
+  color: var(--accent-amber-text);
+  border-color: color-mix(in srgb, var(--accent-amber) 40%, transparent);
 }
 
 .tkd-btn-locked-refresh:hover:not(:disabled) {
-  background: rgba(245, 158, 11, 0.22);
+  background: color-mix(in srgb, var(--accent-amber) 22%, transparent);
 }
 
 /* Reason Input Box */
@@ -892,7 +889,7 @@
 
 .tkd-thumb-item:hover {
   transform: translateY(-2px) scale(1.04);
-  border-color: #10b981;
+  border-color: var(--accent-emerald);
   box-shadow: none;
 }
 
@@ -1026,7 +1023,7 @@
 }
 
 .tkd-timeline-dot.newest {
-  background: #10b981;
+  background: var(--accent-emerald);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
 }
 
@@ -1192,8 +1189,8 @@
 }
 
 .tkd-lightbox-close:hover {
-  background: #ef4444;
-  border-color: #ef4444;
+  background: var(--accent-rose);
+  border-color: var(--accent-rose);
   transform: rotate(90deg);
 }
 
@@ -1237,7 +1234,7 @@
 }
 
 .tkd-acceptance-quick-box:hover {
-  border-color: rgba(16, 185, 129, 0.35);
+  border-color: color-mix(in srgb, var(--accent-emerald) 35%, transparent);
   box-shadow: none;
 }
 
@@ -1272,8 +1269,8 @@
   padding: 6px 13px;
   border-radius: 8px;
   background: var(--tkd-card-bg);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #10b981;
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 40%, transparent);
+  color: var(--accent-emerald-text);
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
@@ -1283,9 +1280,9 @@
 }
 
 .tkd-btn-acceptance-modal-trigger:hover {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: #10b981;
-  color: #059669;
+  background: color-mix(in srgb, var(--accent-emerald) 12%, transparent);
+  border-color: var(--accent-emerald);
+  color: var(--accent-emerald-text);
   transform: translateY(-1px);
 }
 
@@ -1306,7 +1303,7 @@
 .tkd-timeline-inline-link {
   background: none;
   border: none;
-  color: #10b981;
+  color: var(--accent-emerald-text);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 700;
@@ -1319,7 +1316,7 @@
 }
 
 .tkd-timeline-inline-link:hover {
-  color: #059669;
+  color: var(--accent-emerald-text);
 }
 
 /* Compact Alert Banner in Left Column when WAITING_PO_CONFIRMATION */
@@ -1330,8 +1327,8 @@
   gap: 12px;
   padding: 12px 16px;
   border-radius: 12px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 28%, transparent);
   margin-top: 14px;
   flex-wrap: wrap;
 }
@@ -1343,18 +1340,18 @@
 }
 
 .tkd-alert-icon {
-  color: #d97706;
+  color: var(--accent-amber-text);
   flex-shrink: 0;
 }
 
 .tkd-alert-title {
   font-size: 0.86rem;
   font-weight: 700;
-  color: #b45309;
+  color: var(--accent-amber-text);
 }
 
 [data-theme="dark"] .tkd-alert-title {
-  color: #fbbf24;
+  color: var(--accent-amber-text);
 }
 
 .tkd-alert-desc {
@@ -1392,8 +1389,8 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
+  background: color-mix(in srgb, var(--accent-emerald) 15%, transparent);
+  color: var(--accent-emerald-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1471,7 +1468,6 @@
 .tkd-meta-label {
   font-size: 0.75rem;
   color: var(--tkd-text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.4px;
 }
 
@@ -1513,7 +1509,7 @@
 }
 
 .tkd-device-serial strong {
-  color: #10b981;
+  color: var(--accent-emerald-text);
   font-family: var(--font-mono, monospace);
 }
 
@@ -1552,15 +1548,15 @@
 }
 
 .tkd-criteria-item.pass {
-  color: #059669;
+  color: var(--accent-emerald-text);
 }
 
 [data-theme="dark"] .tkd-criteria-item.pass {
-  color: #34d399;
+  color: var(--accent-emerald-text);
 }
 
 .criteria-icon {
-  color: #10b981;
+  color: var(--accent-emerald-text);
   flex-shrink: 0;
 }
 
@@ -1578,17 +1574,17 @@
   margin-top: 8px;
   padding: 8px 12px;
   border-radius: 6px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: color-mix(in srgb, var(--accent-rose) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-rose) 20%, transparent);
   font-size: 0.82rem;
-  color: #dc2626;
+  color: var(--accent-rose-text);
 }
 
 .tkd-accmodal-actions-bar {
   padding: 12px 14px;
   border-radius: 8px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 28%, transparent);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1597,7 +1593,7 @@
 .tkd-accmodal-actions-hint {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #d97706;
+  color: var(--accent-amber-text);
 }
 
 .tkd-accmodal-footer {

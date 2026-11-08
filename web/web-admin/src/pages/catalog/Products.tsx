@@ -644,7 +644,7 @@ export const Products: React.FC = () => {
       {/* Toast Notification */}
       {successToast && (
         <div style={{
-          background: 'rgba(16, 185, 129, 0.95)',
+          background: 'color-mix(in srgb, var(--accent-emerald) 95%, transparent)',
           color: '#fff',
           padding: '10px 18px',
           borderRadius: '8px',
@@ -665,22 +665,22 @@ export const Products: React.FC = () => {
         <div className="products-topbar-title">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <h1>
-              <span>Sản Phẩm & Kho Hàng</span>
+              <span>Sản phẩm và kho hàng</span>
               <span className="products-topbar-count">{totalProducts}</span>
             </h1>
             {isSuperAdmin && (
               <span className="fpt-badge fpt-badge-purple" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                🛡️ Quản lý cửa hàng (Toàn quyền)
+                Quản lý cửa hàng (Toàn quyền)
               </span>
             )}
             {isProductManager && (
               <span className="fpt-badge fpt-badge-success" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                📦 Nhân viên bán hàng & Sản phẩm (PO)
+                Nhân viên bán hàng & Sản phẩm (PO)
               </span>
             )}
             {isTechnician && (
               <span className="fpt-badge fpt-badge-info" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                🔧 Nhân viên kỹ thuật (Tra cứu vật tư & Tồn kho)
+                Nhân viên kỹ thuật (Tra cứu vật tư & Tồn kho)
               </span>
             )}
           </div>
@@ -788,7 +788,7 @@ export const Products: React.FC = () => {
         <div className="products-stat-tile">
           <div className="products-stat-info">
             <span className="products-stat-label">Giá trị kho</span>
-            <span className="products-stat-value" style={{ color: '#059669', fontSize: '1.15rem' }}>
+            <span className="products-stat-value" style={{ color: 'var(--accent-emerald-text)', fontSize: '1.15rem' }}>
               {totalInventoryValue.toLocaleString('vi-VN')} ₫
             </span>
             <span className="products-stat-sub">Theo giá niêm yết</span>
@@ -899,7 +899,7 @@ export const Products: React.FC = () => {
 
           {/* Error Banner */}
           {operationError && (
-            <div role="alert" style={{ padding: '12px 16px', background: 'rgba(239, 68, 68, 0.08)', color: '#dc2626', borderRadius: '8px', fontSize: '13px' }}>
+            <div role="alert" style={{ padding: '12px 16px', background: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)', color: 'var(--accent-rose-text)', borderRadius: '8px', fontSize: '13px' }}>
               {operationError}
             </div>
           )}
@@ -1555,7 +1555,7 @@ export const Products: React.FC = () => {
 
             <div className="clean-modal-body">
               {adjustError && (
-                <div role="alert" style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#dc2626', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div role="alert" style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 6, background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)', color: 'var(--accent-rose-text)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <AlertTriangle size={15} style={{ flexShrink: 0 }} />
                   <span>{adjustError}</span>
                 </div>
@@ -1604,7 +1604,7 @@ export const Products: React.FC = () => {
                               {v.variant_name || v.name || (v as any).size || 'Biến thể'}
                             </span>
                             {isSelected && (
-                              <span style={{ fontSize: '11px', color: 'var(--apple-blue, #007aff)', fontWeight: 800 }}>✓</span>
+                              <span style={{ fontSize: '11px', color: 'var(--apple-blue, var(--accent-primary))', fontWeight: 800 }}>✓</span>
                             )}
                           </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
@@ -1804,12 +1804,12 @@ export const Products: React.FC = () => {
                 <div style={{ width: 1, height: 26, background: 'var(--border-subtle)' }} />
                 <div className="history-metric-chip">
                   <span>Tổng nhập (+)</span>
-                  <strong style={{ color: '#059669' }}>+{historyMetrics.totalIn}</strong>
+                  <strong style={{ color: 'var(--accent-emerald-text)' }}>+{historyMetrics.totalIn}</strong>
                 </div>
                 <div style={{ width: 1, height: 26, background: 'var(--border-subtle)' }} />
                 <div className="history-metric-chip">
                   <span>Tổng xuất (-)</span>
-                  <strong style={{ color: '#dc2626' }}>-{historyMetrics.totalOut}</strong>
+                  <strong style={{ color: 'var(--accent-rose-text)' }}>-{historyMetrics.totalOut}</strong>
                 </div>
               </div>
             </div>
@@ -1830,7 +1830,7 @@ export const Products: React.FC = () => {
                     className={`history-type-tab ${historyTypeFilter === 'in' ? 'active' : ''}`}
                     onClick={() => setHistoryTypeFilter('in')}
                   >
-                    <ArrowDownLeft size={13} style={{ color: '#059669' }} />
+                    <ArrowDownLeft size={13} style={{ color: 'var(--accent-emerald-text)' }} />
                     Nhập kho
                   </button>
                   <button
@@ -1838,7 +1838,7 @@ export const Products: React.FC = () => {
                     className={`history-type-tab ${historyTypeFilter === 'out' ? 'active' : ''}`}
                     onClick={() => setHistoryTypeFilter('out')}
                   >
-                    <ArrowUpRight size={13} style={{ color: '#dc2626' }} />
+                    <ArrowUpRight size={13} style={{ color: 'var(--accent-rose-text)' }} />
                     Xuất kho
                   </button>
                 </div>
@@ -2057,7 +2057,7 @@ export const Products: React.FC = () => {
                               color: 'var(--text-primary)',
                               lineHeight: 1.45
                             }}>
-                              💬 {log.reason}
+                              {log.reason}
                             </div>
                           )}
                         </div>
@@ -2120,9 +2120,9 @@ export const Products: React.FC = () => {
                   <span
                     className="clean-badge"
                     style={{
-                      background: 'rgba(59, 130, 246, 0.12)',
-                      color: '#2563eb',
-                      border: '1px solid rgba(59, 130, 246, 0.25)',
+                      background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+                      color: 'var(--accent-primary)',
+                      border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
                       fontSize: '11px',
                       padding: '2px 8px'
                     }}
@@ -2138,7 +2138,7 @@ export const Products: React.FC = () => {
 
             {/* In-context error banner */}
             {modalError && (
-              <div role="alert" style={{ margin: '12px 18px 0', padding: '10px 14px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#dc2626', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div role="alert" style={{ margin: '12px 18px 0', padding: '10px 14px', borderRadius: 6, background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)', color: 'var(--accent-rose-text)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <AlertTriangle size={15} style={{ flexShrink: 0 }} />
                 <span>{modalError}</span>
               </div>
@@ -2192,7 +2192,7 @@ export const Products: React.FC = () => {
                         type="text"
                         disabled={isTechnician}
                         className="clean-form-input"
-                        style={{ textTransform: 'uppercase' }}
+                        style={{ }}
                         placeholder="SBX-HOME-01"
                         value={formData.sku}
                         onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
@@ -2476,7 +2476,7 @@ export const Products: React.FC = () => {
                             type="text"
                             disabled={isTechnician}
                             className="clean-form-input"
-                            style={{ padding: '7px 10px', fontSize: '13px', textTransform: 'uppercase', fontFamily: 'monospace' }}
+                            style={{ padding: '7px 10px', fontSize: '13px', fontFamily: 'monospace' }}
                             value={v.sku}
                             onChange={(e) => {
                               const updated = [...formData.variants];
@@ -2584,7 +2584,7 @@ export const Products: React.FC = () => {
         <div className="clean-modal-overlay" onClick={() => setDeleteModalOpen(false)}>
           <div className="clean-modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
             <div className="clean-modal-header">
-              <h3 style={{ color: '#dc2626' }}>Xác Nhận Xóa Sản Phẩm</h3>
+              <h3 style={{ color: 'var(--accent-rose-text)' }}>Xác Nhận Xóa Sản Phẩm</h3>
               <button type="button" className="action-icon-btn" onClick={() => setDeleteModalOpen(false)}>
                 <X size={16} />
               </button>
@@ -2592,7 +2592,7 @@ export const Products: React.FC = () => {
 
             <div className="clean-modal-body">
               {deleteError && (
-                <div role="alert" style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#dc2626', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div role="alert" style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 6, background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)', color: 'var(--accent-rose-text)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <AlertTriangle size={15} style={{ flexShrink: 0 }} />
                   <span>{deleteError}</span>
                 </div>
@@ -2617,7 +2617,7 @@ export const Products: React.FC = () => {
               <button
                 type="button"
                 className="btn-primary-compact"
-                style={{ background: '#dc2626' }}
+                style={{ background: 'var(--accent-rose)' }}
                 disabled={deleteSubmitting}
                 onClick={handleDeleteProduct}
               >

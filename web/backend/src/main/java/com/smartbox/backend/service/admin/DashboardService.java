@@ -182,6 +182,52 @@ public class DashboardService {
                 .build();
     }
 
+    /** New customers (7/30 days vs previous 30) and top customers by paid revenue, in two queries. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getCustomerInsights() {
+        var now = OffsetDateTime.now(ZONE);
+        var counts = db.one(
+                "SELECT count(*) AS total, " +
+                "count(*) FILTER (WHERE created_at >= ?) AS d7, " +
+                "count(*) FILTER (WHERE created_at >= ?) AS d30, " +
+                "count(*) FILTER (WHERE created_at >= ? AND created_at < ?) AS prev30 " +
+                "FROM public.profiles WHERE CAST(role AS text) = 'customer'",
+                now.minusDays(7), now.minusDays(30), now.minusDays(60), now.minusDays(30));
+        var buyers = db.one(
+                "SELECT count(DISTINCT user_id) AS buyers, COALESCE(sum(total),0) AS revenue FROM public.orders " +
+                "WHERE CAST(status AS text) IN('paid','confirmed','completed') AND paid_at IS NOT NULL AND user_id IS NOT NULL");
+        var top = db.list(
+                "SELECT o.user_id AS id, COALESCE(NULLIF(p.full_name,''), p.email, 'Khách vãng lai') AS name, p.email AS email, " +
+                "count(*) AS orders, COALESCE(sum(o.total),0) AS revenue, max(o.paid_at) AS last_paid " +
+                "FROM public.orders o LEFT JOIN public.profiles p ON p.id = o.user_id " +
+                "WHERE CAST(o.status AS text) IN('paid','confirmed','completed') AND o.paid_at IS NOT NULL AND o.user_id IS NOT NULL " +
+                "GROUP BY o.user_id, p.full_name, p.email ORDER BY revenue DESC LIMIT 5");
+
+        long buyerCount = ((Number) buyers.get("buyers")).longValue();
+        BigDecimal revenue = OrderWorkflowService.money(buyers.get("revenue"));
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("totalCustomers", ((Number) counts.get("total")).longValue());
+        out.put("newLast7Days", ((Number) counts.get("d7")).longValue());
+        out.put("newLast30Days", ((Number) counts.get("d30")).longValue());
+        out.put("newPrevious30Days", ((Number) counts.get("prev30")).longValue());
+        out.put("buyers", buyerCount);
+        out.put("avgRevenuePerBuyer", buyerCount == 0 ? BigDecimal.ZERO
+                : revenue.divide(BigDecimal.valueOf(buyerCount), 0, RoundingMode.HALF_UP));
+        var rows = new ArrayList<Map<String, Object>>();
+        for (var r : top) {
+            var item = new java.util.LinkedHashMap<String, Object>();
+            item.put("id", String.valueOf(r.get("id")));
+            item.put("name", r.get("name"));
+            item.put("email", r.get("email"));
+            item.put("orders", ((Number) r.get("orders")).longValue());
+            item.put("revenue", OrderWorkflowService.money(r.get("revenue")));
+            item.put("lastPaidAt", r.get("last_paid") == null ? null : r.get("last_paid").toString());
+            rows.add(item);
+        }
+        out.put("topCustomers", rows);
+        return out;
+    }
+
     private BigDecimal revenue(LocalDate from, LocalDate until) {
         String sql = "SELECT COALESCE(sum(total),0) AS total FROM public.orders WHERE CAST(status AS text) IN('paid','confirmed','completed') AND paid_at IS NOT NULL";
         return OrderWorkflowService.money(from == null

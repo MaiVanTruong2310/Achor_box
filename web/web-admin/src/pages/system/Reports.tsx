@@ -478,11 +478,11 @@ export const ReportsPage: React.FC = () => {
       {/* 1. Header */}
       <div className="fpt-page-header" style={{ marginBottom: 0 }}>
         <div className="fpt-page-title">
-          <div className="fpt-page-icon" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+          <div className="fpt-page-icon" style={{ background: 'var(--accent-emerald)' }}>
             <TrendingUp size={22} />
           </div>
           <div>
-            <h1>Báo Cáo Doanh Thu Bán Hàng</h1>
+            <h1>Báo cáo doanh thu bán hàng</h1>
             <p className="fpt-page-desc">
               Kết xuất số liệu kinh doanh, dòng tiền đã thu, tiền hoàn trả và số lượng đơn hàng theo chuẩn mẫu biểu thống kê.
             </p>
@@ -529,7 +529,7 @@ export const ReportsPage: React.FC = () => {
             <Clock size={16} />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>
               Thời gian thực
             </div>
             <div style={{ fontSize: '0.835rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -565,7 +565,7 @@ export const ReportsPage: React.FC = () => {
             <FileSpreadsheet size={16} />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>
               Định dạng hỗ trợ
             </div>
             <div style={{ fontSize: '0.835rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -601,7 +601,7 @@ export const ReportsPage: React.FC = () => {
             <Calendar size={16} />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>
               Giới hạn truy vấn
             </div>
             <div style={{ fontSize: '0.835rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -704,14 +704,14 @@ export const ReportsPage: React.FC = () => {
                       title: 'Báo cáo văn bản PDF',
                       icon: <FileText size={20} />,
                       desc: 'Biểu mẫu tiêu chuẩn có logo, sẵn sàng in ấn hoặc nộp chứng từ.',
-                      color: 'var(--fpt-rose)',
+                      color: 'var(--accent-primary)',
                     },
                     {
                       fmt: 'XLSX' as const,
                       title: 'Bảng tính Excel (.xlsx)',
                       icon: <FileSpreadsheet size={20} />,
                       desc: 'Dữ liệu số liệu thô có công thức để đối chiếu kế toán.',
-                      color: 'var(--fpt-emerald)',
+                      color: 'var(--accent-primary)',
                     },
                   ].map(f => {
                     const isSelected = format === f.fmt;
@@ -720,7 +720,7 @@ export const ReportsPage: React.FC = () => {
                         key={f.fmt}
                         onClick={() => setFormat(f.fmt)}
                         style={{
-                          border: `2px solid ${isSelected ? f.color : 'var(--border-subtle)'}`,
+                          border: `2px solid ${isSelected ? f.color: 'var(--border-subtle)'}`,
                           background: isSelected ? 'var(--bg-card)' : 'var(--bg-surface)',
                           borderRadius: '12px',
                           padding: '12px 14px',
@@ -809,7 +809,7 @@ export const ReportsPage: React.FC = () => {
                   width: '34px',
                   height: '34px',
                   borderRadius: '8px',
-                  background: 'rgba(16, 185, 129, 0.1)',
+                  background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)',
                   color: 'var(--fpt-emerald)',
                   display: 'flex',
                   alignItems: 'center',
@@ -977,7 +977,7 @@ export const ReportsPage: React.FC = () => {
           <div className="pdf-modal-box" onClick={e => e.stopPropagation()}>
             <div className="pdf-modal-header">
               <h3 className="pdf-modal-title">
-                <FileText size={18} style={{ color: '#ef4444' }} />
+                <FileText size={18} style={{ color: 'var(--accent-rose-text)' }} />
                 <span>{previewTitle}</span>
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

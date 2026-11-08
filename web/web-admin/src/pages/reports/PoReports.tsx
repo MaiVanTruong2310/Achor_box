@@ -394,7 +394,7 @@ export const PoReports: React.FC = () => {
               gap: '6px',
               borderRadius: '10px',
               color: 'var(--accent-primary)',
-              borderColor: 'rgba(37, 99, 235, 0.3)'
+              borderColor: 'color-mix(in srgb, var(--accent-primary) 30%, transparent)'
             }}
           >
             <Eye size={15} />
@@ -424,8 +424,8 @@ export const PoReports: React.FC = () => {
               alignItems: 'center',
               gap: '6px',
               borderRadius: '10px',
-              color: '#10b981',
-              borderColor: 'rgba(16, 185, 129, 0.3)'
+              color: 'var(--accent-emerald-text)',
+              borderColor: 'color-mix(in srgb, var(--accent-emerald) 30%, transparent)'
             }}
           >
             <FileSpreadsheet size={15} />
@@ -529,15 +529,15 @@ export const PoReports: React.FC = () => {
                           </td>
                           <td style={{ textAlign: 'center' }}>
                             {isOutOfStock ? (
-                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', fontSize: '0.75rem', fontWeight: 700 }}>
+                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)', color: 'var(--accent-rose-text)', fontSize: '0.75rem', fontWeight: 700 }}>
                                 Hết hàng
                               </span>
                             ) : isLowStock ? (
-                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', fontSize: '0.75rem', fontWeight: 700 }}>
+                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)', color: 'var(--accent-amber-text)', fontSize: '0.75rem', fontWeight: 700 }}>
                                 Sắp hết hàng
                               </span>
                             ) : (
-                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', fontSize: '0.75rem', fontWeight: 700 }}>
+                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)', color: 'var(--accent-emerald-text)', fontSize: '0.75rem', fontWeight: 700 }}>
                                 Đủ định mức
                               </span>
                             )}
@@ -545,10 +545,10 @@ export const PoReports: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <td style={{ textAlign: 'center', fontWeight: 600, color: '#f59e0b' }}>
+                          <td style={{ textAlign: 'center', fontWeight: 600, color: 'var(--accent-amber-text)' }}>
                             {item.soldQuantity}
                           </td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, color: '#10b981' }}>
+                          <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--accent-emerald-text)' }}>
                             {formatVnd(item.revenue)}
                           </td>
                         </>

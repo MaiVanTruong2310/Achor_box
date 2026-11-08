@@ -274,7 +274,7 @@ export const VariantSpecificationsPage: React.FC = () => {
       {toastMessage && (
         <div
           style={{
-            background: 'rgba(16, 185, 129, 0.95)',
+            background: 'color-mix(in srgb, var(--accent-emerald) 95%, transparent)',
             color: '#fff',
             padding: '10px 18px',
             borderRadius: '8px',
@@ -301,17 +301,17 @@ export const VariantSpecificationsPage: React.FC = () => {
             </h1>
             {isSuperAdmin && (
               <span className="fpt-badge fpt-badge-purple" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                🛡️ Quản lý cửa hàng
+                Quản lý cửa hàng
               </span>
             )}
             {isProductManager && (
               <span className="fpt-badge fpt-badge-success" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                📦 Nhân viên bán hàng & Sản phẩm (PO)
+                Nhân viên bán hàng & Sản phẩm (PO)
               </span>
             )}
             {isTechnician && (
               <span className="fpt-badge fpt-badge-info" style={{ fontSize: '0.72rem', padding: '3px 8px' }}>
-                🔧 Nhân viên kỹ thuật (Tra cứu quy cách & kích thước)
+                Nhân viên kỹ thuật (Tra cứu quy cách & kích thước)
               </span>
             )}
           </div>
@@ -380,7 +380,7 @@ export const VariantSpecificationsPage: React.FC = () => {
             <span className="products-stat-value">{proTierCount}</span>
             <span className="products-stat-sub">Tích hợp cân tải điện tử</span>
           </div>
-          <div className="products-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb' }}>
+          <div className="products-stat-icon" style={{ background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)', color: 'var(--accent-primary)' }}>
             <Scale size={18} />
           </div>
         </div>
@@ -450,11 +450,11 @@ export const VariantSpecificationsPage: React.FC = () => {
         <div
           role="alert"
           style={{
-            background: 'rgba(239, 68, 68, 0.08)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
+            background: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)',
             borderRadius: '8px',
             padding: '12px 16px',
-            color: '#dc2626',
+            color: 'var(--accent-rose-text)',
             fontSize: '13px',
             display: 'flex',
             alignItems: 'center',
@@ -610,7 +610,7 @@ export const VariantSpecificationsPage: React.FC = () => {
                           </span>
                         </div>
                       ) : (
-                        <span style={{ fontSize: '12px', color: '#f59e0b', fontStyle: 'italic' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--accent-amber-text)', fontStyle: 'italic' }}>
                           Chưa có số đo
                         </span>
                       )}
@@ -644,8 +644,8 @@ export const VariantSpecificationsPage: React.FC = () => {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '4px',
-                            background: 'rgba(59, 130, 246, 0.1)',
-                            color: '#2563eb',
+                            background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
+                            color: 'var(--accent-primary)',
                             padding: '3px 8px',
                             borderRadius: '6px',
                             fontSize: '11px',
@@ -728,9 +728,9 @@ export const VariantSpecificationsPage: React.FC = () => {
                     <span
                       className="clean-badge"
                       style={{
-                        background: 'rgba(59, 130, 246, 0.12)',
-                        color: '#2563eb',
-                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                        background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+                        color: 'var(--accent-primary)',
+                        border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
                         fontSize: '11px',
                         padding: '2px 8px'
                       }}
@@ -756,7 +756,7 @@ export const VariantSpecificationsPage: React.FC = () => {
             <form onSubmit={handleSaveSpecs}>
               <div className="clean-modal-body">
                 {modalError && (
-                  <div role="alert" style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#dc2626', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div role="alert" style={{ padding: '10px 14px', borderRadius: 6, background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)', color: 'var(--accent-rose-text)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <AlertTriangle size={15} style={{ flexShrink: 0 }} />
                     <span>{modalError}</span>
                   </div>
@@ -764,7 +764,7 @@ export const VariantSpecificationsPage: React.FC = () => {
                 {/* Hardware Tier */}
                 <div className="clean-form-row">
                   <label>
-                    Phân cấp phần cứng &amp; Cảm biến <span style={{ color: '#ef4444' }}>*</span>
+                    Phân cấp phần cứng &amp; Cảm biến <span style={{ color: 'var(--accent-rose-text)' }}>*</span>
                   </label>
                   <select
                     className="clean-form-select"
@@ -780,7 +780,7 @@ export const VariantSpecificationsPage: React.FC = () => {
                 {/* 3 Dimensions */}
                 <div className="clean-form-row">
                   <label>
-                    Kích thước 3 chiều thực tế (cm) <span style={{ color: '#ef4444' }}>*</span>
+                    Kích thước 3 chiều thực tế (cm) <span style={{ color: 'var(--accent-rose-text)' }}>*</span>
                   </label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                     <div>
@@ -887,7 +887,7 @@ export const VariantSpecificationsPage: React.FC = () => {
                 {/* Warranty Months */}
                 <div className="clean-form-row">
                   <label>
-                    Thời hạn bảo hành tiêu chuẩn (tháng) <span style={{ color: '#ef4444' }}>*</span>
+                    Thời hạn bảo hành tiêu chuẩn (tháng) <span style={{ color: 'var(--accent-rose-text)' }}>*</span>
                   </label>
                   <input
                     type="number"

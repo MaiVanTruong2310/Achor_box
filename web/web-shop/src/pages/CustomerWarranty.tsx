@@ -1036,7 +1036,7 @@ export function InstallationTracking() {
     <section className="container section commerce-workspace">
       <OrderNavigation id={id} title="Giao hàng & lắp đặt" />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2>Tiến trình giao hàng &amp; lắp đặt đơn #{id}</h2>
+        <h2>Tiến trình giao hàng và lắp đặt</h2>
         <button
           type="button"
           className="button secondary"

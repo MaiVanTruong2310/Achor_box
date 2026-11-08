@@ -360,7 +360,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
             <ShieldCheck size={22} />
           </div>
           <div>
-            <h1 className="staff-header-title">Quản Lý Nhân Sự</h1>
+            <h1 className="staff-header-title">Quản lý nhân sự</h1>
             <p className="staff-header-desc">
               Quản lý danh sách cán bộ nhân viên nội bộ, cấp tài khoản và phân quyền cho 3 vị trí nghiệp vụ (Quản lý cửa hàng, Nhân viên bán hàng, Nhân viên kỹ thuật).
             </p>
@@ -398,23 +398,23 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
       {/* 2. Executive 4-Card KPI Grid */}
       <div className="staff-kpi-grid">
         <div className="staff-kpi-card">
-          <div className="staff-kpi-bubble" style={{ background: 'rgba(124, 58, 237, 0.12)', color: '#8b5cf6' }}>
+          <div className="staff-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)', color: 'var(--accent-primary)' }}>
             <Shield size={20} />
           </div>
           <div className="staff-kpi-meta">
             <span className="staff-kpi-label">Quản lý cửa hàng</span>
-            <div className="staff-kpi-value" style={{ color: '#8b5cf6' }}>{countAdmin}</div>
+            <div className="staff-kpi-value" style={{ color: 'var(--accent-primary)' }}>{countAdmin}</div>
             <span className="staff-kpi-sub">Toàn quyền hệ thống & nhân sự</span>
           </div>
         </div>
 
         <div className="staff-kpi-card">
-          <div className="staff-kpi-bubble" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}>
+          <div className="staff-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)', color: 'var(--accent-primary)' }}>
             <Box size={20} />
           </div>
           <div className="staff-kpi-meta">
             <span className="staff-kpi-label">Nhân viên bán hàng & Sản phẩm (PO)</span>
-            <div className="staff-kpi-value" style={{ color: '#3b82f6' }}>{countManager}</div>
+            <div className="staff-kpi-value" style={{ color: 'var(--accent-primary)' }}>{countManager}</div>
             <span className="staff-kpi-sub">Quản lý sản phẩm, đơn hàng & phê duyệt</span>
           </div>
         </div>
@@ -431,12 +431,12 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
         </div>
 
         <div className="staff-kpi-card">
-          <div className="staff-kpi-bubble" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' }}>
+          <div className="staff-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)', color: 'var(--accent-rose-text)' }}>
             <Lock size={20} />
           </div>
           <div className="staff-kpi-meta">
             <span className="staff-kpi-label">Tài khoản bị khóa</span>
-            <div className="staff-kpi-value" style={{ color: '#ef4444' }}>{countLocked}</div>
+            <div className="staff-kpi-value" style={{ color: 'var(--accent-rose-text)' }}>{countLocked}</div>
             <span className="staff-kpi-sub">Bị tạm ngừng đăng nhập hệ thống</span>
           </div>
         </div>
@@ -444,13 +444,13 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
 
       {/* 3. Alerts */}
       {message && (
-        <div className="card" style={{ padding: '12px 16px', background: 'rgba(16, 185, 129, 0.12)', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="card" style={{ padding: '12px 16px', background: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-emerald) 30%, transparent)', color: 'var(--accent-emerald-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <CheckCircle2 size={16} />
           <span>{message}</span>
         </div>
       )}
       {error && (
-        <div className="card" style={{ padding: '12px 16px', background: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="card" style={{ padding: '12px 16px', background: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-rose) 30%, transparent)', color: 'var(--accent-rose-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <AlertCircle size={16} />
           <span>{error}</span>
         </div>
@@ -607,7 +607,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
                             className="staff-btn"
                             disabled={!!busy}
                             onClick={() => handleChangeRole(user)}
-                            style={{ background: '#7c3aed', color: '#fff', borderColor: '#7c3aed' }}
+                            style={{ background: 'var(--accent-primary)', color: '#fff', borderColor: 'var(--accent-primary)' }}
                           >
                             <Check size={12} />
                             <span>Lưu</span>
@@ -787,7 +787,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
                           key={item.role}
                           onClick={() => setStaffForm({ ...staffForm, role: item.role })}
                           style={{
-                            border: `2px solid ${isSelected ? item.color : 'var(--border-subtle)'}`,
+                            border: `2px solid ${isSelected ? item.color: 'var(--border-subtle)'}`,
                             background: isSelected ? 'var(--bg-card)' : 'var(--bg-surface)',
                             borderRadius: '12px',
                             padding: '12px',
@@ -1010,7 +1010,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
 
                 {/* Thông báo thành công nếu có */}
                 {resetSuccess ? (
-                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '12px 14px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent)', padding: '12px 14px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--fpt-emerald)', fontWeight: 600, fontSize: '0.85rem' }}>
                       <CheckCircle2 size={16} />
                       <span>{resetSuccess}</span>
@@ -1151,7 +1151,7 @@ export const AccountManagement: React.FC<{ permissions?: boolean }> = ({ permiss
               {/* Card vai trò & phạm vi nghiệp vụ */}
               <div style={{ background: 'var(--bg-surface)', padding: '16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>
                     Vai trò hiện tại
                   </span>
                   {getRoleBadge(staffDetail.role)}

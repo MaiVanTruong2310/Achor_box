@@ -104,13 +104,13 @@ export const PoAcceptanceReview: React.FC<PoAcceptanceReviewProps> = ({
             border: isCompleted ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent)'
           }}
         >
-          {isCompleted ? '✓ Đã nghiệm thu & Hoàn thành' : '⏳ Chờ PO duyệt nghiệm thu'}
+          {isCompleted ? '✓ Đã nghiệm thu & Hoàn thành' : 'Chờ PO duyệt nghiệm thu'}
         </span>
       </div>
 
       {/* Completed Success Banner */}
       {isCompleted && (
-        <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '14px 18px', borderRadius: 12, border: '1px solid rgba(16, 185, 129, 0.3)', color: '#047857' }}>
+        <div style={{ background: 'color-mix(in srgb, var(--accent-emerald) 8%, transparent)', padding: '14px 18px', borderRadius: 12, border: '1px solid color-mix(in srgb, var(--accent-emerald) 30%, transparent)', color: 'var(--accent-emerald-text)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
             <CheckCircle2 size={18} />
             <span>Đơn hàng đã hoàn thành toàn bộ quy trình!</span>
@@ -123,7 +123,7 @@ export const PoAcceptanceReview: React.FC<PoAcceptanceReviewProps> = ({
 
       {/* Rework Banner if job was previously rejected and now back in progress */}
       {job.reworkNotes && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.08)', padding: '14px 18px', borderRadius: 12, border: '1px solid rgba(239, 68, 68, 0.3)', color: '#b91c1c' }}>
+        <div style={{ background: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)', padding: '14px 18px', borderRadius: 12, border: '1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent)', color: 'var(--accent-rose-text)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
             <AlertTriangle size={18} />
             <span>Yêu cầu xử lý lại trước đó:</span>
@@ -184,14 +184,14 @@ export const PoAcceptanceReview: React.FC<PoAcceptanceReviewProps> = ({
       {/* PO Actions (Approve / Reject) if waiting confirmation */}
       {!isPO ? (
         <div style={{
-          background: 'rgba(59, 130, 246, 0.08)',
-          border: '1px solid rgba(59, 130, 246, 0.25)',
+          background: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
           borderRadius: 10,
           padding: '14px 18px',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          color: '#1d4ed8',
+          color: 'var(--accent-primary)',
           fontSize: '0.88rem'
         }}>
           <ShieldCheck size={20} color="#2563eb" style={{ flexShrink: 0 }} />
@@ -245,7 +245,7 @@ export const PoAcceptanceReview: React.FC<PoAcceptanceReviewProps> = ({
         <div className="tech-modal-overlay" onClick={() => setReworkDialogOpen(false)}>
           <div className="tech-modal-container" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
             <div className="tech-modal-header">
-              <h3 className="tech-modal-title" style={{ color: '#dc2626' }}>
+              <h3 className="tech-modal-title" style={{ color: 'var(--accent-rose-text)' }}>
                 <RotateCcw size={20} />
                 <span>Yêu cầu Kỹ thuật viên xử lý lại</span>
               </h3>

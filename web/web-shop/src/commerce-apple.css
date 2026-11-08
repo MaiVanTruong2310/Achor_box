@@ -1,0 +1,213 @@
+/* ============================================================
+   Commerce pages (order detail, checkout, payment result)
+   Apple HIG, App UI mode: grouped surfaces, hairlines, one accent.
+   Loaded last so it can replace the older hard-coded colours; uses
+   the --ab-* tokens so light and dark both work.
+   ============================================================ */
+
+.commerce-workspace {
+  --c-line: var(--ab-separator);
+  --c-fill: var(--ab-tile-off);
+  color: var(--ab-text);
+}
+
+/* Titles and small labels: sentence case, no mono */
+.commerce-workspace .eyebrow,
+.commerce-workspace .order-caption,
+.commerce-workspace th,
+.commerce-workspace caption {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+.commerce-workspace .eyebrow { font-size: 13px; font-weight: 400; color: var(--ab-text-2); margin: 0 0 4px; }
+.commerce-workspace .order-caption { display: block; font-size: 13px; font-weight: 400; color: var(--ab-text-2); margin-bottom: 2px; }
+.commerce-workspace h1 { font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: -0.022em; }
+.commerce-workspace h2 { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.015em; }
+.commerce-workspace .order-reference span,
+.commerce-workspace .order-code,
+.commerce-workspace .warranty-card h3 {
+  font-family: var(--ab-font) !important;
+  font-size: 13px; color: var(--ab-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Surfaces: no card borders, background layering instead */
+.commerce-workspace .panel,
+.commerce-workspace .order-block,
+.commerce-workspace .order-progress-panel,
+.commerce-workspace .order-help-box,
+.commerce-workspace .customer-order-card,
+.commerce-workspace .order-subnav {
+  background: var(--ab-surface) !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  box-shadow: none !important;
+}
+.commerce-workspace .order-subnav { padding: 4px; background: var(--c-fill) !important; border-radius: 12px !important; }
+.commerce-workspace .order-subnav a { border-radius: 9px; min-height: 40px; color: var(--ab-text-2); font-size: 15px; font-weight: 500; }
+.commerce-workspace .order-subnav a.active { background: var(--ab-surface); color: var(--ab-text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.commerce-workspace .order-subnav a.active svg { color: var(--ab-tint); }
+.commerce-workspace .order-next-step { background: var(--c-fill) !important; border-top: 0 !important; }
+.commerce-workspace .order-block .commerce-snapshot { background: transparent !important; }
+.commerce-workspace .commerce-address {
+  background: var(--c-fill) !important; border-radius: 12px; border: 0 !important;
+}
+.commerce-workspace .customer-order-card > header,
+.commerce-workspace .customer-order-card footer { background: transparent !important; border-color: var(--c-line) !important; border-width: 0 0 .5px 0 !important; }
+.commerce-workspace .customer-order-card footer { border-width: .5px 0 0 0 !important; }
+
+/* Progress: one accent, calm */
+.commerce-workspace .order-progress li.is-done span,
+.commerce-workspace .order-progress li.is-current span {
+  background: var(--ab-tint) !important; border-color: var(--ab-tint) !important; color: #fff !important;
+}
+.commerce-workspace .order-progress li.is-done strong,
+.commerce-workspace .order-progress li.is-current strong { color: var(--ab-text) !important; }
+.commerce-workspace .order-progress li { color: var(--ab-text-2); }
+.commerce-workspace .order-progress li::after, .commerce-workspace .order-progress li::before { background: var(--c-line) !important; }
+
+/* Tables: hairlines, sentence-case headers */
+.commerce-snapshot table { border: 0; }
+.commerce-snapshot th { background: transparent !important; color: var(--ab-text-2) !important; font-size: 13px; font-weight: 400; border-bottom: .5px solid var(--c-line) !important; }
+.commerce-snapshot td { border-bottom: .5px solid var(--c-line) !important; }
+.commerce-snapshot caption { color: var(--ab-text-2); font-size: 13px; text-align: left; padding: 0 0 8px; }
+.commerce-totals > div { border-color: var(--c-line) !important; }
+.commerce-amount { font-weight: 600; }
+
+/* Buttons: filled accent for the main action, tinted for the rest */
+.commerce-workspace .button,
+.commerce-workspace .apple-primary-cta-btn {
+  background: var(--ab-tint) !important; color: #fff !important; border: 0 !important;
+  border-radius: 12px !important; min-height: 44px; font-size: 17px; font-weight: 600; box-shadow: none !important;
+}
+.commerce-workspace .button:hover, .commerce-workspace .apple-primary-cta-btn:hover:not(:disabled) { background: var(--ab-tint-hover) !important; transform: none; }
+.commerce-workspace .button:active, .commerce-workspace .apple-primary-cta-btn:active:not(:disabled) { opacity: .7; }
+.commerce-workspace .button.secondary,
+.commerce-workspace button:not(.button):not(.apple-primary-cta-btn):not([class*="payment"]):not([role="tab"]) {
+  background: color-mix(in srgb, var(--ab-tint) 12%, transparent); color: var(--ab-tint);
+  border: 0; border-radius: 12px; min-height: 44px; font-weight: 600; padding: 0 18px;
+}
+.commerce-workspace .button.secondary { background: color-mix(in srgb, var(--ab-tint) 12%, transparent) !important; color: var(--ab-tint) !important; }
+.commerce-workspace .apple-primary-cta-btn:disabled, .commerce-workspace .button:disabled { background: var(--c-fill) !important; color: var(--ab-text-3) !important; }
+.commerce-workspace .text-link { color: var(--ab-tint); font-weight: 400; font-size: 15px; text-decoration: none; }
+.commerce-workspace :is(a, button, input, summary):focus-visible { outline: 2px solid var(--ab-tint); outline-offset: 2px; }
+
+/* Checkout summary + payment methods as one grouped list */
+.apple-glass-summary { background: var(--ab-surface) !important; border: 0 !important; border-radius: 18px !important; box-shadow: none !important; backdrop-filter: none !important; }
+.apple-summary-title { font-size: 22px; font-weight: 600; letter-spacing: -0.015em; }
+.payment-methods-selector h4 { color: var(--ab-text) !important; font-size: 15px !important; font-weight: 600 !important; }
+.payment-methods-group { background: var(--c-fill, rgba(120,120,128,.12)); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; gap: 1px; }
+.payment-method-card { background: var(--ab-surface) !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; min-height: 56px; }
+.payment-method-card + .payment-method-card { border-top: .5px solid var(--ab-separator) !important; }
+.payment-method-card:hover { background: var(--ab-tile-off) !important; }
+.payment-method-card.active { background: color-mix(in srgb, var(--ab-tint) 8%, var(--ab-surface)) !important; box-shadow: none !important; }
+.payment-method-icon, .payment-method-card.active .payment-method-icon { background: transparent !important; color: var(--ab-text-2) !important; }
+.payment-method-card.active .payment-method-icon { color: var(--ab-tint) !important; }
+.payment-method-title, .payment-method-card.active .payment-method-title { color: var(--ab-text) !important; font-size: 15px; font-weight: 600; }
+.payment-method-desc { color: var(--ab-text-2) !important; font-size: 13px; }
+.payment-method-badge, .badge-recommended, .badge-neutral {
+  background: var(--ab-tile-off) !important; color: var(--ab-text-2) !important; border: 0 !important;
+  text-transform: none !important; letter-spacing: 0 !important; font-size: 12px; font-weight: 500; border-radius: 999px;
+}
+.payment-details-box { background: var(--ab-tile-off) !important; border: 0 !important; border-radius: 12px !important; color: var(--ab-text) !important; }
+.payment-details-box p { color: var(--ab-text) !important; font-size: 15px; }
+.payment-details-box strong { color: var(--ab-text) !important; }
+.apple-terms-pill { background: transparent !important; border: 0 !important; padding: 8px 0 !important; border-radius: 0 !important; color: var(--ab-text-2); font-size: 15px; }
+
+/* Status chips: neutral pill, colour only for the dot/text semantics already used */
+.commerce-workspace .commerce-section-title { align-items: center; }
+
+@media (prefers-reduced-motion: reduce) { .commerce-workspace * { transition: none !important; animation: none !important; } }
+
+/* Page uses the grouped background so white surfaces read as layers */
+body:has(.commerce-workspace) { background: var(--ab-bg) !important; }
+.commerce-badge { border: 0 !important; border-radius: 999px !important; font-size: 13px !important; font-weight: 500 !important; padding: 4px 10px !important; text-transform: none !important; }
+.commerce-badge.is-positive { background: color-mix(in srgb, var(--ab-green) 16%, transparent) !important; color: #248A3D !important; }
+.commerce-badge.is-warning { background: color-mix(in srgb, var(--ab-orange) 16%, transparent) !important; color: #B25000 !important; }
+.commerce-badge.is-negative { background: color-mix(in srgb, var(--ab-red) 14%, transparent) !important; color: #D70015 !important; }
+.commerce-badge.is-neutral { background: var(--ab-tile-off) !important; color: var(--ab-text-2) !important; }
+[data-theme='dark'] .commerce-badge.is-positive { color: #30D158 !important; }
+[data-theme='dark'] .commerce-badge.is-warning { color: #FF9F0A !important; }
+[data-theme='dark'] .commerce-badge.is-negative { color: #FF453A !important; }
+
+/* Tables must follow the theme */
+.commerce-workspace .table-scroll, .commerce-snapshot table, .commerce-snapshot tbody, .commerce-snapshot thead, .commerce-snapshot tr { background: transparent !important; }
+.commerce-snapshot td { color: var(--ab-text) !important; }
+.commerce-snapshot td small { color: var(--ab-text-2) !important; }
+.commerce-totals dt { color: var(--ab-text-2) !important; }
+.commerce-totals dd, .commerce-total dt { color: var(--ab-text) !important; }
+.commerce-workspace .muted { color: var(--ab-text-2) !important; }
+.commerce-workspace .commerce-payment-summary .commerce-section-title > span:first-child { color: var(--ab-text-2); }
+
+/* Payment method rows: keep badges on one line, native radios use the accent */
+.payment-method-header { flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.payment-method-badge { white-space: nowrap; padding: 2px 8px !important; }
+.payment-method-radio, .apple-terms-pill input[type="checkbox"] { accent-color: var(--ab-tint); }
+.payment-method-card { padding: 14px 16px !important; align-items: flex-start; }
+
+/* ---- Order detail: compact page (completed / cancelled) and step view (in progress) ---- */
+.order-compact-header { margin-bottom: 20px; }
+.order-compact-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0 4px; }
+.order-compact-title h1 { margin: 0; }
+.order-compact-header .order-reference { display: block; margin: 0; font-size: 13px; color: var(--ab-text-2); }
+.order-compact-header .order-reference span { display: inline; }
+.order-compact-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+.order-compact-grid .order-side-column { display: flex; flex-direction: column; gap: 20px; }
+.order-compact-actions > div { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.order-workspace .order-history { margin-top: 20px; padding: 16px 24px; }
+.order-history > summary { cursor: pointer; font-size: 17px; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.order-step-panel { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
+.order-step-btn { all: unset; display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; min-height: 44px; border-radius: 12px; padding: 4px 8px; }
+.order-step-btn:focus-visible { outline: 2px solid var(--ab-tint); outline-offset: 2px; }
+.order-progress li.is-selected strong { text-decoration: underline; text-underline-offset: 4px; }
+.apple-glass-summary .commerce-payment-summary { background: transparent !important; padding: 0 !important; border-radius: 0 !important; }
+@media (max-width: 860px) { .order-compact-grid { grid-template-columns: 1fr; } }
+.order-compact .commerce-snapshot > .commerce-section-title .commerce-badge, .order-compact .commerce-order-date { display: none; }
+
+/* ================= Account: order list (AccountHome) ================= */
+.account-super-eyebrow { text-transform: none !important; letter-spacing: 0 !important; font-size: 13px !important; font-weight: 400 !important; color: var(--ab-text-2) !important; }
+.apple-card { border: 0 !important; box-shadow: none !important; background: var(--ab-surface) !important; border-radius: 18px !important; }
+.apple-card-header h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.015em; }
+.apple-card-header p { color: var(--ab-text-2) !important; font-size: 15px; }
+.apple-nav-badge { background: var(--ab-tile-off) !important; color: var(--ab-text-2) !important; border: 0 !important; }
+/* filter tabs as a segmented control */
+.apple-status-filter-bar { background: var(--ab-tile-off) !important; border-radius: 12px !important; padding: 4px !important; gap: 2px !important; border: 0 !important; display: flex; flex-wrap: wrap; }
+.apple-filter-tab { background: transparent !important; border: 0 !important; color: var(--ab-text-2) !important; border-radius: 9px !important; min-height: 36px; box-shadow: none !important; font-weight: 500; }
+.apple-filter-tab.active { background: var(--ab-surface) !important; color: var(--ab-text) !important; box-shadow: 0 1px 2px rgba(0,0,0,.1) !important; }
+.apple-filter-tab .apple-filter-count { opacity: .6; }
+.apple-search-box, .apple-select-wrap, .apple-view-toggle { background: var(--ab-tile-off) !important; border: 0 !important; border-radius: 12px !important; min-height: 44px; }
+.apple-view-btn { background: transparent !important; color: var(--ab-text-2) !important; border-radius: 9px !important; }
+.apple-view-btn.active { background: var(--ab-surface) !important; color: var(--ab-tint) !important; }
+/* order cards: grouped rows instead of boxed cards */
+.apple-order-cards-list { gap: 12px !important; }
+.apple-order-card { background: transparent !important; border: 0 !important; border-top: .5px solid var(--ab-separator) !important; border-radius: 0 !important; box-shadow: none !important; padding: 20px 0 !important; }
+.apple-order-card:first-child { border-top: 0 !important; }
+.apple-order-card-header, .apple-order-card-footer { border-color: var(--ab-separator) !important; }
+.apple-order-code { font-family: var(--ab-font) !important; background: transparent !important; color: var(--ab-text) !important; border: 0 !important; font-weight: 600; padding: 0 !important; font-variant-numeric: tabular-nums; }
+.apple-order-payment-method { background: transparent !important; color: var(--ab-text-2) !important; border: 0 !important; padding: 0 !important; text-transform: none !important; }
+.apple-order-id-group span:first-child { color: var(--ab-text-2) !important; font-weight: 400 !important; }
+.apple-order-dot { color: var(--ab-text-3) !important; }
+.apple-order-item-thumb { background: var(--ab-tile-off) !important; border: 0 !important; border-radius: 12px !important; }
+.apple-order-item-name { color: var(--ab-text) !important; }
+.apple-order-item-variant, .apple-order-item-qty, .apple-order-item-subtotal, .apple-order-date { color: var(--ab-text-2) !important; }
+.apple-order-total-label { color: var(--ab-text-2) !important; }
+.apple-order-total-amount { color: var(--ab-text) !important; font-weight: 600; }
+.apple-order-stepper { background: transparent !important; border: 0 !important; padding: 8px 0 !important; }
+.apple-step-label { color: var(--ab-text-2) !important; font-size: 13px; }
+.apple-step-item.active .apple-step-dot, .apple-step-item.completed .apple-step-dot { background: var(--ab-tint) !important; border-color: var(--ab-tint) !important; color: #fff !important; }
+.apple-step-item.active .apple-step-label, .apple-step-item.completed .apple-step-label { color: var(--ab-text) !important; }
+/* buttons: one filled action, others tinted */
+.apple-pill-btn { border: 0 !important; border-radius: 12px !important; min-height: 40px; font-size: 15px; font-weight: 600; box-shadow: none !important; }
+.apple-pill-btn.primary { background: var(--ab-tint) !important; color: #fff !important; }
+.apple-pill-btn.secondary { background: color-mix(in srgb, var(--ab-tint) 12%, transparent) !important; color: var(--ab-tint) !important; }
+.apple-pill-btn:active { opacity: .7; }
+.apple-pill-btn:focus-visible, .apple-filter-tab:focus-visible { outline: 2px solid var(--ab-tint); outline-offset: 2px; }
+/* status pill */
+.apple-status-pill { border: 0 !important; border-radius: 999px !important; text-transform: none !important; letter-spacing: 0 !important; font-weight: 500 !important; background: var(--ab-tile-off); color: var(--ab-text-2); }
+.apple-status-pill.status-completed, .apple-status-pill.status-paid, .apple-status-pill.status-confirmed { background: color-mix(in srgb, var(--ab-green) 16%, transparent) !important; color: #248A3D !important; }
+.apple-status-pill.status-pending, .apple-status-pill.status-awaiting_payment { background: color-mix(in srgb, var(--ab-orange) 16%, transparent) !important; color: #B25000 !important; }
+.apple-status-pill.status-cancelled { background: color-mix(in srgb, var(--ab-red) 14%, transparent) !important; color: #D70015 !important; }
+[data-theme='dark'] .apple-status-pill.status-completed, [data-theme='dark'] .apple-status-pill.status-paid, [data-theme='dark'] .apple-status-pill.status-confirmed { color: #30D158 !important; }
+[data-theme='dark'] .apple-status-pill.status-pending, [data-theme='dark'] .apple-status-pill.status-awaiting_payment { color: #FF9F0A !important; }
+[data-theme='dark'] .apple-status-pill.status-cancelled { color: #FF453A !important; }
+.apple-table th { text-transform: none !important; letter-spacing: 0 !important; font-weight: 400 !important; color: var(--ab-text-2) !important; }

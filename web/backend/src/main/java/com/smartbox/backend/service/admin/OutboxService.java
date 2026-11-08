@@ -9,6 +9,8 @@ import com.smartbox.backend.exception.ResourceNotFoundException;
 import com.smartbox.backend.repository.CommerceRepository;
 import com.smartbox.backend.security.CurrentActor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static com.smartbox.backend.service.commerce.OrderWorkflowService.now;
 
@@ -31,16 +34,35 @@ public class OutboxService {
     private final ObjectMapper json;
     private final CurrentActor actors;
 
+    /** Blocking SMTP work runs here, not in ForkJoinPool.commonPool(). */
+    @Autowired
+    @Qualifier("mailExecutor")
+    private Executor mailExecutor;
+
+    private void async(Runnable task) {
+        CompletableFuture.runAsync(task, mailExecutor);
+    }
+
     /** Must join the caller's business transaction, never SMTP here. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void enqueue(String template, UUID orderId, String eventKey, String reason) {
         var order = db.one("SELECT o.*,p.email,p.full_name FROM public.orders o JOIN public.profiles p ON p.id=o.user_id WHERE o.id=?", orderId);
+        var paymentRows = db.list("SELECT provider FROM public.payments WHERE order_id=? ORDER BY created_at DESC LIMIT 1", orderId);
+        String paymentMethod = !paymentRows.isEmpty() ? Objects.toString(paymentRows.getFirst().get("provider"), "VNPay / Chuyển khoản") : "VNPay / Chuyển khoản";
+
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("orderId", orderId.toString());
+        payload.put("order_id", orderId.toString());
         payload.put("name", order.get("full_name"));
+        payload.put("customer_name", order.get("full_name"));
         payload.put("total", order.get("total"));
+        payload.put("total_amount", order.get("total"));
         payload.put("status", order.get("status"));
         payload.put("reason", reason);
+        payload.put("cancel_reason", reason);
+        payload.put("shipping_address", order.get("shipping_address"));
+        payload.put("shippingAddress", order.get("shipping_address"));
+        payload.put("payment_method", paymentMethod);
         payload.put("time", now().toString());
         payload.put("items", db.list("SELECT product_name_snapshot AS name,sku_snapshot AS sku,variant_name_snapshot AS variant,quantity,unit_price AS price,unit_price*quantity AS subtotal FROM public.order_items WHERE order_id=? ORDER BY variant_id", orderId));
         String recipient = Objects.toString(order.get("email"), "");
@@ -55,7 +77,7 @@ public class OutboxService {
 
     @Transactional
     public List<Map<String, Object>> claim(UUID token, int leaseSeconds) {
-        var rows = db.list("SELECT * FROM public.email_outbox WHERE status='PENDING' AND next_attempt_at<=? AND (claimed_until IS NULL OR claimed_until<?) ORDER BY id LIMIT 50 FOR UPDATE SKIP LOCKED", now(), now());
+        var rows = db.list("SELECT * FROM public.email_outbox WHERE status='PENDING' AND next_attempt_at<=? AND (claimed_until IS NULL OR claimed_until<?) ORDER BY id LIMIT 10 FOR UPDATE SKIP LOCKED", now(), now());
         for (var row : rows) {
             db.update("UPDATE public.email_outbox SET claim_token=?,claimed_until=? WHERE id=?", token, now().plusSeconds(leaseSeconds), row.get("id"));
         }
@@ -108,7 +130,7 @@ public class OutboxService {
         db.update("UPDATE public.email_outbox SET status='PENDING',attempts=0,next_attempt_at=?,last_error=NULL,claimed_until=NULL,claim_token=NULL WHERE id=?", now(), id);
 
         // Run resend in background asynchronously
-        CompletableFuture.runAsync(() -> {
+        async(() -> {
             boolean sent = false;
             String error = null;
             try {
@@ -155,7 +177,7 @@ public class OutboxService {
         actors.get().requireRoles("super_admin", "product_manager");
         var list = db.list("SELECT id, recipient, template FROM public.email_outbox WHERE status='PENDING' ORDER BY created_at ASC LIMIT 50");
         int count = list.size();
-        CompletableFuture.runAsync(() -> {
+        async(() -> {
             for (var row : list) {
                 UUID id = (UUID) row.get("id");
                 try {
@@ -217,11 +239,11 @@ public class OutboxService {
             payloadJson = json.writeValueAsString(payloadMap);
         } catch (Exception ignored) {}
 
-        db.update("INSERT INTO public.email_outbox(id,template,reference_id,event_key,recipient,payload,status,attempts,next_attempt_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+        db.update("INSERT INTO public.email_outbox(id,template,reference_id,event_key,recipient,payload,status,attempts,next_attempt_at,created_at,claimed_until) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                 id, templateCode, id, "custom-email:" + id, recipient,
-                payloadJson, "PENDING", 0, now(), now());
+                payloadJson, "PENDING", 0, now(), now(), now().plusSeconds(120));
 
-        CompletableFuture.runAsync(() -> {
+        async(() -> {
             boolean sent = false;
             String error = null;
             try {

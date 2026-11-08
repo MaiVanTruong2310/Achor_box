@@ -173,7 +173,7 @@ export const ProductDetail: React.FC = () => {
             <ArrowLeft size={16} /> Quay lại danh sách sản phẩm
           </button>
         </div>
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--danger, #ef4444)' }}>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--danger, var(--accent-rose-text))' }}>
           <AlertTriangle size={36} style={{ marginBottom: 12 }} />
           <h3>Không tìm thấy sản phẩm</h3>
           <p>{error || 'Sản phẩm không tồn tại hoặc đã bị xóa.'}</p>
@@ -220,7 +220,7 @@ export const ProductDetail: React.FC = () => {
                 title="Sao chép ID sản phẩm"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center' }}
               >
-                {copied ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
+                {copied ? <Check size={14} style={{ color: 'var(--accent-emerald-text)' }} /> : <Copy size={14} />}
               </button>
             </h2>
             <div className="product-meta-chips">
@@ -251,7 +251,7 @@ export const ProductDetail: React.FC = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Giá gốc niêm yết</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>Giá gốc niêm yết</div>
             <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-primary)' }}>
               {(product.price || 0).toLocaleString('vi-VN')} ₫
             </div>
@@ -396,7 +396,7 @@ export const ProductDetail: React.FC = () => {
           <div className="product-card-panel">
             <div className="product-panel-header">
               <h3>
-                <History size={16} style={{ color: '#3b82f6' }} />
+                <History size={16} style={{ color: 'var(--accent-primary)' }} />
                 Lịch Sử Biến Động Xuất / Nhập Kho Sản Phẩm
               </h3>
             </div>
@@ -474,12 +474,12 @@ export const ProductDetail: React.FC = () => {
 
               {userRole === 'product_manager' && (
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--bg-surface-hover, color-mix(in srgb, var(--accent-primary) 5%, transparent))', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', marginBottom: 10, lineHeight: 1.45 }}>
-                  ℹ️ <strong>Quy trình PO:</strong> Yêu cầu xuất/nhập kho sẽ được gửi đến Quản trị viên (Admin) thẩm định và phê duyệt trước khi cập nhật số lượng tồn thực tế.
+                  ℹ<strong>Quy trình PO:</strong> Yêu cầu xuất/nhập kho sẽ được gửi đến Quản trị viên (Admin) thẩm định và phê duyệt trước khi cập nhật số lượng tồn thực tế.
                 </div>
               )}
 
               {adjustMsg && (
-                <div style={{ padding: '8px 10px', borderRadius: 6, background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontSize: '0.78rem', marginBottom: 10, border: '1px solid rgba(16, 185, 129, 0.25)', lineHeight: 1.4 }}>
+                <div style={{ padding: '8px 10px', borderRadius: 6, background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)', color: 'var(--accent-emerald-text)', fontSize: '0.78rem', marginBottom: 10, border: '1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent)', lineHeight: 1.4 }}>
                   <CheckCircle2 size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }} />
                   {adjustMsg}
                 </div>
@@ -488,7 +488,7 @@ export const ProductDetail: React.FC = () => {
               <form onSubmit={handleAdjustStock} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {variants.length > 0 && (
                   <div>
-                    <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                    <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
                       Chọn biến thể
                     </label>
                     <select
@@ -515,7 +515,7 @@ export const ProductDetail: React.FC = () => {
                 )}
 
                 <div>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
                     Thao tác kho
                   </label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 4 }}>
@@ -557,7 +557,7 @@ export const ProductDetail: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
                     Số lượng
                   </label>
                   <input
@@ -580,7 +580,7 @@ export const ProductDetail: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
                     Lý do điều chỉnh
                   </label>
                   <input

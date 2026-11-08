@@ -41,7 +41,7 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 18%, transparent), rgba(245, 158, 11, 0.18));
+  background: var(--accent-primary);
   border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
   display: flex;
   align-items: center;
@@ -119,8 +119,8 @@
 
 .po-rep-kpi-card.kpi-orange::before { background: var(--accent-primary); }
 .po-rep-kpi-card.kpi-blue::before { background: var(--accent-primary); }
-.po-rep-kpi-card.kpi-emerald::before { background: #10b981; }
-.po-rep-kpi-card.kpi-amber::before { background: #f59e0b; }
+.po-rep-kpi-card.kpi-emerald::before { background: var(--accent-emerald); }
+.po-rep-kpi-card.kpi-amber::before { background: var(--accent-amber); }
 
 .po-rep-kpi-info {
   display: flex;
@@ -132,7 +132,6 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
@@ -170,13 +169,13 @@
 }
 
 .po-rep-kpi-card.kpi-emerald .po-rep-kpi-icon-box {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
+  background: color-mix(in srgb, var(--accent-emerald) 12%, transparent);
+  color: var(--accent-emerald-text);
 }
 
 .po-rep-kpi-card.kpi-amber .po-rep-kpi-icon-box {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  color: var(--accent-amber-text);
 }
 
 /* Control & Export Toolbar */
@@ -287,7 +286,6 @@
   color: var(--text-muted);
   font-weight: 600;
   font-size: 0.78rem;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 12px 18px;
   border-bottom: 1px solid var(--border-subtle);

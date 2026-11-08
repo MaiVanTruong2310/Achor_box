@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
   margin-top: 16px;
 }
 
@@ -111,8 +111,8 @@
 
 .po-tech-card.disabled {
   opacity: 0.75;
-  background: rgba(239, 68, 68, 0.03);
-  border-color: rgba(239, 68, 68, 0.35);
+  background: color-mix(in srgb, var(--accent-rose) 3%, transparent);
+  border-color: color-mix(in srgb, var(--accent-rose) 35%, transparent);
   cursor: not-allowed;
 }
 
@@ -143,21 +143,21 @@
 }
 
 .po-tech-badge-avail.available {
-  background: rgba(16, 185, 129, 0.12);
-  color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: color-mix(in srgb, var(--accent-emerald) 12%, transparent);
+  color: var(--accent-emerald-text);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 30%, transparent);
 }
 
 .po-tech-badge-avail.busy {
-  background: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: color-mix(in srgb, var(--accent-rose) 12%, transparent);
+  color: var(--accent-rose-text);
+  border: 1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent);
 }
 
 .po-tech-conflict-reason {
   font-size: 0.8rem;
-  color: #dc2626;
-  background: rgba(239, 68, 68, 0.08);
+  color: var(--accent-rose-text);
+  background: color-mix(in srgb, var(--accent-rose) 8%, transparent);
   padding: 6px 10px;
   border-radius: 6px;
   font-weight: 600;
@@ -181,7 +181,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
   margin-top: 16px;
 }
 
@@ -217,13 +217,13 @@
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   cursor: pointer;
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
   transition: all 0.2s ease;
 }
 
 .po-proof-item:hover {
   transform: scale(1.03);
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
 }
 
 .po-proof-item img {
@@ -266,20 +266,20 @@
   align-items: center;
   gap: 8px;
   padding: 10px 24px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--accent-emerald);
   color: #fff;
   border: none;
   border-radius: 10px;
   font-size: 0.94rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
   transition: all 0.15s ease;
 }
 
 .po-btn-approve:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
 }
 
 .po-btn-rework {
@@ -287,9 +287,9 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: color-mix(in srgb, var(--accent-rose) 10%, transparent);
+  color: var(--accent-rose-text);
+  border: 1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent);
   border-radius: 10px;
   font-size: 0.94rem;
   font-weight: 700;
@@ -298,7 +298,7 @@
 }
 
 .po-btn-rework:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.18);
+  background: color-mix(in srgb, var(--accent-rose) 18%, transparent);
 }
 
 /* Lightbox Modal */

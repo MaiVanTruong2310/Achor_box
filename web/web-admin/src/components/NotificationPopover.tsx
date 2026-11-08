@@ -365,7 +365,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ onClos
 
       {/* Error Alert */}
       {error && (
-        <div role="alert" style={{ padding: '8px 14px', fontSize: 12, color: 'var(--fpt-rose)', background: 'rgba(244,63,94,0.08)' }}>
+        <div role="alert" style={{ padding: '8px 14px', fontSize: 12, color: 'var(--fpt-rose)', background: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)' }}>
           {error}
         </div>
       )}

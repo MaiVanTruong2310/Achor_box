@@ -28,7 +28,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         <div style={{
           width: '40px',
           height: '40px',
-          border: '3px solid rgba(99, 102, 241, 0.2)',
+          border: '3px solid color-mix(in srgb, var(--accent-primary) 20%, transparent)',
           borderTopColor: 'var(--primary)',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite'

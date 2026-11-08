@@ -1,0 +1,48 @@
+/* Apple HIG design tokens (shared). One accent; green/orange/red = status only. */
+.order-detail-page,
+.proof-modal-overlay,
+.orders-page-container {
+  --od-bg: #f2f2f7;
+  --od-surface: #ffffff;
+  --od-label: #000000;
+  --od-label-2: rgba(60, 60, 67, 0.6);
+  --od-label-3: rgba(60, 60, 67, 0.3);
+  --od-separator: rgba(60, 60, 67, 0.16);
+  --od-fill: rgba(120, 120, 128, 0.12);
+  --od-accent: #007aff;
+  --od-accent-tint: rgba(0, 122, 255, 0.12);
+  --od-green: #34c759;
+  --od-green-tint: rgba(52, 199, 89, 0.14);
+  --od-green-text: #1f8a3b;
+  --od-orange: #ff9500;
+  --od-orange-tint: rgba(255, 149, 0, 0.14);
+  --od-orange-text: #b36200;
+  --od-red: #ff3b30;
+  --od-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+  --od-r-control: 12px;
+  --od-r-card: 18px;
+  --od-r-sheet: 28px;
+  --od-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-theme="dark"] .order-detail-page,
+[data-theme="dark"] .proof-modal-overlay,
+[data-theme="dark"] .orders-page-container {
+  --od-bg: #000000;
+  --od-surface: #1c1c1e;
+  --od-label: #ffffff;
+  --od-label-2: rgba(235, 235, 245, 0.6);
+  --od-label-3: rgba(235, 235, 245, 0.3);
+  --od-separator: rgba(84, 84, 88, 0.6);
+  --od-fill: rgba(120, 120, 128, 0.24);
+  --od-accent: #0a84ff;
+  --od-accent-tint: rgba(10, 132, 255, 0.18);
+  --od-green: #30d158;
+  --od-green-tint: rgba(48, 209, 88, 0.18);
+  --od-green-text: #30d158;
+  --od-orange: #ff9f0a;
+  --od-orange-tint: rgba(255, 159, 10, 0.18);
+  --od-orange-text: #ff9f0a;
+  --od-red: #ff453a;
+}
+

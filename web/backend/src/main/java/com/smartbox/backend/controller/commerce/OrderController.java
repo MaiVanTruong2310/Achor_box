@@ -54,6 +54,12 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrderCounts());
     }
 
+    @GetMapping("/overview")
+    @Operation(summary = "Số lượng theo trạng thái và KPI trong một truy vấn", description = "Gộp /counts và /summary để trang quản lý đơn hàng chỉ cần một lượt gọi")
+    public ResponseEntity<Map<String, Object>> getOrderOverview() {
+        return ResponseEntity.ok(orderService.getOrderOverview());
+    }
+
     @GetMapping("/summary")
     @Operation(summary = "Tổng hợp KPI đơn hàng", description = "Tổng số đơn, đơn hoàn tất, doanh thu đã thu và số tiền chờ thanh toán trên toàn hệ thống (PO chỉ thấy phạm vi mình quản lý)")
     public ResponseEntity<Map<String, Object>> getOrderSummary() {

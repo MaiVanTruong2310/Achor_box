@@ -92,9 +92,9 @@
   font-weight: 650;
   padding: 2.5px 8px;
   border-radius: 999px;
-  background: rgba(0, 122, 255, 0.1);
+  background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
   color: var(--apple-blue);
-  border: 1px solid rgba(0, 122, 255, 0.2);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 20%, transparent);
   display: inline-flex;
   align-items: center;
 }
@@ -139,9 +139,9 @@
 
 /* Apple Pill Button for Mark All As Read */
 .notification-mark-all-pill {
-  background: rgba(0, 122, 255, 0.1) !important;
+  background: color-mix(in srgb, var(--accent-primary) 10%, transparent) !important;
   color: var(--apple-blue) !important;
-  border: 1px solid rgba(0, 122, 255, 0.22) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, transparent) !important;
   font-size: 11.5px !important;
   font-weight: 600 !important;
   border-radius: 999px !important;
@@ -155,8 +155,8 @@
 }
 
 .notification-mark-all-pill:hover {
-  background: rgba(0, 122, 255, 0.18) !important;
-  border-color: rgba(0, 122, 255, 0.35) !important;
+  background: color-mix(in srgb, var(--accent-primary) 18%, transparent) !important;
+  border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent) !important;
   transform: translateY(-0.5px);
 }
 
@@ -233,7 +233,7 @@
 }
 
 .notification-tab-btn.active .tab-badge {
-  background: rgba(0, 122, 255, 0.12);
+  background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
   color: var(--apple-blue);
 }
 
@@ -282,8 +282,8 @@
 }
 
 .notification-item-card.is-unread {
-  background: rgba(0, 122, 255, 0.04);
-  border: 1px solid rgba(0, 122, 255, 0.12);
+  background: color-mix(in srgb, var(--accent-primary) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 [data-theme="dark"] .notification-item-card.is-unread {
@@ -312,7 +312,7 @@
 }
 
 .notification-icon-wrapper.order {
-  background: rgba(0, 122, 255, 0.12);
+  background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
   color: var(--apple-blue);
 }
 
@@ -432,9 +432,9 @@
 }
 
 .notice-status-tag.info {
-  background: rgba(0, 122, 255, 0.12);
+  background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
   color: var(--apple-blue);
-  border: 1px solid rgba(0, 122, 255, 0.26);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 26%, transparent);
 }
 
 [data-theme="dark"] .notice-status-tag.info {
@@ -484,7 +484,7 @@
 
 .notice-toggle-read-btn:hover {
   color: var(--apple-blue);
-  background: rgba(0, 122, 255, 0.1);
+  background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
   transform: scale(1.1);
 }
 
@@ -493,7 +493,7 @@
   height: 7px;
   border-radius: 50%;
   background: var(--apple-blue);
-  box-shadow: 0 0 6px rgba(0, 122, 255, 0.4);
+  box-shadow: none;
 }
 
 /* Empty State */

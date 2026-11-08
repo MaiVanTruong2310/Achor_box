@@ -61,7 +61,6 @@ export const navigation: readonly NavigationItem[] = [
 
 export const tabs: Record<string, { path: string; label: string; roles: UserRole[] }[]> = {
   'admin-system': [
-    { path: '/admin/system', label: 'Thiết lập hệ thống', roles: ['super_admin'] },
-    { path: '/admin/system/audit', label: 'Nhật ký Audit logs', roles: ['super_admin'] }
+    { path: '/admin/system', label: 'Thiết lập hệ thống', roles: ['super_admin'] }
   ]
 };

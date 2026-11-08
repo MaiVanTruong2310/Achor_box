@@ -240,7 +240,7 @@ export const PoDashboard: React.FC = () => {
               {profile?.full_name || 'Nhân viên bán hàng'}
             </span>
           </div>
-          <h1>Tổng Quan Hàng Hóa & Thẩm Định</h1>
+          <h1>Tổng quan hàng hóa và thẩm định</h1>
           <p>
             Giám sát số lượng xuất nhập tồn, thẩm định đơn hàng mới và phê duyệt nghiệm thu lắp đặt.
           </p>
@@ -398,7 +398,7 @@ export const PoDashboard: React.FC = () => {
                   </div>
                 ) : pendingTickets.length === 0 ? (
                   <div className="po-empty-state">
-                    <CheckCircle2 size={32} style={{ color: '#10b981' }} />
+                    <CheckCircle2 size={32} style={{ color: 'var(--accent-emerald-text)' }} />
                     <p>Tuyệt vời! Hiện không có đơn hàng nào chờ bạn duyệt.</p>
                     <span>Các đơn hàng mới của khách sẽ xuất hiện ngay tại đây.</span>
                   </div>
@@ -418,11 +418,11 @@ export const PoDashboard: React.FC = () => {
 
                           <div className="po-tc-body">
                             <div className="po-tc-cust">
-                              👤 <b>{tk.customer_name || 'Khách vãng lai'}</b>
+                              <b>{tk.customer_name || 'Khách vãng lai'}</b>
                               {tk.customer_phone && <span className="po-tc-phone"> · {tk.customer_phone}</span>}
                             </div>
                             <div className="po-tc-prods">
-                              📦 {tk.product_names || `${tk.item_count || 1} sản phẩm SmartBox`}
+                              {tk.product_names || `${tk.item_count || 1} sản phẩm SmartBox`}
                             </div>
                           </div>
 
@@ -456,7 +456,7 @@ export const PoDashboard: React.FC = () => {
                   </div>
                 ) : waitingJobs.length === 0 ? (
                   <div className="po-empty-state">
-                    <CheckCircle2 size={32} style={{ color: '#10b981' }} />
+                    <CheckCircle2 size={32} style={{ color: 'var(--accent-emerald-text)' }} />
                     <p>Không có biên bản nghiệm thu nào cần xác nhận.</p>
                     <span>Khi KTV hoàn thành thi công tại nhà khách, hồ sơ sẽ gửi lên đây.</span>
                   </div>
@@ -476,21 +476,21 @@ export const PoDashboard: React.FC = () => {
 
                           <div className="po-tc-body">
                             <div className="po-tc-cust">
-                              👤 <b>{job.customerName || 'Khách hàng'}</b> · 📍 {job.shippingAddress || 'Địa chỉ tiêu chuẩn'}
+                              <b>{job.customerName || 'Khách hàng'}</b> · {job.shippingAddress || 'Địa chỉ tiêu chuẩn'}
                             </div>
                             <div className="po-tc-prods">
-                              🔧 Kỹ thuật viên thi công: <b>{job.technicianName || 'Đội KTV'}</b>
+                              Kỹ thuật viên thi công: <b>{job.technicianName || 'Đội KTV'}</b>
                             </div>
                             {job.completionNote && (
                               <div className="po-tc-note">
-                                💬 <i>"{job.completionNote}"</i>
+                                <i>"{job.completionNote}"</i>
                               </div>
                             )}
                           </div>
 
                           <div className="po-tc-footer">
                             <div className="po-tc-photos-pill">
-                              📷 Có {job.completionPhotos?.length || 1} ảnh minh chứng
+                              Có {job.completionPhotos?.length || 1} ảnh minh chứng
                             </div>
                             <Link
                               to={`/po/delivery/${job.id}`}
@@ -516,7 +516,7 @@ export const PoDashboard: React.FC = () => {
           <div className="po-panel">
             <div className="po-panel-header">
               <h3 className="po-panel-title">
-                <AlertTriangle size={17} style={{ color: '#ef4444' }} />
+                <AlertTriangle size={17} style={{ color: 'var(--accent-rose-text)' }} />
                 <span>Cảnh báo tồn kho an toàn</span>
               </h3>
               <Link to="/po/products" className="po-panel-link">
@@ -527,7 +527,7 @@ export const PoDashboard: React.FC = () => {
 
             {lowStockVariants.length === 0 ? (
               <div className="po-stock-safe-banner">
-                <CheckCircle2 size={18} style={{ color: '#10b981' }} />
+                <CheckCircle2 size={18} style={{ color: 'var(--accent-emerald-text)' }} />
                 <span>Tất cả biến thể thuộc danh mục của bạn đều còn đủ tồn kho an toàn.</span>
               </div>
             ) : (
@@ -559,7 +559,7 @@ export const PoDashboard: React.FC = () => {
           <div className="po-panel">
             <div className="po-panel-header">
               <h3 className="po-panel-title">
-                <TrendingUp size={17} style={{ color: '#f59e0b' }} />
+                <TrendingUp size={17} style={{ color: 'var(--accent-amber-text)' }} />
                 <span>Top sản phẩm bán chạy nhất</span>
               </h3>
               <Link to="/po/reports" className="po-panel-link">
@@ -603,7 +603,7 @@ export const PoDashboard: React.FC = () => {
       <section className="po-panel">
         <div className="po-panel-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Layers size={17} style={{ color: 'var(--apple-blue, #007aff)' }} />
+            <Layers size={17} style={{ color: 'var(--apple-blue, var(--accent-primary))' }} />
             <h3 className="po-panel-title" style={{ margin: 0 }}>
               Biến Động Xuất Nhập Kho Gần Đây
             </h3>

@@ -117,15 +117,15 @@ const errorText = (e: unknown) => {
 
 const getJobActionInfo = (action: string) => {
   const act = (action || '').toUpperCase();
-  if (act.includes('APPROVE')) return { label: 'PO duyệt nghiệm thu', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' };
+  if (act.includes('APPROVE')) return { label: 'PO duyệt nghiệm thu', color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)' };
   if (act.includes('SUBMIT')) return { label: 'Nộp hồ sơ nghiệm thu', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)' };
-  if (act.includes('INSTALL')) return { label: 'Lắp đặt hoàn tất', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
-  if (act.includes('LINK_SERIAL')) return { label: 'Gán Serial thiết bị', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' };
-  if (act.includes('DELIVER')) return { label: 'Đã đến địa chỉ', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' };
-  if (act.includes('START')) return { label: 'KTV di chuyển', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.12)' };
-  if (act.includes('ASSIGN')) return { label: 'Phân công KTV', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' };
-  if (act.includes('REWORK') || act.includes('FAIL')) return { label: 'Yêu cầu xử lý lại', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
-  return { label: action.replace(/^TECH_/, ''), color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
+  if (act.includes('INSTALL')) return { label: 'Lắp đặt hoàn tất', color: 'var(--accent-amber-text)', bg: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)' };
+  if (act.includes('LINK_SERIAL')) return { label: 'Gán Serial thiết bị', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' };
+  if (act.includes('DELIVER')) return { label: 'Đã đến địa chỉ', color: 'var(--accent-primary)', bg: 'rgba(6, 182, 212, 0.12)' };
+  if (act.includes('START')) return { label: 'KTV di chuyển', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' };
+  if (act.includes('ASSIGN')) return { label: 'Phân công KTV', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' };
+  if (act.includes('REWORK') || act.includes('FAIL')) return { label: 'Yêu cầu xử lý lại', color: 'var(--accent-rose-text)', bg: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)' };
+  return { label: action.replace(/^TECH_/, ''), color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 10%, transparent)' };
 };
 
 export const DeliveryInstallations: React.FC = () => {
@@ -509,7 +509,7 @@ export const DeliveryInstallations: React.FC = () => {
         {/* 1. Header */}
         <div className="di-list-header">
           <div className="di-list-title-wrap">
-            <h1>Điều phối giao & lắp đặt</h1>
+            <h1>Điều phối giao và lắp đặt</h1>
             <p>Quản lý phân công, tiến độ và nghiệm thu</p>
           </div>
         </div>
@@ -634,7 +634,7 @@ export const DeliveryInstallations: React.FC = () => {
                     title="Nhấn để sắp xếp theo mã đơn"
                   >
                     <div className="th-content">
-                      <span>MÃ ĐƠN</span>
+                      <span>Mã đơn</span>
                       <span className={`sort-icon ${sortField === 'orderId' ? 'active' : 'inactive'}`}>
                         {sortField === 'orderId' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
                       </span>
@@ -648,7 +648,7 @@ export const DeliveryInstallations: React.FC = () => {
                     title="Nhấn để sắp xếp theo khách hàng"
                   >
                     <div className="th-content">
-                      <span>KHÁCH HÀNG</span>
+                      <span>Khách hàng</span>
                       <span className={`sort-icon ${sortField === 'customerName' ? 'active' : 'inactive'}`}>
                         {sortField === 'customerName' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
                       </span>
@@ -662,7 +662,7 @@ export const DeliveryInstallations: React.FC = () => {
                     title="Nhấn để sắp xếp theo kỹ thuật viên"
                   >
                     <div className="th-content">
-                      <span>KỸ THUẬT VIÊN</span>
+                      <span>Kỹ thuật viên</span>
                       <span className={`sort-icon ${sortField === 'technicianName' ? 'active' : 'inactive'}`}>
                         {sortField === 'technicianName' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
                       </span>
@@ -676,7 +676,7 @@ export const DeliveryInstallations: React.FC = () => {
                     title="Nhấn để sắp xếp theo lịch hẹn"
                   >
                     <div className="th-content">
-                      <span>LỊCH HẸN</span>
+                      <span>Lịch hẹn</span>
                       <span className={`sort-icon ${sortField === 'scheduledAt' ? 'active' : 'inactive'}`}>
                         {sortField === 'scheduledAt' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
                       </span>
@@ -690,7 +690,7 @@ export const DeliveryInstallations: React.FC = () => {
                     title="Nhấn để sắp xếp theo địa chỉ"
                   >
                     <div className="th-content">
-                      <span>ĐỊA CHỈ THI CÔNG</span>
+                      <span>Địa chỉ thi công</span>
                       <span className={`sort-icon ${sortField === 'shippingAddress' ? 'active' : 'inactive'}`}>
                         {sortField === 'shippingAddress' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
                       </span>
@@ -704,7 +704,7 @@ export const DeliveryInstallations: React.FC = () => {
                     title="Nhấn để sắp xếp theo lượt thi công"
                   >
                     <div className="th-content" style={{ justifyContent: 'center' }}>
-                      <span>LƯỢT</span>
+                      <span>Lượt</span>
                       <span className={`sort-icon ${sortField === 'attempt' ? 'active' : 'inactive'}`}>
                         {sortField === 'attempt' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
                       </span>
@@ -718,7 +718,7 @@ export const DeliveryInstallations: React.FC = () => {
                     title="Nhấn để sắp xếp theo trạng thái"
                   >
                     <div className="th-content" style={{ justifyContent: 'center' }}>
-                      <span>TRẠNG THÁI</span>
+                      <span>Trạng thái</span>
                       <span className={`sort-icon ${sortField === 'status' ? 'active' : 'inactive'}`}>
                         {sortField === 'status' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
                       </span>
@@ -726,7 +726,7 @@ export const DeliveryInstallations: React.FC = () => {
                   </th>
 
                   <th style={{ width: '8%', textAlign: 'right' }}>
-                    <span>THAO TÁC</span>
+                    <span>Thao tác</span>
                   </th>
                 </tr>
               </thead>
@@ -849,7 +849,6 @@ export const DeliveryInstallations: React.FC = () => {
                             title="Xem chi tiết công việc"
                           >
                             <span>Chi tiết</span>
-                            <span className="arrow">→</span>
                           </button>
                         </td>
                       </tr>
@@ -1018,8 +1017,8 @@ export const DeliveryInstallations: React.FC = () => {
           {manager && job.status === 'WAITING_PO_CONFIRMATION' && (
             <div
               style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.06) 100%)',
-                border: '1.5px solid rgba(16, 185, 129, 0.35)',
+                background: 'var(--bg-surface)',
+                border: '1.5px solid color-mix(in srgb, var(--accent-emerald) 35%, transparent)',
                 borderRadius: '16px',
                 padding: '20px',
                 marginBottom: '20px',
@@ -1033,8 +1032,8 @@ export const DeliveryInstallations: React.FC = () => {
                       width: '36px',
                       height: '36px',
                       borderRadius: '10px',
-                      background: 'rgba(16, 185, 129, 0.15)',
-                      color: '#059669',
+                      background: 'color-mix(in srgb, var(--accent-emerald) 15%, transparent)',
+                      color: 'var(--accent-emerald-text)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
@@ -1056,14 +1055,14 @@ export const DeliveryInstallations: React.FC = () => {
                   style={{
                     padding: '4px 10px',
                     borderRadius: '999px',
-                    background: 'rgba(245, 158, 11, 0.12)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    color: '#d97706',
+                    background: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)',
+                    border: '1px solid color-mix(in srgb, var(--accent-amber) 30%, transparent)',
+                    color: 'var(--accent-amber-text)',
                     fontSize: '11.5px',
                     fontWeight: 700
                   }}
                 >
-                  ⏳ Chờ PO thẩm định 1-click
+                  Chờ PO thẩm định 1-click
                 </span>
               </div>
 
@@ -1078,8 +1077,8 @@ export const DeliveryInstallations: React.FC = () => {
                     padding: '14px'
                   }}
                 >
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>
-                    📦 Thiết bị trong đơn hàng #{shortOrderCode}
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>
+                    Thiết bị trong đơn hàng #{shortOrderCode}
                   </div>
                   <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {job.items && job.items.length > 0 ? job.items.map(it => `${it.productName || 'Anchor Box'}${it.variantName ? ' - ' + it.variantName : ''} (x${it.quantity})`).join(', ') : (job as any).orderSummary || 'Hộp thông minh Anchor Box'}
@@ -1101,8 +1100,8 @@ export const DeliveryInstallations: React.FC = () => {
                     padding: '14px'
                   }}
                 >
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>
-                    🔧 Thực tế kỹ thuật viên thi công
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>
+                    Thực tế kỹ thuật viên thi công
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Mã Serial:</span>
@@ -1133,7 +1132,7 @@ export const DeliveryInstallations: React.FC = () => {
                         gap: '4px'
                       }}
                     >
-                      {allSerialsLinked ? '✓ Đã quét & khớp cấu hình thiết bị' : '⚠️ Cần kiểm tra lại mã Serial'}
+                      {allSerialsLinked ? '✓ Đã quét & khớp cấu hình thiết bị' : 'Cần kiểm tra lại mã Serial'}
                     </span>
                   </div>
                 </div>
@@ -1143,7 +1142,7 @@ export const DeliveryInstallations: React.FC = () => {
               {photos.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
                   <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Camera size={14} style={{ color: '#059669' }} />
+                    <Camera size={14} style={{ color: 'var(--accent-emerald-text)' }} />
                     <span>Ảnh minh chứng nghiệm thu thực tế ({photos.length} ảnh):</span>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -1187,7 +1186,7 @@ export const DeliveryInstallations: React.FC = () => {
               )}
 
               {/* Nút thao tác 1-click */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid rgba(16, 185, 129, 0.2)', paddingTop: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid color-mix(in srgb, var(--accent-emerald) 20%, transparent)', paddingTop: '14px' }}>
                 <button
                   type="button"
                   className="btn-tkd-approve"
@@ -1198,7 +1197,7 @@ export const DeliveryInstallations: React.FC = () => {
                     fontSize: '13px',
                     fontWeight: 700,
                     borderRadius: '10px',
-                    background: '#10b981',
+                    background: 'var(--accent-emerald)',
                     color: '#fff',
                     border: 'none',
                     display: 'inline-flex',
@@ -1221,9 +1220,9 @@ export const DeliveryInstallations: React.FC = () => {
                     fontSize: '13px',
                     fontWeight: 600,
                     borderRadius: '10px',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    color: '#dc2626',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)',
+                    color: 'var(--accent-rose-text)',
+                    border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
@@ -1331,9 +1330,9 @@ export const DeliveryInstallations: React.FC = () => {
                 <span
                   className="di-job-badge"
                   style={{
-                    background: 'rgba(245, 158, 11, 0.12)',
-                    color: '#f59e0b',
-                    border: '1px solid rgba(245, 158, 11, 0.28)'
+                    background: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)',
+                    color: 'var(--accent-amber-text)',
+                    border: '1px solid color-mix(in srgb, var(--accent-amber) 28%, transparent)'
                   }}
                 >
                   Chờ gắn Serial
@@ -1367,16 +1366,16 @@ export const DeliveryInstallations: React.FC = () => {
                         {d.serialNumber && d.serialNumber !== 'N/A' ? (
                           <span className="di-serial-code">{d.serialNumber}</span>
                         ) : (
-                          <span style={{ color: '#ef4444', fontStyle: 'italic' }}>Chưa gán serial</span>
+                          <span style={{ color: 'var(--accent-rose-text)', fontStyle: 'italic' }}>Chưa gán serial</span>
                         )}
                       </td>
                       <td>
                         {job.status === 'COMPLETED' ? (
-                          <span style={{ color: '#10b981', fontWeight: 600 }}>✓ Đã kích hoạt BH</span>
+                          <span style={{ color: 'var(--accent-emerald-text)', fontWeight: 600 }}>✓ Đã kích hoạt BH</span>
                         ) : d.serialNumber && d.serialNumber !== 'N/A' ? (
-                          <span style={{ color: '#10b981', fontWeight: 600 }}>✓ Hợp lệ</span>
+                          <span style={{ color: 'var(--accent-emerald-text)', fontWeight: 600 }}>✓ Hợp lệ</span>
                         ) : (
-                          <span style={{ color: '#f59e0b', fontWeight: 600 }}>Cần nhập serial</span>
+                          <span style={{ color: 'var(--accent-amber-text)', fontWeight: 600 }}>Cần nhập serial</span>
                         )}
                       </td>
                     </tr>
@@ -1415,14 +1414,14 @@ export const DeliveryInstallations: React.FC = () => {
                         {job.status === 'COMPLETED' ? (
                           <span className="di-serial-code">Bảo hành điện tử Anchor Box</span>
                         ) : (
-                          <span style={{ color: '#f59e0b', fontStyle: 'italic' }}>Chưa gán serial</span>
+                          <span style={{ color: 'var(--accent-amber-text)', fontStyle: 'italic' }}>Chưa gán serial</span>
                         )}
                       </td>
                       <td>
                         {job.status === 'COMPLETED' ? (
-                          <span style={{ color: '#10b981', fontWeight: 600 }}>✓ Đã kích hoạt BH</span>
+                          <span style={{ color: 'var(--accent-emerald-text)', fontWeight: 600 }}>✓ Đã kích hoạt BH</span>
                         ) : (
-                          <span style={{ color: '#f59e0b', fontWeight: 600 }}>Chờ KTV bàn giao</span>
+                          <span style={{ color: 'var(--accent-amber-text)', fontWeight: 600 }}>Chờ KTV bàn giao</span>
                         )}
                       </td>
                     </tr>
@@ -1543,12 +1542,12 @@ export const DeliveryInstallations: React.FC = () => {
               {/* Ảnh vừa tải lên chưa nộp */}
               {pendingPhotos.length > 0 && (
                 <div>
-                  <div style={{ fontSize: '0.82rem', color: '#0284c7', marginBottom: 8, fontWeight: 700 }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--accent-primary)', marginBottom: 8, fontWeight: 700 }}>
                     Ảnh mới tải lên ({pendingPhotos.length} ảnh) — Hãy bấm "Gửi báo cáo nghiệm thu" bên dưới để hoàn tất:
                   </div>
                   <div className="di-photos-preview-strip">
                     {pendingPhotos.map((url, idx) => (
-                      <div key={idx} className="di-photo-thumb-box" style={{ borderColor: '#0284c7', position: 'relative' }}>
+                      <div key={idx} className="di-photo-thumb-box" style={{ borderColor: 'var(--accent-primary)', position: 'relative' }}>
                         <img src={url} alt={`Ảnh mới ${idx + 1}`} onClick={() => setActiveLightboxImg(url)} />
                         <button
                           type="button"
@@ -1559,7 +1558,7 @@ export const DeliveryInstallations: React.FC = () => {
                             position: 'absolute',
                             top: 4,
                             right: 4,
-                            background: 'rgba(239, 68, 68, 0.9)',
+                            background: 'color-mix(in srgb, var(--accent-rose) 90%, transparent)',
                             color: '#fff',
                             border: 'none',
                             borderRadius: '50%',
@@ -1678,7 +1677,7 @@ export const DeliveryInstallations: React.FC = () => {
               </div>
 
               {job.reworkNotes && (
-                <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(239, 68, 68, 0.08)', color: '#dc2626', fontSize: '0.82rem' }}>
+                <div style={{ padding: '8px 12px', borderRadius: 8, background: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)', color: 'var(--accent-rose-text)', fontSize: '0.82rem' }}>
                   <strong>Lý do yêu cầu xử lý lại:</strong> {job.reworkNotes}
                 </div>
               )}
@@ -1694,7 +1693,7 @@ export const DeliveryInstallations: React.FC = () => {
           <div className="di-history-card">
             <div className="di-history-card-header">
               <h3 className="di-history-card-title">
-                <Clock size={15} style={{ color: 'var(--accent-sky, #0284c7)' }} />
+                <Clock size={15} style={{ color: 'var(--accent-sky, var(--accent-primary))' }} />
                 <span>Nhật ký lịch sử tiến độ</span>
               </h3>
               <span className="di-history-count-badge">
@@ -1754,7 +1753,7 @@ export const DeliveryInstallations: React.FC = () => {
                 <ShieldCheck size={14} style={{ color: 'var(--accent-primary, var(--accent-primary))' }} />
                 <span>Quy trình thi công &amp; bàn giao</span>
               </h4>
-              <span style={{ fontSize: '0.74rem', color: '#0284c7', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
                 {showGuidelines ? 'Thu gọn ▲' : 'Mở rộng ▼'}
               </span>
             </div>

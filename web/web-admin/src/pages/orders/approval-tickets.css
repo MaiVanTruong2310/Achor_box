@@ -41,7 +41,7 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 18%, transparent), rgba(16, 185, 129, 0.18));
+  background: var(--accent-primary);
   border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
   display: flex;
   align-items: center;
@@ -81,9 +81,9 @@
   gap: 8px;
   padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #10b981;
+  background: color-mix(in srgb, var(--accent-emerald) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent);
+  color: var(--accent-emerald-text);
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
@@ -93,7 +93,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #10b981;
+  background-color: var(--accent-emerald);
   box-shadow: none;
   animation: aptPulse 2s infinite;
 }
@@ -144,7 +144,7 @@
 
 .apt-kpi-card.active {
   border-color: var(--accent-primary);
-  background: linear-gradient(180deg, var(--bg-card) 0%, color-mix(in srgb, var(--accent-primary) 3%, transparent) 100%);
+  background: var(--accent-primary);
 }
 
 .apt-kpi-card::before {
@@ -156,10 +156,10 @@
   width: 4px;
 }
 
-.apt-kpi-card.kpi-amber::before { background: #f59e0b; }
-.apt-kpi-card.kpi-emerald::before { background: #10b981; }
+.apt-kpi-card.kpi-amber::before { background: var(--accent-amber); }
+.apt-kpi-card.kpi-emerald::before { background: var(--accent-emerald); }
 .apt-kpi-card.kpi-sky::before { background: var(--accent-primary); }
-.apt-kpi-card.kpi-rose::before { background: #f43f5e; }
+.apt-kpi-card.kpi-rose::before { background: var(--accent-rose); }
 
 .apt-kpi-info {
   display: flex;
@@ -171,7 +171,6 @@
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
@@ -199,13 +198,13 @@
 }
 
 .apt-kpi-card.kpi-amber .apt-kpi-icon-box {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  color: var(--accent-amber-text);
 }
 
 .apt-kpi-card.kpi-emerald .apt-kpi-icon-box {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
+  background: color-mix(in srgb, var(--accent-emerald) 12%, transparent);
+  color: var(--accent-emerald-text);
 }
 
 .apt-kpi-card.kpi-sky .apt-kpi-icon-box {
@@ -214,8 +213,8 @@
 }
 
 .apt-kpi-card.kpi-rose .apt-kpi-icon-box {
-  background: rgba(244, 63, 94, 0.12);
-  color: #f43f5e;
+  background: color-mix(in srgb, var(--accent-rose) 12%, transparent);
+  color: var(--accent-rose-text);
 }
 
 /* Control & Filter Toolbar */
@@ -329,7 +328,6 @@
   color: var(--text-muted);
   font-weight: 600;
   font-size: 0.78rem;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 14px 18px;
   border-bottom: 1px solid var(--border-subtle);
@@ -377,9 +375,9 @@
 }
 
 .apt-seq-badge.order {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: color-mix(in srgb, var(--accent-emerald) 10%, transparent);
+  color: var(--accent-emerald-text);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent);
 }
 
 .apt-round-badge {
@@ -531,7 +529,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+  background: var(--bg-surface);
 }
 
 .apt-modal-body {
@@ -641,7 +639,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 15%, transparent), rgba(16, 185, 129, 0.15));
+  background: var(--accent-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -690,12 +688,12 @@
 .apt-item-total {
   font-size: 1rem;
   font-weight: 700;
-  color: #10b981;
+  color: var(--accent-emerald-text);
 }
 
 /* Decision Action Banner */
 .apt-decision-box {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 6%, transparent), rgba(16, 185, 129, 0.06));
+  background: var(--accent-primary);
   border: 1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent);
   border-radius: 16px;
   padding: 20px 24px;

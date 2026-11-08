@@ -219,13 +219,13 @@ export const CouponsPage: React.FC = () => {
 
   // Helper date status
   const getValidityStatus = (startStr: string, endStr: string, active: boolean) => {
-    if (!active) return { label: 'Tạm dừng', color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' };
+    if (!active) return { label: 'Tạm dừng', color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 10%, transparent)' };
     const now = new Date();
     const start = new Date(startStr);
     const end = new Date(endStr);
-    if (now < start) return { label: 'Sắp diễn ra', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.1)' };
-    if (now > end) return { label: 'Đã hết hạn', color: '#dc2626', bg: 'rgba(239, 68, 68, 0.1)' };
-    return { label: 'Đang áp dụng', color: '#16a34a', bg: 'rgba(22, 163, 74, 0.1)' };
+    if (now < start) return { label: 'Sắp diễn ra', color: 'var(--accent-primary)', bg: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)' };
+    if (now > end) return { label: 'Đã hết hạn', color: 'var(--accent-rose-text)', bg: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)' };
+    return { label: 'Đang áp dụng', color: 'var(--accent-emerald-text)', bg: 'rgba(22, 163, 74, 0.1)' };
   };
 
   // Filtered coupons
@@ -263,7 +263,7 @@ export const CouponsPage: React.FC = () => {
       {toastMessage && (
         <div
           style={{
-            background: 'rgba(16, 185, 129, 0.95)',
+            background: 'color-mix(in srgb, var(--accent-emerald) 95%, transparent)',
             color: '#fff',
             padding: '10px 18px',
             borderRadius: '8px',
@@ -354,7 +354,7 @@ export const CouponsPage: React.FC = () => {
             <span className="products-stat-value">{totalUsed}</span>
             <span className="products-stat-sub">Lượt dùng thực tế</span>
           </div>
-          <div className="products-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb' }}>
+          <div className="products-stat-icon" style={{ background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)', color: 'var(--accent-primary)' }}>
             <Percent size={18} />
           </div>
         </div>
@@ -411,11 +411,11 @@ export const CouponsPage: React.FC = () => {
         <div
           role="alert"
           style={{
-            background: 'rgba(239, 68, 68, 0.08)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
+            background: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)',
             borderRadius: '8px',
             padding: '12px 16px',
-            color: '#dc2626',
+            color: 'var(--accent-rose-text)',
             fontSize: '13px',
             display: 'flex',
             alignItems: 'center',
@@ -658,7 +658,7 @@ export const CouponsPage: React.FC = () => {
             <form onSubmit={handleSave}>
               <div className="clean-modal-body">
                 {modalError && (
-                  <div role="alert" style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#dc2626', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div role="alert" style={{ padding: '10px 14px', borderRadius: 6, background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)', color: 'var(--accent-rose-text)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <AlertCircle size={15} style={{ flexShrink: 0 }} />
                     <span>{modalError}</span>
                   </div>
@@ -674,7 +674,7 @@ export const CouponsPage: React.FC = () => {
                       required
                       maxLength={30}
                       className="clean-form-input"
-                      style={{ textTransform: 'uppercase', fontFamily: 'monospace', fontWeight: 600 }}
+                      style={{ fontFamily: 'monospace', fontWeight: 600 }}
                       placeholder="VD: SMARTBOX2026"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
@@ -843,7 +843,7 @@ export const CouponsPage: React.FC = () => {
         <div className="clean-modal-overlay" onClick={() => !deleting && setDeleteModalOpen(false)}>
           <div className="clean-modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
             <div className="clean-modal-header">
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#dc2626' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-rose-text)' }}>
                 <ShieldAlert size={18} />
                 <span>Xác nhận xóa mã ưu đãi</span>
               </h3>
@@ -878,7 +878,7 @@ export const CouponsPage: React.FC = () => {
               <button
                 type="button"
                 className="btn-primary-compact"
-                style={{ background: '#dc2626' }}
+                style={{ background: 'var(--accent-rose)' }}
                 disabled={deleting}
                 onClick={handleDelete}
               >

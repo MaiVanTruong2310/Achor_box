@@ -251,11 +251,11 @@ export const AdminCatalogSettings: React.FC<AdminCatalogSettingsProps> = ({
         <div
           role="status"
           style={{
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
+            background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--accent-emerald) 25%, transparent)',
             borderRadius: '8px',
             padding: '8px 14px',
-            color: '#10b981',
+            color: 'var(--accent-emerald-text)',
             fontSize: '0.8125rem',
             display: 'flex',
             alignItems: 'center',
@@ -271,11 +271,11 @@ export const AdminCatalogSettings: React.FC<AdminCatalogSettingsProps> = ({
         <div
           role="alert"
           style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
+            background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--accent-rose) 25%, transparent)',
             borderRadius: '8px',
             padding: '8px 14px',
-            color: '#ef4444',
+            color: 'var(--accent-rose-text)',
             fontSize: '0.8125rem',
             display: 'flex',
             alignItems: 'center',
@@ -491,7 +491,7 @@ export const AdminCatalogSettings: React.FC<AdminCatalogSettingsProps> = ({
                           alignItems: 'center',
                           gap: '4px',
                           borderRadius: '6px',
-                          color: '#ef4444'
+                          color: 'var(--accent-rose-text)'
                         }}
                       >
                         <Trash2 size={12} />
@@ -581,8 +581,8 @@ export const AdminCatalogSettings: React.FC<AdminCatalogSettingsProps> = ({
               {error && (
                 <div
                   style={{
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    color: '#ef4444',
+                    background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)',
+                    color: 'var(--accent-rose-text)',
                     padding: '8px 12px',
                     borderRadius: '8px',
                     fontSize: '0.8rem',

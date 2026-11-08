@@ -121,17 +121,48 @@ public class ProductService {
         return PaginationUtil.toMap(pageResult);
     }
 
+    private static final long CATEGORY_LIST_TTL_MS = 60_000L;
+    private volatile List<ProductCategory> categoryListSnapshot;
+    private volatile long categoryListExpiresAt;
+
+    /** Called by every category mutation so the list never serves stale data on this instance. */
+    private void invalidateCategoryList() {
+        categoryListSnapshot = null;
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            // Drop again after commit so a read racing the transaction cannot re-cache pre-commit data.
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            categoryListSnapshot = null;
+                        }
+                    });
+        }
+    }
+
     @Transactional(readOnly = true)
     public List<ProductCategory> getAllCategories() {
+        var cached = categoryListSnapshot;
+        if (cached != null && System.currentTimeMillis() < categoryListExpiresAt) {
+            return cached;
+        }
         List<ProductCategory> list = categoryRepository.findAllByOrderByNameAsc();
-        for (ProductCategory cat : list) {
-            if (cat.getManagerId() != null) {
-                profileRepository.findById(cat.getManagerId()).ifPresent(p -> {
+        // One query for all managers instead of one findById (one DB round trip) per category.
+        var managerIds = list.stream().map(ProductCategory::getManagerId)
+                .filter(java.util.Objects::nonNull).collect(java.util.stream.Collectors.toSet());
+        if (!managerIds.isEmpty()) {
+            var managers = new java.util.HashMap<java.util.UUID, com.smartbox.backend.entity.Profile>();
+            profileRepository.findAllById(managerIds).forEach(p -> managers.put(p.getId(), p));
+            for (ProductCategory cat : list) {
+                var p = cat.getManagerId() == null ? null : managers.get(cat.getManagerId());
+                if (p != null) {
                     cat.setManagerName(p.getFullName());
                     cat.setManagerEmail(p.getEmail());
-                });
+                }
             }
         }
+        categoryListSnapshot = list;
+        categoryListExpiresAt = System.currentTimeMillis() + CATEGORY_LIST_TTL_MS;
         return list;
     }
 
@@ -155,6 +186,7 @@ public class ProductService {
             @CacheEvict(value = "system_settings", allEntries = true)
     })
     public ProductCategory createCategory(com.smartbox.backend.dto.request.catalog.ProductCategoryRequest request) {
+        invalidateCategoryList();
         actors.get().requireRoles("super_admin");
         String name = request.getName().trim();
         String slug = request.getSlug() != null && !request.getSlug().isBlank()
@@ -181,6 +213,7 @@ public class ProductService {
             @CacheEvict(value = "system_settings", allEntries = true)
     })
     public ProductCategory updateCategory(UUID id, com.smartbox.backend.dto.request.catalog.ProductCategoryRequest request) {
+        invalidateCategoryList();
         actors.get().requireRoles("super_admin");
         ProductCategory category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Loại sản phẩm", "id", id));
@@ -218,6 +251,7 @@ public class ProductService {
             @CacheEvict(value = "system_settings", allEntries = true)
     })
     public void deleteCategory(UUID id) {
+        invalidateCategoryList();
         actors.get().requireRoles("super_admin");
         ProductCategory category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Loại sản phẩm", "id", id));

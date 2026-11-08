@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   User,
-  History,
   ShoppingBag,
   Truck,
   CheckCircle2,
@@ -19,7 +18,6 @@ import {
   Clock,
   Phone,
   Mail,
-  MapPin,
   CreditCard,
   Calendar,
   Layers,
@@ -32,6 +30,7 @@ import { toast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { SalesInvoiceModal } from '../../components/SalesInvoiceModal';
 import { Printer } from 'lucide-react';
+import '../../styles/apple-tokens.css';
 import './order-detail.css';
 
 interface OrderItem {
@@ -58,24 +57,24 @@ interface TimelineEvent {
 }
 
 const ORDER_STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Chờ xử lý', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-  pending_payment: { label: 'Chờ thanh toán', color: '#eab308', bg: 'rgba(234, 179, 8, 0.1)' },
-  paid: { label: 'Đã thanh toán', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
-  confirmed: { label: 'Đã duyệt PO', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
-  approved: { label: 'Đã duyệt PO', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
-  shipping: { label: 'Đang giao hàng', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
-  installed: { label: 'Đã nghiệm thu', color: '#059669', bg: 'rgba(5, 150, 105, 0.1)' },
-  completed: { label: 'Đã nghiệm thu', color: '#059669', bg: 'rgba(5, 150, 105, 0.1)' },
-  cancelled: { label: 'Đã hủy', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' }
+  pending: { label: 'Chờ xử lý', color: 'var(--od-orange-text)', bg: 'var(--od-orange-tint)' },
+  pending_payment: { label: 'Chờ thanh toán', color: 'var(--od-orange-text)', bg: 'var(--od-orange-tint)' },
+  paid: { label: 'Đã thanh toán', color: 'var(--od-green-text)', bg: 'var(--od-green-tint)' },
+  confirmed: { label: 'Đã duyệt PO', color: 'var(--od-accent)', bg: 'var(--od-accent-tint)' },
+  approved: { label: 'Đã duyệt PO', color: 'var(--od-accent)', bg: 'var(--od-accent-tint)' },
+  shipping: { label: 'Đang giao hàng', color: 'var(--od-accent)', bg: 'var(--od-accent-tint)' },
+  installed: { label: 'Đã nghiệm thu', color: 'var(--od-green-text)', bg: 'var(--od-green-tint)' },
+  completed: { label: 'Đã nghiệm thu', color: 'var(--od-green-text)', bg: 'var(--od-green-tint)' },
+  cancelled: { label: 'Đã hủy', color: 'var(--od-red)', bg: 'var(--od-fill)' }
 };
 
 const JOB_STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  ASSIGNED: { label: 'Đã xếp lịch', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
-  IN_PROGRESS: { label: 'Đang giao & lắp', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-  DELIVERED: { label: 'Đã tới địa chỉ', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
-  INSTALLED: { label: 'Đã lắp đặt', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.1)' },
-  COMPLETED: { label: 'Đã nghiệm thu', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
-  FAILED: { label: 'Cần xử lý lại', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' }
+  ASSIGNED: { label: 'Đã xếp lịch', color: 'var(--od-accent)', bg: 'var(--od-accent-tint)' },
+  IN_PROGRESS: { label: 'Đang giao & lắp', color: 'var(--od-orange-text)', bg: 'var(--od-orange-tint)' },
+  DELIVERED: { label: 'Đã tới địa chỉ', color: 'var(--od-accent)', bg: 'var(--od-accent-tint)' },
+  INSTALLED: { label: 'Đã lắp đặt', color: 'var(--od-accent)', bg: 'var(--od-accent-tint)' },
+  COMPLETED: { label: 'Đã nghiệm thu', color: 'var(--od-green-text)', bg: 'var(--od-green-tint)' },
+  FAILED: { label: 'Cần xử lý lại', color: 'var(--od-red)', bg: 'var(--od-fill)' }
 };
 
 function formatEventLabel(source?: string, action?: string): { title: string; desc: string; iconType: string; tag: string } {
@@ -279,17 +278,17 @@ export const OrderDetail: React.FC = () => {
   const renderNodeIcon = (iconType: string) => {
     switch (iconType) {
       case 'acceptance':
-        return <ShieldCheck size={13} style={{ color: '#10b981' }} />;
+        return <ShieldCheck size={13} />;
       case 'install':
-        return <Wrench size={13} style={{ color: '#0ea5e9' }} />;
+        return <Wrench size={13} />;
       case 'delivery':
-        return <Truck size={13} style={{ color: '#3b82f6' }} />;
+        return <Truck size={13} />;
       case 'ticket':
-        return <FileCheck size={13} style={{ color: '#8b5cf6' }} />;
+        return <FileCheck size={13} />;
       case 'payment':
-        return <CreditCard size={13} style={{ color: '#10b981' }} />;
+        return <CreditCard size={13} />;
       default:
-        return <ShoppingBag size={13} style={{ color: 'var(--accent-primary)' }} />;
+        return <ShoppingBag size={13} />;
     }
   };
 
@@ -307,7 +306,7 @@ export const OrderDetail: React.FC = () => {
   if (error || !order) {
     return (
       <div className="order-detail-page">
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--danger, #ef4444)' }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
           <AlertCircle size={32} style={{ marginBottom: 8 }} />
           <h3>Không tìm thấy đơn hàng</h3>
           <p>{error || 'Đơn hàng không tồn tại hoặc đã bị xóa.'}</p>
@@ -336,8 +335,8 @@ export const OrderDetail: React.FC = () => {
   // Statuses
   const statusInfo = ORDER_STATUS_MAP[order.status] || {
     label: order.status || 'Chờ xử lý',
-    color: '#64748b',
-    bg: 'rgba(100, 116, 139, 0.1)'
+    color: 'var(--od-label-2)',
+    bg: 'var(--od-fill)'
   };
 
   const assignedTechName = deliveryJob?.assignedTo
@@ -353,99 +352,52 @@ export const OrderDetail: React.FC = () => {
 
   return (
     <div className="order-detail-page">
-      {/* 1. Unified Top Header Strip */}
+      {/* 1. Header: toolbar + large title */}
       <div className="order-header-strip">
-        <div className="order-header-left">
-          <button type="button" className="btn-back-compact" onClick={() => navigate(backListPath)}>
-            <ArrowLeft size={13} />
-            <span>Quay lại</span>
+        <div className="order-toolbar">
+          <button type="button" className="btn-back-compact plain" onClick={() => navigate(backListPath)}>
+            <ArrowLeft size={18} />
+            <span>Đơn hàng</span>
           </button>
 
-          <span className="order-code-text">
-            #{order.id.slice(0, 10)}...
+          <div className="order-header-right">
+            <Link
+              to={profile?.role === 'product_manager' ? `/po/approvals/${order.id}` : `/orders/approvals/${order.id}`}
+              className="btn-back-compact"
+            >
+              <FileCheck size={17} />
+              <span>Vé thẩm định PO</span>
+            </Link>
+            <button type="button" className="btn-back-compact" onClick={() => setShowInvoiceModal(true)}>
+              <Printer size={17} />
+              <span>In hóa đơn</span>
+            </button>
             <button
               type="button"
-              onClick={handleCopyId}
-              title="Sao chép toàn bộ mã đơn hàng"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0 2px' }}
+              className="btn-back-compact icon-only"
+              onClick={fetchOrderDetail}
+              aria-label="Làm mới dữ liệu"
             >
-              {copied ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={13} />}
+              <RefreshCw size={17} />
             </button>
-          </span>
-
-          <span
-            className="order-badge-pill"
-            style={{ color: statusInfo.color, backgroundColor: statusInfo.bg }}
-          >
-            <span className="dot" />
-            <span>{statusInfo.label}</span>
-          </span>
-
-          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-            {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : '—'}
-          </span>
+          </div>
         </div>
 
-        <div className="order-header-right">
-          <div className="order-total-highlight">
-            <span>Tổng thanh toán:</span>
-            <strong>{totalAmount.toLocaleString('vi-VN')} ₫</strong>
+        <div className="order-title-block">
+          <h1 className="order-large-title">{totalAmount.toLocaleString('vi-VN')} ₫</h1>
+          <div className="order-meta-line">
+            <span className="order-badge-pill" style={{ color: statusInfo.color, backgroundColor: statusInfo.bg }}>
+              <span className="dot" />
+              <span>{statusInfo.label}</span>
+            </span>
+            <span className="order-code-text">
+              #{order.id.slice(0, 10)}
+              <button type="button" className="order-icon-btn" onClick={handleCopyId} aria-label="Sao chép mã đơn hàng">
+                {copied ? <Check size={15} /> : <Copy size={15} />}
+              </button>
+            </span>
+            <span>{order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : '—'}</span>
           </div>
-
-          <Link
-            to={profile?.role === 'product_manager' ? `/po/approvals/${order.id}` : `/orders/approvals/${order.id}`}
-            className="btn-back-compact"
-            title="Xem vé thẩm định PO của đơn hàng"
-            style={{
-              padding: '5px 12px',
-              borderRadius: 999,
-              textDecoration: 'none',
-              background: 'rgba(245, 158, 11, 0.08)',
-              color: '#d97706',
-              border: '1px solid rgba(245, 158, 11, 0.25)',
-              fontWeight: 600,
-              fontSize: '12px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6
-            }}
-          >
-            <FileCheck size={13} />
-            <span>Vé thẩm định PO</span>
-          </Link>
-
-          <button
-            type="button"
-            className="btn-back-compact"
-            onClick={() => setShowInvoiceModal(true)}
-            title="Xem trước bản in A4 / Hóa đơn bán hàng"
-            style={{
-              padding: '5px 12px',
-              borderRadius: 999,
-              background: 'rgba(0, 122, 255, 0.08)',
-              border: '1px solid rgba(0, 122, 255, 0.25)',
-              color: 'var(--apple-blue, #007aff)',
-              fontWeight: 600,
-              fontSize: '12px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer'
-            }}
-          >
-            <Printer size={13} />
-            <span>In A4 / Hóa đơn</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn-back-compact"
-            onClick={fetchOrderDetail}
-            title="Làm mới dữ liệu"
-            style={{ padding: '4px 8px' }}
-          >
-            <RefreshCw size={13} />
-          </button>
         </div>
       </div>
 
@@ -461,10 +413,9 @@ export const OrderDetail: React.FC = () => {
           <div className="order-panel">
             <div className="order-panel-header">
               <h3 className="order-panel-title">
-                <ShoppingBag size={14} />
-                <span>Chi tiết sản phẩm & Thanh toán</span>
+                <span>Sản phẩm và thanh toán</span>
               </h3>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{items.length} sản phẩm</span>
+              <span className="order-panel-sub">{items.length} sản phẩm</span>
             </div>
 
             <div className="order-panel-body">
@@ -473,7 +424,7 @@ export const OrderDetail: React.FC = () => {
                 <thead>
                   <tr>
                     <th>Sản phẩm</th>
-                    <th style={{ textAlign: 'center', width: '50px' }}>SL</th>
+                    <th style={{ textAlign: 'center', width: '64px' }}>SL</th>
                     <th style={{ textAlign: 'right', width: '120px' }}>Đơn giá</th>
                     <th style={{ textAlign: 'right', width: '130px' }}>Thành tiền</th>
                   </tr>
@@ -486,19 +437,19 @@ export const OrderDetail: React.FC = () => {
                           {it.productId ? (
                             <Link to={`/products/${it.productId}`} className="compact-prod-link" title="Xem chi tiết sản phẩm này">
                               <span>{it.productName}</span>
-                              <ExternalLink size={11} />
+                              <ExternalLink size={13} />
                             </Link>
                           ) : (
                             <span style={{ fontWeight: 600 }}>{it.productName}</span>
                           )}
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
-                            {it.variantName ? `${it.variantName} • ` : ''}SKU: <code style={{ color: 'var(--accent-primary)' }}>{it.sku || 'SBX-DEF'}</code>
+                          <div className="compact-prod-sku">
+                            {it.variantName ? `${it.variantName} · ` : ''}SKU <code>{it.sku || 'SBX-DEF'}</code>
                           </div>
                         </div>
                       </td>
-                      <td style={{ textAlign: 'center', fontWeight: 600 }}>x{it.quantity || 1}</td>
+                      <td style={{ textAlign: 'center' }}>{it.quantity || 1}</td>
                       <td style={{ textAlign: 'right' }}>{Number(it.unitPrice || 0).toLocaleString('vi-VN')} ₫</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--accent-primary)' }}>
+                      <td style={{ textAlign: 'right', fontWeight: 600 }}>
                         {Number(it.subtotal || it.unitPrice * (it.quantity || 1)).toLocaleString('vi-VN')} ₫
                       </td>
                     </tr>
@@ -509,21 +460,21 @@ export const OrderDetail: React.FC = () => {
               {/* Financial Summary */}
               <div className="compact-finance-summary">
                 <div className="compact-finance-row">
-                  <span>Tạm tính tiền hàng:</span>
+                  <span>Tạm tính</span>
                   <span>{subtotal.toLocaleString('vi-VN')} ₫</span>
                 </div>
                 {discountAmount > 0 && (
-                  <div className="compact-finance-row" style={{ color: '#10b981' }}>
-                    <span>Giảm giá (Voucher):</span>
+                  <div className="compact-finance-row discount">
+                    <span>Giảm giá</span>
                     <span>-{discountAmount.toLocaleString('vi-VN')} ₫</span>
                   </div>
                 )}
                 <div className="compact-finance-row">
-                  <span>Phí vận chuyển & lắp đặt:</span>
-                  <span style={{ color: '#10b981' }}>Miễn phí 100%</span>
+                  <span>Vận chuyển và lắp đặt</span>
+                  <span style={{ color: 'var(--od-green-text)' }}>Miễn phí</span>
                 </div>
                 <div className="compact-finance-row grand">
-                  <span>Tổng thanh toán:</span>
+                  <span>Tổng thanh toán</span>
                   <span>{totalAmount.toLocaleString('vi-VN')} ₫</span>
                 </div>
               </div>
@@ -531,27 +482,26 @@ export const OrderDetail: React.FC = () => {
               {/* Payment Row */}
               <div className={`compact-payment-strip ${order.paidAt ? 'paid' : order.status === 'cancelled' ? 'cancelled' : 'pending'}`}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <CreditCard size={14} style={{ color: order.paidAt ? '#10b981' : order.status === 'cancelled' ? '#64748b' : '#f59e0b' }} />
+                  <CreditCard size={17} />
                   <span>
-                    Phương thức: <strong>{order.paymentMethod || 'VNPAY'}</strong> •{' '}
+                    <strong>{order.paymentMethod || 'VNPAY'}</strong> ·{' '}
                     {order.status === 'cancelled'
                       ? (order.paidAt ? 'Đã thanh toán (Đã hủy đơn)' : 'Chưa thanh toán (Đã hủy đơn)')
                       : (order.paidAt ? 'Đã thanh toán (Quyết toán)' : 'Chờ thanh toán')}
                   </span>
                 </div>
                 {order.transactionRef && (
-                  <code style={{ fontSize: '11px', color: 'var(--accent-primary)' }}>Ref: {order.transactionRef}</code>
+                  <code>Mã giao dịch {order.transactionRef}</code>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Card 2: Thông tin giao hàng & Lắp đặt (Gọn gàng & Ngăn nắp) */}
+          {/* Card 2: Giao hàng và lắp đặt (Gọn gàng & Ngăn nắp) */}
           <div className="order-panel">
             <div className="order-panel-header">
               <h3 className="order-panel-title">
-                <Truck size={14} />
-                <span>Thông tin giao hàng & Lắp đặt</span>
+                <span>Giao hàng và lắp đặt</span>
               </h3>
               {currentJobStatus && (
                 <span
@@ -572,29 +522,27 @@ export const OrderDetail: React.FC = () => {
                 {/* Tile 1: Kỹ thuật viên phụ trách */}
                 <div className="delivery-tile">
                   <div className="delivery-tile-label">
-                    <User size={12} />
-                    <span>Kỹ thuật viên phụ trách</span>
+                    <User size={15} />
+                    <span>Kỹ thuật viên</span>
                   </div>
                   <div className="delivery-tile-content">
-                    <span style={{ fontWeight: 700 }}>{assignedTechName}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                      {deliveryJob?.assignedTo ? 'Đã tiếp nhận' : 'Chờ điều phối'}
-                    </span>
+                    <span>{assignedTechName}</span>
+                    <small>{deliveryJob?.assignedTo ? 'Đã tiếp nhận' : 'Chờ điều phối'}</small>
                   </div>
                 </div>
 
                 {/* Tile 2: Mã vận đơn */}
                 <div className="delivery-tile">
                   <div className="delivery-tile-label">
-                    <Truck size={12} />
-                    <span>Mã vận đơn bưu tá</span>
+                    <Truck size={15} />
+                    <span>Mã vận đơn</span>
                   </div>
                   <div className="tracking-input-group">
                     <input
                       type="text"
                       value={trackingNumberInput}
                       onChange={(e) => setTrackingNumberInput(e.target.value)}
-                      placeholder="Nhập mã vận đơn..."
+                      placeholder="Nhập mã vận đơn" aria-label="Mã vận đơn"
                     />
                     <button
                       type="button"
@@ -605,8 +553,8 @@ export const OrderDetail: React.FC = () => {
                     </button>
                   </div>
                   {trackingSuccess && (
-                    <div style={{ color: '#10b981', fontSize: '11px', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                      <Check size={12} /> Đã cập nhật mã vận đơn thành công.
+                    <div style={{ color: 'var(--od-green-text)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Check size={14} /> Đã cập nhật mã vận đơn.
                     </div>
                   )}
                 </div>
@@ -614,20 +562,20 @@ export const OrderDetail: React.FC = () => {
 
               {/* Nút xem minh chứng nghiệm thu nếu completed */}
               {isCompleted ? (
-                <div style={{ marginTop: 2 }}>
+                <div>
                   <button
                     type="button"
                     className="btn-proof-slim"
                     onClick={handleOpenProofModal}
                   >
-                    <FileCheck size={14} />
-                    <span>Xem Biên Bản Nghiệm Thu & Kiểm Định Thiết Bị</span>
+                    <FileCheck size={18} />
+                    <span>Xem biên bản nghiệm thu</span>
                   </button>
                 </div>
               ) : (
-                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 2px' }}>
-                  <Clock size={12} />
-                  <span>Đang tiến hành giao hàng & thi công định vị Anchor Box.</span>
+                <div className="delivery-hint">
+                  <Clock size={15} />
+                  <span>Đang giao hàng và lắp đặt Anchor Box.</span>
                 </div>
               )}
             </div>
@@ -638,36 +586,34 @@ export const OrderDetail: React.FC = () => {
         {/* CỘT PHẢI: CHIẾM 1/3 (KHÁCH HÀNG & BIỂU ĐỒ TIMELINE) */}
         {/* =================================================== */}
         <div className="order-right-column">
-          {/* Card 1: Thông tin khách hàng */}
+          {/* Card 1: Khách hàng */}
           <div className="order-panel">
             <div className="order-panel-header">
               <h3 className="order-panel-title">
-                <User size={14} />
-                <span>Thông tin khách hàng</span>
+                <span>Khách hàng</span>
               </h3>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Người nhận</span>
+              <span className="order-panel-sub">Người nhận</span>
             </div>
 
             <div className="order-panel-body">
               <div className="compact-kv-table">
                 <div className="compact-kv-row">
-                  <span className="compact-kv-lbl">Khách hàng:</span>
+                  <span className="compact-kv-lbl">Khách hàng</span>
                   <span className="compact-kv-val">{recipientName}</span>
                 </div>
                 <div className="compact-kv-row">
-                  <span className="compact-kv-lbl">Điện thoại:</span>
+                  <span className="compact-kv-lbl">Điện thoại</span>
                   <span className="compact-kv-val">
                     <a href={`tel:${phone}`}>{phone}</a>
                   </span>
                 </div>
                 <div className="compact-kv-row">
-                  <span className="compact-kv-lbl">Email:</span>
-                  <span className="compact-kv-val" style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>{email}</span>
+                  <span className="compact-kv-lbl">Email</span>
+                  <span className="compact-kv-val">{email}</span>
                 </div>
-                <div className="compact-kv-row" style={{ borderBottom: 'none' }}>
-                  <span className="compact-kv-lbl">Địa chỉ nhận:</span>
-                  <span className="compact-kv-val" style={{ fontWeight: 500 }}>
-                    <MapPin size={11} style={{ display: 'inline', marginRight: 3, color: 'var(--accent-primary)' }} />
+                <div className="compact-kv-row">
+                  <span className="compact-kv-lbl">Địa chỉ</span>
+                  <span className="compact-kv-val">
                     {addressLine}
                   </span>
                 </div>
@@ -675,8 +621,8 @@ export const OrderDetail: React.FC = () => {
 
               {installationNote && (
                 <div className="compact-address-box">
-                  <strong style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Ghi chú: </strong>
-                  <span>"{installationNote}"</span>
+                  <strong>Ghi chú </strong>
+                  <span>{installationNote}</span>
                 </div>
               )}
             </div>
@@ -686,12 +632,9 @@ export const OrderDetail: React.FC = () => {
           <div className="order-panel">
             <div className="order-panel-header">
               <h3 className="order-panel-title">
-                <History size={14} />
-                <span>Biểu đồ tiến trình đơn hàng</span>
+                <span>Tiến trình đơn hàng</span>
               </h3>
-              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>
-                {sortedTimeline.length} sự kiện
-              </span>
+              <span className="order-panel-sub">{sortedTimeline.length} sự kiện</span>
             </div>
 
             <div className="order-panel-body">
@@ -706,7 +649,7 @@ export const OrderDetail: React.FC = () => {
                     className={`stepper-step ${st.completed ? 'completed' : ''} ${st.active ? 'active' : ''}`}
                   >
                     <div className="stepper-node">
-                      {st.completed ? <Check size={11} /> : st.step}
+                      {st.completed ? <Check size={13} /> : st.step}
                     </div>
                     <span className="stepper-label">{st.label}</span>
                   </div>
@@ -732,7 +675,7 @@ export const OrderDetail: React.FC = () => {
                         <div className="flow-card">
                           <div className="flow-card-top">
                             <span className="flow-timestamp">
-                              <Clock size={10} />
+                              <Clock size={12} />
                               {displayTime ? new Date(displayTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '—'}
                             </span>
                             <span className="flow-stage-tag">
@@ -764,15 +707,15 @@ export const OrderDetail: React.FC = () => {
           <div className="proof-modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="proof-modal-header">
               <h4>
-                <ShieldCheck size={16} />
-                Biên Bản Nghiệm Thu & Bàn Giao Thiết Bị
+                Biên bản nghiệm thu
               </h4>
               <button
                 type="button"
                 onClick={() => setShowProofModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                className="order-icon-btn"
+                aria-label="Đóng"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
@@ -785,65 +728,56 @@ export const OrderDetail: React.FC = () => {
               ) : (
                 <>
                   <div className="proof-banner">
-                    <CheckCircle size={16} />
-                    <span>Nghiệm thu hoàn tất & Khách hàng đã nhận bàn giao</span>
+                    <CheckCircle size={18} />
+                    <span>Nghiệm thu hoàn tất, khách hàng đã nhận bàn giao</span>
                   </div>
 
                   <div className="compact-kv-table">
                     <div className="compact-kv-row">
-                      <span className="compact-kv-lbl">Thời gian:</span>
-                      <span className="compact-kv-val" style={{ color: '#10b981' }}>
+                      <span className="compact-kv-lbl">Thời gian</span>
+                      <span className="compact-kv-val">
                         {deliveryJob?.completedAt ? new Date(deliveryJob.completedAt).toLocaleString('vi-VN') : 'Đã nghiệm thu'}
                       </span>
                     </div>
                     <div className="compact-kv-row">
-                      <span className="compact-kv-lbl">Kỹ thuật viên:</span>
+                      <span className="compact-kv-lbl">Kỹ thuật viên</span>
                       <span className="compact-kv-val">{assignedTechName}</span>
                     </div>
                   </div>
 
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginTop: 4 }}>
-                    Hạng mục kiểm định thiết bị tại chỗ:
+                  <div style={{ fontSize: 17, fontWeight: 600 }}>
+                    Hạng mục kiểm định
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <div className="proof-check-row">
-                      <CheckCircle2 size={14} style={{ color: '#10b981' }} />
+                      <CheckCircle2 size={18} style={{ color: 'var(--od-green)', flexShrink: 0 }} />
                       <span>Xác minh mã Serial Anchor Box khớp hợp đồng PO</span>
                     </div>
                     <div className="proof-check-row">
-                      <CheckCircle2 size={14} style={{ color: '#10b981' }} />
-                      <span>Khởi tạo & kiểm tra đóng/mở khóa an toàn thành công</span>
+                      <CheckCircle2 size={18} style={{ color: 'var(--od-green)', flexShrink: 0 }} />
+                      <span>Khởi tạo và kiểm tra đóng/mở khóa an toàn thành công</span>
                     </div>
                     <div className="proof-check-row">
-                      <CheckCircle2 size={14} style={{ color: '#10b981' }} />
+                      <CheckCircle2 size={18} style={{ color: 'var(--od-green)', flexShrink: 0 }} />
                       <span>Hiệu chuẩn cảm biến tải trọng (Tare Weight Verification)</span>
                     </div>
                     <div className="proof-check-row">
-                      <CheckCircle2 size={14} style={{ color: '#10b981' }} />
+                      <CheckCircle2 size={18} style={{ color: 'var(--od-green)', flexShrink: 0 }} />
                       <span>Kích hoạt bảo hành điện tử chính hãng tự động</span>
                     </div>
                   </div>
 
                   {deliveryJob?.devices && deliveryJob.devices.length > 0 && (
                     <div style={{ marginTop: 4 }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Mã Serial thiết bị đã bàn giao:</span>
+                      <span style={{ fontSize: 13, color: 'var(--od-label-2)' }}>Số serial thiết bị đã bàn giao</span>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
                         {deliveryJob.devices.map((d, i) => (
                           <span
                             key={i}
-                            style={{
-                              padding: '2px 8px',
-                              borderRadius: 4,
-                              background: 'var(--bg-main)',
-                              border: '1px solid var(--border-color)',
-                              fontFamily: 'monospace',
-                              fontSize: '11.5px',
-                              color: 'var(--accent-primary)',
-                              fontWeight: 700
-                            }}
+                            style={{ padding: '4px 10px', borderRadius: 999, background: 'var(--od-fill)', fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: 13 }}
                           >
-                            Serial: {d.serialNumber || 'SBX-SER-001'}
+                            {d.serialNumber || 'SBX-SER-001'}
                           </span>
                         ))}
                       </div>
@@ -852,7 +786,7 @@ export const OrderDetail: React.FC = () => {
 
                   {deliveryJob?.installationNote && (
                     <div className="compact-address-box">
-                      <strong>Ghi chú bàn giao:</strong> {deliveryJob.installationNote}
+                      <strong>Ghi chú bàn giao </strong> {deliveryJob.installationNote}
                     </div>
                   )}
                 </>

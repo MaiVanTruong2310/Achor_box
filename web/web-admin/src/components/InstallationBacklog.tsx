@@ -32,19 +32,19 @@ const tileConfigs: Record<string, TileConfig> = {
   pendingApproval: {
     label: 'PO chờ duyệt',
     icon: <Calendar size={15} />,
-    color: '#d97706',
-    bg: 'rgba(217, 119, 6, 0.08)'
+    color: 'var(--accent-amber-text)',
+    bg: 'color-mix(in srgb, var(--accent-amber) 8%, transparent)'
   },
   unassigned: {
     label: 'Chưa phân công',
     icon: <Clock size={15} />,
-    color: '#64748b',
-    bg: 'rgba(100, 116, 139, 0.08)'
+    color: 'var(--text-muted)',
+    bg: 'color-mix(in srgb, var(--text-muted) 8%, transparent)'
   },
   ASSIGNED: {
     label: 'Chưa nhận việc',
     icon: <Clock size={15} />,
-    color: '#0284c7',
+    color: 'var(--accent-primary)',
     bg: 'rgba(2, 132, 199, 0.08)'
   },
   IN_PROGRESS: {
@@ -56,26 +56,26 @@ const tileConfigs: Record<string, TileConfig> = {
   DELIVERED: {
     label: 'Chờ lắp đặt',
     icon: <Package size={15} />,
-    color: '#0ea5e9',
-    bg: 'rgba(14, 165, 233, 0.08)'
+    color: 'var(--accent-primary)',
+    bg: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)'
   },
   INSTALLED: {
     label: 'Chờ nghiệm thu',
     icon: <Wrench size={15} />,
-    color: '#8b5cf6',
-    bg: 'rgba(139, 92, 246, 0.08)'
+    color: 'var(--accent-primary)',
+    bg: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)'
   },
   FAILED: {
     label: 'Cần xử lý lại',
     icon: <AlertTriangle size={15} />,
-    color: '#ef4444',
-    bg: 'rgba(239, 68, 68, 0.08)'
+    color: 'var(--accent-rose-text)',
+    bg: 'color-mix(in srgb, var(--accent-rose) 8%, transparent)'
   },
   overdue: {
     label: 'Quá lịch hẹn',
     icon: <AlertCircle size={15} />,
-    color: '#dc2626',
-    bg: 'rgba(220, 38, 38, 0.12)'
+    color: 'var(--accent-rose-text)',
+    bg: 'color-mix(in srgb, var(--accent-rose) 12%, transparent)'
   }
 };
 
@@ -176,7 +176,7 @@ export const InstallationBacklog: React.FC<{
               <span className="di-metric-val">{waitingPoCount}</span>
             </div>
             <span className="di-metric-sub">
-              {waitingPoCount > 0 ? '🔥 Cần PO kiểm tra ảnh' : 'Đã nộp ảnh minh chứng'}
+              {waitingPoCount > 0 ? 'Cần PO kiểm tra ảnh' : 'Đã nộp ảnh minh chứng'}
             </span>
           </div>
         </div>
@@ -224,10 +224,9 @@ export const InstallationBacklog: React.FC<{
     <div
       style={{
         background: 'var(--bg-card, #ffffff)',
-        border: '1px solid var(--border-subtle, #e2e8f0)',
-        borderRadius: '16px',
-        padding: '18px 22px',
-        boxShadow: 'var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05))',
+        border: 0,
+        borderRadius: '18px',
+        padding: '20px 24px',
         display: 'flex',
         flexDirection: 'column',
         gap: '14px',
@@ -240,8 +239,8 @@ export const InstallationBacklog: React.FC<{
               width: 32,
               height: 32,
               borderRadius: 8,
-              background: 'rgba(16, 185, 129, 0.12)',
-              color: '#059669',
+              background: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)',
+              color: 'var(--accent-emerald-text)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -266,29 +265,32 @@ export const InstallationBacklog: React.FC<{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
-              fontSize: '0.82rem',
+              fontSize: '0.9375rem',
               fontWeight: 600,
-              color: '#4f46e5',
+              color: 'var(--accent-primary)',
               textDecoration: 'none',
-              padding: '4px 10px',
-              borderRadius: 6,
-              background: 'rgba(79, 70, 229, 0.06)',
+              minHeight: 36,
+              padding: '0 14px',
+              borderRadius: 999,
+              background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
             }}
           >
             <span>Bàn điều phối</span>
-            <ArrowUpRight size={13} />
           </Link>
         )}
       </div>
 
-      {error && <p role="alert" style={{ color: '#ef4444', fontSize: 12, margin: 0 }}>{error}</p>}
+      {error && <p role="alert" style={{ color: 'var(--accent-rose-text)', fontSize: 12, margin: 0 }}>{error}</p>}
 
       {summary && (
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-            gap: 10,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: 1,
+            background: 'rgba(120,120,128,.18)',
+            borderRadius: 12,
+            overflow: 'hidden',
           }}
         >
           {Object.entries(tileConfigs)
@@ -302,10 +304,8 @@ export const InstallationBacklog: React.FC<{
                 <div
                   key={key}
                   style={{
-                    background: isHighlight ? cfg.bg : 'var(--bg-canvas, rgba(248, 250, 252, 0.6))',
-                    border: `1px solid ${isHighlight ? cfg.color + '40' : 'var(--border-subtle, #e2e8f0)'}`,
-                    borderRadius: 10,
-                    padding: '10px 12px',
+                    background: 'var(--bg-card, #ffffff)',
+                    padding: '14px 16px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -316,23 +316,24 @@ export const InstallationBacklog: React.FC<{
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span
                       style={{
-                        fontSize: '1.25rem',
-                        fontWeight: 800,
-                        color: isHighlight ? cfg.color : 'var(--text-secondary)',
+                        fontSize: '1.375rem',
+                        fontWeight: 600,
+                        letterSpacing: '-0.022em',
+                        color: hasAlert ? cfg.color : (isHighlight ? 'var(--text-primary)' : 'var(--text-muted)'),
                       }}
                     >
                       {val}
                     </span>
-                    <span style={{ color: isHighlight ? cfg.color : 'var(--text-muted)' }}>
+                    <span style={{ color: hasAlert ? cfg.color : 'var(--text-muted)' }}>
                       {cfg.icon}
                     </span>
                   </div>
 
                   <span
                     style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      color: isHighlight ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      fontSize: '0.8125rem',
+                      fontWeight: 400,
+                      color: 'var(--text-muted)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',

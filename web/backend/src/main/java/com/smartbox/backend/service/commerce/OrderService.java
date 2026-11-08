@@ -65,7 +65,7 @@ public class OrderService {
 
     private static final Set<String> ORDER_SORTS = Set.of("created_at_desc", "created_at_asc", "total_asc", "total_desc", "customer_asc", "customer_desc", "status_asc", "status_desc");
 
-    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    @Transactional(readOnly = true)
     public Map<String, Object> getOrdersPaged(int page, int size, String search, String status, String payment, String sort) {
         var actor = actors.get();
         actor.requireRoles("super_admin", "product_manager", "technician");
@@ -127,6 +127,52 @@ public class OrderService {
             }
         }
         return map;
+    }
+
+    /** Status counts and KPIs in a single database round trip (replaces counts + summary). */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getOrderOverview() {
+        var actor = actors.get();
+        actor.requireRoles("super_admin", "product_manager", "technician");
+        List<Object[]> rows = "product_manager".equals(actor.role())
+                ? orderRepository.overviewForPo(actor.id())
+                : orderRepository.overview();
+
+        Map<String, Long> counts = new LinkedHashMap<>();
+        long total = 0, completed = 0, paidCount = 0, awaitingCount = 0;
+        BigDecimal paidRevenue = BigDecimal.ZERO, awaitingRevenue = BigDecimal.ZERO;
+        for (Object[] r : rows) {
+            if (r == null || r[0] == null) continue;
+            String status = r[0].toString();
+            long n = asLong(r[1]);
+            counts.put(status, n);
+            total += n;
+            if ("completed".equals(status)) completed += n;
+            if (!"cancelled".equals(status)) {
+                paidCount += asLong(r[2]);
+                paidRevenue = paidRevenue.add(asDecimal(r[3]));
+            }
+            if ("pending".equals(status) || "awaiting_payment".equals(status)) {
+                awaitingCount += asLong(r[4]);
+                awaitingRevenue = awaitingRevenue.add(asDecimal(r[5]));
+            }
+        }
+        Map<String, Long> orderedCounts = new LinkedHashMap<>();
+        orderedCounts.put("all", total);
+        orderedCounts.putAll(counts);
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("total", total);
+        summary.put("completed", completed);
+        summary.put("paidCount", paidCount);
+        summary.put("paidRevenue", paidRevenue);
+        summary.put("awaitingPaymentCount", awaitingCount);
+        summary.put("awaitingPaymentRevenue", awaitingRevenue);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("counts", orderedCounts);
+        out.put("summary", summary);
+        return out;
     }
 
     /** Order KPIs for the whole system (or the PO's own scope), independent of list pagination. */

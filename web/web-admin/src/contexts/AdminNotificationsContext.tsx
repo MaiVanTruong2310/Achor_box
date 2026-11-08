@@ -158,7 +158,7 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
                 if (paidOrders.length > 0) {
                   const p = paidOrders[0];
                   toast.success(
-                    `🎉 Đơn hàng #${p.referenceId.slice(0, 8).toUpperCase()} vừa được khách hàng thanh toán thành công!`,
+                    `Đơn hàng #${p.referenceId.slice(0, 8).toUpperCase()} vừa được khách hàng thanh toán thành công!`,
                     'Thanh toán thành công'
                   );
                   playNotificationSound('order');
@@ -196,7 +196,7 @@ export const AdminNotificationsProvider: React.FC<{ children: React.ReactNode }>
                 if (newTasks.length > 0) {
                   const t = newTasks[0];
                   toast.info(
-                    `🔔 Bạn có công việc mới được phân công! Đơn hàng #${t.referenceId.slice(0, 8).toUpperCase()}`,
+                    `Bạn có công việc mới được phân công! Đơn hàng #${t.referenceId.slice(0, 8).toUpperCase()}`,
                     'Công việc mới'
                   );
                   playNotificationSound('new_task');

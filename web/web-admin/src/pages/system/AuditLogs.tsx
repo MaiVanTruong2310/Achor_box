@@ -179,7 +179,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
       // Super alert: Night + Destructive / Role / Stock
       if (isNight && (isDestructive || isRoleAction || isStockAction || isConfigAction)) {
         severity = 'critical';
-        reasons.unshift('🚨 NGUY CƠ CAO: Thao tác nhạy cảm được thực hiện ngoài giờ làm việc!');
+        reasons.unshift('Nguy cơ cao: thao tác nhạy cảm được thực hiện ngoài giờ làm việc');
       }
 
       const isAnomaly = severity !== 'normal';
@@ -298,8 +298,8 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
       {embedded && (
         <div
           style={{
-            background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(88, 86, 214, 0.08) 100%)',
-            border: '1px solid rgba(0, 122, 255, 0.25)',
+            background: 'var(--bg-surface)',
+            border: '1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent)',
             borderRadius: '14px',
             padding: '14px 20px',
             display: 'flex',
@@ -310,7 +310,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Sparkles size={18} style={{ color: '#007aff' }} />
+            <Sparkles size={18} style={{ color: 'var(--accent-primary)' }} />
             <div>
               <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                 Nhật ký kiểm toán hiện đã được tách thành mục độc lập tại thanh Menu chính
@@ -339,7 +339,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
               <ShieldAlert size={22} />
             </div>
             <div>
-              <h1 className="audit-header-title">Nhật Ký Kiểm Toán & Radar An Ninh</h1>
+              <h1 className="audit-header-title">Nhật ký kiểm toán</h1>
               <p className="audit-header-desc">
                 Giám sát toàn diện lịch sử thao tác, truy vết biến động kho, can thiệp phân quyền và tự động phát hiện hành vi bất thường theo thời gian thực.
               </p>
@@ -378,12 +378,12 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           className={`audit-kpi-card ${filterType === 'all' ? 'active' : ''}`}
           onClick={() => setFilterType('all')}
         >
-          <div className="audit-kpi-bubble" style={{ background: 'rgba(0, 122, 255, 0.12)', color: '#007aff' }}>
+          <div className="audit-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)', color: 'var(--accent-primary)' }}>
             <History size={20} />
           </div>
           <div className="audit-kpi-meta">
             <span className="audit-kpi-label">Tổng sự kiện ghi nhận</span>
-            <div className="audit-kpi-value" style={{ color: '#007aff' }}>{totalLogs}</div>
+            <div className="audit-kpi-value" style={{ color: 'var(--accent-primary)' }}>{totalLogs}</div>
             <span className="audit-kpi-sub">Nhật ký truy vết hệ thống</span>
           </div>
         </div>
@@ -403,8 +403,8 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
             <AlertTriangle size={20} />
           </div>
           <div className="audit-kpi-meta">
-            <span className="audit-kpi-label" style={{ color: '#ff3b30' }}>Phát hiện bất thường (Radar)</span>
-            <div className="audit-kpi-value" style={{ color: '#ff3b30' }}>{anomalyLogs.length}</div>
+            <span className="audit-kpi-label" style={{ color: 'var(--accent-rose-text)' }}>Bất thường</span>
+            <div className="audit-kpi-value" style={{ color: 'var(--accent-rose-text)' }}>{anomalyLogs.length}</div>
             <span className="audit-kpi-sub">Cần người quản lý rà soát</span>
           </div>
         </div>
@@ -413,12 +413,12 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           className="audit-kpi-card"
           onClick={() => setFilterType('night')}
         >
-          <div className="audit-kpi-bubble" style={{ background: 'rgba(88, 86, 214, 0.12)', color: '#5856d6' }}>
+          <div className="audit-kpi-bubble" style={{ background: 'var(--bg-input)', color: 'var(--text-secondary)' }}>
             <Moon size={20} />
           </div>
           <div className="audit-kpi-meta">
             <span className="audit-kpi-label">Thao tác đêm (22h - 5h)</span>
-            <div className="audit-kpi-value" style={{ color: '#5856d6' }}>{nightLogs.length}</div>
+            <div className="audit-kpi-value" style={{ color: 'var(--text-primary)' }}>{nightLogs.length}</div>
             <span className="audit-kpi-sub">Ngoài giờ hành chính</span>
           </div>
         </div>
@@ -427,12 +427,12 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           className="audit-kpi-card"
           onClick={() => setFilterType('roles')}
         >
-          <div className="audit-kpi-bubble" style={{ background: 'rgba(175, 82, 222, 0.12)', color: '#af52de' }}>
+          <div className="audit-kpi-bubble" style={{ background: 'var(--bg-input)', color: 'var(--text-secondary)' }}>
             <Shield size={20} />
           </div>
           <div className="audit-kpi-meta">
-            <span className="audit-kpi-label">Quyền hạn & Nhân sự</span>
-            <div className="audit-kpi-value" style={{ color: '#af52de' }}>{roleLogs.length}</div>
+            <span className="audit-kpi-label">Quyền hạn và nhân sự</span>
+            <div className="audit-kpi-value" style={{ color: 'var(--text-primary)' }}>{roleLogs.length}</div>
             <span className="audit-kpi-sub">Đổi vai trò, mật khẩu nội bộ</span>
           </div>
         </div>
@@ -456,7 +456,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
             onClick={() => setFilterType('anomaly')}
           >
             <AlertOctagon size={13} style={{ color: '#ff3b30' }} />
-            <span>🚨 Radar bất thường ({anomalyLogs.length})</span>
+            <span>Bất thường ({anomalyLogs.length})</span>
           </button>
 
           <button
@@ -465,7 +465,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
             onClick={() => setFilterType('night')}
           >
             <Moon size={13} />
-            <span>🌙 Ngoài giờ ({nightLogs.length})</span>
+            <span>Ngoài giờ ({nightLogs.length})</span>
           </button>
 
           <button
@@ -474,7 +474,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
             onClick={() => setFilterType('roles')}
           >
             <Shield size={13} />
-            <span>🛡️ Quyền hạn ({roleLogs.length})</span>
+            <span>Quyền hạn ({roleLogs.length})</span>
           </button>
 
           <button
@@ -483,7 +483,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
             onClick={() => setFilterType('stock')}
           >
             <Package size={13} />
-            <span>📦 Biến động kho ({stockLogs.length})</span>
+            <span>Biến động kho ({stockLogs.length})</span>
           </button>
 
           <button
@@ -492,7 +492,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
             onClick={() => setFilterType('config')}
           >
             <Settings size={13} />
-            <span>⚙️ Cấu hình</span>
+            <span>Cấu hình</span>
           </button>
         </div>
 
@@ -531,12 +531,12 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           <table className="audit-table">
             <thead>
               <tr>
-                <th style={{ width: '150px' }}>Đánh giá Radar</th>
+                <th style={{ width: '150px' }}>Mức độ</th>
                 <th style={{ width: '180px' }}>Thời gian</th>
                 <th style={{ width: '180px' }}>Người thực hiện</th>
                 <th style={{ width: '180px' }}>Hành động</th>
                 <th style={{ width: '160px' }}>Đối tượng tác động</th>
-                <th>Phân tích & Tóm tắt</th>
+                <th>Phân tích</th>
                 <th style={{ width: '90px', textAlign: 'center' }}>Chi tiết</th>
               </tr>
             </thead>
@@ -614,8 +614,8 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                               width: '28px',
                               height: '28px',
                               borderRadius: '8px',
-                              background: 'rgba(0, 122, 255, 0.12)',
-                              color: '#007aff',
+                              background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+                              color: 'var(--accent-primary)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -716,8 +716,8 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: 'rgba(0, 122, 255, 0.12)',
-                    color: '#007aff',
+                    background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+                    color: 'var(--accent-primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -753,9 +753,9 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                 if (!a?.isAnomaly) {
                   return (
                     <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(52, 199, 89, 0.08)', border: '1px solid rgba(52, 199, 89, 0.25)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <CheckCircle2 size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
+                      <CheckCircle2 size={20} style={{ color: 'var(--accent-emerald-text)', flexShrink: 0 }} />
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#16a34a' }}>Đánh giá an toàn: Bình thường</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--accent-emerald-text)' }}>Đánh giá an toàn: Bình thường</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Không phát hiện dấu hiệu gian lận hay bất thường.</div>
                       </div>
                     </div>
@@ -772,9 +772,9 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      {isCrit ? <AlertOctagon size={18} style={{ color: '#ff3b30' }} /> : <AlertTriangle size={18} style={{ color: '#ea580c' }} />}
+                      {isCrit ? <AlertOctagon size={18} style={{ color: '#ff3b30' }} /> : <AlertTriangle size={18} style={{ color: 'var(--accent-amber-text)' }} />}
                       <span style={{ fontWeight: 800, fontSize: '0.88rem', color: isCrit ? '#ff3b30' : '#ea580c' }}>
-                        Cảnh báo an ninh Radar: {isCrit ? 'NGUY CƠ CAO (CRITICAL)' : 'CẦN LƯU Ý (WARNING)'}
+                        Cảnh báo an ninh: {isCrit ? 'Nguy cơ cao' : 'Cần lưu ý'}
                       </span>
                     </div>
                     <ul style={{ margin: '6px 0 0', paddingLeft: '18px', fontSize: '0.8rem', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -789,7 +789,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
               {/* General Metadata Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ padding: '12px', background: 'var(--bg-surface, #f8f9fa)', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Người thực hiện</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>Người thực hiện</span>
                   <div style={{ fontWeight: 700, fontSize: '0.88rem', marginTop: '2px', color: 'var(--text-primary)' }}>
                     {inspectTarget.actor?.full_name || 'Admin'}
                   </div>
@@ -799,7 +799,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                 </div>
 
                 <div style={{ padding: '12px', background: 'var(--bg-surface, #f8f9fa)', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Thời gian ghi nhận</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>Thời gian ghi nhận</span>
                   <div style={{ fontWeight: 700, fontSize: '0.88rem', marginTop: '2px', color: 'var(--text-primary)' }}>
                     {inspectTarget.created_at ? new Date(inspectTarget.created_at).toLocaleString('vi-VN') : '—'}
                   </div>
@@ -809,7 +809,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                 </div>
 
                 <div style={{ padding: '12px', background: 'var(--bg-surface, #f8f9fa)', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Hành động (Action)</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>Hành động (Action)</span>
                   <div style={{ marginTop: '4px' }}>
                     <span className={`audit-action-badge ${getActionClass(inspectTarget.action)}`}>
                       {inspectTarget.action}
@@ -818,7 +818,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                 </div>
 
                 <div style={{ padding: '12px', background: 'var(--bg-surface, #f8f9fa)', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Đối tượng (Target)</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>Đối tượng (Target)</span>
                   <div style={{ fontWeight: 700, fontSize: '0.85rem', marginTop: '2px', color: 'var(--text-primary)' }}>
                     {inspectTarget.target_table}
                   </div>
@@ -831,7 +831,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
               {/* JSON Metadata Payload Viewer */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
                     Dữ liệu tham số chi tiết (Metadata Payload)
                   </span>
                   <button
@@ -840,7 +840,7 @@ export const AuditLogsPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                     onClick={() => handleCopyJson(inspectTarget.meta)}
                     style={{ fontSize: '0.75rem', padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                   >
-                    {copiedJson ? <CheckCircle2 size={12} style={{ color: '#10b981' }} /> : <Copy size={12} />}
+                    {copiedJson ? <CheckCircle2 size={12} style={{ color: 'var(--accent-emerald-text)' }} /> : <Copy size={12} />}
                     <span>{copiedJson ? 'Đã sao chép!' : 'Sao chép JSON'}</span>
                   </button>
                 </div>

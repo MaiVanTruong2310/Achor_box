@@ -221,7 +221,7 @@ export const WarrantyLookupPage: React.FC = () => {
             <QrCode size={22} />
           </div>
           <div>
-            <h1>Tra Cứu Bảo Hành Thiết Bị</h1>
+            <h1>Tra cứu bảo hành thiết bị</h1>
             <p className="fpt-page-desc">
               Nhập mã số Serial trên tem nhãn hoặc dán toàn bộ đường dẫn quét từ mã QR gắn trên tủ Anchor Box.
             </p>
@@ -265,9 +265,9 @@ export const WarrantyLookupPage: React.FC = () => {
                 alignItems: 'center',
                 gap: '8px',
                 borderRadius: '12px',
-                border: '1.5px solid var(--apple-blue, #007aff)',
-                color: 'var(--apple-blue, #007aff)',
-                background: 'rgba(0, 122, 255, 0.08)',
+                border: '1.5px solid var(--apple-blue, var(--accent-primary))',
+                color: 'var(--apple-blue, var(--accent-primary))',
+                background: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)',
                 fontWeight: 700,
                 fontSize: '0.9rem',
                 cursor: 'pointer',
@@ -337,7 +337,7 @@ export const WarrantyLookupPage: React.FC = () => {
             {/* Modal Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Camera size={20} style={{ color: '#007aff' }} />
+                <Camera size={20} style={{ color: 'var(--accent-primary)' }} />
                 <span style={{ fontWeight: 700, fontSize: '15px' }}>Quét mã Barcode / QR tem thiết bị</span>
               </div>
               <button
@@ -376,7 +376,7 @@ export const WarrantyLookupPage: React.FC = () => {
                     position: 'absolute',
                     width: '240px',
                     height: '240px',
-                    border: '2px solid rgba(0, 122, 255, 0.8)',
+                    border: '2px solid color-mix(in srgb, var(--accent-primary) 80%, transparent)',
                     borderRadius: '20px',
                     boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
                     pointerEvents: 'none',
@@ -392,7 +392,7 @@ export const WarrantyLookupPage: React.FC = () => {
                       left: 10,
                       right: 10,
                       height: '2px',
-                      background: 'linear-gradient(90deg, transparent, #007aff, transparent)',
+                      background: 'var(--bg-surface)',
                       boxShadow: '0 0 10px #007aff',
                       animation: 'scanLaser 2s ease-in-out infinite'
                     }}
@@ -410,15 +410,15 @@ export const WarrantyLookupPage: React.FC = () => {
               {/* Loading Indicator */}
               {cameraLoading && (
                 <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', color: '#fff' }}>
-                  <RefreshCw size={28} className="spin" style={{ color: '#007aff' }} />
+                  <RefreshCw size={28} className="spin" style={{ color: 'var(--accent-primary)' }} />
                   <span style={{ fontSize: '13px' }}>Đang khởi động camera...</span>
                 </div>
               )}
 
               {/* Camera Error Display */}
               {cameraError && (
-                <div style={{ position: 'absolute', inset: '20px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '10px' }}>
-                  <AlertCircle size={32} style={{ color: '#ef4444' }} />
+                <div style={{ position: 'absolute', inset: '20px', background: 'color-mix(in srgb, var(--accent-rose) 15%, transparent)', border: '1px solid var(--accent-rose)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '10px' }}>
+                  <AlertCircle size={32} style={{ color: 'var(--accent-rose-text)' }} />
                   <p style={{ margin: 0, fontSize: '13px', color: '#fca5a5' }}>{cameraError}</p>
                 </div>
               )}
@@ -480,7 +480,7 @@ export const WarrantyLookupPage: React.FC = () => {
             </div>
 
             <div style={{ background: data.isValid ? 'var(--fpt-emerald-soft)' : 'var(--fpt-rose-soft)', padding: '10px 16px', borderRadius: '12px', textAlign: 'right' }}>
-              <span style={{ fontSize: '0.75rem', color: data.isValid ? 'var(--fpt-emerald)' : 'var(--fpt-rose)', fontWeight: 700, textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '0.75rem', color: data.isValid ? 'var(--fpt-emerald)' : 'var(--fpt-rose)', fontWeight: 700 }}>
                 Thời hạn bảo hành
               </span>
               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: data.isValid ? 'var(--fpt-emerald)' : 'var(--fpt-rose)' }}>
@@ -492,7 +492,7 @@ export const WarrantyLookupPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             {/* Cột 1: Thông số bảo hành */}
             <div style={{ background: 'var(--bg-surface)', padding: '18px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ fontSize: '0.775rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--fpt-orange)', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.775rem', fontWeight: 700, color: 'var(--fpt-orange)', letterSpacing: '0.04em' }}>
                 Thông tin thời hạn
               </span>
 
@@ -514,7 +514,7 @@ export const WarrantyLookupPage: React.FC = () => {
 
             {/* Cột 2: Thông tin chủ sở hữu */}
             <div style={{ background: 'var(--bg-surface)', padding: '18px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ fontSize: '0.775rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--fpt-blue)', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.775rem', fontWeight: 700, color: 'var(--fpt-blue)', letterSpacing: '0.04em' }}>
                 Chủ sở hữu & Vị trí
               </span>
 

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ShoppingBag,
   Search,
   Eye,
   Truck,
@@ -12,7 +11,6 @@ import {
   FileSpreadsheet,
   X,
   AlertCircle,
-  MapPin,
   Check,
   RefreshCw,
   ChevronLeft,
@@ -21,9 +19,6 @@ import {
   History,
   RotateCcw,
   XCircle,
-  User,
-  Phone,
-  CreditCard,
   Package,
   ArrowUpDown,
   ArrowUp,
@@ -39,6 +34,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { SalesInvoiceModal } from '../../components/SalesInvoiceModal';
 import { CreateOrderModal } from '../../components/CreateOrderModal';
 import { Pagination } from '../../components/Pagination';
+import '../../styles/apple-tokens.css';
 import './orders.css';
 
 const orderLabels: Record<string, string> = {
@@ -60,7 +56,7 @@ const renderOrderStatusBadge = (status: string) => {
     case 'delivered':
       return (
         <span className="fpt-badge fpt-badge-success">
-          <CheckCircle2 size={12} />
+          <CheckCircle2 size={13} />
           <span>{orderLabels[status] || status}</span>
         </span>
       );
@@ -68,7 +64,7 @@ const renderOrderStatusBadge = (status: string) => {
     case 'confirmed':
       return (
         <span className="fpt-badge fpt-badge-info">
-          <Check size={12} />
+          <Check size={13} />
           <span>{orderLabels[status] || status}</span>
         </span>
       );
@@ -78,7 +74,7 @@ const renderOrderStatusBadge = (status: string) => {
     case 'shipping':
       return (
         <span className="fpt-badge fpt-badge-warning">
-          <Clock size={12} />
+          <Clock size={13} />
           <span>{orderLabels[status] || status}</span>
         </span>
       );
@@ -86,7 +82,7 @@ const renderOrderStatusBadge = (status: string) => {
     case 'refunded':
       return (
         <span className="fpt-badge fpt-badge-danger">
-          <XCircle size={12} />
+          <XCircle size={13} />
           <span>{orderLabels[status] || status}</span>
         </span>
       );
@@ -104,53 +100,34 @@ const renderOrderPaymentStatusBadge = (ord: ExtendedOrder) => {
   const isPaid = ord.payment_status === 'paid' || Boolean((ord as any).paid_at);
   const isRefunded = ord.payment_status === 'refunded';
 
-  if (isCancelled) {
-    if (isRefunded) {
-      return (
-        <span style={{ color: '#0284c7', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-          <RotateCcw size={12} /> Đã hoàn tiền
-        </span>
-      );
-    }
-    if (isPaid) {
-      return (
-        <span
-          style={{ color: '#059669', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}
-          title="Đơn đã hủy nhưng đã thanh toán trước đó - Cần đối soát hoàn tiền"
-        >
-          <Check size={12} /> Đã thanh toán (Đã hủy)
-        </span>
-      );
-    }
-    return (
-      <span
-        style={{ color: '#64748b', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}
-        title="Đơn hàng đã hủy khi chưa thanh toán"
-      >
-        <XCircle size={12} style={{ color: '#94a3b8' }} /> Chưa thanh toán
-      </span>
-    );
-  }
-
-  if (isPaid) {
-    return (
-      <span style={{ color: 'var(--fpt-emerald)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-        <Check size={12} /> Đã quyết toán
-      </span>
-    );
-  }
-
   if (isRefunded) {
     return (
-      <span style={{ color: '#0284c7', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-        <RotateCcw size={12} /> Đã hoàn tiền
+      <span className="order-pay-state info">
+        <RotateCcw size={13} /> Đã hoàn tiền
       </span>
     );
   }
-
+  if (isCancelled) {
+    return isPaid ? (
+      <span className="order-pay-state ok" title="Đơn đã hủy nhưng đã thanh toán trước đó. Cần đối soát hoàn tiền.">
+        <Check size={13} /> Đã thanh toán, đơn đã hủy
+      </span>
+    ) : (
+      <span className="order-pay-state muted" title="Đơn hàng đã hủy khi chưa thanh toán">
+        <XCircle size={13} /> Chưa thanh toán
+      </span>
+    );
+  }
+  if (isPaid) {
+    return (
+      <span className="order-pay-state ok">
+        <Check size={13} /> Đã quyết toán
+      </span>
+    );
+  }
   return (
-    <span style={{ color: 'var(--fpt-amber)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-      <Clock size={12} /> Chờ thanh toán
+    <span className="order-pay-state wait">
+      <Clock size={13} /> Chờ thanh toán
     </span>
   );
 };
@@ -336,8 +313,9 @@ export const Orders: React.FC = () => {
       };
       const idempotencyKey = crypto.randomUUID();
       await deliveryApi.assign(dispatchOrder.id, body, idempotencyKey);
-      setDispatchSuccess('Đã phân công giao hàng & lắp đặt thành công cho đơn hàng!');
+      setDispatchSuccess('Đã phân công giao hàng và lắp đặt.');
       await loadOrders();
+      void loadCounts();
       setTimeout(() => {
         setDispatchOrder(null);
       }, 1500);
@@ -368,7 +346,7 @@ export const Orders: React.FC = () => {
 
   const loadCounts = async () => {
     try {
-      const [counts, totals] = await Promise.all([adminCatalogApi.orderCounts(), adminCatalogApi.orderSummary()]);
+      const { counts, summary: totals } = await adminCatalogApi.orderOverview();
       setSummary(totals);
       if (counts && Object.keys(counts).length > 0) {
         setStatusCounts(counts);
@@ -425,7 +403,6 @@ export const Orders: React.FC = () => {
           if (matched) openDetailModal(matched);
           else navigate(`/orders/${encodeURIComponent(initialOrderId)}`, { replace: true });
         }
-        void loadCounts();
       }
     } catch (e) {
       if (request === requestVersion.current) {
@@ -439,6 +416,11 @@ export const Orders: React.FC = () => {
   useEffect(() => {
     loadOrders();
   }, [page, debouncedSearch, statusFilter, paymentFilter, sortKey]);
+
+  // Counts and KPIs ignore filters and paging: load once, in parallel with the list.
+  useEffect(() => {
+    void loadCounts();
+  }, []);
 
   useEffect(() => {
     const handleNewOrder = () => {
@@ -520,6 +502,7 @@ export const Orders: React.FC = () => {
           .catch(() => {});
       }
       await loadOrders();
+      void loadCounts();
     } catch (e: any) {
       setTicketErr(e.message || 'Lỗi thao tác phiếu PO');
       try {
@@ -552,136 +535,87 @@ export const Orders: React.FC = () => {
   return (
     <div className="orders-page-container">
       {listError && (
-        <div role="alert" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', padding: '10px 16px', color: '#dc2626', fontSize: '13px' }}>
+        <div role="alert" className="orders-error">
           {listError}
         </div>
       )}
 
-      {/* 1. Page Header */}
-      <div className="fpt-page-header" style={{ marginBottom: 14 }}>
-        <div className="fpt-page-title">
-          <div className="fpt-page-icon" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' }}>
-            <ShoppingBag size={22} />
-          </div>
-          <div>
-            <h1>Quản Lý Đơn Hàng</h1>
-            <p className="fpt-page-desc">
-              Theo dõi đơn hàng, đối soát thanh toán, điều phối giao lắp và phê duyệt PO trực tiếp cho từng đơn hàng.
-            </p>
-          </div>
+      {/* 1. Header: large title + actions (one primary action) */}
+      <div className="orders-header">
+        <div>
+          <h1 className="orders-large-title">Đơn hàng</h1>
+          <p className="orders-header-desc">
+            Theo dõi đơn hàng, đối soát thanh toán, điều phối giao lắp và phê duyệt PO.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="orders-header-actions">
           {isPO && (
             <>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => navigate('/po/approvals')}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                title="Trang thẩm định và phê duyệt phiếu PO"
-              >
-                <FileCheck size={16} style={{ color: 'var(--fpt-amber)' }} />
+              <button type="button" className="orders-btn" onClick={() => navigate('/po/approvals')}>
+                <FileCheck size={17} />
                 <span>Phê duyệt PO</span>
               </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => navigate('/po/delivery')}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                title="Trang điều phối và thực hiện giao hàng & lắp đặt"
-              >
-                <Truck size={16} style={{ color: 'var(--fpt-emerald)' }} />
-                <span>Điều phối & Nghiệm thu</span>
+              <button type="button" className="orders-btn" onClick={() => navigate('/po/delivery')}>
+                <Truck size={17} />
+                <span>Điều phối và nghiệm thu</span>
               </button>
             </>
           )}
 
-          {isAdmin && (
-            <button
-              type="button"
-              className="btn-create-order"
-              onClick={() => setIsCreateOrderModalOpen(true)}
-              title="Tạo đơn hàng mới cho khách hàng (Chờ PO thẩm định)"
-            >
-              <Plus size={16} strokeWidth={2.4} />
-              <span>Tạo đơn hàng mới</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => navigate(isAdmin ? '/admin/reports' : '/po/reports')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <FileSpreadsheet size={16} />
-            <span>Xuất Báo Cáo</span>
+          <button type="button" className="orders-btn" onClick={() => navigate(isAdmin ? '/admin/reports' : '/po/reports')}>
+            <FileSpreadsheet size={17} />
+            <span>Xuất báo cáo</span>
           </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={loading}
-            onClick={() => loadOrders()}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <RefreshCw size={15} className={loading ? 'spin' : ''} />
+          <button type="button" className="orders-btn" disabled={loading} onClick={() => { void loadOrders(); void loadCounts(); }}>
+            <RefreshCw size={17} className={loading ? 'spin' : ''} />
             <span>Làm mới</span>
           </button>
+
+          {isAdmin && (
+            <button type="button" className="btn-create-order" onClick={() => setIsCreateOrderModalOpen(true)}>
+              <Plus size={17} strokeWidth={2.4} />
+              <span>Tạo đơn hàng</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 2. Compact Top Metric Ribbon (Minimal vertical space) */}
+      {/* 2. Summary: one grouped surface */}
       <div className="orders-metric-strip">
         <div className="orders-mini-stat">
-          <div className="orders-mini-icon" style={{ background: 'var(--fpt-emerald-soft)', color: 'var(--fpt-emerald)' }}>
-            <CreditCard size={18} />
-          </div>
           <div className="orders-mini-info">
             <span className="orders-mini-label">Doanh thu đã thu</span>
-            <span className="orders-mini-value" style={{ color: 'var(--fpt-emerald)' }}>
-              {kpi.paid.toLocaleString('vi-VN')} ₫
-            </span>
+            <span className="orders-mini-value">{kpi.paid.toLocaleString('vi-VN')} ₫</span>
             <span className="orders-mini-sub">{kpi.paidCount} đơn đã thanh toán · {kpi.scope}</span>
           </div>
         </div>
 
         <div className="orders-mini-stat">
-          <div className="orders-mini-icon" style={{ background: 'var(--fpt-amber-soft)', color: 'var(--fpt-amber)' }}>
-            <Clock size={18} />
-          </div>
           <div className="orders-mini-info">
             <span className="orders-mini-label">Chờ thanh toán</span>
-            <span className="orders-mini-value" style={{ color: 'var(--fpt-amber)' }}>
-              {kpi.awaiting.toLocaleString('vi-VN')} ₫
-            </span>
-            <span className="orders-mini-sub">{kpi.awaitingCount} đơn chờ thanh toán · {kpi.scope}</span>
+            <span className="orders-mini-value">{kpi.awaiting.toLocaleString('vi-VN')} ₫</span>
+            <span className="orders-mini-sub">{kpi.awaitingCount} đơn · {kpi.scope}</span>
           </div>
         </div>
 
         <div className="orders-mini-stat">
-          <div className="orders-mini-icon" style={{ background: 'var(--fpt-blue-soft)', color: 'var(--fpt-blue)' }}>
-            <CheckCircle2 size={18} />
-          </div>
           <div className="orders-mini-info">
             <span className="orders-mini-label">Đơn hoàn tất</span>
-            <span className="orders-mini-value" style={{ color: 'var(--fpt-blue)' }}>
-              {kpi.completed} <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>/ {kpi.total} đơn</span>
+            <span className="orders-mini-value">
+              {kpi.completed} <small>/ {kpi.total} đơn</small>
             </span>
             <span className="orders-mini-sub">{kpi.scope}</span>
           </div>
         </div>
 
         <div className="orders-mini-stat">
-          <div className="orders-mini-icon" style={{ background: 'var(--fpt-purple-soft)', color: 'var(--fpt-purple)' }}>
-            <Package size={18} />
-          </div>
           <div className="orders-mini-info">
             <span className="orders-mini-label">Tỷ lệ hoàn tất</span>
-            <span className="orders-mini-value" style={{ color: 'var(--fpt-purple)' }}>
+            <span className="orders-mini-value">
               {kpi.total > 0 ? `${Math.round((kpi.completed / kpi.total) * 100)}%` : '0%'}
             </span>
-            <span className="orders-mini-sub">Đơn hoàn tất / tổng đơn · {kpi.scope}</span>
+            <span className="orders-mini-sub">{kpi.scope}</span>
           </div>
         </div>
       </div>
@@ -711,10 +645,10 @@ export const Orders: React.FC = () => {
         <div className="orders-sub-toolbar">
           <div className="orders-sub-toolbar-left">
             <div className="orders-inline-search">
-              <Search size={15} className="orders-search-icon-inline" />
+              <Search size={17} className="orders-search-icon-inline" />
               <input
                 type="text"
-                placeholder="Tìm mã đơn, khách hàng, số điện thoại, vận đơn…"
+                placeholder="Tìm mã đơn, khách hàng, vận đơn" aria-label="Tìm đơn hàng"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -729,15 +663,16 @@ export const Orders: React.FC = () => {
                     setSearchTerm('');
                     setPage(0);
                   }}
-                  title="Xóa từ khóa tìm kiếm"
+                  aria-label="Xóa từ khóa tìm kiếm"
                 >
-                  <X size={13} />
+                  <X size={16} />
                 </button>
               )}
             </div>
 
             <select
               className="orders-inline-select"
+              aria-label="Lọc theo thanh toán"
               value={paymentFilter}
               onChange={(e) => {
                 setPaymentFilter(e.target.value);
@@ -745,7 +680,7 @@ export const Orders: React.FC = () => {
               }}
             >
               <option value="all">Tất cả thanh toán</option>
-              <option value="paid">Đã thanh toán (VNPAY / Thẻ)</option>
+              <option value="paid">Đã thanh toán</option>
               <option value="pending">Chưa thanh toán</option>
               <option value="refunded">Đã hoàn tiền</option>
             </select>
@@ -767,45 +702,30 @@ export const Orders: React.FC = () => {
                 }}
                 title="Khôi phục toàn bộ bộ lọc"
               >
-                <RotateCcw size={13} />
-                <span>Xóa lọc</span>
+                <RotateCcw size={15} />
+                <span>Xóa bộ lọc</span>
               </button>
             )}
           </div>
 
           <div className="orders-sub-toolbar-right">
             <span>
-              Tổng: <strong>{totalElements}</strong> đơn
+              <strong>{totalElements}</strong> đơn hàng
             </span>
-            <span style={{ color: 'var(--border-subtle)' }}>•</span>
+            <span aria-hidden="true">·</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <SlidersHorizontal size={13} style={{ color: 'var(--text-muted)' }} />
+              <SlidersHorizontal size={14} />
               <span>
-                Sắp xếp: <strong>{sortField === 'created_at' ? 'Thời gian' : sortField === 'total' ? 'Tổng tiền' : sortField === 'customer' ? 'Khách hàng' : 'Trạng thái'}</strong> ({sortOrder === 'desc' ? 'Giảm dần' : 'Tăng dần'})
+                Sắp xếp theo <strong>{sortField === 'created_at' ? 'Thời gian' : sortField === 'total' ? 'Tổng tiền' : sortField === 'customer' ? 'Khách hàng' : 'Trạng thái'}</strong>, {sortOrder === 'desc' ? 'giảm dần' : 'tăng dần'}
               </span>
             </span>
           </div>
         </div>
 
         {loading && orders.length > 0 && (
-          <div style={{
-            position: 'absolute',
-            top: 52,
-            right: 16,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '4px 12px',
-            borderRadius: 16,
-            background: 'rgba(37, 99, 235, 0.1)',
-            color: 'var(--fpt-blue)',
-            fontSize: '12px',
-            fontWeight: 600,
-            zIndex: 5,
-            border: '1px solid rgba(37, 99, 235, 0.2)'
-          }}>
-            <RefreshCw size={12} className="spin" />
-            <span>Đang cập nhật…</span>
+          <div className="orders-loading-chip" role="status">
+            <RefreshCw size={13} className="spin" />
+            <span>Đang cập nhật</span>
           </div>
         )}
 
@@ -819,9 +739,9 @@ export const Orders: React.FC = () => {
                   onClick={() => handleSort('created_at')}
                   title="Nhấn để sắp xếp theo ngày tạo"
                 >
-                  <span>MÃ ĐƠN &amp; NGÀY</span>
+                  <span>Mã đơn và ngày</span>
                   <span className={`sort-icon ${sortField === 'created_at' ? 'active' : 'inactive'}`}>
-                    {sortField === 'created_at' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
+                    {sortField === 'created_at' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} />}
                   </span>
                 </th>
 
@@ -831,14 +751,14 @@ export const Orders: React.FC = () => {
                   onClick={() => handleSort('customer')}
                   title="Nhấn để sắp xếp theo tên khách hàng"
                 >
-                  <span>KHÁCH HÀNG &amp; ĐỊA CHỈ</span>
+                  <span>Khách hàng và địa chỉ</span>
                   <span className={`sort-icon ${sortField === 'customer' ? 'active' : 'inactive'}`}>
-                    {sortField === 'customer' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
+                    {sortField === 'customer' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} />}
                   </span>
                 </th>
 
                 <th style={{ width: '140px' }}>
-                  <span>THANH TOÁN</span>
+                  <span>Thanh toán</span>
                 </th>
 
                 <th
@@ -847,14 +767,14 @@ export const Orders: React.FC = () => {
                   onClick={() => handleSort('total')}
                   title="Nhấn để sắp xếp theo tổng tiền"
                 >
-                  <span>TỔNG TIỀN</span>
+                  <span>Tổng tiền</span>
                   <span className={`sort-icon ${sortField === 'total' ? 'active' : 'inactive'}`}>
-                    {sortField === 'total' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
+                    {sortField === 'total' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} />}
                   </span>
                 </th>
 
                 <th style={{ width: '160px' }}>
-                  <span>VẬN CHUYỂN</span>
+                  <span>Vận chuyển</span>
                 </th>
 
                 <th
@@ -863,14 +783,14 @@ export const Orders: React.FC = () => {
                   onClick={() => handleSort('status')}
                   title="Nhấn để sắp xếp theo trạng thái đơn"
                 >
-                  <span>TRẠNG THÁI</span>
+                  <span>Trạng thái</span>
                   <span className={`sort-icon ${sortField === 'status' ? 'active' : 'inactive'}`}>
-                    {sortField === 'status' ? (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
+                    {sortField === 'status' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} />}
                   </span>
                 </th>
 
                 <th style={{ width: '185px', textAlign: 'right' }}>
-                  <span>THAO TÁC</span>
+                  <span>Thao tác</span>
                 </th>
               </tr>
             </thead>
@@ -880,21 +800,21 @@ export const Orders: React.FC = () => {
                   <tr key={i}>
                     <td colSpan={7} style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                        <div style={{ width: '15%', height: 16, borderRadius: 4, background: 'var(--border-subtle)', opacity: 0.6 }} />
-                        <div style={{ width: '30%', height: 16, borderRadius: 4, background: 'var(--border-subtle)', opacity: 0.6 }} />
-                        <div style={{ width: '20%', height: 16, borderRadius: 4, background: 'var(--border-subtle)', opacity: 0.6 }} />
-                        <div style={{ width: '15%', height: 16, borderRadius: 4, background: 'var(--border-subtle)', opacity: 0.6 }} />
-                        <div style={{ width: '20%', height: 16, borderRadius: 4, background: 'var(--border-subtle)', opacity: 0.6 }} />
+                        <div className="orders-skeleton-bar" style={{ width: '15%' }} />
+                        <div className="orders-skeleton-bar" style={{ width: '30%' }} />
+                        <div className="orders-skeleton-bar" style={{ width: '20%' }} />
+                        <div className="orders-skeleton-bar" style={{ width: '15%' }} />
+                        <div className="orders-skeleton-bar" style={{ width: '20%' }} />
                       </div>
                     </td>
                   </tr>
                 ))
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-secondary)' }}>
-                    <Package size={32} style={{ display: 'inline-block', marginBottom: '10px', opacity: 0.4 }} />
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Không có đơn hàng nào phù hợp với bộ lọc hiện tại</div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Thử thay đổi từ khóa tìm kiếm hoặc lọc theo trạng thái khác.</p>
+                  <td colSpan={7} className="orders-empty">
+                    <Package size={32} style={{ opacity: 0.4 }} />
+                    <strong>Không có đơn hàng phù hợp</strong>
+                    <p style={{ margin: '4px 0 0' }}>Thử đổi từ khóa tìm kiếm hoặc chọn trạng thái khác.</p>
                   </td>
                 </tr>
               ) : (
@@ -911,8 +831,7 @@ export const Orders: React.FC = () => {
                     >
                       <td>
                         <div className="order-id-cell">
-                          <span>{ord.id.slice(0, 8)}</span>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>...</span>
+                          <span>#{ord.id.slice(0, 8)}</span>
                         </div>
                         <div className="order-date-sub">
                           {new Date(ord.created_at).toLocaleDateString('vi-VN')} {new Date(ord.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
@@ -925,23 +844,21 @@ export const Orders: React.FC = () => {
                         </div>
                         {ord.customer?.phone && (
                           <div className="order-customer-sub">
-                            <Phone size={11} style={{ opacity: 0.7 }} />
                             <span>{ord.customer?.phone}</span>
                           </div>
                         )}
                         {ord.shipping_address && (
                           <div className="order-address-truncate" title={ord.shipping_address}>
-                            <MapPin size={11} style={{ display: 'inline', marginRight: 3, verticalAlign: '-1px' }} />
                             {ord.shipping_address}
                           </div>
                         )}
                       </td>
 
                       <td>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {ord.payment_method?.toUpperCase() || 'CHƯA CHỌN'}
+                        <div style={{ fontWeight: 600 }}>
+                          {ord.payment_method?.toUpperCase() || 'Chưa chọn'}
                         </div>
-                        <div style={{ fontSize: '0.72rem', marginTop: '2px' }}>
+                        <div style={{ marginTop: '2px' }}>
                           {renderOrderPaymentStatusBadge(ord)}
                         </div>
                       </td>
@@ -954,15 +871,15 @@ export const Orders: React.FC = () => {
 
                       <td>
                         {ord.tracking_number ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fpt-blue)', fontSize: '0.75rem', background: 'rgba(37, 99, 235, 0.08)', padding: '2px 6px', borderRadius: '4px' }}>
-                            <Truck size={12} />
+                          <div className="order-tracking">
+                            <Truck size={14} />
                             <span>{ord.tracking_number}</span>
                           </div>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Chưa xuất mã</span>
+                          <span className="order-sub-text">Chưa có mã vận đơn</span>
                         )}
                         {ord.items_summary && (
-                          <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: '3px', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ord.items_summary}>
+                          <div className="order-items-summary" title={ord.items_summary}>
                             {ord.items_summary}
                           </div>
                         )}
@@ -978,20 +895,20 @@ export const Orders: React.FC = () => {
                             <button
                               type="button"
                               className="btn-dispatch"
-                              title="Điều phối giao hàng và lắp đặt cho đơn này"
+                              aria-label="Điều phối giao hàng và lắp đặt cho đơn này"
                               onClick={() => openDispatchModal(ord)}
                             >
-                              <Truck size={13} />
-                              <span>Giao &amp; lắp</span>
+                              <Truck size={16} />
+                              <span>Giao và lắp</span>
                             </button>
                           )}
                           <button
                             type="button"
                             className="btn-detail"
-                            title="Xem chi tiết đơn hàng"
+                            aria-label="Xem chi tiết đơn hàng"
                             onClick={() => navigate(`/orders/${ord.id}`)}
                           >
-                            <Eye size={13} />
+                            <Eye size={16} />
                             <span>Chi tiết</span>
                           </button>
                         </div>
@@ -1493,69 +1410,38 @@ export const Orders: React.FC = () => {
             {/* Header */}
             <div className="dispatch-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  background: 'var(--fpt-blue-soft)',
-                  color: 'var(--fpt-blue)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Truck size={18} />
-                </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Điều Phối Giao &amp; Lắp Đặt
+                  <h3 style={{ margin: 0, fontSize: 20, lineHeight: '25px', fontWeight: 600, letterSpacing: '-0.01em' }}>
+                    Điều phối giao và lắp đặt
                   </h3>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Đơn hàng <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--fpt-blue)', fontWeight: 600 }}>#{dispatchOrder.id.slice(0, 8)}</code>
+                  <p style={{ margin: '2px 0 0 0', fontSize: 13, color: 'var(--od-label-2)' }}>
+                    Đơn hàng #{dispatchOrder.id.slice(0, 8)}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                className="btn btn-secondary btn-sm"
-                style={{ padding: '6px', borderRadius: '8px' }}
+                className="orders-btn"
+                style={{ minWidth: 44, padding: 0, borderRadius: 999 }}
+                aria-label="Đóng"
                 disabled={dispatchLoading}
                 onClick={() => setDispatchOrder(null)}
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
             {/* Body */}
             <form onSubmit={handleAssignDelivery} className="dispatch-modal-body">
               {dispatchError && (
-                <div role="alert" style={{
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  color: '#dc2626',
-                  fontSize: '0.8rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
+                <div role="alert" className="orders-error" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <AlertCircle size={16} />
                   <span>{dispatchError}</span>
                 </div>
               )}
 
               {dispatchSuccess && (
-                <div role="status" style={{
-                  background: 'rgba(16, 185, 129, 0.08)',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  color: '#059669',
-                  fontSize: '0.8rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
+                <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 12, background: 'var(--od-green-tint)', color: 'var(--od-green-text)' }}>
                   <CheckCircle2 size={16} />
                   <span>{dispatchSuccess}</span>
                 </div>
@@ -1567,22 +1453,20 @@ export const Orders: React.FC = () => {
                   <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                     {dispatchOrder.customer?.full_name || 'Khách vãng lai'}
                   </span>
-                  <span style={{ color: 'var(--fpt-emerald)', fontWeight: 700, fontSize: '0.85rem' }}>
+                  <span style={{ fontWeight: 600 }}>
                     {Number(dispatchOrder.total || 0).toLocaleString('vi-VN')} ₫ · {dispatchOrder.payment_status === 'paid' ? 'Đã quyết toán' : 'Đã xác nhận'}
                   </span>
                 </div>
                 {dispatchOrder.customer?.phone && (
-                  <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Phone size={13} style={{ opacity: 0.7 }} />
+                  <div style={{ color: 'var(--od-label-2)' }}>
                     <span>{dispatchOrder.customer?.phone}</span>
                   </div>
                 )}
-                <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'flex-start', gap: 6, lineHeight: 1.4 }}>
-                  <MapPin size={13} style={{ opacity: 0.7, flexShrink: 0, marginTop: 2 }} />
+                <div style={{ color: 'var(--od-label-2)' }}>
                   <span>{dispatchOrder.shipping_address || 'Địa chỉ chưa cập nhật'}</span>
                 </div>
                 {dispatchOrder.items_summary && (
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem', borderTop: '1px dashed var(--border-subtle)', paddingTop: 6, marginTop: 2 }}>
+                  <div style={{ color: 'var(--od-label-2)', fontSize: 13, borderTop: '1px solid var(--od-separator)', paddingTop: 8, marginTop: 2 }}>
                     Sản phẩm: {dispatchOrder.items_summary}
                   </div>
                 )}
@@ -1590,16 +1474,9 @@ export const Orders: React.FC = () => {
 
               {/* Notice if already assigned */}
               {existingJob && (
-                <div style={{
-                  background: 'rgba(37, 99, 235, 0.06)',
-                  border: '1px solid rgba(37, 99, 235, 0.2)',
-                  borderRadius: '10px',
-                  padding: '10px 14px',
-                  fontSize: '0.78rem',
-                  color: 'var(--text-secondary)'
-                }}>
-                  <strong style={{ color: 'var(--fpt-blue)', display: 'block', marginBottom: 2 }}>
-                    ℹ Đơn hàng đã có lệnh giao lắp ({existingJob.status}):
+                <div style={{ padding: '12px 16px', borderRadius: 12, background: 'var(--od-accent-tint)', fontSize: 15, color: 'var(--od-label)' }}>
+                  <strong style={{ display: 'block', marginBottom: 2 }}>
+                    Đơn hàng đã có lệnh giao lắp ({existingJob.status})
                   </strong>
                   Lịch hẹn hiện tại: {existingJob.scheduledAt ? new Date(existingJob.scheduledAt).toLocaleString('vi-VN') : 'Chưa có'}. Bạn có thể chọn nhân sự khác hoặc đổi lịch hẹn để cập nhật lại.
                 </div>
@@ -1608,7 +1485,7 @@ export const Orders: React.FC = () => {
               {/* Technician Select */}
               <div className="dispatch-form-group">
                 <label htmlFor="tech-select">
-                  Kỹ thuật viên phụ trách giao &amp; lắp <span style={{ color: '#ef4444' }}>*</span>
+                  Kỹ thuật viên phụ trách
                 </label>
                 <select
                   id="tech-select"
@@ -1617,7 +1494,7 @@ export const Orders: React.FC = () => {
                   disabled={dispatchLoading}
                   onChange={(e) => setTechnicianId(e.target.value)}
                 >
-                  <option value="">-- Chọn kỹ thuật viên --</option>
+                  <option value="">Chọn kỹ thuật viên</option>
                   {technicians.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.fullName || `Kỹ thuật viên (${t.id.slice(0, 8)})`}
@@ -1629,7 +1506,7 @@ export const Orders: React.FC = () => {
               {/* Scheduled Date/Time */}
               <div className="dispatch-form-group">
                 <label htmlFor="sched-input">
-                  Thời gian hẹn giao &amp; thi công <span style={{ color: '#ef4444' }}>*</span>
+                  Thời gian hẹn
                 </label>
                 <input
                   id="sched-input"
@@ -1645,12 +1522,12 @@ export const Orders: React.FC = () => {
               {/* Optional Note */}
               <div className="dispatch-form-group">
                 <label htmlFor="note-input">
-                  Ghi chú cho kỹ thuật viên (Tùy chọn)
+                  Ghi chú cho kỹ thuật viên (không bắt buộc)
                 </label>
                 <textarea
                   id="note-input"
                   rows={2}
-                  placeholder="Vị trí lắp đặt, lưu ý đặc biệt từ khách hàng..."
+                  placeholder="Vị trí lắp đặt, lưu ý đặc biệt từ khách hàng"
                   value={dispatchNote}
                   disabled={dispatchLoading}
                   onChange={(e) => setDispatchNote(e.target.value)}
@@ -1658,22 +1535,21 @@ export const Orders: React.FC = () => {
               </div>
 
               {/* Footer Buttons */}
-              <div className="dispatch-modal-footer" style={{ margin: '0 -20px -20px -20px' }}>
+              <div className="dispatch-modal-footer" style={{ margin: '0 -24px -16px' }}>
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  className="orders-btn"
                   disabled={dispatchLoading}
                   onClick={() => setDispatchOrder(null)}
                 >
-                  Hủy bỏ
+                  Hủy
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary btn-sm"
+                  className="orders-btn primary"
                   disabled={dispatchLoading || !technicianId || !scheduledAt}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
-                  {dispatchLoading ? <RefreshCw size={14} className="spin" /> : <Truck size={14} />}
+                  {dispatchLoading ? <RefreshCw size={16} className="spin" /> : <Truck size={16} />}
                   <span>{existingJob ? 'Cập nhật phân công' : 'Xác nhận điều phối'}</span>
                 </button>
               </div>

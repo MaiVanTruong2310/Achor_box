@@ -237,9 +237,9 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
             style={{
               padding: '10px 14px',
               borderRadius: 8,
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#dc2626',
+              background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent)',
+              color: 'var(--accent-rose-text)',
               fontSize: '0.84rem',
               display: 'flex',
               alignItems: 'center',
@@ -298,7 +298,7 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
 
                   {!isAvailable && tech.conflictReason && (
                     <div className="po-tech-conflict-reason">
-                      ⚠️ {tech.conflictReason}
+                      {tech.conflictReason}
                     </div>
                   )}
 
@@ -324,9 +324,9 @@ export const PoDeliveryDispatch: React.FC<PoDeliveryDispatchProps> = ({
                 marginTop: 10,
                 padding: '10px 14px',
                 borderRadius: 8,
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#dc2626',
+                background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent)',
+                color: 'var(--accent-rose-text)',
                 fontSize: '0.86rem',
                 display: 'flex',
                 alignItems: 'center',

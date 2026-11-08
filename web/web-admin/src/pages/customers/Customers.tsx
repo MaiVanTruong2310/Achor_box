@@ -280,7 +280,7 @@ export const CustomersPage: React.FC = () => {
             <Users size={22} />
           </div>
           <div>
-            <h1 className="customer-header-title">Danh Bạ Khách Hàng</h1>
+            <h1 className="customer-header-title">Khách hàng</h1>
             <p className="customer-header-desc">
               Quản lý hồ sơ khách hàng, xem lịch sử đơn hàng, thiết bị sở hữu và đồng bộ tài khoản mua sắm trực tuyến.
             </p>
@@ -317,7 +317,7 @@ export const CustomersPage: React.FC = () => {
           onClick={() => { setAccount('all'); setState('all'); setPage(0); }}
           title="Bấm để xem tất cả hồ sơ khách hàng"
         >
-          <div className="customer-kpi-bubble" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}>
+          <div className="customer-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)', color: 'var(--accent-primary)' }}>
             <Users size={20} />
           </div>
           <div className="customer-kpi-meta">
@@ -332,12 +332,12 @@ export const CustomersPage: React.FC = () => {
           onClick={() => { setAccount('with'); setPage(0); }}
           title="Bấm để lọc khách hàng đã có tài khoản Web/App"
         >
-          <div className="customer-kpi-bubble" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
+          <div className="customer-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)', color: 'var(--accent-emerald-text)' }}>
             <UserCheck size={20} />
           </div>
           <div className="customer-kpi-meta">
             <span className="customer-kpi-label">Có tài khoản web/app</span>
-            <div className="customer-kpi-value" style={{ color: '#10b981' }}>{countWithAccount}</div>
+            <div className="customer-kpi-value" style={{ color: 'var(--accent-emerald-text)' }}>{countWithAccount}</div>
             <div className="customer-kpi-sub">Đã kích hoạt đăng nhập</div>
           </div>
         </div>
@@ -347,7 +347,7 @@ export const CustomersPage: React.FC = () => {
           onClick={() => { setAccount('without'); setPage(0); }}
           title="Bấm để lọc hồ sơ khách mua lẻ (chưa tạo tài khoản)"
         >
-          <div className="customer-kpi-bubble" style={{ background: 'rgba(148, 163, 184, 0.12)', color: '#94a3b8' }}>
+          <div className="customer-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', color: 'var(--text-muted)' }}>
             <FileText size={20} />
           </div>
           <div className="customer-kpi-meta">
@@ -362,12 +362,12 @@ export const CustomersPage: React.FC = () => {
           onClick={() => { setState('active'); setAccount('all'); setPage(0); }}
           title="Bấm để lọc hồ sơ khách hàng đang quản lý"
         >
-          <div className="customer-kpi-bubble" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' }}>
+          <div className="customer-kpi-bubble" style={{ background: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)', color: 'var(--accent-amber-text)' }}>
             <ShieldCheck size={20} />
           </div>
           <div className="customer-kpi-meta">
             <span className="customer-kpi-label">Đang quản lý</span>
-            <div className="customer-kpi-value" style={{ color: '#f59e0b' }}>{countActive}</div>
+            <div className="customer-kpi-value" style={{ color: 'var(--accent-amber-text)' }}>{countActive}</div>
             <div className="customer-kpi-sub">Hồ sơ đang mở hoạt động</div>
           </div>
         </div>
@@ -375,13 +375,13 @@ export const CustomersPage: React.FC = () => {
 
       {/* 3. Alerts */}
       {message && (
-        <div className="card" style={{ padding: '10px 14px', background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.25)', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem' }}>
+        <div className="card" style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-emerald) 25%, transparent)', color: 'var(--accent-emerald-text)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem' }}>
           <CheckCircle2 size={16} />
           <span>{message}</span>
         </div>
       )}
       {error && (
-        <div className="card" style={{ padding: '10px 14px', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.25)', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem' }}>
+        <div className="card" style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-rose) 25%, transparent)', color: 'var(--accent-rose-text)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem' }}>
           <AlertCircle size={16} />
           <span>{error}</span>
         </div>
@@ -565,9 +565,9 @@ export const CustomersPage: React.FC = () => {
                             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                               {customer.username ? `@${customer.username}` : 'Đăng nhập email'} ·{' '}
                               {customer.isLocked ? (
-                                <strong style={{ color: 'var(--fpt-rose, #ef4444)' }}>Đang khóa</strong>
+                                <strong style={{ color: 'var(--fpt-rose, var(--accent-rose-text))' }}>Đang khóa</strong>
                               ) : (
-                                <span style={{ color: '#10b981' }}>Hoạt động</span>
+                                <span style={{ color: 'var(--accent-emerald-text)' }}>Hoạt động</span>
                               )}
                             </span>
                           </div>
@@ -593,12 +593,12 @@ export const CustomersPage: React.FC = () => {
                         <div style={{ display: 'inline-flex', gap: '6px' }}>
                           <button
                             type="button"
-                            className="customer-action-btn primary"
+                            className="customer-action-btn"
                             onClick={() => handleViewCustomerProfile(customer)}
                             title="Xem hồ sơ chi tiết và lịch sử đơn hàng của khách"
                           >
                             <Eye size={12} />
-                            <span>Hồ sơ & Đơn</span>
+                            <span>Hồ sơ và đơn</span>
                           </button>
 
                           <button
@@ -669,7 +669,7 @@ export const CustomersPage: React.FC = () => {
                       {copiedText === viewCustomer.id.slice(0, 8).toUpperCase() ? ' ✓' : ''}
                     </span>
                     {viewCustomer.username && (
-                      <span style={{ color: '#3b82f6', fontWeight: 600 }}>@{viewCustomer.username}</span>
+                      <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>@{viewCustomer.username}</span>
                     )}
                     <span style={{ color: 'var(--text-muted)' }}>
                       • Tạo ngày {new Date(viewCustomer.createdAt).toLocaleDateString('vi-VN')}
@@ -707,7 +707,7 @@ export const CustomersPage: React.FC = () => {
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
                         title="Sao chép email"
                       >
-                        {copiedText === viewCustomer.email ? <Check size={12} style={{ color: '#10b981' }} /> : <Copy size={11} />}
+                        {copiedText === viewCustomer.email ? <Check size={12} style={{ color: 'var(--accent-emerald-text)' }} /> : <Copy size={11} />}
                       </button>
                     )}
                   </div>
@@ -734,7 +734,7 @@ export const CustomersPage: React.FC = () => {
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
                         title="Sao chép số điện thoại"
                       >
-                        {copiedText === viewCustomer.phone ? <Check size={12} style={{ color: '#10b981' }} /> : <Copy size={11} />}
+                        {copiedText === viewCustomer.phone ? <Check size={12} style={{ color: 'var(--accent-emerald-text)' }} /> : <Copy size={11} />}
                       </button>
                     )}
                   </div>
@@ -761,7 +761,7 @@ export const CustomersPage: React.FC = () => {
               {/* 3. Three Executive Metric Cards */}
               <div className="c360-metrics-row">
                 <div className="c360-metric-tile">
-                  <div className="c360-metric-icon" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}>
+                  <div className="c360-metric-icon" style={{ background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)', color: 'var(--accent-primary)' }}>
                     <ShoppingBag size={20} />
                   </div>
                   <div>
@@ -773,24 +773,24 @@ export const CustomersPage: React.FC = () => {
                 </div>
 
                 <div className="c360-metric-tile">
-                  <div className="c360-metric-icon" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
+                  <div className="c360-metric-icon" style={{ background: 'color-mix(in srgb, var(--accent-emerald) 12%, transparent)', color: 'var(--accent-emerald-text)' }}>
                     <Cpu size={20} />
                   </div>
                   <div>
                     <div className="c360-metric-title">Thiết bị sở hữu</div>
-                    <div className="c360-metric-number" style={{ color: '#10b981' }}>
+                    <div className="c360-metric-number" style={{ color: 'var(--accent-emerald-text)' }}>
                       {(customerOrdersData?.devices || []).length}
                     </div>
                   </div>
                 </div>
 
                 <div className="c360-metric-tile">
-                  <div className="c360-metric-icon" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' }}>
+                  <div className="c360-metric-icon" style={{ background: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)', color: 'var(--accent-amber-text)' }}>
                     <Wrench size={20} />
                   </div>
                   <div>
                     <div className="c360-metric-title">Yêu cầu bảo hành</div>
-                    <div className="c360-metric-number" style={{ color: '#f59e0b' }}>
+                    <div className="c360-metric-number" style={{ color: 'var(--accent-amber-text)' }}>
                       {(customerOrdersData?.warrantyClaims || []).length}
                     </div>
                   </div>
@@ -1040,7 +1040,7 @@ export const CustomersPage: React.FC = () => {
                 )}
 
                 {/* Phần 1: Thông tin liên hệ */}
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--fpt-blue)', marginBottom: '-6px' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--fpt-blue)', marginBottom: '-6px' }}>
                   1. Thông tin liên hệ
                 </div>
 
@@ -1112,7 +1112,7 @@ export const CustomersPage: React.FC = () => {
                 {/* Phần 2: Cấp tài khoản đăng nhập (khi tạo mới) */}
                 {!editing && (
                   <>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--fpt-orange)', marginTop: '8px', marginBottom: '-6px' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--fpt-orange)', marginTop: '8px', marginBottom: '-6px' }}>
                       2. Tài khoản mua sắm trực tuyến
                     </div>
 

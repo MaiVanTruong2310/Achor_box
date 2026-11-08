@@ -157,7 +157,7 @@ const TimetableCard: React.FC<{
             </span>
             {isLive && (
               <span className="timetable-live-tag">
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-rose)' }} />
                 Đang diễn ra
               </span>
             )}
@@ -517,9 +517,9 @@ export const TechnicianDailyTasks: React.FC = () => {
 
   // Shifts definition for daily timetable
   const shifts = [
-    { id: 'morning' as const, title: 'Ca Sáng', range: '08:00 – 12:00', icon: '🌅', color: 'var(--apple-blue, #0071e3)', bg: 'var(--apple-blue-soft, rgba(0, 113, 227, 0.08))' },
-    { id: 'afternoon' as const, title: 'Ca Chiều', range: '13:30 – 17:30', icon: '☀️', color: 'var(--apple-orange, #ff9500)', bg: 'var(--apple-orange-soft, rgba(255, 149, 0, 0.08))' },
-    { id: 'evening' as const, title: 'Ca Tối / Tăng ca', range: '18:00 – 21:00', icon: '🌙', color: 'var(--apple-purple, #af52de)', bg: 'var(--apple-purple-soft, rgba(175, 82, 222, 0.08))' },
+    { id: 'morning' as const, title: 'Ca sáng', range: '08:00 – 12:00', icon: '', color: 'var(--text-primary)', bg: 'transparent' },
+    { id: 'afternoon' as const, title: 'Ca chiều', range: '13:30 – 17:30', icon: '', color: 'var(--text-primary)', bg: 'transparent' },
+    { id: 'evening' as const, title: 'Ca tối, tăng ca', range: '18:00 – 21:00', icon: '', color: 'var(--text-primary)', bg: 'transparent' },
   ];
 
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
@@ -548,7 +548,7 @@ export const TechnicianDailyTasks: React.FC = () => {
         <div className="tech-header-info">
           <h1>
             <Truck size={22} color="var(--apple-blue, #0071e3)" />
-            Lịch làm việc & Nhiệm vụ trong ngày
+            Lịch làm việc hôm nay
           </h1>
           <p>
             Xin chào {profile?.full_name || 'Kỹ thuật viên'}. Quản lý danh sách thi công theo thời khóa biểu, nộp ảnh minh chứng và nghiệm thu.
@@ -718,7 +718,7 @@ export const TechnicianDailyTasks: React.FC = () => {
             <span className="tech-metric-label">Tổng nhiệm vụ</span>
             <div className="tech-metric-count">{data?.summary.total || 0}</div>
           </div>
-          <Calendar size={22} color="var(--apple-blue, #0071e3)" />
+          <Calendar size={22} />
         </div>
 
         <div
@@ -727,11 +727,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Mới giao</span>
-            <div className="tech-metric-count" style={{ color: 'var(--apple-blue, #0071e3)' }}>
+            <div className="tech-metric-count" >
               {data?.summary.pending || 0}
             </div>
           </div>
-          <Clock size={22} color="var(--apple-blue, #0071e3)" />
+          <Clock size={22} />
         </div>
 
         <div
@@ -740,11 +740,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Đang thực hiện</span>
-            <div className="tech-metric-count" style={{ color: 'var(--apple-indigo, #5856d6)' }}>
+            <div className="tech-metric-count" >
               {data?.summary.inProgress || 0}
             </div>
           </div>
-          <Play size={22} color="var(--apple-indigo, #5856d6)" />
+          <Play size={22} />
         </div>
 
         <div
@@ -753,11 +753,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Chờ PO duyệt</span>
-            <div className="tech-metric-count" style={{ color: 'var(--apple-orange, #ff9500)' }}>
+            <div className="tech-metric-count" >
               {data?.summary.waitingConfirmation || 0}
             </div>
           </div>
-          <Camera size={22} color="var(--apple-orange, #ff9500)" />
+          <Camera size={22} />
         </div>
 
         <div
@@ -766,11 +766,11 @@ export const TechnicianDailyTasks: React.FC = () => {
         >
           <div>
             <span className="tech-metric-label">Đã hoàn thành</span>
-            <div className="tech-metric-count" style={{ color: 'var(--apple-green, #34c759)' }}>
+            <div className="tech-metric-count" >
               {data?.summary.completed || 0}
             </div>
           </div>
-          <CheckCircle2 size={22} color="var(--apple-green, #34c759)" />
+          <CheckCircle2 size={22} />
         </div>
       </section>
 
@@ -790,7 +790,7 @@ export const TechnicianDailyTasks: React.FC = () => {
             <>
               {filteredTasks.length === 0 && (
                 <div className="timetable-day-notice">
-                  <span>☕ Ngày <strong>{new Date(selectedDate).toLocaleDateString('vi-VN')}</strong> chưa có ca thi công nào.</span>
+                  <span>Ngày <strong>{new Date(selectedDate).toLocaleDateString('vi-VN')}</strong> chưa có ca thi công nào.</span>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button type="button" className="tech-quick-btn" onClick={handleToday}>Xem Hôm nay</button>
                     <button type="button" className="tech-quick-btn" onClick={handleTomorrow}>Xem Ngày mai</button>
@@ -805,7 +805,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                   return (
                     <div key={shift.id} className="timetable-shift-column">
                       {/* Column Header */}
-                      <div className="timetable-col-header" style={{ borderTop: `4px solid ${shift.color}` }}>
+                      <div className="timetable-col-header" >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: '1.25rem' }}>{shift.icon}</span>
                           <div>
@@ -837,7 +837,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                           <div className="timetable-col-empty">
                             <span style={{ fontSize: '1.5rem', opacity: 0.5 }}>{shift.icon}</span>
                             <div style={{ fontWeight: 600, fontSize: '0.86rem', color: 'var(--text-primary)' }}>
-                              Trống lịch {shift.title}
+                              Chưa có lịch
                             </div>
                             <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
                               Khung giờ {shift.range} sẵn sàng nhận đơn mới
@@ -1025,7 +1025,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                   Chi tiết {selectedTask.typeLabel} · {selectedTask.orderCode}
                 </h3>
                 <span className={getStatusBadgeClass(selectedTask.status, selectedTask.reworkNotes)}>
-                  {selectedTask.reworkNotes ? '⚠️ Yêu cầu xử lý lại' : selectedTask.statusLabel}
+                  {selectedTask.reworkNotes ? 'Yêu cầu xử lý lại' : selectedTask.statusLabel}
                 </span>
               </div>
               <button className="tech-modal-close" onClick={closeTaskModal}>
@@ -1164,7 +1164,7 @@ export const TechnicianDailyTasks: React.FC = () => {
                     <Camera size={18} color="var(--apple-blue, #0071e3)" />
                     <span>Ảnh minh chứng nghiệm thu (Proof of Work)</span>
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--accent-rose-text)', fontWeight: 600 }}>
                     * Bắt buộc ít nhất 1 ảnh
                   </span>
                 </div>

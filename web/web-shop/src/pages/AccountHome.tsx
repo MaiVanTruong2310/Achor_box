@@ -664,7 +664,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
             <p>Hotline giải đáp thắc mắc và hỗ trợ kết nối phần cứng:</p>
             <a href="tel:0367744634" className="support-phone">0367 744 634</a>
             <Link to="/order-tracking" className="support-track-link">
-              Tra cứu đơn hàng trực tuyến →
+              Tra cứu đơn hàng trực tuyến
             </Link>
           </div>
         </aside>
@@ -788,7 +788,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>Đơn hàng gần đây</h3>
                     <Link to="/account/orders" style={{ fontSize: '13px', color: '#0071e3', textDecoration: 'none', fontWeight: 600 }}>
-                      Xem tất cả ({totalOrdersCount}) →
+                      Xem tất cả ({totalOrdersCount})
                     </Link>
                   </div>
 
@@ -956,8 +956,8 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
                     >
                       <option value="newest">Mới nhất trước</option>
                       <option value="oldest">Cũ nhất trước</option>
-                      <option value="price_desc">Tổng tiền: Cao → Thấp</option>
-                      <option value="price_asc">Tổng tiền: Thấp → Cao</option>
+                      <option value="price_desc">Tổng tiền: cao đến thấp</option>
+                      <option value="price_asc">Tổng tiền: thấp đến cao</option>
                     </select>
                   </div>
 
@@ -967,7 +967,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
                       type="button"
                       className={`apple-view-btn ${orderViewMode === 'cards' ? 'active' : ''}`}
                       onClick={() => setOrderViewMode('cards')}
-                      title="Xem dạng thẻ đơn hàng (Khuyên dùng)"
+                      title="Xem dạng thẻ"
                     >
                       <LayoutGrid size={15} />
                     </button>
@@ -975,7 +975,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
                       type="button"
                       className={`apple-view-btn ${orderViewMode === 'table' ? 'active' : ''}`}
                       onClick={() => setOrderViewMode('table')}
-                      title="Xem dạng bảng thu gọn"
+                      title="Xem dạng bảng"
                     >
                       <List size={15} />
                     </button>
@@ -1046,7 +1046,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
                               <AlertCircle size={15} />
                               <span>Đơn hàng đã hủy</span>
                             </div>
-                          ) : (
+                          ) : (s === 'completed' || s === 'delivered') ? null : (
                             <div className="apple-order-stepper">
                               <div className={`apple-step-item ${step >= 1 ? (step > 1 ? 'completed' : 'active') : ''}`}>
                                 <div className="apple-step-dot">{step > 1 ? <Check size={12} /> : '1'}</div>
@@ -1143,7 +1143,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
                                 to={`/account/orders/${order.id}`}
                                 className="apple-pill-btn primary"
                               >
-                                <span>Chi tiết đơn hàng →</span>
+                                <span>Chi tiết đơn hàng</span>
                               </Link>
 
                               <Link
@@ -1156,7 +1156,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
                               </Link>
 
                               {order.status === 'awaiting_payment' && (
-                                <Link to={`/checkout/${order.id}`} className="apple-pill-btn primary" style={{ background: '#0071e3' }}>
+                                <Link to={`/checkout/${order.id}`} className="apple-pill-btn primary">
                                   <CreditCard size={13} />
                                   <span>Thanh toán ngay</span>
                                 </Link>
@@ -1379,7 +1379,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
                           to={`/account/devices/${device.id}`}
                           className="apple-pill-btn primary"
                         >
-                          Chi tiết thiết bị →
+                          Chi tiết thiết bị
                         </Link>
                       </div>
                     </div>

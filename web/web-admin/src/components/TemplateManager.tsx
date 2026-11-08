@@ -316,21 +316,21 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
     switch (channel.toLowerCase()) {
       case 'email':
         return (
-          <span className="badge" style={{ background: 'rgba(14, 165, 233, 0.15)', color: 'var(--accent-sky)', border: '1px solid rgba(14, 165, 233, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <span className="badge" style={{ background: 'color-mix(in srgb, var(--accent-primary) 15%, transparent)', color: 'var(--accent-sky)', border: '1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <Mail size={12} />
             <span>Email HTML</span>
           </span>
         );
       case 'sms':
         return (
-          <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <span className="badge" style={{ background: 'color-mix(in srgb, var(--accent-emerald) 15%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald) 30%, transparent)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <MessageSquare size={12} />
             <span>SMS Brandname</span>
           </span>
         );
       case 'push':
         return (
-          <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <span className="badge" style={{ background: 'color-mix(in srgb, var(--accent-amber) 15%, transparent)', color: 'var(--accent-amber)', border: '1px solid color-mix(in srgb, var(--accent-amber) 30%, transparent)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <Bell size={12} />
             <span>Push App</span>
           </span>
@@ -529,7 +529,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                           style={{
                             fontSize: '0.7rem',
                             fontFamily: 'var(--font-mono)',
-                            background: 'rgba(14, 165, 233, 0.08)',
+                            background: 'color-mix(in srgb, var(--accent-primary) 8%, transparent)',
                             color: 'var(--accent-sky)',
                             padding: '2px 6px',
                             borderRadius: '4px'
@@ -645,13 +645,13 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
               <div style={{ padding: '20px 24px', overflowY: 'auto', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {/* Notices */}
                 {saveSuccessNotice && (
-                  <div style={{ padding: '10px 14px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', color: '#10b981', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--accent-emerald) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald) 30%, transparent)', borderRadius: '8px', color: 'var(--accent-emerald-text)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <CheckCircle size={15} />
                     <span>{saveSuccessNotice}</span>
                   </div>
                 )}
                 {saveErrorNotice && (
-                  <div style={{ padding: '10px 14px', background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '8px', color: '#fb7185', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--accent-rose) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent)', borderRadius: '8px', color: '#fb7185', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <AlertTriangle size={15} />
                     <span>{saveErrorNotice}</span>
                   </div>
@@ -734,8 +734,8 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                         type="button"
                         onClick={() => handleInsertVariable(v)}
                         style={{
-                          background: 'rgba(14, 165, 233, 0.12)',
-                          border: '1px solid rgba(14, 165, 233, 0.3)',
+                          background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)',
+                          border: '1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent)',
                           color: 'var(--accent-sky)',
                           padding: '3px 8px',
                           borderRadius: '6px',
@@ -864,7 +864,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                           margin: '0 auto',
                           width: '100%',
                           background: '#ffffff',
-                          color: '#1e293b',
+                          color: 'var(--text-primary)',
                           borderRadius: '12px',
                           overflow: 'hidden',
                           boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
@@ -875,11 +875,11 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                         <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '10px 14px', fontSize: '0.75rem' }}>
                           <div><strong>Người gửi:</strong> Anchor Box &lt;support@smartbox.vn&gt;</div>
                           <div style={{ marginTop: '2px' }}><strong>Người nhận:</strong> Nguyễn Văn An &lt;khachhang@smartbox.vn&gt;</div>
-                          <div style={{ marginTop: '2px', color: '#0284c7', fontWeight: 600 }}><strong>Tiêu đề:</strong> {mockSubject}</div>
+                          <div style={{ marginTop: '2px', color: 'var(--accent-primary)', fontWeight: 600 }}><strong>Tiêu đề:</strong> {mockSubject}</div>
                         </div>
 
                         {/* Email Body Banner */}
-                        <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', color: '#ffffff', padding: '16px 20px', textAlign: 'center' }}>
+                        <div style={{ background: 'var(--bg-surface)', color: '#ffffff', padding: '16px 20px', textAlign: 'center' }}>
                           <h4 style={{ margin: 0, letterSpacing: '1px', fontSize: '1.05rem', fontWeight: 800 }}>SMARTBOX</h4>
                           <div style={{ fontSize: '11px', color: '#bae6fd', marginTop: '2px' }}>Hệ Thống Tủ Giao Nhận Hàng Thông Minh</div>
                         </div>
@@ -890,13 +890,13 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                             padding: '20px',
                             fontSize: '13.5px',
                             lineHeight: 1.6,
-                            color: '#334155'
+                            color: 'var(--text-secondary)'
                           }}
                           dangerouslySetInnerHTML={{ __html: mockHtml }}
                         />
 
                         {/* Email Footer */}
-                        <div style={{ background: '#f8fafc', padding: '12px 16px', borderTop: '1px solid #e2e8f0', textAlign: 'center', fontSize: '11px', color: '#64748b' }}>
+                        <div style={{ background: '#f8fafc', padding: '12px 16px', borderTop: '1px solid #e2e8f0', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
                           © 2026 Anchor Box Vietnam Co., Ltd. Hotline: <strong>1900 8888</strong>
                         </div>
                       </div>
@@ -911,19 +911,19 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                           margin: '0 auto',
                           background: '#0f172a',
                           borderRadius: '28px',
-                          border: '8px solid #334155',
+                          border: '8px solid var(--text-secondary)',
                           overflow: 'hidden',
                           boxShadow: '0 12px 30px rgba(0, 0, 0, 0.3)'
                         }}
                       >
                         {/* Phone Top Notch */}
                         <div style={{ background: '#0f172a', padding: '8px 16px', display: 'flex', justifyContent: 'center' }}>
-                          <div style={{ width: '60px', height: '4px', background: '#475569', borderRadius: '4px' }} />
+                          <div style={{ width: '60px', height: '4px', background: 'var(--text-secondary)', borderRadius: '4px' }} />
                         </div>
 
                         {/* SMS Header */}
-                        <div style={{ background: '#1e293b', padding: '10px 14px', textAlign: 'center', borderBottom: '1px solid #334155' }}>
-                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>Tin nhắn đến</div>
+                        <div style={{ background: '#1e293b', padding: '10px 14px', textAlign: 'center', borderBottom: '1px solid var(--text-secondary)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Tin nhắn đến</div>
                           <div style={{ fontWeight: 700, fontSize: '13px', color: '#38bdf8' }}>SMARTBOX</div>
                         </div>
 
@@ -931,7 +931,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                         <div style={{ padding: '24px 14px', minHeight: '180px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                           <div
                             style={{
-                              background: '#2563eb',
+                              background: 'var(--accent-primary)',
                               color: '#ffffff',
                               padding: '10px 14px',
                               borderRadius: '16px 16px 4px 16px',
@@ -944,7 +944,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                           >
                             {mockHtml}
                           </div>
-                          <div style={{ fontSize: '10px', color: '#64748b', alignSelf: 'flex-end', marginTop: '4px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', alignSelf: 'flex-end', marginTop: '4px' }}>
                             Hôm nay • 09:30
                           </div>
                         </div>
@@ -960,13 +960,13 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                         margin: '0 auto',
                         background: '#0f172a',
                         borderRadius: '28px',
-                        border: '8px solid #334155',
+                        border: '8px solid var(--text-secondary)',
                         overflow: 'hidden',
                         padding: '14px',
                         boxShadow: '0 12px 30px rgba(0, 0, 0, 0.3)'
                       }}
                     >
-                      <div style={{ textAlign: 'center', color: '#64748b', fontSize: '11px', marginBottom: '14px' }}>
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', marginBottom: '14px' }}>
                         12:45 • Thứ Bảy, 13 tháng 9
                       </div>
 
@@ -986,12 +986,12 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                             <Bell size={12} />
                             <span>SMARTBOX APP</span>
                           </div>
-                          <span style={{ fontSize: '10px', color: '#64748b' }}>vừa xong</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>vừa xong</span>
                         </div>
                         <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#f8fafc', marginBottom: '3px' }}>
                           {mockSubject}
                         </div>
-                        <div style={{ fontSize: '11.5px', color: '#94a3b8', lineHeight: 1.4 }}>
+                        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
                           {mockHtml}
                         </div>
                       </div>
@@ -1131,8 +1131,8 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ embedded = fal
                     <span>{testSendResult.message}</span>
                   </div>
                   {testSendResult.isRealSent && (
-                    <div style={{ marginTop: '4px', fontSize: '0.75rem', color: '#10b981' }}>
-                      🚀 Đã gửi email thực tế qua SMTP server tới <strong>{testSendResult.recipient}</strong>!
+                    <div style={{ marginTop: '4px', fontSize: '0.75rem', color: 'var(--accent-emerald-text)' }}>
+                      Đã gửi email thực tế qua SMTP server tới <strong>{testSendResult.recipient}</strong>!
                     </div>
                   )}
                 </div>
