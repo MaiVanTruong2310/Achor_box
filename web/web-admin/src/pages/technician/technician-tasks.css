@@ -1586,3 +1586,20 @@
 .weekly-timetable-card { border: 0 !important; border-radius: 18px !important; background: var(--bg-card) !important; }
 @media (prefers-reduced-motion: reduce) { .tech-tasks-page * { transition: none !important; } }
 .tech-header-info h1 svg { display: none !important; }
+
+/* ================= Route suggestion (sắp xếp tuyến) ================= */
+.route-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 8px; }
+.route-order-badge { flex: none; display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 999px; background: var(--apple-blue); color: #fff; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.route-leg { font-size: 13px; line-height: 18px; color: var(--text-muted); }
+.route-warning { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 10px; border-radius: 999px; font-size: 13px; line-height: 18px; font-weight: 500; background: rgba(255, 149, 0, .16); color: #B25000; }
+[data-theme="dark"] .route-warning { color: #FF9F0A; }
+.route-summary { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 12px 20px; border-radius: 12px; background: rgba(120, 120, 128, .08); color: var(--text-muted); font-size: 15px; line-height: 20px; }
+.route-summary-error { background: rgba(255, 59, 48, .12); color: #D70015; }
+[data-theme="dark"] .route-summary-error { color: #FF453A; }
+.route-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 20px 0; font-size: 13px; color: var(--text-muted); }
+.route-maps-link { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; font-size: 15px; font-weight: 600; text-decoration: none; color: var(--apple-blue); background: color-mix(in srgb, var(--apple-blue) 12%, transparent); }
+.route-maps-link:hover { opacity: .8; }
+.route-maps-link:focus-visible, .route-btn:focus-visible { outline: 2px solid var(--apple-blue); outline-offset: 2px; }
+.route-btn { display: inline-flex; align-items: center; gap: 6px; }
+.route-btn:disabled { opacity: .6; cursor: progress; }
+.route-actions { flex-wrap: wrap; padding: 4px 20px 8px; } .route-actions > span { white-space: nowrap; } .route-maps-link { white-space: nowrap; }

@@ -1,0 +1,75 @@
+/* Address form + picker. Apple HIG, uses the --ab-* tokens (light and dark). */
+
+.af { display: flex; flex-direction: column; gap: 16px; }
+.af-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.af-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.af-label { font-size: 13px; line-height: 18px; color: var(--ab-text-2); }
+.af-input {
+  width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 14px;
+  font: inherit; font-size: 17px; color: var(--ab-text);
+  background: var(--ab-tile-off); border: 0; border-radius: 12px; outline: none;
+}
+.af-input::placeholder { color: var(--ab-text-3); }
+.af-input:focus-visible { box-shadow: 0 0 0 2px var(--ab-tint); }
+.af-check { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; font-size: 15px; color: var(--ab-text); }
+.af-check input { width: 20px; height: 20px; accent-color: var(--ab-tint); margin: 0; flex: none; }
+.af-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.ap-modal { max-width: 640px !important; width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; }
+
+.ap { position: relative; display: flex; flex-direction: column; gap: 10px; }
+.ap-field { position: relative; display: flex; align-items: center; background: var(--ab-tile-off); border-radius: 12px; min-height: 44px; padding: 0 14px; gap: 10px; color: var(--ab-text-2); }
+.ap-field:focus-within { box-shadow: 0 0 0 2px var(--ab-tint); }
+.ap-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 17px; color: var(--ab-text); min-height: 44px; }
+.ap-field input::placeholder { color: var(--ab-text-3); }
+.ap-spin { animation: ap-rot .8s linear infinite; flex: none; }
+@keyframes ap-rot { to { transform: rotate(360deg); } }
+
+.ap-list {
+  position: absolute; z-index: 20; top: 48px; left: 0; right: 0; margin: 0; padding: 6px; list-style: none;
+  background: var(--ab-surface); border-radius: 14px; max-height: 260px; overflow-y: auto;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 30px rgba(0,0,0,.14);
+}
+.ap-list li { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; min-height: 44px; box-sizing: border-box; border-radius: 10px; cursor: pointer; font-size: 15px; line-height: 20px; color: var(--ab-text); }
+.ap-list li svg { flex: none; margin-top: 2px; color: var(--ab-text-2); }
+.ap-list li.is-active { background: var(--ab-tile-off); }
+.ap-empty, .ap-notice { margin: 0; font-size: 13px; line-height: 18px; color: var(--ab-text-2); }
+.ap-notice { color: #B25000; }
+
+.ap-map { position: relative; height: 260px; border-radius: 14px; overflow: hidden; background: var(--ab-tile-off); z-index: 0; }
+.ap-map-loading { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; color: var(--ab-text-2); }
+.ap-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ap-locate {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 0; cursor: pointer;
+  border-radius: 12px; font: inherit; font-size: 15px; font-weight: 600; color: var(--ab-tint);
+  background: color-mix(in srgb, var(--ab-tint) 12%, transparent);
+}
+.ap-locate:active { opacity: .7; }
+.ap-locate:focus-visible { outline: 2px solid var(--ab-tint); outline-offset: 2px; }
+.ap-hint { font-size: 13px; color: var(--ab-text-2); }
+
+/* Pin drawn in CSS so no image assets are needed */
+.ap-pin-wrap { background: none; border: 0; }
+.ap-pin { display: block; width: 28px; height: 28px; margin: 0 auto; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--ab-tint); border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); box-sizing: border-box; }
+.ap-pin::after { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fff; top: 8px; left: 8px; }
+
+@media (max-width: 560px) { .af-row { grid-template-columns: 1fr; } .ap-map { height: 220px; } }
+@media (prefers-reduced-motion: reduce) { .ap-spin { animation: none; } }
+
+/* Global form styles (shop.css) add margins, borders and shadows to labels and inputs: neutralise inside the address form */
+.af .af-label, .af label.af-label { margin: 0 !important; padding: 0 !important; display: block !important; font-weight: 400 !important; }
+.af .af-input, .af .ap-field input {
+  margin: 0 !important; border: 0 !important; border-radius: 12px !important; background: transparent;
+  box-shadow: none !important; font-size: 17px !important; width: 100%; box-sizing: border-box;
+}
+.af .af-input { background: var(--ab-tile-off) !important; padding: 0 14px !important; min-height: 44px; }
+.af .ap-field input { padding: 0 !important; min-height: 44px; background: transparent !important; border-radius: 0 !important; }
+.af .af-input:focus-visible { box-shadow: 0 0 0 2px var(--ab-tint) !important; }
+.af .af-check { margin: 0 !important; display: flex !important; }
+.af .af-check input { width: 20px !important; height: 20px !important; min-height: 0 !important; padding: 0 !important; background: initial !important; }
+.af .af-check { flex-direction: row !important; justify-content: flex-start !important; align-items: center !important; text-align: left !important; font-weight: 400 !important; gap: 10px !important; }
+.af .af-check span { color: var(--ab-text); font-size: 15px; }
+
+.ap-item-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.ap-item-text strong { font-weight: 600; font-size: 15px; line-height: 20px; }
+.ap-item-text small { font-size: 13px; line-height: 18px; color: var(--ab-text-2); }
+.ap-dist { flex: none; font-size: 13px; color: var(--ab-text-2); margin-top: 1px; font-variant-numeric: tabular-nums; }

@@ -29,6 +29,100 @@ class DeliveryInstallationIntegrationTests extends CommerceIntegrationTests {
     @Autowired com.smartbox.backend.service.storage.ImageStorage storage;
     String proofUrl(){return storage.publicUrl(com.smartbox.backend.service.storage.ImageBucket.DELIVERY_PROOFS,UUID.randomUUID()+".jpg");}
     @Autowired InstallationDashboardService backlog;
+    @Autowired CustomerNotifier notifier;
+    @Test void customerStatusNotificationAlsoQueuesPush(){
+        confirmedOrder();
+        assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.push_outbox p JOIN public.notifications n ON n.id=p.notification_id WHERE n.user_id=? AND n.type='ORDER_PAID'",Integer.class,CUSTOMER));
+    }
+    @Autowired CustomerArrivalReminderJob arrival;
+    UUID jobAt(OffsetDateTime when){UUID job=job(confirmedOrder());jdbc.update("UPDATE public.delivery_installations SET scheduled_at=? WHERE id=?",when,job);return job;}
+    int notes(String type){return jdbc.queryForObject("SELECT count(*) FROM public.notifications WHERE user_id=? AND type=?",Integer.class,CUSTOMER,type);}
+    @Test void arrivalReminderSentOnceForJobInsideWindow(){
+        jdbc.update("UPDATE public.profiles SET phone='0901234567' WHERE id=?",TECH);
+        UUID job=jobAt(now().plusMinutes(30));
+        assertEquals(1,arrival.remind(now()));assertEquals(0,arrival.remind(now()));
+        assertEquals(1,notes("TECHNICIAN_ARRIVING"));
+        String body=jdbc.queryForObject("SELECT body FROM public.notifications WHERE type='TECHNICIAN_ARRIVING'",String.class);
+        assertTrue(body.contains("Kỹ thuật kiểm thử"));assertTrue(body.contains("0901234567"));
+        assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.push_outbox p JOIN public.notifications n ON n.id=p.notification_id WHERE n.type='TECHNICIAN_ARRIVING'",Integer.class));
+        assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.email_outbox WHERE template='TECHNICIAN_ARRIVING' AND reference_id=?",Integer.class,job));
+    }
+    @Test void arrivalReminderIgnoresJobsOutsideWindowOrFinished(){
+        UUID far=jobAt(now().plusHours(3));
+        assertEquals(0,arrival.remind(now()));
+        jdbc.update("UPDATE public.delivery_installations SET scheduled_at=?,status='COMPLETED' WHERE id=?",now().plusMinutes(10),far);
+        assertEquals(0,arrival.remind(now()));
+    }
+    @Test void arrivalReminderRepeatsAfterReschedule(){
+        UUID job=jobAt(now().plusMinutes(30));
+        assertEquals(1,arrival.remind(now()));
+        jdbc.update("UPDATE public.delivery_installations SET scheduled_at=? WHERE id=?",now().plusMinutes(45),job);
+        assertEquals(1,arrival.remind(now()));
+        assertEquals(2,notes("TECHNICIAN_ARRIVING"));
+    }
+    @Test void arrivalReminderStillNotifiesWhenCustomerEmailIsBad(){
+        jdbc.update("UPDATE public.profiles SET email='nope' WHERE id=?",CUSTOMER);
+        jobAt(now().plusMinutes(30));
+        assertEquals(1,arrival.remind(now()));
+        assertEquals(1,notes("TECHNICIAN_ARRIVING"));
+        assertEquals("FAILED",jdbc.queryForObject("SELECT status FROM public.email_outbox WHERE template='TECHNICIAN_ARRIVING'",String.class));
+    }
+    @Test void arrivalReminderCoversWarrantyClaims(){
+        jdbc.update("INSERT INTO public.warranty_claims(id,customer_id,assigned_to,status,scheduled_at) VALUES(?,?,?,'new',?)",UUID.randomUUID(),CUSTOMER,TECH,now().plusMinutes(20));
+        assertEquals(1,arrival.remind(now()));
+        assertEquals(1,notes("TECHNICIAN_ARRIVING"));
+    }
+    @Autowired WarrantyExpiryReminderJob expiry;
+    @BeforeEach void warrantyPlansTable(){jdbc.execute("CREATE TABLE IF NOT EXISTS public.warranty_plans(id uuid PRIMARY KEY,code text NOT NULL UNIQUE,name text NOT NULL,extra_months integer NOT NULL,price numeric NOT NULL,sort_order integer NOT NULL DEFAULT 0,is_active boolean NOT NULL DEFAULT true)");jdbc.update("DELETE FROM public.warranty_plans");}
+    UUID issuedWarranty(){
+        UUID order=confirmedOrder(),job=job(order);installed(job,order);
+        jobs.progress(job,"ACCEPT",new Acceptance(true,null),version(job),UUID.randomUUID());
+        return jdbc.queryForObject("SELECT id FROM public.warranties",UUID.class);
+    }
+    void endsIn(UUID warranty,java.time.LocalDate day){jdbc.update("UPDATE public.warranties SET end_date=? WHERE id=?",day,warranty);}
+    void onePlan(){jdbc.update("INSERT INTO public.warranty_plans(id,code,name,extra_months,price) VALUES(?,?,?,?,?)",UUID.randomUUID(),"P12","Gia hạn 12 tháng",12,990000);}
+    @Test void expiryReminderSentOnceInsideThirtyDays(){
+        onePlan();UUID w=issuedWarranty();java.time.LocalDate today=java.time.LocalDate.now();endsIn(w,today.plusDays(20));
+        assertEquals(1,expiry.remind(today));assertEquals(0,expiry.remind(today));
+        assertEquals(1,notes("WARRANTY_EXPIRING"));
+        assertTrue(jdbc.queryForObject("SELECT body FROM public.notifications WHERE type='WARRANTY_EXPIRING'",String.class).contains("20"));
+        assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.push_outbox p JOIN public.notifications n ON n.id=p.notification_id WHERE n.type='WARRANTY_EXPIRING'",Integer.class));
+        String payload=jdbc.queryForObject("SELECT payload FROM public.email_outbox WHERE template='WARRANTY_EXPIRING' AND reference_id=?",String.class,w);
+        assertTrue(payload.contains("Gia hạn 12 tháng"));assertTrue(payload.contains("/contact"));
+    }
+    @Test void expiryReminderSkipsOutsideWindowAndInactive(){
+        UUID w=issuedWarranty();java.time.LocalDate today=java.time.LocalDate.now();
+        endsIn(w,today.plusDays(31));assertEquals(0,expiry.remind(today));
+        endsIn(w,today.minusDays(1));assertEquals(0,expiry.remind(today));
+        endsIn(w,today.plusDays(5));jdbc.update("UPDATE public.warranties SET status='expired' WHERE id=?",w);assertEquals(0,expiry.remind(today));
+    }
+    @Test void expiryReminderRepeatsAfterExtension(){
+        UUID w=issuedWarranty();java.time.LocalDate today=java.time.LocalDate.now();
+        endsIn(w,today.plusDays(10));assertEquals(1,expiry.remind(today));
+        endsIn(w,today.plusDays(25));assertEquals(1,expiry.remind(today));
+        assertEquals(2,notes("WARRANTY_EXPIRING"));
+    }
+    @Test void expiryReminderWorksWithoutPlansAndBadEmail(){
+        UUID w=issuedWarranty();java.time.LocalDate today=java.time.LocalDate.now();endsIn(w,today.plusDays(7));
+        jdbc.update("UPDATE public.profiles SET email='nope' WHERE id=?",CUSTOMER);
+        assertEquals(1,expiry.remind(today));
+        assertEquals(1,notes("WARRANTY_EXPIRING"));
+        assertEquals("FAILED",jdbc.queryForObject("SELECT status FROM public.email_outbox WHERE template='WARRANTY_EXPIRING'",String.class));
+    }
+    @Test void enqueueDirectInsertsOnceAndRejectsBadRecipient(){
+        UUID ref=UUID.randomUUID();
+        assertTrue(outbox.enqueueDirect("WARRANTY_EXPIRING",ref,"k:"+ref,"a@b.co",Map.of("x","1")));
+        assertFalse(outbox.enqueueDirect("WARRANTY_EXPIRING",ref,"k:"+ref,"a@b.co",Map.of("x","1")));
+        assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.email_outbox WHERE event_key=?",Integer.class,"k:"+ref));
+        assertEquals("PENDING",jdbc.queryForObject("SELECT status FROM public.email_outbox WHERE event_key=?",String.class,"k:"+ref));
+        assertTrue(outbox.enqueueDirect("WARRANTY_EXPIRING",ref,"bad:"+ref,"nope",Map.of("x","1")));
+        assertEquals("FAILED",jdbc.queryForObject("SELECT status FROM public.email_outbox WHERE event_key=?",String.class,"bad:"+ref));
+    }
+    @Test void customerNotifierWritesNotificationAndPush(){
+        UUID id=notifier.notify(CUSTOMER,"TEST","t","b");
+        assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM public.notifications WHERE id=? AND user_id=? AND type='TEST' AND is_read=false",Integer.class,id,CUSTOMER));
+        assertEquals("PENDING",jdbc.queryForObject("SELECT status FROM public.push_outbox WHERE notification_id=?",String.class,id));
+    }
     @Test void testBacklogSummary() {
         actors.staff();
         var s = backlog.summary();

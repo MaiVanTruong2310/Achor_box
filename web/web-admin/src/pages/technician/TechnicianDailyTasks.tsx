@@ -19,11 +19,15 @@ import {
   AlertTriangle,
   Play,
   CalendarDays,
-  LayoutGrid
+  LayoutGrid,
+  Navigation
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../contexts/ToastContext';
 import { deliveryApi, DailyTask, DailyTasksResponse } from '../../services/deliveryInstallation';
+import { useRoutePlan } from './useRoutePlan';
+import { addressOf, isRouteFinished, makeRouteKey, type ShiftId } from '../../services/routeSession';
+import { formatKm, formatMinutes, mapsRouteUrl, type PlannedStop } from '../../services/routePlanner';
 import { warrantiesService } from '../../services/api';
 import './technician-tasks.css';
 
@@ -134,7 +138,9 @@ const TimetableCard: React.FC<{
   onOpen: (task: DailyTask) => void;
   onStart: (e: React.MouseEvent, task: DailyTask) => void;
   submitting?: boolean;
-}> = ({ task, onOpen, onStart, submitting }) => {
+  stop?: PlannedStop;
+  unlocated?: boolean;
+}> = ({ task, onOpen, onStart, submitting, stop, unlocated }) => {
   const isDelivery = task.type === 'DELIVERY_INSTALLATION';
   const isLive = isTaskCurrentlyLive(task);
   const firstItem = task.items?.[0];
@@ -142,11 +148,27 @@ const TimetableCard: React.FC<{
     ? `${firstItem.productName || 'Thiết bị Anchor Box'}${firstItem.variantName ? ` (${firstItem.variantName})` : ''}`
     : task.typeLabel;
 
+  const placed = !!stop && stop.order !== null;
+  const legText = placed && stop!.kmFromPrevious !== null
+    ? `${stop!.legFromCurrent ? 'Từ vị trí hiện tại' : 'Cách điểm trước'} ${formatKm(stop!.kmFromPrevious!)}, khoảng ${formatMinutes(stop!.minutesFromPrevious ?? 0)}`
+    : null;
+  const warningText = stop?.warning
+    ? `${stop.warning.kind === 'early' ? 'Đến sớm' : 'Có thể trễ'} khoảng ${formatMinutes(stop.warning.minutes)} so với giờ hẹn`
+    : null;
+
   return (
     <div
       className={`timetable-card ${isDelivery ? 'delivery' : 'warranty'}`}
       onClick={() => onOpen(task)}
     >
+      {(placed || unlocated) && (
+        <div className="route-row">
+          {placed && <span className="route-order-badge" aria-label={`Điểm thứ ${stop!.order} trong tuyến đề xuất`}>{stop!.order}</span>}
+          {legText && <span className="route-leg">{legText}</span>}
+          {unlocated && <span className="route-leg">Chưa xác định vị trí</span>}
+          {warningText && <span className="route-warning" role="status">{warningText}</span>}
+        </div>
+      )}
       <div>
         {/* Top Header: Shift Tag, Live indicator, Type & Status badge */}
         <div className="timetable-card-top-row">
@@ -193,7 +215,7 @@ const TimetableCard: React.FC<{
           <span title={task.shippingAddress}>{task.shortAddress || task.shippingAddress || 'Chưa có địa chỉ'}</span>
           {task.shippingAddress && (
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.shippingAddress)}`}
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(task.shippingAddress)}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
@@ -515,6 +537,13 @@ export const TechnicianDailyTasks: React.FC = () => {
     return true;
   });
 
+  // Suggested route (see docs/superpowers/specs/2026-11-09-technician-route-order-design.md)
+  const shiftTasksByShift = { morning: [], afternoon: [], evening: [] } as Record<ShiftId, DailyTask[]>;
+  for (const t of filteredTasks) shiftTasksByShift[getTaskShift(t)].push(t);
+  const routeKey = makeRouteKey(selectedDate, data?.tasks || [], activeFilter);
+  const routePlan = useRoutePlan(shiftTasksByShift, routeKey, selectedDate === getVnDateStr());
+  const routeActiveCount = filteredTasks.filter((t) => !isRouteFinished(t.status)).length;
+
   // Shifts definition for daily timetable
   const shifts = [
     { id: 'morning' as const, title: 'Ca sáng', range: '08:00 – 12:00', icon: '', color: 'var(--text-primary)', bg: 'transparent' },
@@ -635,6 +664,27 @@ export const TechnicianDailyTasks: React.FC = () => {
             >
               <RefreshCw size={15} />
             </button>
+
+            {viewMode === 'timetable_day' && (routeActiveCount >= 2 || routePlan.status === 'ready') && (
+              <button
+                type="button"
+                className="tech-quick-btn route-btn"
+                onClick={routePlan.status === 'ready' ? routePlan.undo : routePlan.run}
+                disabled={routePlan.status === 'running'}
+                title="Đề xuất thứ tự đi trong từng ca theo khoảng cách"
+              >
+                <Navigation size={15} />
+                <span>
+                  {routePlan.status === 'running'
+                    ? routePlan.progress.total > 0
+                      ? `Đang xác định vị trí ${routePlan.progress.done}/${routePlan.progress.total}`
+                      : 'Đang xác định vị trí'
+                    : routePlan.status === 'ready'
+                      ? 'Hoàn tác tuyến'
+                      : 'Sắp xếp tuyến'}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -687,7 +737,7 @@ export const TechnicianDailyTasks: React.FC = () => {
           <div className="tech-urgent-banner-actions">
             {(upcomingUrgentTasks[0].shippingAddress || upcomingUrgentTasks[0].shortAddress) && (
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(upcomingUrgentTasks[0].shippingAddress || upcomingUrgentTasks[0].shortAddress)}`}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(upcomingUrgentTasks[0].shippingAddress || upcomingUrgentTasks[0].shortAddress)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="tech-urgent-action-btn maps"
@@ -799,9 +849,30 @@ export const TechnicianDailyTasks: React.FC = () => {
                 </div>
               )}
 
+              {routePlan.status === 'error' && <div className="route-summary route-summary-error" role="alert">{routePlan.message}</div>}
+              {routePlan.route && (
+                <div className="route-summary" role="status">
+                  <span>{routePlan.route.startedFromCurrentPosition ? 'Tuyến gợi ý bắt đầu từ vị trí hiện tại của bạn.' : 'Không có vị trí hiện tại, tuyến gợi ý bắt đầu từ ca đầu theo giờ hẹn.'}</span>
+                  {routePlan.route.unlocated.length > 0 && <span>{routePlan.route.unlocated.length} ca chưa xác định vị trí, giữ nguyên chỗ cũ.</span>}
+                  <span>Thứ tự chỉ để tham khảo, giờ hẹn với khách không đổi.</span>
+                </div>
+              )}
+
               <div className="timetable-columns-board">
                 {shifts.map((shift) => {
-                  const shiftTasks = filteredTasks.filter((t) => getTaskShift(t) === shift.id);
+                  const plan = routePlan.route?.plans[shift.id];
+                  const baseTasks = filteredTasks.filter((t) => getTaskShift(t) === shift.id);
+                  const stopById = new Map((plan?.stops || []).map((st) => [st.id, st]));
+                  const shiftTasks = plan
+                    ? [
+                        ...(plan.stops.map((st) => baseTasks.find((t) => t.id === st.id)).filter(Boolean) as DailyTask[]),
+                        ...baseTasks.filter((t) => !stopById.has(t.id)),
+                      ]
+                    : baseTasks;
+                  const routed = !!plan && plan.stops.filter((st) => st.order !== null).length >= 2;
+                  const routeLink = routed
+                    ? mapsRouteUrl(shiftTasks.filter((t) => stopById.get(t.id)?.order != null).map(addressOf))
+                    : null;
                   return (
                     <div key={shift.id} className="timetable-shift-column">
                       {/* Column Header */}
@@ -818,6 +889,17 @@ export const TechnicianDailyTasks: React.FC = () => {
                         </span>
                       </div>
 
+                      {routed && plan && (
+                        <div className="route-actions">
+                          <span>Tổng khoảng {formatKm(plan.totalKm)}</span>
+                          {routeLink && (
+                            <a className="route-maps-link" href={routeLink} target="_blank" rel="noopener noreferrer">
+                              Mở tuyến trên Google Maps
+                            </a>
+                          )}
+                        </div>
+                      )}
+
                       {/* Column Task Cards or Empty Slot */}
                       <div className="timetable-col-body">
                         {shiftTasks.length > 0 ? (
@@ -831,6 +913,8 @@ export const TechnicianDailyTasks: React.FC = () => {
                                 void handleStartTask(t);
                               }}
                               submitting={submitting}
+                              stop={stopById.get(task.id)}
+                              unlocated={!!routePlan.route?.unlocated.includes(task.id)}
                             />
                           ))
                         ) : (
@@ -1072,7 +1156,7 @@ export const TechnicianDailyTasks: React.FC = () => {
 
                   {selectedTask.shippingAddress && (
                     <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedTask.shippingAddress)}`}
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedTask.shippingAddress)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="tech-btn-map"

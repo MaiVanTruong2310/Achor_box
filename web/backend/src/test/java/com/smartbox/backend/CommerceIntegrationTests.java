@@ -40,7 +40,7 @@ class CommerceIntegrationTests {
         void customer(){actor.set(new Actor(CUSTOMER,"customer"));}
     }
     @Configuration @EnableTransactionManagement
-    @Import({OrderWorkflowService.class,OrderStateMachine.class,PaymentService.class,VnpayGateway.class,ApprovalTicketService.class,OutboxService.class,FulfillmentService.class,RevenueReportService.class,MqttDeviceService.class,VariantInventoryService.class,DeviceWorkflowService.class,DeliveryInstallationService.class,CustomerAccountService.class,CustomerOrderService.class,PaymentAuditService.class,AcceptanceWarrantyService.class,OrderTrackingService.class,InstallationDashboardService.class,PaymentTimeoutService.class,OrderDelayedExpiryQueue.class,com.smartbox.backend.service.storage.SupabaseImageStorage.class,com.smartbox.backend.service.warranty.WarrantyPlanService.class})
+    @Import({CustomerNotifier.class,CustomerArrivalReminderJob.class,WarrantyExpiryReminderJob.class,OrderWorkflowService.class,OrderStateMachine.class,PaymentService.class,VnpayGateway.class,ApprovalTicketService.class,OutboxService.class,FulfillmentService.class,RevenueReportService.class,MqttDeviceService.class,VariantInventoryService.class,DeviceWorkflowService.class,DeliveryInstallationService.class,CustomerAccountService.class,CustomerOrderService.class,PaymentAuditService.class,AcceptanceWarrantyService.class,OrderTrackingService.class,InstallationDashboardService.class,PaymentTimeoutService.class,OrderDelayedExpiryQueue.class,com.smartbox.backend.service.storage.SupabaseImageStorage.class,com.smartbox.backend.service.warranty.WarrantyPlanService.class})
     static class Config {
         @Bean DataSource dataSource(@org.springframework.beans.factory.annotation.Value("${test.jdbc.url:jdbc:h2:mem:commerce;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=5000;NON_KEYWORDS=KEY}") String url,
             @org.springframework.beans.factory.annotation.Value("${test.jdbc.user:sa}") String user,@org.springframework.beans.factory.annotation.Value("${test.jdbc.password:}") String password){return new DriverManagerDataSource(url,user,password);}
@@ -58,6 +58,7 @@ class CommerceIntegrationTests {
         @Bean org.springframework.transaction.PlatformTransactionManager transactionManager(DataSource ds){return new DataSourceTransactionManager(ds);}
         @Bean ObjectMapper json(){return new ObjectMapper().findAndRegisterModules();}
         @Bean TestActors actors(){return new TestActors();}
+        @Bean(name="mailExecutor") java.util.concurrent.Executor mailExecutor(){return task->{};}
     }
     @Autowired JdbcTemplate jdbc;
     @Autowired OrderWorkflowService orders;

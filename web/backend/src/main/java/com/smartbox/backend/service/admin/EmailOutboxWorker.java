@@ -132,6 +132,10 @@ public class EmailOutboxWorker {
                     helper.setSubject(renderedSubject);
                     helper.setText(renderedBody, true);
                     log.info("[EMAIL OUTBOX] Đã gửi email sử dụng mẫu động CSDL cho mã: '{}' tới: '{}'", template, recipient);
+                } else if (CustomerMailBodies.supports(template)) {
+                    var rendered = CustomerMailBodies.render(template, payload);
+                    helper.setSubject(rendered.subject());
+                    helper.setText(rendered.html(), true);
                 } else {
                     // Fallback to Thymeleaf template if DB template is not present or inactive
                     var context = new Context(Locale.forLanguageTag("vi-VN"));
@@ -287,6 +291,8 @@ public class EmailOutboxWorker {
             case "DEVICE_DELIVERED" -> "Thiết bị đã giao, đang lắp đặt";
             case "INSTALLATION_DELAYED" -> "Điều chỉnh lịch giao và lắp đặt";
             case "INSTALLATION_COMPLETED" -> "AnchorBox đã được lắp đặt và nghiệm thu";
+            case "TECHNICIAN_ARRIVING" -> "Kỹ thuật viên sắp tới";
+            case "WARRANTY_EXPIRING" -> "Bảo hành sắp hết hạn";
             default -> "Cập nhật đơn hàng";
         };
     }

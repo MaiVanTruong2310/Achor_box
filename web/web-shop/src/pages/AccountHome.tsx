@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo, type FormEvent, type ChangeEvent } from 'react';
+import { AddressPicker } from '../components/AddressPicker';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Package,
@@ -2090,7 +2091,7 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
           ==================================================== */}
       {addressModal.open && (
         <div className="apple-modal-overlay" onClick={() => !addressSaving && setAddressModal({ open: false })}>
-          <div className="apple-modal-card" onClick={e => e.stopPropagation()}>
+          <div className="apple-modal-card ap-modal" onClick={e => e.stopPropagation()}>
             <div className="apple-modal-header">
               <h3>{addressModal.address ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ giao hàng mới'}</h3>
               <button
@@ -2110,102 +2111,51 @@ export function AccountHome({ defaultTab = 'profile' }: AccountHomeProps) {
               </div>
             )}
 
-            <form onSubmit={handleSaveAddress} noValidate>
-              <div className="auth-input-group">
-                <label className="auth-input-label">Tên địa chỉ (VD: Nhà riêng, Văn phòng)</label>
-                <input
-                  type="text"
-                  className="auth-input"
-                  style={{ paddingLeft: 14 }}
-                  value={addressForm.label}
-                  onChange={e => setAddressForm({ ...addressForm, label: e.target.value })}
-                  required
-                />
+            <form onSubmit={handleSaveAddress} noValidate className="af">
+              <div className="af-field">
+                <label className="af-label" htmlFor="addr-label">Tên địa chỉ, ví dụ Nhà riêng hoặc Văn phòng</label>
+                <input id="addr-label" type="text" className="af-input" value={addressForm.label}
+                  onChange={e => setAddressForm({ ...addressForm, label: e.target.value })} required />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div className="auth-input-group">
-                  <label className="auth-input-label">Tên người nhận</label>
-                  <input
-                    type="text"
-                    className="auth-input"
-                    style={{ paddingLeft: 14 }}
-                    value={addressForm.recipientName}
-                    onChange={e => setAddressForm({ ...addressForm, recipientName: e.target.value })}
-                    required
-                  />
+              <div className="af-row">
+                <div className="af-field">
+                  <label className="af-label" htmlFor="addr-name">Tên người nhận</label>
+                  <input id="addr-name" type="text" className="af-input" autoComplete="name" value={addressForm.recipientName}
+                    onChange={e => setAddressForm({ ...addressForm, recipientName: e.target.value })} required />
                 </div>
-                <div className="auth-input-group">
-                  <label className="auth-input-label">Số điện thoại</label>
-                  <input
-                    type="tel"
-                    className="auth-input"
-                    style={{ paddingLeft: 14 }}
-                    value={addressForm.phone}
-                    onChange={e => setAddressForm({ ...addressForm, phone: e.target.value })}
-                    required
-                  />
+                <div className="af-field">
+                  <label className="af-label" htmlFor="addr-phone">Số điện thoại</label>
+                  <input id="addr-phone" type="tel" className="af-input" autoComplete="tel" inputMode="tel" value={addressForm.phone}
+                    onChange={e => setAddressForm({ ...addressForm, phone: e.target.value })} required />
                 </div>
               </div>
 
-              <div className="auth-input-group">
-                <label className="auth-input-label">Địa chỉ chi tiết (Số nhà, đường, phường/xã, quận/huyện)</label>
-                <input
-                  type="text"
-                  className="auth-input"
-                  style={{ paddingLeft: 14 }}
-                  value={addressForm.addressLine}
-                  onChange={e => setAddressForm({ ...addressForm, addressLine: e.target.value })}
-                  required
-                />
+              <div className="af-field">
+                <span className="af-label">Địa chỉ nhận hàng và lắp đặt</span>
+                <AddressPicker value={addressForm.addressLine}
+                  onChange={addressLine => setAddressForm(form => ({ ...form, addressLine }))} />
               </div>
 
-              <div className="auth-input-group">
-                <label className="auth-input-label">Ghi chú lắp đặt cho kỹ thuật viên (tùy chọn)</label>
-                <input
-                  type="text"
-                  className="auth-input"
-                  style={{ paddingLeft: 14 }}
-                  placeholder="VD: Lắp cạnh cổng chính, có ổ điện cách 2m..."
+              <div className="af-field">
+                <label className="af-label" htmlFor="addr-note">Ghi chú lắp đặt cho kỹ thuật viên, không bắt buộc</label>
+                <input id="addr-note" type="text" className="af-input" placeholder="Ví dụ: lắp cạnh cổng chính, có ổ điện cách 2 m"
                   value={addressForm.installationNote || ''}
-                  onChange={e => setAddressForm({ ...addressForm, installationNote: e.target.value })}
-                />
+                  onChange={e => setAddressForm({ ...addressForm, installationNote: e.target.value })} />
               </div>
 
-              <div style={{ marginTop: 12, marginBottom: 16 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '13px' }}>
-                  <input
-                    type="checkbox"
-                    checked={addressForm.isDefault}
-                    onChange={e => setAddressForm({ ...addressForm, isDefault: e.target.checked })}
-                    style={{ accentColor: '#0071e3', width: 16, height: 16 }}
-                  />
-                  <span>Đặt làm địa chỉ giao hàng mặc định</span>
-                </label>
-              </div>
+              <label className="af-check">
+                <input type="checkbox" checked={addressForm.isDefault}
+                  onChange={e => setAddressForm({ ...addressForm, isDefault: e.target.checked })} />
+                <span>Đặt làm địa chỉ giao hàng mặc định</span>
+              </label>
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
-                <button
-                  type="button"
-                  className="apple-pill-btn secondary"
-                  onClick={() => setAddressModal({ open: false })}
-                  disabled={addressSaving}
-                >
+              <div className="af-actions">
+                <button type="button" className="apple-pill-btn secondary" onClick={() => setAddressModal({ open: false })} disabled={addressSaving}>
                   Hủy
                 </button>
-                <button
-                  type="submit"
-                  className="apple-pill-btn primary"
-                  disabled={addressSaving}
-                >
-                  {addressSaving ? (
-                    <>
-                      <Loader2 size={15} className="animate-spin" />
-                      <span>Đang lưu…</span>
-                    </>
-                  ) : (
-                    <span>Lưu địa chỉ</span>
-                  )}
+                <button type="submit" className="apple-pill-btn primary" disabled={addressSaving}>
+                  {addressSaving ? (<><Loader2 size={15} className="animate-spin" /><span>Đang lưu…</span></>) : (<span>Lưu địa chỉ</span>)}
                 </button>
               </div>
             </form>

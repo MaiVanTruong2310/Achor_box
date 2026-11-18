@@ -75,6 +75,22 @@ public class OutboxService {
         }
     }
 
+    /**
+     * Queues an email that is not tied to an order (arrival and warranty reminders).
+     * Returns true only when this call created the row; a repeated event key is ignored.
+     */
+    @Transactional
+    public boolean enqueueDirect(String template, UUID referenceId, String eventKey, String recipient, Map<String, Object> payload) {
+        boolean valid = Objects.toString(recipient, "").matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+        try {
+            return db.update("INSERT INTO public.email_outbox(id,template,reference_id,event_key,recipient,payload,status,next_attempt_at,last_error,created_at) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(event_key) DO NOTHING",
+                    UUID.randomUUID(), template, referenceId, eventKey, Objects.toString(recipient, ""), json.writeValueAsString(payload),
+                    valid ? "PENDING" : "FAILED", now(), valid ? null : "EMAIL_RECIPIENT_MISSING", now()) == 1;
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("Cannot serialize email snapshot", ex);
+        }
+    }
+
     @Transactional
     public List<Map<String, Object>> claim(UUID token, int leaseSeconds) {
         var rows = db.list("SELECT * FROM public.email_outbox WHERE status='PENDING' AND next_attempt_at<=? AND (claimed_until IS NULL OR claimed_until<?) ORDER BY id LIMIT 10 FOR UPDATE SKIP LOCKED", now(), now());

@@ -44,6 +44,7 @@ public class OrderWorkflowService {
     private final CustomerAccountService customers;
     private final AcceptanceWarrantyService warranties;
     private final WarrantyPlanService warrantyPlans;
+    private final CustomerNotifier notifier;
 
     @Value("${smartbox.orders.draft-minutes:30}")
     private int draftMinutes;
@@ -478,8 +479,7 @@ public class OrderWorkflowService {
         }
         if (title != null) {
             try {
-                db.update("INSERT INTO public.notifications(id, user_id, type, title, body, is_read, created_at) VALUES(?,?,?,?,?,false,?)",
-                        UUID.randomUUID(), customerId, type, title, body, now());
+                notifier.notify(customerId, type, title, body);
             } catch (Exception ignored) {}
         }
     }

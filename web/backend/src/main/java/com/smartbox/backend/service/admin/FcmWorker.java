@@ -43,6 +43,14 @@ public class FcmWorker {
         client = RestClient.builder().baseUrl("https://fcm.googleapis.com/v1/projects/" + project).requestFactory(factory).build();
     }
 
+    /** FCM data values must be strings; notifications to customers have no device, so deviceId is optional. */
+    static Map<String, String> data(UUID notification, Object deviceId) {
+        var data = new java.util.LinkedHashMap<String, String>();
+        data.put("notificationId", notification.toString());
+        if (deviceId != null) data.put("deviceId", deviceId.toString());
+        return data;
+    }
+
     @Scheduled(fixedDelay = 10000)
     public void run() {
         UUID token = UUID.randomUUID();
@@ -53,7 +61,7 @@ public class FcmWorker {
                 UUID notification = uuid(row.get("notification_id"));
                 for (var target : push.tokens(uuid(row.get("user_id")), notification)) {
                     client.post().uri("/messages:send").header("Authorization", "Bearer " + credentials.getAccessToken().getTokenValue())
-                            .body(Map.of("message", Map.of("token", target.get("token"), "notification", Map.of("title", row.get("title"), "body", row.get("body")), "data", Map.of("notificationId", notification.toString(), "deviceId", row.get("device_id").toString()))))
+                            .body(Map.of("message", Map.of("token", target.get("token"), "notification", Map.of("title", row.get("title"), "body", row.get("body")), "data", data(notification, row.get("device_id")))))
                             .retrieve().toBodilessEntity();
                     push.tokenSent(notification, uuid(target.get("id")));
                 }
